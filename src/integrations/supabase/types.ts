@@ -79,6 +79,84 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          changed_fields: string[] | null
+          created_at: string | null
+          empresa_id: string
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          record_id: string
+          table_name: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_fields?: string[] | null
+          created_at?: string | null
+          empresa_id: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id: string
+          table_name: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_fields?: string[] | null
+          created_at?: string | null
+          empresa_id?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      compliance_templates: {
+        Row: {
+          checklist: Json
+          created_at: string | null
+          descricao: string | null
+          empresa_id: string
+          framework: string
+          id: string
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          checklist: Json
+          created_at?: string | null
+          descricao?: string | null
+          empresa_id: string
+          framework: string
+          id?: string
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          checklist?: Json
+          created_at?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          framework?: string
+          id?: string
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       controles: {
         Row: {
           area: string | null
@@ -213,6 +291,57 @@ export type Database = {
           id?: string
           nome?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      controles_evidencias: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_tamanho: number | null
+          arquivo_tipo: string | null
+          arquivo_url: string | null
+          controle_id: string
+          controle_teste_id: string | null
+          created_at: string | null
+          created_by: string | null
+          descricao: string | null
+          id: string
+          is_current_version: boolean | null
+          nome: string
+          updated_at: string | null
+          versao: number | null
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          controle_id: string
+          controle_teste_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          is_current_version?: boolean | null
+          nome: string
+          updated_at?: string | null
+          versao?: number | null
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          controle_id?: string
+          controle_teste_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          is_current_version?: boolean | null
+          nome?: string
+          updated_at?: string | null
+          versao?: number | null
         }
         Relationships: []
       }
@@ -423,6 +552,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      relatorios_salvos: {
+        Row: {
+          configuracao: Json
+          created_at: string | null
+          created_by: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          configuracao: Json
+          created_at?: string | null
+          created_by?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          configuracao?: Json
+          created_at?: string | null
+          created_by?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       riscos: {
         Row: {
@@ -778,6 +940,17 @@ export type Database = {
       controle_pertence_empresa: {
         Args: { controle_id: string }
         Returns: boolean
+      }
+      create_audit_log: {
+        Args: {
+          p_table_name: string
+          p_record_id: string
+          p_action: string
+          p_old_values?: Json
+          p_new_values?: Json
+          p_changed_fields?: string[]
+        }
+        Returns: undefined
       }
       generate_temp_password: {
         Args: Record<PropertyKey, never>
