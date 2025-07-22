@@ -381,7 +381,7 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-300">
+              <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-300">
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   Pendente primeiro acesso
