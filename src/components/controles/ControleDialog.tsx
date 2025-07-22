@@ -43,7 +43,7 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
     nome: "",
     descricao: "",
     tipo: "preventivo",
-    categoria_id: "",
+    categoria_id: "sem_categoria",
     processo: "",
     area: "",
     responsavel: "",
@@ -63,7 +63,7 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
         nome: controle.nome || "",
         descricao: controle.descricao || "",
         tipo: controle.tipo || "preventivo",
-        categoria_id: controle.categoria_id || "",
+        categoria_id: controle.categoria_id || "sem_categoria",
         processo: controle.processo || "",
         area: controle.area || "",
         responsavel: controle.responsavel || "",
@@ -78,7 +78,7 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
         nome: "",
         descricao: "",
         tipo: "preventivo",
-        categoria_id: "",
+        categoria_id: "sem_categoria",
         processo: "",
         area: "",
         responsavel: "",
@@ -107,7 +107,7 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
       const controleData = {
         ...data,
         empresa_id: profile.empresa_id,
-        categoria_id: data.categoria_id || null,
+        categoria_id: data.categoria_id === "sem_categoria" ? null : data.categoria_id,
         data_implementacao: data.data_implementacao || null,
         proxima_avaliacao: data.proxima_avaliacao || null
       };
@@ -206,12 +206,12 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="categoria">Categoria</Label>
-              <Select value={formData.categoria_id} onValueChange={(value) => setFormData(prev => ({ ...prev, categoria_id: value }))}>
+              <Select value={formData.categoria_id || "sem_categoria"} onValueChange={(value) => setFormData(prev => ({ ...prev, categoria_id: value === "sem_categoria" ? "" : value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sem categoria</SelectItem>
+                  <SelectItem value="sem_categoria">Sem categoria</SelectItem>
                   {categorias.map((categoria) => (
                     <SelectItem key={categoria.id} value={categoria.id}>
                       {categoria.nome}
