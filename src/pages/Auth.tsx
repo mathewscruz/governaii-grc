@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
-import logoImage from '@/assets/governaii-logo.png';
+import logoImage from '@/assets/governaii-logo-main.png';
 
 const Auth = () => {
   const { user, loading } = useAuth();
@@ -65,15 +65,19 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <div className="w-full max-w-md">
+        {/* Logo fora do card */}
+        <div className="text-center mb-8">
+          <img 
+            src={logoImage} 
+            alt="GovernAII" 
+            className="h-20 mx-auto object-contain"
+          />
+        </div>
+        
         <Card className="shadow-2xl border-0 bg-white">
           <CardHeader className="text-center pb-6">
-            <img 
-              src={logoImage} 
-              alt="GovernAII" 
-              className="h-16 mx-auto mb-4 object-contain"
-            />
             <CardTitle className="text-2xl font-bold text-gray-800 mb-2">
               Acesso ao Sistema
             </CardTitle>
