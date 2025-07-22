@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
 import GerenciamentoUsuarios from '@/components/configuracoes/GerenciamentoUsuarios';
 import ConfiguracoesGerais from '@/components/configuracoes/ConfiguracoesGerais';
+import { PageTransition } from '@/components/PageTransition';
 
 const Configuracoes = () => {
   const { user } = useAuth();
@@ -51,7 +52,8 @@ const Configuracoes = () => {
   const isAdmin = userRole === 'admin' || isSuperAdmin;
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-7xl">
+    <PageTransition>
+      <div className="container mx-auto py-6 px-4 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Configurações</h1>
         <p className="text-muted-foreground">
@@ -122,6 +124,7 @@ const Configuracoes = () => {
         </TabsContent>
       </Tabs>
     </div>
+    </PageTransition>
   );
 };
 

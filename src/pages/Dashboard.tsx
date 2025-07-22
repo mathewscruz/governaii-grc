@@ -6,6 +6,7 @@ import { AlertTriangle, Shield, TrendingUp, Users, Building, CheckCircle } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { MatrizVisualizacao } from '@/components/riscos/MatrizVisualizacao';
+import { PageTransition } from '@/components/PageTransition';
 
 interface DashboardStats {
   totalRiscos: number;
@@ -101,7 +102,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-7xl space-y-6">
+    <PageTransition>
+      <div className="container mx-auto py-6 px-4 max-w-7xl space-y-6">
       {/* Título */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
@@ -211,5 +213,6 @@ export default function Dashboard() {
         </Card>
       </div>
     </div>
+    </PageTransition>
   );
 }

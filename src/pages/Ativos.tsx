@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { PageTransition } from '@/components/PageTransition';
 
 interface Ativo {
   id: string;
@@ -225,7 +226,8 @@ const Ativos = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <PageTransition>
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gestão de Ativos</h1>
@@ -492,6 +494,7 @@ const Ativos = () => {
         onConfirm={confirmDelete}
       />
     </div>
+    </PageTransition>
   );
 };
 
