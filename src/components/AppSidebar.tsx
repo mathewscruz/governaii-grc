@@ -21,6 +21,7 @@ import {
   LogOut,
   LayoutDashboard
 } from 'lucide-react';
+import logoMini from '@/assets/governaii-logo-mini.png';
 
 import {
   Sidebar,
@@ -122,10 +123,10 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border h-14">
         <div className="flex items-center justify-center px-3 py-2 h-full">
           <img 
-            src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/sign/logotipo/Governiaa%20(500%20x%20200%20px)%20(15).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NTdhMjYzYS1jZjc1LTQ3OGYtYjNkMy01NWM2ODViMTQ0MTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvdGlwby9Hb3Zlcm5pYWEgKDUwMCB4IDIwMCBweCkgKDE1KS5wbmciLCJpYXQiOjE3NTMyMDEzODIsImV4cCI6MTc4NDczNzM4Mn0.AjG5UVNIcJcoMc_MVu3tIGUbLQGe77VhUeeSlEa5-1o" 
+            src={isCollapsed ? logoMini : "https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/sign/logotipo/Governiaa%20(500%20x%20200%20px)%20(15).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NTdhMjYzYS1jZjc1LTQ3OGYtYjNkMy01NWM2ODViMTQ0MTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvdGlwby9Hb3Zlcm5pYWEgKDUwMCB4IDIwMCBweCkgKDE1KS5wbmciLCJpYXQiOjE3NTMyMDEzODIsImV4cCI6MTc4NDczNzM4Mn0.AjG5UVNIcJcoMc_MVu3tIGUbLQGe77VhUeeSlEa5-1o"} 
             alt="GovernAII" 
             className={`object-contain transition-all duration-300 ${
-              isCollapsed ? 'h-8 w-8' : 'h-10 w-auto max-w-[200px]'
+              isCollapsed ? 'h-10 w-10' : 'h-12 w-auto max-w-[200px]'
             }`}
           />
         </div>
@@ -219,9 +220,11 @@ export function AppSidebar() {
             variant="ghost" 
             size="sm" 
             onClick={handleSignOut}
-            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 h-10 px-3"
+            className={`w-full text-sidebar-foreground hover:bg-sidebar-accent/50 h-10 px-3 ${
+              isCollapsed ? 'justify-center' : 'justify-start'
+            }`}
           >
-            <LogOut className="h-4 w-4 mr-3 flex-shrink-0" />
+            <LogOut className={`h-4 w-4 flex-shrink-0 ${!isCollapsed ? 'mr-3' : ''}`} />
             {!isCollapsed && <span className="text-sm font-medium">Sair</span>}
           </Button>
         </div>
