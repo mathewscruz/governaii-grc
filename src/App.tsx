@@ -7,6 +7,7 @@ import Layout from '@/components/Layout';
 import Auth from '@/pages/Auth';
 import Dashboard from '@/pages/Dashboard';
 import Ativos from '@/pages/Ativos';
+import { Riscos } from '@/pages/Riscos';
 import Configuracoes from '@/pages/Configuracoes';
 import NotFound from '@/pages/NotFound';
 
@@ -22,7 +23,7 @@ function App() {
             <Route path="/" element={<Layout><Navigate to="/dashboard" replace /></Layout>} />
             <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
             <Route path="/ativos" element={<Layout><Ativos /></Layout>} />
-            <Route path="/riscos" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Gestão de Riscos</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
+            <Route path="/riscos" element={<Layout><Riscos /></Layout>} />
             <Route path="/auditorias" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Auditorias</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
             <Route path="/contratos" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Contratos</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
             <Route path="/documentos" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Documentos</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
