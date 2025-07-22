@@ -27,15 +27,15 @@ export const PasswordResetEmail = ({
 }: PasswordResetEmailProps) => (
   <Html>
     <Head />
-    <Preview>Sua nova senha temporária para o GovernAI</Preview>
+    <Preview>Sua nova senha temporária para o GovernAII</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={logoContainer}>
           <Img
-            src={`${loginUrl}/governaii-logo.png`}
-            width="200"
-            height="80"
-            alt="GovernAI Logo"
+            src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/sign/logotipo/Governiaa%20(500%20x%20200%20px)%20(20).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NTdhMjYzYS1jZjc1LTQ3OGYtYjNkMy01NWM2ODViMTQ0MTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvdGlwby9Hb3Zlcm5pYWEgKDUwMCB4IDIwMCBweCkgKDIwKS5wbmciLCJpYXQiOjE3NTMyMDc1MTUsImV4cCI6MTc4NDc0MzUxNX0.5wdMpRQlszuUk9MaPw15_rq2xS83F8e-YfI3cKgSyTY"
+            width="250"
+            height="100"
+            alt="GovernAII Logo"
             style={logo}
           />
         </Section>
@@ -47,7 +47,7 @@ export const PasswordResetEmail = ({
         </Text>
         
         <Text style={text}>
-          Uma nova senha temporária foi gerada para sua conta no GovernAI:
+          Uma nova senha temporária foi gerada para sua conta no GovernAII:
         </Text>
         
         <Section style={credentialsBox}>
@@ -64,21 +64,24 @@ export const PasswordResetEmail = ({
             target="_blank"
             style={button}
           >
-            Acessar o GovernAI
+            Acessar o GovernAII
           </Link>
         </Section>
         
         <Text style={importantNote}>
-          <strong>Importante:</strong> Por segurança, recomendamos que você altere esta senha temporária após fazer login.
+          <strong>🔐 Importante:</strong> Por segurança, recomendamos que você altere esta senha temporária após fazer login no sistema.
         </Text>
         
         <Text style={text}>
-          Se você não solicitou esta redefinição de senha, entre em contato conosco imediatamente.
+          Se você não solicitou esta redefinição de senha, entre em contato conosco imediatamente para investigarmos a situação.
         </Text>
+        
+        <Section style={divider}></Section>
         
         <Text style={footer}>
           Atenciosamente,<br />
-          Equipe GovernAI
+          <strong>Equipe GovernAII</strong><br />
+          <span style={footerSubtext}>Governança Inteligente para o Futuro</span>
         </Text>
       </Container>
     </Body>
@@ -88,100 +91,131 @@ export const PasswordResetEmail = ({
 export default PasswordResetEmail
 
 const main = {
-  backgroundColor: '#f6f9fc',
-  fontFamily: '"Segoe UI", Roboto, sans-serif',
+  backgroundColor: '#f8fafc',
+  fontFamily: '"Inter", "Segoe UI", Roboto, sans-serif',
+  padding: '20px',
 }
 
 const container = {
   backgroundColor: '#ffffff',
-  border: '1px solid #f0f0f0',
-  borderRadius: '8px',
+  border: '1px solid #e2e8f0',
+  borderRadius: '16px',
+  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
   margin: '40px auto',
-  padding: '40px',
+  padding: '48px',
   width: '600px',
+  maxWidth: '100%',
 }
 
 const logoContainer = {
   textAlign: 'center' as const,
-  marginBottom: '32px',
+  marginBottom: '40px',
+  padding: '20px 0',
 }
 
 const logo = {
   margin: '0 auto',
+  borderRadius: '8px',
 }
 
 const h1 = {
-  color: '#1a1a1a',
-  fontSize: '28px',
-  fontWeight: 'bold',
-  margin: '0 0 30px',
+  background: 'linear-gradient(135deg, #dc2626, #ef4444)',
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  fontSize: '32px',
+  fontWeight: '700',
+  margin: '0 0 32px',
   textAlign: 'center' as const,
+  letterSpacing: '-0.025em',
 }
 
 const text = {
-  color: '#484848',
+  color: '#475569',
   fontSize: '16px',
-  lineHeight: '26px',
-  margin: '0 0 16px',
+  lineHeight: '28px',
+  margin: '0 0 20px',
 }
 
 const credentialsBox = {
-  backgroundColor: '#f8f9fa',
-  border: '1px solid #e9ecef',
-  borderRadius: '6px',
-  padding: '24px',
-  margin: '24px 0',
+  background: 'linear-gradient(145deg, #fef2f2, #fee2e2)',
+  border: '2px solid #fecaca',
+  borderRadius: '12px',
+  padding: '32px',
+  margin: '32px 0',
+  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
 }
 
 const credentialLabel = {
-  color: '#6c757d',
-  fontSize: '14px',
-  fontWeight: '600',
-  margin: '0 0 4px',
+  color: '#64748b',
+  fontSize: '12px',
+  fontWeight: '700',
+  margin: '0 0 8px',
   textTransform: 'uppercase' as const,
+  letterSpacing: '0.05em',
 }
 
 const credentialValue = {
-  color: '#212529',
-  fontSize: '18px',
-  fontWeight: 'bold',
-  margin: '0 0 16px',
-  fontFamily: 'monospace',
+  color: '#1e293b',
+  fontSize: '20px',
+  fontWeight: '700',
+  margin: '0 0 24px',
+  fontFamily: '"JetBrains Mono", Monaco, monospace',
+  padding: '12px 16px',
+  backgroundColor: '#ffffff',
+  border: '1px solid #e2e8f0',
+  borderRadius: '8px',
 }
 
 const buttonContainer = {
-  margin: '32px 0',
+  margin: '40px 0',
   textAlign: 'center' as const,
 }
 
 const button = {
-  backgroundColor: '#dc3545',
+  background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
   border: 'none',
-  borderRadius: '6px',
+  borderRadius: '12px',
   color: '#ffffff',
   display: 'inline-block',
   fontSize: '16px',
-  fontWeight: 'bold',
-  padding: '14px 28px',
+  fontWeight: '600',
+  padding: '16px 32px',
   textAlign: 'center' as const,
   textDecoration: 'none',
-  transition: 'background-color 0.3s ease',
+  transition: 'all 0.3s ease',
+  boxShadow: '0 4px 14px 0 rgba(220, 38, 38, 0.35)',
+  letterSpacing: '0.025em',
 }
 
 const importantNote = {
-  backgroundColor: '#f8d7da',
-  border: '1px solid #f5c6cb',
-  borderRadius: '6px',
-  color: '#721c24',
+  background: 'linear-gradient(145deg, #fef2f2, #fee2e2)',
+  border: '1px solid #ef4444',
+  borderRadius: '12px',
+  color: '#b91c1c',
   fontSize: '14px',
-  lineHeight: '20px',
-  margin: '24px 0',
-  padding: '16px',
+  lineHeight: '24px',
+  margin: '32px 0',
+  padding: '20px',
+  borderLeft: '4px solid #ef4444',
+}
+
+const divider = {
+  height: '1px',
+  background: 'linear-gradient(90deg, transparent, #e2e8f0, transparent)',
+  margin: '40px 0',
 }
 
 const footer = {
-  color: '#8898aa',
+  color: '#64748b',
   fontSize: '14px',
-  lineHeight: '20px',
+  lineHeight: '24px',
   marginTop: '32px',
+  textAlign: 'center' as const,
+}
+
+const footerSubtext = {
+  color: '#94a3b8',
+  fontSize: '12px',
+  fontStyle: 'italic',
 }
