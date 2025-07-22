@@ -29,17 +29,6 @@ const Auth = () => {
     }
   }, [user, loading]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Debounce para buscar logo da empresa
   useEffect(() => {
     const timeoutId = setTimeout(async () => {
@@ -60,6 +49,18 @@ const Auth = () => {
 
     return () => clearTimeout(timeoutId);
   }, [email, getCompanyByEmail]);
+
+  // Early return AFTER all hooks
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
