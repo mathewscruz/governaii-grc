@@ -193,13 +193,21 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
   };
 
   const handleCompanyLogoUpload = async (file: File) => {
+    console.log('=== INÍCIO DO UPLOAD DO LOGO ===');
+    console.log('Usuário:', user?.email);
+    console.log('Role do usuário:', userRole);
+    console.log('Empresa ID:', userProfile?.empresa_id);
+    console.log('É admin?', isAdmin);
+
     if (!userProfile?.empresa_id) {
+      console.error('Empresa não encontrada no perfil do usuário');
       toast.error('Empresa não encontrada');
       return;
     }
 
     const validationError = validateImageFile(file);
     if (validationError) {
+      console.error('Erro de validação do arquivo:', validationError);
       toast.error(validationError);
       return;
     }
@@ -219,13 +227,21 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
       const fileName = `empresa-${userProfile.empresa_id}-${timestamp}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      console.log('Iniciando upload do logo da empresa...');
+      console.log('Iniciando upload para o storage...');
+      console.log('Bucket: empresa-logos');
+      console.log('Arquivo:', filePath);
+      console.log('Tamanho do arquivo:', file.size, 'bytes');
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('empresa-logos')
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('ERRO NO UPLOAD PARA O STORAGE:', uploadError);
+        throw new Error(`Erro no upload: ${uploadError.message}`);
+      }
+
+      console.log('✅ Upload para storage bem-sucedido:', uploadData);
 
       const { data: urlData } = supabase.storage
         .from('empresa-logos')
@@ -234,24 +250,36 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
       // URL com cache busting para garantir refresh
       const logoUrlWithCacheBusting = `${urlData.publicUrl}?t=${timestamp}`;
 
-      console.log('Logo uploaded, URL:', logoUrlWithCacheBusting);
+      console.log('URL pública gerada:', logoUrlWithCacheBusting);
 
       // Verificar se a imagem está acessível
+      console.log('Verificando se a imagem está acessível...');
       const isImageReady = await verifyImageLoad(logoUrlWithCacheBusting);
       if (!isImageReady) {
+        console.error('Imagem não está acessível após upload');
         throw new Error('Falha ao verificar se a imagem foi carregada corretamente');
       }
 
-      console.log('Imagem verificada, atualizando banco de dados...');
+      console.log('✅ Imagem verificada como acessível');
 
-      const { error: updateError } = await supabase
+      console.log('Atualizando tabela empresas...');
+      console.log('Empresa ID:', userProfile.empresa_id);
+      console.log('Nova logo_url:', logoUrlWithCacheBusting);
+
+      const { error: updateError, data: updateData } = await supabase
         .from('empresas')
         .update({ logo_url: logoUrlWithCacheBusting })
-        .eq('id', userProfile.empresa_id);
+        .eq('id', userProfile.empresa_id)
+        .select();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('ERRO AO ATUALIZAR TABELA EMPRESAS:', updateError);
+        throw new Error(`Erro ao atualizar banco: ${updateError.message}`);
+      }
 
-      console.log('Banco atualizado, chamando refetchProfile...');
+      console.log('✅ Banco de dados atualizado:', updateData);
+
+      console.log('Chamando refetchProfile...');
 
       // Forçar atualização imediata do contexto
       await refetchProfile();
@@ -259,12 +287,27 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
       // Forçar re-render de todos os componentes que usam logo
       forceLogoUpdate();
 
-      console.log('Logo da empresa atualizado com sucesso');
+      console.log('=== UPLOAD CONCLUÍDO COM SUCESSO ===');
       toast.success('Logo da empresa atualizado com sucesso');
 
-    } catch (error) {
-      console.error('Erro ao fazer upload do logo da empresa:', error);
-      toast.error('Erro ao fazer upload do logo da empresa');
+    } catch (error: any) {
+      console.error('=== ERRO NO UPLOAD DO LOGO ===');
+      console.error('Tipo do erro:', error.constructor.name);
+      console.error('Mensagem:', error.message);
+      console.error('Stack:', error.stack);
+      console.error('Objeto completo:', error);
+      
+      // Mensagem de erro mais específica para o usuário
+      let errorMessage = 'Erro ao fazer upload do logo da empresa';
+      if (error.message.includes('upload')) {
+        errorMessage = 'Erro ao enviar arquivo para o servidor';
+      } else if (error.message.includes('banco')) {
+        errorMessage = 'Erro ao salvar informações no banco de dados';
+      } else if (error.message.includes('not allowed') || error.message.includes('policy')) {
+        errorMessage = 'Você não tem permissão para atualizar o logo da empresa';
+      }
+      
+      toast.error(errorMessage);
       setLogoPreview(null);
     } finally {
       setUploading(false);
