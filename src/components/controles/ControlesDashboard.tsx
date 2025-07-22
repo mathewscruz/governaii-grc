@@ -47,7 +47,7 @@ export default function ControlesDashboard() {
     to: new Date()
   });
   const [responsavelFilter, setResponsavelFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
 
   // Buscar estatísticas
   const { data: stats } = useQuery({
@@ -236,7 +236,7 @@ export default function ControlesDashboard() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="ativo">Ativo</SelectItem>
                 <SelectItem value="inativo">Inativo</SelectItem>
                 <SelectItem value="em_revisao">Em Revisão</SelectItem>
