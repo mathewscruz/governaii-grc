@@ -1,13 +1,16 @@
+
 import { useState } from "react";
 import { Plus, Shield, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ControleDialog from "@/components/controles/ControleDialog";
 import CategoriasDialog from "@/components/controles/CategoriasDialog";
+import TestesList from "@/components/controles/TestesList";
 
 interface Controle {
   id: string;
@@ -39,6 +42,7 @@ export default function Controles() {
   const [controleDialogOpen, setControleDialogOpen] = useState(false);
   const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
   const [editingControle, setEditingControle] = useState<Controle | null>(null);
+  const [selectedControleForTests, setSelectedControleForTests] = useState<Controle | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -178,138 +182,190 @@ export default function Controles() {
         </div>
       </div>
 
-      {/* Métricas */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Controles</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{controles.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Controles Ativos</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {controles.filter(c => c.status === 'ativo').length}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Revisão</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {controles.filter(c => c.status === 'em_revisao').length}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Criticidade Alta</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {controles.filter(c => ['alto', 'critico'].includes(c.criticidade)).length}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="controles" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="controles">Controles</TabsTrigger>
+          <TabsTrigger value="testes" disabled={!selectedControleForTests}>
+            Testes {selectedControleForTests && `- ${selectedControleForTests.nome}`}
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Lista de Controles */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {controles.map((controle) => (
-          <Card key={controle.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  {getTipoIcon(controle.tipo)}
-                  <CardTitle className="text-lg">{controle.nome}</CardTitle>
+        <TabsContent value="controles" className="space-y-6">
+          {/* Métricas */}
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total de Controles</CardTitle>
+                <Shield className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{controles.length}</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Controles Ativos</CardTitle>
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {controles.filter(c => c.status === 'ativo').length}
                 </div>
-                <div className="flex gap-1">
-                  {getStatusBadge(controle.status)}
-                  {getCriticidadeBadge(controle.criticidade)}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Em Revisão</CardTitle>
+                <Clock className="h-4 w-4 text-yellow-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {controles.filter(c => c.status === 'em_revisao').length}
                 </div>
-              </div>
-              {controle.categoria && (
-                <Badge 
-                  variant="outline" 
-                  style={{ borderColor: controle.categoria.cor, color: controle.categoria.cor }}
-                >
-                  {controle.categoria.nome}
-                </Badge>
-              )}
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="mb-4">
-                {controle.descricao || "Sem descrição"}
-              </CardDescription>
-              
-              <div className="space-y-2 text-sm">
-                {controle.processo && (
-                  <div><strong>Processo:</strong> {controle.processo}</div>
-                )}
-                {controle.area && (
-                  <div><strong>Área:</strong> {controle.area}</div>
-                )}
-                {controle.responsavel && (
-                  <div><strong>Responsável:</strong> {controle.responsavel}</div>
-                )}
-                {controle.frequencia && (
-                  <div><strong>Frequência:</strong> {controle.frequencia}</div>
-                )}
-                {controle.proxima_avaliacao && (
-                  <div><strong>Próxima Avaliação:</strong> {new Date(controle.proxima_avaliacao).toLocaleDateString()}</div>
-                )}
-              </div>
-              
-              <div className="flex gap-2 mt-4">
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Criticidade Alta</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {controles.filter(c => ['alto', 'critico'].includes(c.criticidade)).length}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Lista de Controles */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {controles.map((controle) => (
+              <Card key={controle.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      {getTipoIcon(controle.tipo)}
+                      <CardTitle className="text-lg">{controle.nome}</CardTitle>
+                    </div>
+                    <div className="flex gap-1">
+                      {getStatusBadge(controle.status)}
+                      {getCriticidadeBadge(controle.criticidade)}
+                    </div>
+                  </div>
+                  {controle.categoria && (
+                    <Badge 
+                      variant="outline" 
+                      style={{ borderColor: controle.categoria.cor, color: controle.categoria.cor }}
+                    >
+                      {controle.categoria.nome}
+                    </Badge>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="mb-4">
+                    {controle.descricao || "Sem descrição"}
+                  </CardDescription>
+                  
+                  <div className="space-y-2 text-sm">
+                    {controle.processo && (
+                      <div><strong>Processo:</strong> {controle.processo}</div>
+                    )}
+                    {controle.area && (
+                      <div><strong>Área:</strong> {controle.area}</div>
+                    )}
+                    {controle.responsavel && (
+                      <div><strong>Responsável:</strong> {controle.responsavel}</div>
+                    )}
+                    {controle.frequencia && (
+                      <div><strong>Frequência:</strong> {controle.frequencia}</div>
+                    )}
+                    {controle.proxima_avaliacao && (
+                      <div><strong>Próxima Avaliação:</strong> {new Date(controle.proxima_avaliacao).toLocaleDateString()}</div>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(controle)}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedControleForTests(controle);
+                        // Mudar para a aba de testes
+                        const tabsTrigger = document.querySelector('[value="testes"]') as HTMLElement;
+                        if (tabsTrigger) tabsTrigger.click();
+                      }}
+                    >
+                      Testes
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(controle.id)}
+                    >
+                      Excluir
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {controles.length === 0 && (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Shield className="w-12 h-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Nenhum controle cadastrado</h3>
+                <p className="text-muted-foreground mb-4">
+                  Comece criando seu primeiro controle interno
+                </p>
+                <Button onClick={() => setControleDialogOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Criar Primeiro Controle
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="testes">
+          {selectedControleForTests ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
                 <Button
                   variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(controle)}
+                  onClick={() => setSelectedControleForTests(null)}
                 >
-                  Editar
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDelete(controle.id)}
-                >
-                  Excluir
+                  ← Voltar aos Controles
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {controles.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Shield className="w-12 h-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nenhum controle cadastrado</h3>
-            <p className="text-muted-foreground mb-4">
-              Comece criando seu primeiro controle interno
-            </p>
-            <Button onClick={() => setControleDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Criar Primeiro Controle
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+              <TestesList 
+                controleId={selectedControleForTests.id} 
+                controleNome={selectedControleForTests.nome}
+              />
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Shield className="w-12 h-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Selecione um controle</h3>
+                <p className="text-muted-foreground">
+                  Clique em "Testes" em um controle para visualizar seu histórico de testes
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
       <ControleDialog
         open={controleDialogOpen}
