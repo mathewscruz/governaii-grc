@@ -55,7 +55,11 @@ export function MatrizVisualizacao() {
       if (matrizData && matrizData.configuracao && matrizData.configuracao[0]) {
         setMatriz({
           ...matrizData,
-          configuracao: matrizData.configuracao[0]
+          configuracao: {
+            escala_probabilidade: matrizData.configuracao[0].escala_probabilidade as Array<{ valor: number; descricao: string }>,
+            escala_impacto: matrizData.configuracao[0].escala_impacto as Array<{ valor: number; descricao: string }>,
+            niveis_risco: matrizData.configuracao[0].niveis_risco as Array<{ min: number; max: number; nivel: string; cor?: string }>
+          }
         });
       }
 

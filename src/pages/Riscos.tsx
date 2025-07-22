@@ -113,7 +113,9 @@ export function Riscos() {
         .single();
 
       if (data) {
-        setMatrizConfig(data);
+        setMatrizConfig({
+          niveis_risco: data.niveis_risco as Array<{ min: number; max: number; nivel: string; cor?: string }>
+        });
       }
     } catch (error) {
       console.error('Erro ao carregar configuração da matriz:', error);
