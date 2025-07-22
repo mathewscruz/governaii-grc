@@ -119,7 +119,7 @@ const logo = {
 }
 
 const h1 = {
-  background: 'linear-gradient(135deg, #dc2626, #ef4444)',
+  background: 'linear-gradient(135deg, hsl(217, 91%, 60%), hsl(217, 91%, 50%))',
   backgroundClip: 'text',
   WebkitBackgroundClip: 'text',
   WebkitTextFillColor: 'transparent',
@@ -138,8 +138,8 @@ const text = {
 }
 
 const credentialsBox = {
-  background: 'linear-gradient(145deg, #fef2f2, #fee2e2)',
-  border: '2px solid #fecaca',
+  background: 'linear-gradient(145deg, #f8fafc, #f1f5f9)',
+  border: '2px solid #e2e8f0',
   borderRadius: '12px',
   padding: '32px',
   margin: '32px 0',
@@ -173,7 +173,7 @@ const buttonContainer = {
 }
 
 const button = {
-  background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+  background: 'linear-gradient(135deg, hsl(217, 91%, 60%), hsl(217, 91%, 50%))',
   border: 'none',
   borderRadius: '12px',
   color: '#ffffff',
@@ -184,20 +184,20 @@ const button = {
   textAlign: 'center' as const,
   textDecoration: 'none',
   transition: 'all 0.3s ease',
-  boxShadow: '0 4px 14px 0 rgba(220, 38, 38, 0.35)',
+  boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.35)',
   letterSpacing: '0.025em',
 }
 
 const importantNote = {
-  background: 'linear-gradient(145deg, #fef2f2, #fee2e2)',
-  border: '1px solid #ef4444',
+  background: 'linear-gradient(145deg, #fef3c7, #fde68a)',
+  border: '1px solid #f59e0b',
   borderRadius: '12px',
-  color: '#b91c1c',
+  color: '#92400e',
   fontSize: '14px',
   lineHeight: '24px',
   margin: '32px 0',
   padding: '20px',
-  borderLeft: '4px solid #ef4444',
+  borderLeft: '4px solid #f59e0b',
 }
 
 const divider = {

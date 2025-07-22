@@ -158,11 +158,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkTemporaryPassword = async () => {
     if (!user) {
+      console.log('No user for temporary password check');
       setHasTemporaryPassword(false);
       return;
     }
 
     try {
+      console.log('Checking temporary password for user:', user.id);
       const { data, error } = await supabase
         .from('temporary_passwords')
         .select('is_temporary')
@@ -170,8 +172,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('is_temporary', true)
         .single();
 
-      setHasTemporaryPassword(!!data);
+      console.log('Temporary password check result:', data, error);
+      const hasTemp = !!data;
+      setHasTemporaryPassword(hasTemp);
+      console.log('Has temporary password:', hasTemp);
     } catch (error) {
+      console.log('Error checking temporary password:', error);
       // Se não encontrar registro, assume que não tem senha temporária
       setHasTemporaryPassword(false);
     }
@@ -188,13 +194,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event);
+        console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          fetchProfile(session.user.id);
-          checkTemporaryPassword();
+          await fetchProfile(session.user.id);
+          // Garantir que verificação de senha temporária aconteça após login
+          if (event === 'SIGNED_IN') {
+            console.log('User signed in, checking temporary password...');
+            setTimeout(async () => {
+              await checkTemporaryPassword();
+            }, 500);
+          }
         } else {
           setProfile(null);
           setCompany(null);
