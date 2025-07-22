@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +34,7 @@ interface Props {
 }
 
 const ConfiguracoesGerais = ({ userRole }: Props) => {
-  const { user } = useAuth();
+  const { user, refetchProfile } = useAuth();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
@@ -53,6 +54,10 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
   });
 
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+
+  // Tipos de arquivo aceitos para logos
+  const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp'];
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -83,6 +88,18 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
 
     fetchUserProfile();
   }, [user, form]);
+
+  const validateImageFile = (file: File): string | null => {
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      return 'Formato de arquivo não suportado. Use: JPG, PNG, GIF, SVG ou WebP';
+    }
+    
+    if (file.size > MAX_FILE_SIZE) {
+      return 'Arquivo muito grande. Tamanho máximo: 5MB';
+    }
+    
+    return null;
+  };
 
   const handleProfileSubmit = async (data: PerfilForm) => {
     try {
@@ -120,6 +137,12 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
 
   const handlePhotoUpload = async (file: File) => {
     if (!user) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
 
     try {
       setUploading(true);
@@ -160,6 +183,12 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
       return;
     }
 
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
     try {
       setUploading(true);
       const fileExt = file.name.split('.').pop();
@@ -183,8 +212,10 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
 
       if (updateError) throw updateError;
 
+      // Atualizar o contexto de autenticação para refletir as mudanças
+      await refetchProfile();
+
       toast.success('Logo da empresa atualizado com sucesso');
-      toast.info('Recarregue a página para ver as alterações');
     } catch (error) {
       console.error('Erro ao fazer upload do logo da empresa:', error);
       toast.error('Erro ao fazer upload do logo da empresa');
@@ -220,7 +251,7 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
                 <label className="cursor-pointer">
                   <input
                     type="file"
-                    accept="image/*"
+                    accept={ACCEPTED_IMAGE_TYPES.join(',')}
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -235,9 +266,10 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
                     </span>
                   </Button>
                 </label>
-                <p className="text-sm text-muted-foreground">
-                  Será exibido no menu lateral da sua empresa
-                </p>
+                <div className="text-sm text-muted-foreground">
+                  <p>Será exibido no menu lateral da sua empresa</p>
+                  <p className="text-xs">Formatos aceitos: JPG, PNG, GIF, SVG, WebP (máx. 5MB)</p>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -271,7 +303,7 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
                 <label className="absolute bottom-0 right-0 cursor-pointer">
                   <input
                     type="file"
-                    accept="image/*"
+                    accept={ACCEPTED_IMAGE_TYPES.join(',')}
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -288,6 +320,9 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
                 <h3 className="font-medium">Foto de Perfil</h3>
                 <p className="text-sm text-muted-foreground">
                   Clique no ícone para alterar sua foto
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Formatos aceitos: JPG, PNG, GIF, SVG, WebP (máx. 5MB)
                 </p>
               </div>
             </div>
