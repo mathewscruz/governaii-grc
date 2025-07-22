@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Plus, Search, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,10 @@ interface RiscoStats {
   tratados: number;
 }
 
+interface MatrizConfig {
+  niveis_risco: Array<{ min: number; max: number; nivel: string; cor?: string }>;
+}
+
 export function Riscos() {
   const { profile } = useAuth();
   const [riscos, setRiscos] = useState<Risco[]>([]);
@@ -67,6 +72,8 @@ export function Riscos() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [riscoToDelete, setRiscoToDelete] = useState<Risco | null>(null);
   const [selectedRiscoForTratamentos, setSelectedRiscoForTratamentos] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('riscos');
+  const [matrizConfig, setMatrizConfig] = useState<MatrizConfig | null>(null);
 
   const fetchRiscos = async () => {
     try {
@@ -94,6 +101,22 @@ export function Riscos() {
       toast.error('Erro ao carregar riscos: ' + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMatrizConfig = async () => {
+    try {
+      const { data } = await supabase
+        .from('riscos_matriz_configuracao')
+        .select('niveis_risco')
+        .limit(1)
+        .single();
+
+      if (data) {
+        setMatrizConfig(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configuração da matriz:', error);
     }
   };
 
@@ -132,6 +155,7 @@ export function Riscos() {
   useEffect(() => {
     if (profile) {
       fetchRiscos();
+      fetchMatrizConfig();
     }
   }, [profile]);
 
@@ -188,9 +212,18 @@ export function Riscos() {
   const handleMatrizDialogSuccess = () => {
     setMatrizDialogOpen(false);
     fetchRiscos();
+    fetchMatrizConfig();
   };
 
   const getNivelBadgeVariant = (nivel: string) => {
+    if (matrizConfig) {
+      const nivelConfig = matrizConfig.niveis_risco.find(n => n.nivel === nivel);
+      if (nivelConfig?.cor) {
+        return 'default';
+      }
+    }
+
+    // Fallback para cores padrão se não houver configuração
     switch (nivel) {
       case 'Crítico':
       case 'Muito Alto':
@@ -205,6 +238,20 @@ export function Riscos() {
       default:
         return 'secondary';
     }
+  };
+
+  const getNivelBadgeStyle = (nivel: string) => {
+    if (matrizConfig) {
+      const nivelConfig = matrizConfig.niveis_risco.find(n => n.nivel === nivel);
+      if (nivelConfig?.cor) {
+        return {
+          backgroundColor: nivelConfig.cor,
+          color: 'white',
+          borderColor: nivelConfig.cor
+        };
+      }
+    }
+    return {};
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -222,6 +269,11 @@ export function Riscos() {
       default:
         return 'secondary';
     }
+  };
+
+  const handleTratamentosClick = (riscoId: string) => {
+    setSelectedRiscoForTratamentos(riscoId);
+    setActiveTab('tratamentos');
   };
 
   if (loading) {
@@ -303,7 +355,7 @@ export function Riscos() {
       </div>
 
       {/* Tabs para Riscos e Tratamentos */}
-      <Tabs defaultValue="riscos" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="riscos">Riscos</TabsTrigger>
           <TabsTrigger value="tratamentos">Tratamentos</TabsTrigger>
@@ -417,13 +469,19 @@ export function Riscos() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Badge variant={getNivelBadgeVariant(risco.nivel_risco_inicial)}>
+                            <Badge 
+                              variant={getNivelBadgeVariant(risco.nivel_risco_inicial)}
+                              style={getNivelBadgeStyle(risco.nivel_risco_inicial)}
+                            >
                               {risco.nivel_risco_inicial}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             {risco.nivel_risco_residual ? (
-                              <Badge variant={getNivelBadgeVariant(risco.nivel_risco_residual)}>
+                              <Badge 
+                                variant={getNivelBadgeVariant(risco.nivel_risco_residual)}
+                                style={getNivelBadgeStyle(risco.nivel_risco_residual)}
+                              >
                                 {risco.nivel_risco_residual}
                               </Badge>
                             ) : (
@@ -448,9 +506,7 @@ export function Riscos() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                  setSelectedRiscoForTratamentos(risco.id);
-                                }}
+                                onClick={() => handleTratamentosClick(risco.id)}
                               >
                                 Tratamentos
                               </Button>
@@ -485,7 +541,10 @@ export function Riscos() {
                 </div>
                 <Button 
                   variant="outline" 
-                  onClick={() => setSelectedRiscoForTratamentos(null)}
+                  onClick={() => {
+                    setSelectedRiscoForTratamentos(null);
+                    setActiveTab('riscos');
+                  }}
                 >
                   Voltar para Lista de Riscos
                 </Button>
@@ -501,10 +560,7 @@ export function Riscos() {
                   <p className="text-muted-foreground mb-4">
                     Para visualizar e gerenciar tratamentos, primeiro selecione um risco na aba "Riscos".
                   </p>
-                  <Button onClick={() => {
-                    const tabButton = document.querySelector('[data-state="inactive"]') as HTMLButtonElement;
-                    tabButton?.click();
-                  }}>
+                  <Button onClick={() => setActiveTab('riscos')}>
                     Ver Lista de Riscos
                   </Button>
                 </div>
