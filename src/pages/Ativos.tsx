@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface Ativo {
   id: string;
@@ -64,6 +65,10 @@ const Ativos = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAtivo, setEditingAtivo] = useState<Ativo | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; ativoId: string }>({
+    open: false,
+    ativoId: ''
+  });
   const [formData, setFormData] = useState({
     nome: '',
     tipo: '',
@@ -159,14 +164,16 @@ const Ativos = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este ativo?')) return;
+  const handleDelete = (id: string) => {
+    setDeleteConfirm({ open: true, ativoId: id });
+  };
 
+  const confirmDelete = async () => {
     try {
       const { error } = await supabase
         .from('ativos')
         .delete()
-        .eq('id', id);
+        .eq('id', deleteConfirm.ativoId);
 
       if (error) throw error;
       toast.success('Ativo excluído com sucesso!');
@@ -473,6 +480,17 @@ const Ativos = () => {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm({ open, ativoId: '' })}
+        title="Confirmar exclusão"
+        description="Tem certeza que deseja excluir este ativo? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

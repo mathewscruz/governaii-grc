@@ -22,6 +22,7 @@ import {
   LayoutDashboard
 } from 'lucide-react';
 import logoMini from '@/assets/governaii-logo-mini.png';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 import {
   Sidebar,
@@ -85,12 +86,13 @@ const menuItems = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
-  const { profile, signOut } = useAuth();
+  const { signOut } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
   
   // Start with all groups collapsed
   const [openGroups, setOpenGroups] = useState<string[]>([]);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
   const isCollapsed = state === 'collapsed';
 
@@ -107,7 +109,11 @@ export function AppSidebar() {
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent/50';
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmSignOut = async () => {
     try {
       await signOut();
     } catch (error) {
@@ -216,17 +222,6 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-3">
         <div>
-          {!isCollapsed && profile && (
-            <div className="mb-3 px-2 py-2 bg-sidebar-accent/30 rounded-md">
-              <div className="text-xs text-sidebar-foreground/70 mb-1">Conectado como:</div>
-              <div className="text-sm font-medium text-sidebar-foreground truncate">
-                {profile.nome}
-              </div>
-              <div className="text-xs text-sidebar-foreground/70 capitalize">
-                {profile.role.replace('_', ' ')}
-              </div>
-            </div>
-          )}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -240,6 +235,17 @@ export function AppSidebar() {
           </Button>
         </div>
       </SidebarFooter>
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        title="Confirmar saída"
+        description="Tem certeza que deseja sair do sistema?"
+        confirmText="Sair"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={confirmSignOut}
+      />
     </Sidebar>
   );
 }
