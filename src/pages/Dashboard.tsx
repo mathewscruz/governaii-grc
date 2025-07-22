@@ -6,7 +6,6 @@ import { AlertTriangle, Shield, TrendingUp, Users, Building, CheckCircle } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { MatrizVisualizacao } from '@/components/riscos/MatrizVisualizacao';
-import { PageTransition } from '@/components/PageTransition';
 
 interface DashboardStats {
   totalRiscos: number;
@@ -37,6 +36,8 @@ export default function Dashboard() {
 
   const fetchDashboardStats = async () => {
     try {
+      console.log('Fetching dashboard stats...');
+      
       // Buscar estatísticas de riscos
       const { data: riscos } = await supabase
         .from('riscos')
@@ -80,11 +81,13 @@ export default function Dashboard() {
         tratamentosConcluidos: tratamentos?.filter(t => t.status === 'concluído').length || 0
       };
 
+      console.log('Dashboard stats loaded:', newStats);
       setStats(newStats);
     } catch (error) {
       console.error('Erro ao carregar estatísticas do dashboard:', error);
     } finally {
       setLoading(false);
+      console.log('Dashboard loading finished');
     }
   };
 
@@ -102,8 +105,7 @@ export default function Dashboard() {
   }
 
   return (
-    <PageTransition>
-      <div className="container mx-auto py-6 px-4 max-w-7xl space-y-6">
+    <div className="container mx-auto py-6 px-4 max-w-7xl space-y-6 animate-fade-in">
       {/* Título */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
@@ -213,6 +215,5 @@ export default function Dashboard() {
         </Card>
       </div>
     </div>
-    </PageTransition>
   );
 }
