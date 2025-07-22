@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import AuditorSelect from "./AuditorSelect";
+import { useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
 
 interface TrabalhosDialogProps {
   open: boolean;
@@ -54,19 +56,7 @@ const TrabalhosDialog = ({ open, onOpenChange, auditoria }: TrabalhosDialogProps
     enabled: !!auditoria?.id
   });
 
-  const { data: usuarios } = useQuery({
-    queryKey: ['usuarios'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, nome')
-        .eq('ativo', true)
-        .order('nome');
-
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  const { data: usuarios } = useUsuariosEmpresa();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,21 +229,11 @@ const TrabalhosDialog = ({ open, onOpenChange, auditoria }: TrabalhosDialogProps
 
                     <div className="space-y-2">
                       <Label htmlFor="responsavel">Responsável</Label>
-                      <Select
+                      <AuditorSelect
                         value={formData.responsavel}
-                        onValueChange={(value) => setFormData({ ...formData, responsavel: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o responsável" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {usuarios?.map((usuario) => (
-                            <SelectItem key={usuario.user_id} value={usuario.user_id}>
-                              {usuario.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={(value) => setFormData({ ...formData, responsavel: value })}
+                        placeholder="Selecione o responsável"
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -348,66 +328,70 @@ const TrabalhosDialog = ({ open, onOpenChange, auditoria }: TrabalhosDialogProps
           )}
 
           <div className="grid gap-4">
-            {trabalhos?.map((trabalho) => (
-              <Card key={trabalho.id}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{trabalho.nome}</CardTitle>
-                      <div className="flex gap-2 mt-2">
-                        {getStatusBadge(trabalho.status)}
-                        <Badge variant="outline">{trabalho.tipo}</Badge>
+            {trabalhos?.map((trabalho) => {
+              const responsavelInfo = usuarios?.find(u => u.user_id === trabalho.responsavel);
+              
+              return (
+                <Card key={trabalho.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg">{trabalho.nome}</CardTitle>
+                        <div className="flex gap-2 mt-2">
+                          {getStatusBadge(trabalho.status)}
+                          <Badge variant="outline">{trabalho.tipo}</Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(trabalho)}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(trabalho.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(trabalho)}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(trabalho.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {trabalho.descricao && (
+                        <p className="text-sm text-muted-foreground">
+                          <strong>Descrição:</strong> {trabalho.descricao}
+                        </p>
+                      )}
+                      {responsavelInfo && (
+                        <p className="text-sm text-muted-foreground">
+                          <strong>Responsável:</strong> {responsavelInfo.nome}
+                        </p>
+                      )}
+                      {trabalho.data_inicio && (
+                        <p className="text-sm text-muted-foreground">
+                          <strong>Data de Início:</strong> {new Date(trabalho.data_inicio).toLocaleDateString('pt-BR')}
+                        </p>
+                      )}
+                      {trabalho.data_conclusao && (
+                        <p className="text-sm text-muted-foreground">
+                          <strong>Data de Conclusão:</strong> {new Date(trabalho.data_conclusao).toLocaleDateString('pt-BR')}
+                        </p>
+                      )}
+                      {trabalho.conclusoes && (
+                        <p className="text-sm text-muted-foreground">
+                          <strong>Conclusões:</strong> {trabalho.conclusoes}
+                        </p>
+                      )}
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {trabalho.descricao && (
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Descrição:</strong> {trabalho.descricao}
-                      </p>
-                    )}
-                    {trabalho.responsavel && (
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Responsável:</strong> {trabalho.responsavel}
-                      </p>
-                    )}
-                    {trabalho.data_inicio && (
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Data de Início:</strong> {new Date(trabalho.data_inicio).toLocaleDateString('pt-BR')}
-                      </p>
-                    )}
-                    {trabalho.data_conclusao && (
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Data de Conclusão:</strong> {new Date(trabalho.data_conclusao).toLocaleDateString('pt-BR')}
-                      </p>
-                    )}
-                    {trabalho.conclusoes && (
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Conclusões:</strong> {trabalho.conclusoes}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {trabalhos?.length === 0 && (

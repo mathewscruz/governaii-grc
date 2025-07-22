@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import AuditorSelect from "./AuditorSelect";
 
 interface AuditoriaDialogProps {
   open: boolean;
@@ -39,20 +40,7 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { data: usuarios } = useQuery({
-    queryKey: ['usuarios-auditoria'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, nome, email')
-        .eq('ativo', true)
-        .order('nome');
-
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (auditoria) {
@@ -88,10 +76,38 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
         framework: ''
       });
     }
+    setErrors({});
   }, [auditoria]);
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.nome.trim()) {
+      newErrors.nome = 'Nome é obrigatório';
+    }
+
+    if (!formData.tipo) {
+      newErrors.tipo = 'Tipo é obrigatório';
+    }
+
+    if (formData.data_inicio && formData.data_fim_prevista) {
+      if (formData.data_fim_prevista <= formData.data_inicio) {
+        newErrors.data_fim_prevista = 'Data de conclusão deve ser posterior à data de início';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      toast.error('Por favor, corrija os erros no formulário');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -156,8 +172,9 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
                 id="nome"
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                required
+                className={errors.nome ? "border-red-500" : ""}
               />
+              {errors.nome && <p className="text-sm text-red-500">{errors.nome}</p>}
             </div>
 
             <div className="space-y-2">
@@ -165,9 +182,8 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
               <Select
                 value={formData.tipo}
                 onValueChange={(value) => setFormData({ ...formData, tipo: value })}
-                required
               >
-                <SelectTrigger>
+                <SelectTrigger className={errors.tipo ? "border-red-500" : ""}>
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -178,6 +194,7 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
                   <SelectItem value="ti">Auditoria de TI</SelectItem>
                 </SelectContent>
               </Select>
+              {errors.tipo && <p className="text-sm text-red-500">{errors.tipo}</p>}
             </div>
 
             <div className="space-y-2">
@@ -218,21 +235,11 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
 
             <div className="space-y-2">
               <Label htmlFor="auditor_responsavel">Auditor Responsável</Label>
-              <Select
+              <AuditorSelect
                 value={formData.auditor_responsavel}
-                onValueChange={(value) => setFormData({ ...formData, auditor_responsavel: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o auditor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {usuarios?.map((usuario) => (
-                    <SelectItem key={usuario.user_id} value={usuario.user_id}>
-                      {usuario.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(value) => setFormData({ ...formData, auditor_responsavel: value })}
+                placeholder="Selecione o auditor responsável"
+              />
             </div>
 
             <div className="space-y-2">
@@ -278,7 +285,10 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
               <Label>Data de Conclusão Prevista</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button 
+                    variant="outline" 
+                    className={`w-full justify-start text-left font-normal ${errors.data_fim_prevista ? "border-red-500" : ""}`}
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.data_fim_prevista ? format(formData.data_fim_prevista, "PPP", { locale: ptBR }) : "Selecione a data"}
                   </Button>
@@ -292,6 +302,7 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
                   />
                 </PopoverContent>
               </Popover>
+              {errors.data_fim_prevista && <p className="text-sm text-red-500">{errors.data_fim_prevista}</p>}
             </div>
           </div>
 
