@@ -5,14 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { RiscoForm } from '@/components/riscos/RiscoForm';
-import { MatrizForm } from '@/components/riscos/MatrizForm';
+import { RiscoDialog } from '@/components/riscos/RiscoDialog';
+import { MatrizDialog } from '@/components/riscos/MatrizDialog';
 
 interface Risco {
   id: string;
@@ -60,7 +59,7 @@ export function Riscos() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [nivelFilter, setNivelFilter] = useState<string>('');
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [riscoDialogOpen, setRiscoDialogOpen] = useState(false);
   const [matrizDialogOpen, setMatrizDialogOpen] = useState(false);
   const [editingRisco, setEditingRisco] = useState<Risco | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -144,7 +143,7 @@ export function Riscos() {
 
   const handleEdit = (risco: Risco) => {
     setEditingRisco(risco);
-    setDialogOpen(true);
+    setRiscoDialogOpen(true);
   };
 
   const openDeleteDialog = (risco: Risco) => {
@@ -174,7 +173,18 @@ export function Riscos() {
 
   const openCreateDialog = () => {
     setEditingRisco(null);
-    setDialogOpen(true);
+    setRiscoDialogOpen(true);
+  };
+
+  const handleDialogSuccess = () => {
+    setRiscoDialogOpen(false);
+    setEditingRisco(null);
+    fetchRiscos();
+  };
+
+  const handleMatrizDialogSuccess = () => {
+    setMatrizDialogOpen(false);
+    fetchRiscos();
   };
 
   const getNivelBadgeVariant = (nivel: string) => {
@@ -303,46 +313,14 @@ export function Riscos() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Dialog open={matrizDialogOpen} onOpenChange={setMatrizDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Configurar Matriz
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl">
-                  <DialogHeader>
-                    <DialogTitle>Configurar Matriz de Riscos</DialogTitle>
-                  </DialogHeader>
-                  <MatrizForm onSuccess={() => {
-                    setMatrizDialogOpen(false);
-                    fetchRiscos();
-                  }} />
-                </DialogContent>
-              </Dialog>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={openCreateDialog} size="sm">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Novo Risco
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingRisco ? 'Editar Risco' : 'Novo Risco'}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <RiscoForm
-                    risco={editingRisco}
-                    onSuccess={() => {
-                      setDialogOpen(false);
-                      setEditingRisco(null);
-                      fetchRiscos();
-                    }}
-                  />
-                </DialogContent>
-              </Dialog>
+              <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)}>
+                <Settings className="mr-2 h-4 w-4" />
+                Configurar Matriz
+              </Button>
+              <Button onClick={openCreateDialog} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Risco
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -473,6 +451,20 @@ export function Riscos() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <RiscoDialog
+        open={riscoDialogOpen}
+        onOpenChange={setRiscoDialogOpen}
+        risco={editingRisco}
+        onSuccess={handleDialogSuccess}
+      />
+
+      <MatrizDialog
+        open={matrizDialogOpen}
+        onOpenChange={setMatrizDialogOpen}
+        onSuccess={handleMatrizDialogSuccess}
+      />
 
       <ConfirmDialog
         open={deleteDialogOpen}

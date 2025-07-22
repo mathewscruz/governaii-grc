@@ -15,6 +15,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
+import { DialogFooter } from '@/components/ui/dialog';
 
 const matrizSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -625,11 +626,14 @@ export function MatrizForm({ onSuccess }: Props) {
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-end">
+      <DialogFooter className="gap-2">
+        <Button type="button" variant="outline" onClick={onSuccess}>
+          Cancelar
+        </Button>
         <Button onClick={onSuccess}>
           Concluir
         </Button>
-      </div>
+      </DialogFooter>
     </div>
   );
 }
