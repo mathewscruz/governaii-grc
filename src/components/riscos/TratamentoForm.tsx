@@ -66,8 +66,8 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess }: TratamentoFor
         descricao: data.descricao,
         responsavel: data.responsavel || null,
         custo: data.custo ? parseFloat(data.custo) : null,
-        prazo: data.prazo || null,
-        data_inicio: data.data_inicio || null,
+        prazo: data.prazo ? data.prazo.toISOString() : null,
+        data_inicio: data.data_inicio ? data.data_inicio.toISOString() : null,
         status: data.status,
         eficacia: data.eficacia || null
       };

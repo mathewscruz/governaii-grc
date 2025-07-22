@@ -501,7 +501,10 @@ export function Riscos() {
                   <p className="text-muted-foreground mb-4">
                     Para visualizar e gerenciar tratamentos, primeiro selecione um risco na aba "Riscos".
                   </p>
-                  <Button onClick={() => document.querySelector('[data-state="inactive"]')?.click()}>
+                  <Button onClick={() => {
+                    const tabButton = document.querySelector('[data-state="inactive"]') as HTMLButtonElement;
+                    tabButton?.click();
+                  }}>
                     Ver Lista de Riscos
                   </Button>
                 </div>
