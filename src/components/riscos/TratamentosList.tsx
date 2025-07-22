@@ -27,9 +27,10 @@ interface Tratamento {
 
 interface TratamentosListProps {
   riscoId: string;
+  riscoNome?: string;
 }
 
-export function TratamentosList({ riscoId }: TratamentosListProps) {
+export function TratamentosList({ riscoId, riscoNome }: TratamentosListProps) {
   const [tratamentos, setTratamentos] = useState<Tratamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [tratamentoDialogOpen, setTratamentoDialogOpen] = useState(false);
@@ -144,7 +145,14 @@ export function TratamentosList({ riscoId }: TratamentosListProps) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Tratamentos do Risco</CardTitle>
+          <div>
+            <CardTitle className="text-lg">Tratamentos do Risco</CardTitle>
+            {riscoNome && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Risco: <span className="font-medium">{riscoNome}</span>
+              </p>
+            )}
+          </div>
           <Button onClick={openCreateDialog} size="sm">
             <Plus className="mr-2 h-4 w-4" />
             Novo Tratamento

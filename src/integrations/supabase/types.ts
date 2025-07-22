@@ -392,6 +392,7 @@ export type Database = {
           escala_probabilidade: Json
           id: string
           matriz_id: string
+          metodo_calculo: string
           niveis_risco: Json
           updated_at: string
         }
@@ -401,6 +402,7 @@ export type Database = {
           escala_probabilidade: Json
           id?: string
           matriz_id: string
+          metodo_calculo?: string
           niveis_risco: Json
           updated_at?: string
         }
@@ -410,6 +412,7 @@ export type Database = {
           escala_probabilidade?: Json
           id?: string
           matriz_id?: string
+          metodo_calculo?: string
           niveis_risco?: Json
           updated_at?: string
         }

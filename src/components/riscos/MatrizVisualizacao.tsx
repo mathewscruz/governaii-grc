@@ -12,6 +12,7 @@ interface Matriz {
     escala_probabilidade: Array<{ valor: number; descricao: string }>;
     escala_impacto: Array<{ valor: number; descricao: string }>;
     niveis_risco: Array<{ min: number; max: number; nivel: string; cor?: string }>;
+    metodo_calculo?: string;
   };
 }
 
@@ -46,7 +47,8 @@ export function MatrizVisualizacao() {
           configuracao:riscos_matriz_configuracao(
             escala_probabilidade,
             escala_impacto,
-            niveis_risco
+            niveis_risco,
+            metodo_calculo
           )
         `)
         .eq('empresa_id', profile?.empresa_id)
@@ -59,7 +61,8 @@ export function MatrizVisualizacao() {
           configuracao: {
             escala_probabilidade: matrizData.configuracao[0].escala_probabilidade as Array<{ valor: number; descricao: string }>,
             escala_impacto: matrizData.configuracao[0].escala_impacto as Array<{ valor: number; descricao: string }>,
-            niveis_risco: matrizData.configuracao[0].niveis_risco as Array<{ min: number; max: number; nivel: string; cor?: string }>
+            niveis_risco: matrizData.configuracao[0].niveis_risco as Array<{ min: number; max: number; nivel: string; cor?: string }>,
+            metodo_calculo: matrizData.configuracao[0].metodo_calculo || 'multiplicacao'
           }
         });
       }
@@ -89,9 +92,13 @@ export function MatrizVisualizacao() {
   const getNivelRisco = (probabilidade: number, impacto: number) => {
     if (!matriz?.configuracao) return null;
     
-    const produto = probabilidade * impacto;
+    const metodoCalculo = (matriz.configuracao as any).metodo_calculo || 'multiplicacao';
+    const resultado = metodoCalculo === 'multiplicacao' 
+      ? probabilidade * impacto
+      : probabilidade + impacto;
+      
     return matriz.configuracao.niveis_risco.find(n => 
-      produto >= n.min && produto <= n.max
+      resultado >= n.min && resultado <= n.max
     );
   };
 

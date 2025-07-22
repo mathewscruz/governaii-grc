@@ -44,6 +44,7 @@ interface Matriz {
     escala_probabilidade: any;
     escala_impacto: any;
     niveis_risco: any;
+    metodo_calculo?: string;
   }>;
 }
 
@@ -110,7 +111,10 @@ export function RiscoForm({ risco, onSuccess }: Props) {
       if (matriz && matriz.configuracao && matriz.configuracao[0]) {
         setSelectedMatriz({
           ...matriz,
-          configuracao: matriz.configuracao[0]
+          configuracao: {
+            ...matriz.configuracao[0],
+            metodo_calculo: matriz.configuracao[0].metodo_calculo || 'multiplicacao'
+          }
         } as any);
       } else {
         setSelectedMatriz(matriz || null);
@@ -129,7 +133,8 @@ export function RiscoForm({ risco, onSuccess }: Props) {
           configuracao:riscos_matriz_configuracao(
             escala_probabilidade,
             escala_impacto,
-            niveis_risco
+            niveis_risco,
+            metodo_calculo
           )
         `);
 
@@ -165,16 +170,19 @@ export function RiscoForm({ risco, onSuccess }: Props) {
     }
   };
 
-  const calcularNivelRisco = (probabilidade: string, impacto: string): string => {
+  const calcularNivelRisco = (probabilidade: string, impacto: string, metodoCalculo: 'multiplicacao' | 'soma' = 'multiplicacao'): string => {
     if (!selectedMatriz?.configuracao || !probabilidade || !impacto) return '';
 
     const probValue = parseInt(probabilidade);
     const impactValue = parseInt(impacto);
-    const produto = probValue * impactValue;
+    
+    const resultado = metodoCalculo === 'multiplicacao' 
+      ? probValue * impactValue
+      : probValue + impactValue;
 
     const config = selectedMatriz.configuracao as any;
     const nivel = config.niveis_risco?.find((n: any) => 
-      produto >= n.min && produto <= n.max
+      resultado >= n.min && resultado <= n.max
     );
 
     return nivel?.nivel || '';
@@ -189,9 +197,17 @@ export function RiscoForm({ risco, onSuccess }: Props) {
     setLoading(true);
 
     try {
-      const nivelInicial = calcularNivelRisco(data.probabilidade_inicial, data.impacto_inicial);
+      const nivelInicial = calcularNivelRisco(
+        data.probabilidade_inicial, 
+        data.impacto_inicial,
+        (selectedMatriz?.configuracao as any)?.metodo_calculo || 'multiplicacao'
+      );
       const nivelResidual = data.probabilidade_residual && data.impacto_residual 
-        ? calcularNivelRisco(data.probabilidade_residual, data.impacto_residual)
+        ? calcularNivelRisco(
+            data.probabilidade_residual, 
+            data.impacto_residual,
+            (selectedMatriz?.configuracao as any)?.metodo_calculo || 'multiplicacao'
+          )
         : null;
 
       const riscoData = {
@@ -268,8 +284,16 @@ export function RiscoForm({ risco, onSuccess }: Props) {
     }
   };
 
-  const nivelInicialCalculado = calcularNivelRisco(watchProbabilidade, watchImpacto);
-  const nivelResidualCalculado = calcularNivelRisco(watchProbabilidadeResidual || '', watchImpactoResidual || '');
+  const nivelInicialCalculado = calcularNivelRisco(
+    watchProbabilidade, 
+    watchImpacto,
+    (selectedMatriz?.configuracao as any)?.metodo_calculo || 'multiplicacao'
+  );
+  const nivelResidualCalculado = calcularNivelRisco(
+    watchProbabilidadeResidual || '', 
+    watchImpactoResidual || '',
+    (selectedMatriz?.configuracao as any)?.metodo_calculo || 'multiplicacao'
+  );
 
   return (
     <div className="space-y-6">

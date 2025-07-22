@@ -13,6 +13,7 @@ import { Plus, Trash2, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DialogFooter } from '@/components/ui/dialog';
 
 const matrizSchema = z.object({
@@ -94,6 +95,8 @@ export function MatrizForm({ onSuccess }: Props) {
     { min: 17, max: 25, nivel: 'Crítico', cor: '#dc2626' }
   ]);
 
+  const [metodoCalculo, setMetodoCalculo] = useState<'multiplicacao' | 'soma'>('multiplicacao');
+
   const matrizForm = useForm<MatrizForm>({
     resolver: zodResolver(matrizSchema),
     defaultValues: {
@@ -125,7 +128,8 @@ export function MatrizForm({ onSuccess }: Props) {
           configuracao:riscos_matriz_configuracao(
             escala_probabilidade,
             escala_impacto,
-            niveis_risco
+            niveis_risco,
+            metodo_calculo
           )
         `)
         .order('created_at', { ascending: false });
@@ -135,7 +139,8 @@ export function MatrizForm({ onSuccess }: Props) {
         configuracao: matriz.configuracao?.[0] ? {
           escala_probabilidade: (matriz.configuracao[0].escala_probabilidade as unknown) as EscalaItem[],
           escala_impacto: (matriz.configuracao[0].escala_impacto as unknown) as EscalaItem[],
-          niveis_risco: (matriz.configuracao[0].niveis_risco as unknown) as NivelRisco[]
+          niveis_risco: (matriz.configuracao[0].niveis_risco as unknown) as NivelRisco[],
+          metodo_calculo: matriz.configuracao[0].metodo_calculo || 'multiplicacao'
         } : undefined
       })) || [];
 
@@ -162,6 +167,7 @@ export function MatrizForm({ onSuccess }: Props) {
       setEscalaProbabilidade(matriz.configuracao.escala_probabilidade);
       setEscalaImpacto(matriz.configuracao.escala_impacto);
       setNiveisRisco(matriz.configuracao.niveis_risco);
+      setMetodoCalculo((matriz.configuracao as any).metodo_calculo || 'multiplicacao');
     }
   };
 
@@ -188,6 +194,7 @@ export function MatrizForm({ onSuccess }: Props) {
       { min: 10, max: 16, nivel: 'Alto', cor: '#f97316' },
       { min: 17, max: 25, nivel: 'Crítico', cor: '#dc2626' }
     ]);
+    setMetodoCalculo('multiplicacao');
   };
 
   const onSubmitMatriz = async (data: MatrizForm) => {
@@ -217,7 +224,8 @@ export function MatrizForm({ onSuccess }: Props) {
           .update({
             escala_probabilidade: escalaProbabilidade as any,
             escala_impacto: escalaImpacto as any,
-            niveis_risco: niveisRisco as any
+            niveis_risco: niveisRisco as any,
+            metodo_calculo: metodoCalculo
           })
           .eq('matriz_id', editingMatriz.id);
 
@@ -245,7 +253,8 @@ export function MatrizForm({ onSuccess }: Props) {
             matriz_id: novaMatriz.id,
             escala_probabilidade: escalaProbabilidade as any,
             escala_impacto: escalaImpacto as any,
-            niveis_risco: niveisRisco as any
+            niveis_risco: niveisRisco as any,
+            metodo_calculo: metodoCalculo
           });
 
         if (configError) throw configError;
@@ -427,6 +436,30 @@ export function MatrizForm({ onSuccess }: Props) {
                       </FormItem>
                     )}
                   />
+
+                  <Separator />
+
+                  {/* Método de Cálculo */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium">Método de Cálculo</h4>
+                    </div>
+                    <Select value={metodoCalculo} onValueChange={(value: 'multiplicacao' | 'soma') => setMetodoCalculo(value)}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="multiplicacao">Multiplicação (P × I)</SelectItem>
+                        <SelectItem value="soma">Soma (P + I)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">
+                      {metodoCalculo === 'multiplicacao' 
+                        ? 'O nível de risco será calculado multiplicando probabilidade por impacto'
+                        : 'O nível de risco será calculado somando probabilidade e impacto'
+                      }
+                    </p>
+                  </div>
 
                   <Separator />
 
