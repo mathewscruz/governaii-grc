@@ -121,12 +121,12 @@ export function AppSidebar() {
       collapsible="icon"
     >
       <SidebarHeader className="border-b border-sidebar-border h-14">
-        <div className="flex items-center justify-center px-3 py-2 h-full">
+        <div className="flex items-center justify-center px-1 py-2 h-full">
           <img 
             src={isCollapsed ? logoMini : "https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/sign/logotipo/Governiaa%20(500%20x%20200%20px)%20(15).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NTdhMjYzYS1jZjc1LTQ3OGYtYjNkMy01NWM2ODViMTQ0MTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvdGlwby9Hb3Zlcm5pYWEgKDUwMCB4IDIwMCBweCkgKDE1KS5wbmciLCJpYXQiOjE3NTMyMDEzODIsImV4cCI6MTc4NDczNzM4Mn0.AjG5UVNIcJcoMc_MVu3tIGUbLQGe77VhUeeSlEa5-1o"} 
             alt="GovernAII" 
             className={`object-contain transition-all duration-300 ${
-              isCollapsed ? 'h-11 w-11' : 'h-12 w-auto max-w-[200px]'
+              isCollapsed ? 'h-12 w-12' : 'h-12 w-auto max-w-[200px]'
             }`}
           />
         </div>
