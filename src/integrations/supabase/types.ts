@@ -124,6 +124,314 @@ export type Database = {
         }
         Relationships: []
       }
+      auditoria_achados: {
+        Row: {
+          area_afetada: string | null
+          auditoria_id: string
+          causa_raiz: string | null
+          created_at: string | null
+          criticidade: string
+          descricao: string
+          id: string
+          impacto: string | null
+          status: string
+          tipo: string
+          titulo: string
+          trabalho_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          area_afetada?: string | null
+          auditoria_id: string
+          causa_raiz?: string | null
+          created_at?: string | null
+          criticidade?: string
+          descricao: string
+          id?: string
+          impacto?: string | null
+          status?: string
+          tipo: string
+          titulo: string
+          trabalho_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          area_afetada?: string | null
+          auditoria_id?: string
+          causa_raiz?: string | null
+          created_at?: string | null
+          criticidade?: string
+          descricao?: string
+          id?: string
+          impacto?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string
+          trabalho_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_achados_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_achados_trabalho_id_fkey"
+            columns: ["trabalho_id"]
+            isOneToOne: false
+            referencedRelation: "auditoria_trabalhos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditoria_evidencias: {
+        Row: {
+          achado_id: string | null
+          arquivo_nome: string | null
+          arquivo_tamanho: number | null
+          arquivo_tipo: string | null
+          arquivo_url: string | null
+          auditoria_id: string | null
+          created_at: string | null
+          created_by: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          tipo: string
+          trabalho_id: string | null
+        }
+        Insert: {
+          achado_id?: string | null
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          auditoria_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          tipo: string
+          trabalho_id?: string | null
+        }
+        Update: {
+          achado_id?: string | null
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          auditoria_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          tipo?: string
+          trabalho_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_evidencias_achado_id_fkey"
+            columns: ["achado_id"]
+            isOneToOne: false
+            referencedRelation: "auditoria_achados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_evidencias_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_evidencias_trabalho_id_fkey"
+            columns: ["trabalho_id"]
+            isOneToOne: false
+            referencedRelation: "auditoria_trabalhos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditoria_recomendacoes: {
+        Row: {
+          achado_id: string
+          created_at: string | null
+          data_implementacao: string | null
+          descricao: string
+          evidencia_implementacao: string | null
+          id: string
+          observacoes: string | null
+          prazo_implementacao: string | null
+          prioridade: string
+          responsavel: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          achado_id: string
+          created_at?: string | null
+          data_implementacao?: string | null
+          descricao: string
+          evidencia_implementacao?: string | null
+          id?: string
+          observacoes?: string | null
+          prazo_implementacao?: string | null
+          prioridade?: string
+          responsavel?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          achado_id?: string
+          created_at?: string | null
+          data_implementacao?: string | null
+          descricao?: string
+          evidencia_implementacao?: string | null
+          id?: string
+          observacoes?: string | null
+          prazo_implementacao?: string | null
+          prioridade?: string
+          responsavel?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_recomendacoes_achado_id_fkey"
+            columns: ["achado_id"]
+            isOneToOne: false
+            referencedRelation: "auditoria_achados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditoria_trabalhos: {
+        Row: {
+          auditoria_id: string
+          conclusoes: string | null
+          created_at: string | null
+          data_conclusao: string | null
+          data_inicio: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          responsavel: string | null
+          status: string
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          auditoria_id: string
+          conclusoes?: string | null
+          created_at?: string | null
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          responsavel?: string | null
+          status?: string
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          auditoria_id?: string
+          conclusoes?: string | null
+          created_at?: string | null
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          responsavel?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_trabalhos_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditorias: {
+        Row: {
+          auditor_equipe: string[] | null
+          auditor_responsavel: string | null
+          created_at: string | null
+          created_by: string | null
+          data_fim_prevista: string | null
+          data_fim_real: string | null
+          data_inicio: string | null
+          descricao: string | null
+          empresa_id: string
+          escopo: string | null
+          framework: string | null
+          id: string
+          metodologia: string | null
+          nome: string
+          objetivos: string | null
+          prioridade: string
+          status: string
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          auditor_equipe?: string[] | null
+          auditor_responsavel?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data_fim_prevista?: string | null
+          data_fim_real?: string | null
+          data_inicio?: string | null
+          descricao?: string | null
+          empresa_id: string
+          escopo?: string | null
+          framework?: string | null
+          id?: string
+          metodologia?: string | null
+          nome: string
+          objetivos?: string | null
+          prioridade?: string
+          status?: string
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          auditor_equipe?: string[] | null
+          auditor_responsavel?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data_fim_prevista?: string | null
+          data_fim_real?: string | null
+          data_inicio?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          escopo?: string | null
+          framework?: string | null
+          id?: string
+          metodologia?: string | null
+          nome?: string
+          objetivos?: string | null
+          prioridade?: string
+          status?: string
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       compliance_templates: {
         Row: {
           checklist: Json
@@ -937,6 +1245,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auditoria_pertence_empresa: {
+        Args: { auditoria_id: string }
+        Returns: boolean
+      }
       controle_pertence_empresa: {
         Args: { controle_id: string }
         Returns: boolean

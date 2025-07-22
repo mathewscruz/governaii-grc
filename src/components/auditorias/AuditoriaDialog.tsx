@@ -1,0 +1,352 @@
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+
+interface AuditoriaDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  auditoria?: any;
+  onSuccess: () => void;
+}
+
+const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: AuditoriaDialogProps) => {
+  const [formData, setFormData] = useState({
+    nome: '',
+    descricao: '',
+    tipo: '',
+    status: 'planejamento',
+    prioridade: 'media',
+    auditor_responsavel: '',
+    auditor_equipe: [] as string[],
+    data_inicio: null as Date | null,
+    data_fim_prevista: null as Date | null,
+    escopo: '',
+    objetivos: '',
+    metodologia: '',
+    framework: ''
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: usuarios } = useQuery({
+    queryKey: ['usuarios-auditoria'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, nome, email')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  useEffect(() => {
+    if (auditoria) {
+      setFormData({
+        nome: auditoria.nome || '',
+        descricao: auditoria.descricao || '',
+        tipo: auditoria.tipo || '',
+        status: auditoria.status || 'planejamento',
+        prioridade: auditoria.prioridade || 'media',
+        auditor_responsavel: auditoria.auditor_responsavel || '',
+        auditor_equipe: auditoria.auditor_equipe || [],
+        data_inicio: auditoria.data_inicio ? new Date(auditoria.data_inicio) : null,
+        data_fim_prevista: auditoria.data_fim_prevista ? new Date(auditoria.data_fim_prevista) : null,
+        escopo: auditoria.escopo || '',
+        objetivos: auditoria.objetivos || '',
+        metodologia: auditoria.metodologia || '',
+        framework: auditoria.framework || ''
+      });
+    } else {
+      setFormData({
+        nome: '',
+        descricao: '',
+        tipo: '',
+        status: 'planejamento',
+        prioridade: 'media',
+        auditor_responsavel: '',
+        auditor_equipe: [],
+        data_inicio: null,
+        data_fim_prevista: null,
+        escopo: '',
+        objetivos: '',
+        metodologia: '',
+        framework: ''
+      });
+    }
+  }, [auditoria]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .single();
+
+      if (!profile?.empresa_id) {
+        toast.error('Erro ao obter dados da empresa');
+        return;
+      }
+
+      const auditoriaData = {
+        ...formData,
+        empresa_id: profile.empresa_id,
+        data_inicio: formData.data_inicio?.toISOString().split('T')[0] || null,
+        data_fim_prevista: formData.data_fim_prevista?.toISOString().split('T')[0] || null,
+        auditor_responsavel: formData.auditor_responsavel || null,
+      };
+
+      if (auditoria) {
+        const { error } = await supabase
+          .from('auditorias')
+          .update(auditoriaData)
+          .eq('id', auditoria.id);
+
+        if (error) throw error;
+        toast.success('Auditoria atualizada com sucesso');
+      } else {
+        const { error } = await supabase
+          .from('auditorias')
+          .insert(auditoriaData);
+
+        if (error) throw error;
+        toast.success('Auditoria criada com sucesso');
+      }
+
+      onSuccess();
+    } catch (error) {
+      console.error('Erro ao salvar auditoria:', error);
+      toast.error('Erro ao salvar auditoria');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {auditoria ? 'Editar Auditoria' : 'Nova Auditoria'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome da Auditoria *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tipo">Tipo *</Label>
+              <Select
+                value={formData.tipo}
+                onValueChange={(value) => setFormData({ ...formData, tipo: value })}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="interna">Auditoria Interna</SelectItem>
+                  <SelectItem value="externa">Auditoria Externa</SelectItem>
+                  <SelectItem value="compliance">Compliance</SelectItem>
+                  <SelectItem value="operacional">Operacional</SelectItem>
+                  <SelectItem value="ti">Auditoria de TI</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="planejamento">Planejamento</SelectItem>
+                  <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                  <SelectItem value="concluida">Concluída</SelectItem>
+                  <SelectItem value="cancelada">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="prioridade">Prioridade</Label>
+              <Select
+                value={formData.prioridade}
+                onValueChange={(value) => setFormData({ ...formData, prioridade: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="baixa">Baixa</SelectItem>
+                  <SelectItem value="media">Média</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="critica">Crítica</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="auditor_responsavel">Auditor Responsável</Label>
+              <Select
+                value={formData.auditor_responsavel}
+                onValueChange={(value) => setFormData({ ...formData, auditor_responsavel: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o auditor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {usuarios?.map((usuario) => (
+                    <SelectItem key={usuario.user_id} value={usuario.user_id}>
+                      {usuario.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="framework">Framework</Label>
+              <Select
+                value={formData.framework}
+                onValueChange={(value) => setFormData({ ...formData, framework: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o framework" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="COSO">COSO</SelectItem>
+                  <SelectItem value="ISO27001">ISO 27001</SelectItem>
+                  <SelectItem value="SOX">Sarbanes-Oxley</SelectItem>
+                  <SelectItem value="COBIT">COBIT</SelectItem>
+                  <SelectItem value="Personalizado">Personalizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Data de Início</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.data_inicio ? format(formData.data_inicio, "PPP", { locale: ptBR }) : "Selecione a data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.data_inicio || undefined}
+                    onSelect={(date) => setFormData({ ...formData, data_inicio: date || null })}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Data de Conclusão Prevista</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.data_fim_prevista ? format(formData.data_fim_prevista, "PPP", { locale: ptBR }) : "Selecione a data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.data_fim_prevista || undefined}
+                    onSelect={(date) => setFormData({ ...formData, data_fim_prevista: date || null })}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="descricao">Descrição</Label>
+            <Textarea
+              id="descricao"
+              value={formData.descricao}
+              onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="escopo">Escopo da Auditoria</Label>
+            <Textarea
+              id="escopo"
+              value={formData.escopo}
+              onChange={(e) => setFormData({ ...formData, escopo: e.target.value })}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="objetivos">Objetivos</Label>
+            <Textarea
+              id="objetivos"
+              value={formData.objetivos}
+              onChange={(e) => setFormData({ ...formData, objetivos: e.target.value })}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="metodologia">Metodologia</Label>
+            <Textarea
+              id="metodologia"
+              value={formData.metodologia}
+              onChange={(e) => setFormData({ ...formData, metodologia: e.target.value })}
+              rows={3}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Salvando...' : auditoria ? 'Atualizar' : 'Criar'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default AuditoriaDialog;
