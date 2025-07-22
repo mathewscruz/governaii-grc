@@ -87,13 +87,14 @@ Deno.serve(async (req) => {
 
     console.log(`Criando usuário: ${email}`)
 
-    // Criar usuário no Auth usando service role
+    // Criar usuário no Auth usando service role com metadata admin_created
     const { data: authData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: 'temp123456', // Senha temporária inicial
       email_confirm: true,
       user_metadata: {
-        nome: nome
+        nome: nome,
+        admin_created: 'true'
       }
     })
 
@@ -104,7 +105,10 @@ Deno.serve(async (req) => {
 
     console.log('Usuário criado no Auth:', authData.user.id)
 
-    // Criar perfil do usuário
+    // Aguardar um pouco para garantir que o usuário foi criado
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Criar perfil do usuário (o trigger não criará automaticamente devido ao admin_created)
     const { error: profileInsertError } = await supabaseAdmin
       .from('profiles')
       .insert({
@@ -112,7 +116,7 @@ Deno.serve(async (req) => {
         nome: nome,
         email: email,
         role: role,
-        empresa_id: empresa_id || null,
+        empresa_id: empresa_id || currentUserProfile.empresa_id,
       })
 
     if (profileInsertError) {
