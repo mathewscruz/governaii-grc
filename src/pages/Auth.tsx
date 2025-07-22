@@ -68,7 +68,7 @@ const Auth = () => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -80,6 +80,27 @@ const Auth = () => {
       });
 
       if (error) throw error;
+
+      // Fallback: Create profile manually if trigger failed
+      if (data.user && !data.user.email_confirmed_at) {
+        try {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              user_id: data.user.id,
+              nome: nome,
+              email: email,
+              role: email === 'admin@governaii.com' ? 'super_admin' : 'user'
+            });
+          
+          if (profileError && !profileError.message.includes('duplicate key')) {
+            console.error('Profile creation error:', profileError);
+          }
+        } catch (profileError) {
+          console.error('Fallback profile creation failed:', profileError);
+        }
+      }
+
       toast.success('Conta criada com sucesso! Verifique seu email para confirmar.');
     } catch (error: any) {
       console.error('Error signing up:', error);
