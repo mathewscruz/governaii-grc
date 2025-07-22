@@ -7,6 +7,7 @@ import Layout from '@/components/Layout';
 import Auth from '@/pages/Auth';
 import Dashboard from '@/pages/Dashboard';
 import Ativos from '@/pages/Ativos';
+import Configuracoes from '@/pages/Configuracoes';
 import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -30,7 +31,7 @@ function App() {
             <Route path="/dados" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Dados</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
             <Route path="/due-diligence" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Due Diligence</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
             <Route path="/denuncia" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Canal de Denúncia</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
-            <Route path="/configuracoes" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Configurações</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
+            <Route path="/configuracoes" element={<Layout><Configuracoes /></Layout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>

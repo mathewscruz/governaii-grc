@@ -82,6 +82,8 @@ export type Database = {
       empresas: {
         Row: {
           ativo: boolean
+          cnpj: string | null
+          contato: string | null
           created_at: string
           id: string
           logo_url: string | null
@@ -90,6 +92,8 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          cnpj?: string | null
+          contato?: string | null
           created_at?: string
           id?: string
           logo_url?: string | null
@@ -98,6 +102,8 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          cnpj?: string | null
+          contato?: string | null
           created_at?: string
           id?: string
           logo_url?: string | null
@@ -148,6 +154,7 @@ export type Database = {
           created_at: string
           email: string
           empresa_id: string | null
+          foto_url: string | null
           id: string
           nome: string
           role: Database["public"]["Enums"]["user_role"]
@@ -159,6 +166,7 @@ export type Database = {
           created_at?: string
           email: string
           empresa_id?: string | null
+          foto_url?: string | null
           id?: string
           nome: string
           role?: Database["public"]["Enums"]["user_role"]
@@ -170,6 +178,7 @@ export type Database = {
           created_at?: string
           email?: string
           empresa_id?: string | null
+          foto_url?: string | null
           id?: string
           nome?: string
           role?: Database["public"]["Enums"]["user_role"]
