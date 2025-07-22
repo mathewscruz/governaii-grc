@@ -30,11 +30,7 @@ const Auditorias = () => {
     queryFn: async () => {
       let query = supabase
         .from('auditorias')
-        .select(`
-          *,
-          auditor_responsavel_profile:profiles!auditorias_auditor_responsavel_fkey(nome),
-          created_by_profile:profiles!auditorias_created_by_fkey(nome)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (searchTerm) {
@@ -64,7 +60,7 @@ const Auditorias = () => {
     const statusMap = {
       planejamento: { label: "Planejamento", variant: "secondary" as const },
       em_andamento: { label: "Em Andamento", variant: "default" as const },
-      concluida: { label: "Concluída", variant: "success" as const },
+      concluida: { label: "Concluída", variant: "outline" as const },
       cancelada: { label: "Cancelada", variant: "destructive" as const },
     };
     
@@ -223,7 +219,7 @@ const Auditorias = () => {
                 <div className="space-y-3">
                   <div className="text-sm text-muted-foreground">
                     <strong>Auditor Responsável:</strong>{' '}
-                    {auditoria.auditor_responsavel_profile?.nome || 'Não atribuído'}
+                    Não atribuído
                   </div>
                   
                   {auditoria.data_inicio && (

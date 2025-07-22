@@ -9,6 +9,7 @@ import Dashboard from '@/pages/Dashboard';
 import Ativos from '@/pages/Ativos';
 import { Riscos } from '@/pages/Riscos';
 import Controles from '@/pages/Controles';
+import Auditorias from '@/pages/Auditorias';
 import Configuracoes from '@/pages/Configuracoes';
 import NotFound from '@/pages/NotFound';
 
@@ -26,7 +27,7 @@ function App() {
             <Route path="/ativos" element={<Layout><Ativos /></Layout>} />
             <Route path="/riscos" element={<Layout><Riscos /></Layout>} />
             <Route path="/controles" element={<Layout><Controles /></Layout>} />
-            <Route path="/auditorias" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Auditorias</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
+            <Route path="/auditorias" element={<Layout><Auditorias /></Layout>} />
             <Route path="/contratos" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Contratos</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
             <Route path="/documentos" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Documentos</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
             <Route path="/contas-privilegiadas" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Contas Privilegiadas</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />

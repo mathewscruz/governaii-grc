@@ -44,10 +44,7 @@ const TrabalhosDialog = ({ open, onOpenChange, auditoria }: TrabalhosDialogProps
       
       const { data, error } = await supabase
         .from('auditoria_trabalhos')
-        .select(`
-          *,
-          responsavel_profile:profiles!auditoria_trabalhos_responsavel_fkey(nome)
-        `)
+        .select('*')
         .eq('auditoria_id', auditoria.id)
         .order('created_at', { ascending: false });
 
@@ -387,9 +384,9 @@ const TrabalhosDialog = ({ open, onOpenChange, auditoria }: TrabalhosDialogProps
                         <strong>Descrição:</strong> {trabalho.descricao}
                       </p>
                     )}
-                    {trabalho.responsavel_profile?.nome && (
+                    {trabalho.responsavel && (
                       <p className="text-sm text-muted-foreground">
-                        <strong>Responsável:</strong> {trabalho.responsavel_profile.nome}
+                        <strong>Responsável:</strong> {trabalho.responsavel}
                       </p>
                     )}
                     {trabalho.data_inicio && (
