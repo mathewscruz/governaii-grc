@@ -133,9 +133,9 @@ export function MatrizForm({ onSuccess }: Props) {
       const matrizesComConfig = matrizesData?.map(matriz => ({
         ...matriz,
         configuracao: matriz.configuracao?.[0] ? {
-          escala_probabilidade: matriz.configuracao[0].escala_probabilidade as EscalaItem[],
-          escala_impacto: matriz.configuracao[0].escala_impacto as EscalaItem[],
-          niveis_risco: matriz.configuracao[0].niveis_risco as NivelRisco[]
+          escala_probabilidade: (matriz.configuracao[0].escala_probabilidade as unknown) as EscalaItem[],
+          escala_impacto: (matriz.configuracao[0].escala_impacto as unknown) as EscalaItem[],
+          niveis_risco: (matriz.configuracao[0].niveis_risco as unknown) as NivelRisco[]
         } : undefined
       })) || [];
 
