@@ -79,6 +79,235 @@ export type Database = {
           },
         ]
       }
+      controles: {
+        Row: {
+          area: string | null
+          categoria_id: string | null
+          created_at: string
+          criticidade: string
+          data_implementacao: string | null
+          descricao: string | null
+          empresa_id: string
+          frequencia: string | null
+          id: string
+          nome: string
+          processo: string | null
+          proxima_avaliacao: string | null
+          responsavel: string | null
+          status: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          categoria_id?: string | null
+          created_at?: string
+          criticidade?: string
+          data_implementacao?: string | null
+          descricao?: string | null
+          empresa_id: string
+          frequencia?: string | null
+          id?: string
+          nome: string
+          processo?: string | null
+          proxima_avaliacao?: string | null
+          responsavel?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          categoria_id?: string | null
+          created_at?: string
+          criticidade?: string
+          data_implementacao?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          frequencia?: string | null
+          id?: string
+          nome?: string
+          processo?: string | null
+          proxima_avaliacao?: string | null
+          responsavel?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controles_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "controles_categorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      controles_ativos: {
+        Row: {
+          ativo_id: string
+          controle_id: string
+          created_at: string
+          id: string
+          observacoes: string | null
+          tipo_protecao: string
+        }
+        Insert: {
+          ativo_id: string
+          controle_id: string
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          tipo_protecao?: string
+        }
+        Update: {
+          ativo_id?: string
+          controle_id?: string
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          tipo_protecao?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controles_ativos_ativo_id_fkey"
+            columns: ["ativo_id"]
+            isOneToOne: false
+            referencedRelation: "ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controles_ativos_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      controles_categorias: {
+        Row: {
+          cor: string | null
+          created_at: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      controles_riscos: {
+        Row: {
+          controle_id: string
+          created_at: string
+          eficacia_estimada: string | null
+          id: string
+          observacoes: string | null
+          risco_id: string
+          tipo_vinculacao: string
+        }
+        Insert: {
+          controle_id: string
+          created_at?: string
+          eficacia_estimada?: string | null
+          id?: string
+          observacoes?: string | null
+          risco_id: string
+          tipo_vinculacao?: string
+        }
+        Update: {
+          controle_id?: string
+          created_at?: string
+          eficacia_estimada?: string | null
+          id?: string
+          observacoes?: string | null
+          risco_id?: string
+          tipo_vinculacao?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controles_riscos_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controles_riscos_risco_id_fkey"
+            columns: ["risco_id"]
+            isOneToOne: false
+            referencedRelation: "riscos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      controles_testes: {
+        Row: {
+          controle_id: string
+          created_at: string
+          data_teste: string
+          evidencias: string | null
+          id: string
+          observacoes: string | null
+          proxima_avaliacao: string | null
+          resultado: string
+          testador: string | null
+          updated_at: string
+        }
+        Insert: {
+          controle_id: string
+          created_at?: string
+          data_teste: string
+          evidencias?: string | null
+          id?: string
+          observacoes?: string | null
+          proxima_avaliacao?: string | null
+          resultado: string
+          testador?: string | null
+          updated_at?: string
+        }
+        Update: {
+          controle_id?: string
+          created_at?: string
+          data_teste?: string
+          evidencias?: string | null
+          id?: string
+          observacoes?: string | null
+          proxima_avaliacao?: string | null
+          resultado?: string
+          testador?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controles_testes_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empresas: {
         Row: {
           ativo: boolean
@@ -546,6 +775,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      controle_pertence_empresa: {
+        Args: { controle_id: string }
+        Returns: boolean
+      }
       generate_temp_password: {
         Args: Record<PropertyKey, never>
         Returns: string
