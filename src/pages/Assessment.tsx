@@ -27,7 +27,7 @@ const assessmentLogger = {
 interface QuestionData {
   id: string;
   pergunta: string;
-  tipo: 'texto' | 'multipla_escolha' | 'arquivo' | 'numerico' | 'booleano';
+  tipo: 'texto' | 'multipla_escolha' | 'radio' | 'arquivo' | 'numerico' | 'booleano';
   opcoes?: string[];
   obrigatoria: boolean;
   peso?: number;
@@ -238,7 +238,7 @@ export default function Assessment() {
           return [];
         }),
         supabaseRequest(
-          `due_diligence_responses?assessment_id=eq.${assessment.id}`,
+          `due_diligence_responses?select=question_id,resposta,pontuacao&assessment_id=eq.${assessment.id}`,
           { method: 'GET' }
         ).catch(error => {
           assessmentLogger.warn('Erro ao carregar respostas existentes:', error);
@@ -249,7 +249,7 @@ export default function Assessment() {
       // Montar respostas em objeto
       const responsesMap: Record<string, any> = {};
       responsesData.forEach((response: any) => {
-        responsesMap[response.question_id] = response.response_text || response.response_file_url || response.response_score;
+        responsesMap[response.question_id] = response.resposta || response.pontuacao;
       });
 
       // ETAPA 5: Montar objeto final do assessment
@@ -303,22 +303,43 @@ export default function Assessment() {
       };
 
       // Determinar o tipo de resposta
-      if (question?.tipo === 'arquivo') {
-        responseData.response_file_url = value;
-      } else if (question?.tipo === 'numerico') {
-        responseData.response_score = parseFloat(value) || 0;
+      if (question?.tipo === 'numerico') {
+        responseData.pontuacao = parseFloat(value) || 0;
       } else {
-        responseData.response_text = value;
+        responseData.resposta = value;
       }
 
-      // Fazer upsert
-      await supabaseRequest('due_diligence_responses', {
-        method: 'POST',
-        body: JSON.stringify(responseData),
-        headers: {
-          'Prefer': 'resolution=merge-duplicates'
+      // Fazer upsert manual
+      try {
+        // Tentar atualizar primeiro
+        const existingResponse = await supabaseRequest(
+          `due_diligence_responses?assessment_id=eq.${assessment.id}&question_id=eq.${questionId}`,
+          { method: 'GET' }
+        );
+        
+        if (existingResponse && existingResponse.length > 0) {
+          // Atualizar existente
+          await supabaseRequest(
+            `due_diligence_responses?assessment_id=eq.${assessment.id}&question_id=eq.${questionId}`,
+            {
+              method: 'PATCH',
+              body: JSON.stringify(responseData)
+            }
+          );
+        } else {
+          // Inserir novo
+          await supabaseRequest('due_diligence_responses', {
+            method: 'POST',
+            body: JSON.stringify(responseData)
+          });
         }
-      });
+      } catch (error) {
+        // Se falhar, tentar inserir
+        await supabaseRequest('due_diligence_responses', {
+          method: 'POST',
+          body: JSON.stringify(responseData)
+        });
+      }
 
       assessmentLogger.info('Resposta salva com sucesso');
     } catch (error) {
@@ -472,7 +493,6 @@ export default function Assessment() {
                 </div>
               )}
             </div>
-            <h1 className="text-2xl font-bold">{assessment.empresa.nome}</h1>
             <p className="text-muted-foreground">Due Diligence - {assessment.template.nome}</p>
           </div>
 
@@ -526,11 +546,10 @@ export default function Assessment() {
               <div className="flex items-center justify-center h-16 w-16 bg-muted rounded-lg">
                 <Building2 className="h-8 w-8 text-muted-foreground" />
               </div>
-            )}
+              )}
+            </div>
+            <p className="text-muted-foreground">Due Diligence - {assessment.template.nome}</p>
           </div>
-          <h1 className="text-2xl font-bold">{assessment.empresa.nome}</h1>
-          <p className="text-muted-foreground">Due Diligence - {assessment.template.nome}</p>
-        </div>
 
         {/* Progress bar */}
         <div className="mb-8">
@@ -567,7 +586,7 @@ export default function Assessment() {
                   />
                 )}
 
-                {question.tipo === 'multipla_escolha' && question.opcoes && (
+                {question.tipo === 'radio' && question.opcoes && (
                   <RadioGroup
                     value={responses[question.id] || ''}
                     onValueChange={(value) => handleResponseChange(question.id, value)}
