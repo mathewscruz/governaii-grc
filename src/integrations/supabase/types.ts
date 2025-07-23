@@ -1438,6 +1438,13 @@ export type Database = {
             referencedRelation: "denuncias_categorias"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_denuncias_responsavel"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       denuncias_anexos: {
@@ -1510,7 +1517,7 @@ export type Database = {
           cor?: string | null
           created_at?: string | null
           descricao?: string | null
-          empresa_id: string
+          empresa_id?: string
           id?: string
           nome: string
           updated_at?: string | null
@@ -1546,7 +1553,7 @@ export type Database = {
           ativo?: boolean | null
           created_at?: string | null
           emails_notificacao?: string[] | null
-          empresa_id: string
+          empresa_id?: string
           id?: string
           notificar_administradores?: boolean | null
           permitir_anonimas?: boolean | null
@@ -1610,6 +1617,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "denuncias"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_movimentacoes_usuario"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
