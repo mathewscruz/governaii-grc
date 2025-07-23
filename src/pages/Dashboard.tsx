@@ -2,29 +2,31 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Shield, TrendingUp, Bell, Activity, Target } from 'lucide-react';
+import { HardDrive, Shield, AlertCircle, Bell, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { MatrizVisualizacao } from '@/components/riscos/MatrizVisualizacao';
 import { RecentActivities } from '@/components/dashboard/RecentActivities';
 import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
+import { useAtivosStats } from '@/hooks/useAtivosStats';
+import { useControlesStats } from '@/hooks/useControlesStats';
+import { useIncidentesStats } from '@/hooks/useIncidentesStats';
 
 interface DashboardStats {
-  securityScore: number;
   criticalAlerts: number;
-  complianceRate: number;
-  monthlyTrend: number;
 }
 
 export default function Dashboard() {
   const { profile } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
-    securityScore: 0,
     criticalAlerts: 0,
-    complianceRate: 0,
-    monthlyTrend: 0
   });
   const [loading, setLoading] = useState(true);
+  
+  // Usar hooks para dados reais
+  const ativosStats = useAtivosStats();
+  const controlesStats = useControlesStats();
+  const incidentesStats = useIncidentesStats();
 
   useEffect(() => {
     if (profile) {
@@ -34,7 +36,7 @@ export default function Dashboard() {
 
   const fetchDashboardStats = async () => {
     try {
-      // Buscar riscos
+      // Buscar riscos críticos
       const { data: riscos } = await supabase
         .from('riscos')
         .select('nivel_risco_inicial');
@@ -45,51 +47,29 @@ export default function Dashboard() {
         .select('status')
         .in('status', ['nova', 'em_investigacao']);
 
-      // Buscar controles vencidos
+      // Buscar controles vencidos (próximos 30 dias)
+      const dataLimite = new Date();
+      dataLimite.setDate(dataLimite.getDate() + 30);
       const { data: controles } = await supabase
         .from('controles')
         .select('proxima_avaliacao')
-        .lt('proxima_avaliacao', new Date().toISOString());
+        .lte('proxima_avaliacao', dataLimite.toISOString())
+        .gte('proxima_avaliacao', new Date().toISOString());
 
-      // Buscar auditorias pendentes
-      const { data: auditorias } = await supabase
-        .from('auditorias')
-        .select('status')
-        .eq('status', 'planejamento');
-
-      // Calcular score de segurança baseado na distribuição de riscos
-      const totalRiscos = riscos?.length || 0;
       const riscosAltos = riscos?.filter(r => 
         r.nivel_risco_inicial === 'Alto' || 
         r.nivel_risco_inicial === 'Crítico' || 
         r.nivel_risco_inicial === 'Muito Alto'
       ).length || 0;
 
-      const securityScore = totalRiscos > 0 
-        ? Math.round(((totalRiscos - riscosAltos) / totalRiscos) * 100)
-        : 100;
-
-      // Alertas críticos
+      // Alertas críticos consolidados
       const criticalAlerts = 
         (denuncias?.length || 0) + 
         (controles?.length || 0) + 
-        (auditorias?.length || 0) + 
-        riscosAltos;
+        riscosAltos +
+        (incidentesStats.data?.criticos || 0);
 
-      // Taxa de conformidade (simplificada)
-      const complianceRate = Math.max(0, 100 - (riscosAltos * 10));
-
-      // Tendência mensal (simulada - seria calculada com dados históricos)
-      const monthlyTrend = securityScore > 70 ? 5 : securityScore > 50 ? 0 : -3;
-
-      const newStats: DashboardStats = {
-        securityScore,
-        criticalAlerts,
-        complianceRate,
-        monthlyTrend
-      };
-
-      setStats(newStats);
+      setStats({ criticalAlerts });
     } catch (error) {
       console.error('Erro ao carregar estatísticas do dashboard:', error);
     } finally {
@@ -97,7 +77,7 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
+  if (loading || ativosStats.isLoading || controlesStats.isLoading || incidentesStats.isLoading) {
     return (
       <div className="container mx-auto py-6 px-4 max-w-7xl">
         <div className="flex items-center justify-center min-h-96">
@@ -124,22 +104,28 @@ export default function Dashboard() {
 
       {/* 1ª Linha - KPIs Principais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Card 1: Gestão de Ativos */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Score Global de Segurança</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Gestão de Ativos</CardTitle>
+            <HardDrive className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.securityScore}%</div>
+            <div className="text-2xl font-bold">{ativosStats.data?.total || 0}</div>
             <div className="flex items-center mt-2">
-              <TrendingUp className={`h-4 w-4 mr-1 ${stats.monthlyTrend >= 0 ? 'text-green-600' : 'text-red-600'}`} />
-              <span className={`text-xs ${stats.monthlyTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {stats.monthlyTrend >= 0 ? '+' : ''}{stats.monthlyTrend}% este mês
-              </span>
+              <Badge variant={ativosStats.data?.criticos > 0 ? "destructive" : "default"}>
+                {ativosStats.data?.ativos || 0} ativos
+              </Badge>
+              {ativosStats.data?.criticos > 0 && (
+                <span className="text-xs text-destructive ml-2">
+                  {ativosStats.data.criticos} críticos
+                </span>
+              )}
             </div>
           </CardContent>
         </Card>
 
+        {/* Card 2: Alertas Críticos */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Alertas Críticos</CardTitle>
@@ -155,31 +141,45 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        {/* Card 3: Controles Internos */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conformidade Regulatória</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Controles Internos</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.complianceRate}%</div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Taxa de conformidade atual
-            </p>
+            <div className="text-2xl font-bold">{controlesStats.data?.ativos || 0}</div>
+            <div className="flex items-center mt-2">
+              <Badge variant={controlesStats.data?.vencendoAvaliacao > 0 ? "outline" : "default"}>
+                {controlesStats.data?.vencendoAvaliacao || 0} vencendo
+              </Badge>
+              <span className="text-xs text-muted-foreground ml-2">
+                de {controlesStats.data?.total || 0} totais
+              </span>
+            </div>
           </CardContent>
         </Card>
 
+        {/* Card 4: Incidentes de Segurança */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tendência Mensal</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Incidentes Ativos</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${stats.monthlyTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {stats.monthlyTrend >= 0 ? '+' : ''}{stats.monthlyTrend}%
+            <div className="text-2xl font-bold">
+              {(incidentesStats.data?.abertos || 0) + (incidentesStats.data?.investigacao || 0)}
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Variação do score
-            </p>
+            <div className="flex items-center mt-2">
+              <Badge variant={(incidentesStats.data?.mes || 0) > 0 ? "outline" : "default"}>
+                +{incidentesStats.data?.mes || 0} este mês
+              </Badge>
+              {incidentesStats.data?.criticos > 0 && (
+                <span className="text-xs text-destructive ml-2">
+                  {incidentesStats.data.criticos} críticos
+                </span>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
