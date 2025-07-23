@@ -28,6 +28,8 @@ const assessmentLogger = {
 
 interface QuestionData {
   id: string;
+  titulo: string;
+  descricao?: string;
   pergunta: string;
   tipo: 'texto' | 'multipla_escolha' | 'radio' | 'arquivo' | 'numerico' | 'booleano' | 'select';
   opcoes?: string[];
@@ -293,6 +295,8 @@ export default function Assessment() {
       
       setQuestions(questionsData.map((q: any) => ({
         id: q.id,
+        titulo: q.titulo,
+        descricao: q.descricao,
         pergunta: q.titulo || q.pergunta,
         tipo: q.tipo,
         opcoes: q.opcoes,
@@ -480,8 +484,8 @@ export default function Assessment() {
         data_conclusao: new Date().toISOString()
       };
 
-      // Usar id e link_token para satisfazer a política RLS
-      await supabaseRequest(`due_diligence_assessments?id=eq.${assessment.id}&link_token=eq.${token}`, {
+      // Usar apenas link_token para satisfazer a política RLS
+      await supabaseRequest(`due_diligence_assessments?link_token=eq.${token}`, {
         method: 'PATCH',
         body: JSON.stringify(updateData)
       });
@@ -669,10 +673,10 @@ export default function Assessment() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header com logo da empresa melhorado */}
         <div className="mb-8 text-center animate-fade-in">
-          <Card className="inline-block p-6 shadow-lg border-border/50 bg-card/50 backdrop-blur-sm">
+          <Card className="inline-block p-6 shadow-lg border-border/50 bg-white">
             <div className="flex items-center justify-center mb-4">
               {assessment.empresa.logo_url && !logoError ? (
-                <div className="relative p-3 bg-background rounded-xl shadow-sm">
+                <div className="relative p-3 bg-white rounded-xl shadow-sm">
                   {logoLoading && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -700,7 +704,7 @@ export default function Assessment() {
 
         {/* Progress bar */}
         <div className="mb-8 animate-fade-in">
-          <Card className="p-6 shadow-sm border-border/50 bg-card/30 backdrop-blur-sm">
+          <Card className="p-6 shadow-sm border-border/50 bg-white">
             <div className="flex justify-between items-center mb-4">
               <span className="text-sm font-medium text-muted-foreground">
                 Página {currentPage + 1} de {totalPages}
@@ -717,8 +721,8 @@ export default function Assessment() {
         </div>
 
         {/* Perguntas */}
-        <Card className="mb-8 shadow-lg border-border/50 bg-card/50 backdrop-blur-sm animate-fade-in">
-          <CardHeader className="bg-gradient-to-r from-card to-card/80 border-b border-border/50">
+        <Card className="mb-8 shadow-lg border-border/50 bg-white animate-fade-in">
+          <CardHeader className="bg-white border-b border-border/50">
             <CardTitle className="text-xl flex items-center space-x-2">
               <FileText className="w-5 h-5 text-primary" />
               <span>Questionário</span>
@@ -727,10 +731,17 @@ export default function Assessment() {
           <CardContent className="p-8 space-y-8">
             {currentQuestions.map((question, index) => (
               <div key={question.id} className="space-y-4 p-6 bg-white rounded-xl border border-border shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-                <Label className="text-lg font-semibold text-foreground leading-relaxed block">
-                  {question.pergunta}
-                  {question.obrigatoria && <span className="text-destructive ml-2 text-xl">*</span>}
-                </Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground block">
+                    {question.titulo}
+                    {question.obrigatoria && <span className="text-destructive ml-2">*</span>}
+                  </Label>
+                  {question.descricao && (
+                    <p className="text-lg font-semibold text-foreground leading-relaxed">
+                      {question.descricao}
+                    </p>
+                  )}
+                </div>
 
                 {question.tipo === 'texto' && (
                   <Textarea
@@ -748,7 +759,7 @@ export default function Assessment() {
                     className="space-y-3"
                   >
                     {question.opcoes.map((opcao, index) => (
-                      <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-accent/30 transition-colors duration-200">
+                      <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white transition-colors duration-200">
                         <RadioGroupItem value={opcao} id={`${question.id}-${index}`} className="border-border/50" />
                         <Label htmlFor={`${question.id}-${index}`} className="text-sm font-medium cursor-pointer flex-1">{opcao}</Label>
                       </div>
@@ -772,11 +783,11 @@ export default function Assessment() {
                     onValueChange={(value) => handleResponseChange(question.id, value)}
                     className="flex space-x-6"
                   >
-                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-accent/30 transition-colors duration-200">
+                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white transition-colors duration-200">
                       <RadioGroupItem value="sim" id={`${question.id}-sim`} className="border-border/50" />
                       <Label htmlFor={`${question.id}-sim`} className="text-sm font-medium cursor-pointer">Sim</Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-accent/30 transition-colors duration-200">
+                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white transition-colors duration-200">
                       <RadioGroupItem value="nao" id={`${question.id}-nao`} className="border-border/50" />
                       <Label htmlFor={`${question.id}-nao`} className="text-sm font-medium cursor-pointer">Não</Label>
                     </div>
@@ -803,7 +814,7 @@ export default function Assessment() {
 
                 {question.tipo === 'arquivo' && (
                   <div className="space-y-3">
-                    <div className="border-2 border-dashed border-border/50 hover:border-primary/50 rounded-xl p-8 text-center transition-colors duration-200 bg-accent/10 hover:bg-accent/20">
+                    <div className="border-2 border-dashed border-border/50 hover:border-primary/50 rounded-xl p-8 text-center transition-colors duration-200 bg-white">
                       <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                       <p className="text-sm text-muted-foreground mb-3">
                         Arraste um arquivo ou clique para selecionar
@@ -820,7 +831,7 @@ export default function Assessment() {
                       />
                     </div>
                     {responses[question.id] && (
-                      <div className="flex items-center space-x-3 text-sm text-muted-foreground p-3 bg-success/10 rounded-lg border border-success/20">
+                      <div className="flex items-center space-x-3 text-sm text-muted-foreground p-3 bg-white rounded-lg border border-success/20">
                         <FileText className="h-4 w-4 text-success" />
                         <span className="font-medium">{responses[question.id]}</span>
                       </div>
