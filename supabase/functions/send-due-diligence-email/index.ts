@@ -172,7 +172,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Enviando e-mail ${type} para ${fornecedor_email}`);
 
     const emailResponse = await resend.emails.send({
-      from: "Due Diligence <noreply@resend.dev>",
+      from: "Due Diligence <noreply@governaii.com.br>",
       to: [fornecedor_email],
       subject: emailContent.subject,
       html: emailContent.html,
