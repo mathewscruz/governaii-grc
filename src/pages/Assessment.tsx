@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CheckCircle, FileText, ArrowRight, ArrowLeft, AlertCircle, Upload, Building2, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 // ETAPA 5: Sistema de logs para debugging
 const assessmentLogger = {
@@ -411,6 +412,23 @@ export default function Assessment() {
         body: JSON.stringify(updateData)
       });
 
+      // Calcular score com IA
+      assessmentLogger.info('Iniciando cálculo de score com IA...');
+      try {
+        const { data: scoreResult, error: scoreError } = await supabase.functions.invoke('calculate-assessment-score', {
+          body: { assessment_id: assessment.id }
+        });
+
+        if (scoreError) {
+          assessmentLogger.warn('Erro no cálculo de score:', scoreError);
+        } else {
+          assessmentLogger.info('Score calculado com sucesso:', scoreResult);
+        }
+      } catch (scoreError) {
+        assessmentLogger.warn('Erro ao calcular score:', scoreError);
+        // Não falhar o envio se o cálculo de score falhar
+      }
+
       // Atualizar estado local
       setAssessment(prev => prev ? {
         ...prev,
@@ -420,7 +438,7 @@ export default function Assessment() {
 
       setIsFinished(true);
       assessmentLogger.info('Assessment finalizado com sucesso');
-      toast.success('Questionário enviado com sucesso!');
+      toast.success('Questionário enviado com sucesso e está sendo avaliado!');
 
     } catch (error: any) {
       assessmentLogger.error('Erro ao finalizar assessment:', error);

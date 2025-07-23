@@ -264,10 +264,19 @@ export function AssessmentsManagerEnhanced() {
   };
 
   const getScoreColor = (score?: number) => {
-    if (!score) return '';
-    if (score >= 80) return 'text-green-600 font-semibold';
-    if (score >= 60) return 'text-yellow-600 font-semibold';
+    if (!score || score === 0) return 'text-muted-foreground';
+    if (score >= 8) return 'text-green-600 font-semibold';
+    if (score >= 6) return 'text-blue-600 font-semibold';
+    if (score >= 4) return 'text-yellow-600 font-semibold';
     return 'text-red-600 font-semibold';
+  };
+
+  const getScoreBadge = (score?: number) => {
+    if (!score || score === 0) return { text: "Aguardando", variant: "outline" as const };
+    if (score >= 8) return { text: "Excelente", variant: "default" as const };
+    if (score >= 6) return { text: "Bom", variant: "secondary" as const };
+    if (score >= 4) return { text: "Regular", variant: "outline" as const };
+    return { text: "Ruim", variant: "destructive" as const };
   };
 
   const isExpired = (dateString: string) => {
