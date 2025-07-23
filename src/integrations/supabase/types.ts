@@ -994,6 +994,192 @@ export type Database = {
           },
         ]
       }
+      documentos: {
+        Row: {
+          aprovado_por: string | null
+          arquivo_nome: string | null
+          arquivo_tamanho: number | null
+          arquivo_tipo: string | null
+          arquivo_url: string | null
+          categoria: string | null
+          confidencial: boolean | null
+          created_at: string
+          created_by: string | null
+          data_aprovacao: string | null
+          data_vencimento: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          is_current_version: boolean | null
+          nome: string
+          status: string | null
+          tags: string[] | null
+          tipo: string
+          updated_at: string
+          versao: number | null
+        }
+        Insert: {
+          aprovado_por?: string | null
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          categoria?: string | null
+          confidencial?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          data_aprovacao?: string | null
+          data_vencimento?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          is_current_version?: boolean | null
+          nome: string
+          status?: string | null
+          tags?: string[] | null
+          tipo?: string
+          updated_at?: string
+          versao?: number | null
+        }
+        Update: {
+          aprovado_por?: string | null
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          categoria?: string | null
+          confidencial?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          data_aprovacao?: string | null
+          data_vencimento?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          is_current_version?: boolean | null
+          nome?: string
+          status?: string | null
+          tags?: string[] | null
+          tipo?: string
+          updated_at?: string
+          versao?: number | null
+        }
+        Relationships: []
+      }
+      documentos_aprovacoes: {
+        Row: {
+          aprovador_id: string
+          comentarios: string | null
+          created_at: string
+          data_aprovacao: string | null
+          documento_id: string
+          id: string
+          status: string
+        }
+        Insert: {
+          aprovador_id: string
+          comentarios?: string | null
+          created_at?: string
+          data_aprovacao?: string | null
+          documento_id: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          aprovador_id?: string
+          comentarios?: string | null
+          created_at?: string
+          data_aprovacao?: string | null
+          documento_id?: string
+          id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      documentos_categorias: {
+        Row: {
+          cor: string | null
+          created_at: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      documentos_comentarios: {
+        Row: {
+          comentario: string
+          created_at: string
+          documento_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comentario: string
+          created_at?: string
+          documento_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comentario?: string
+          created_at?: string
+          documento_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      documentos_vinculacoes: {
+        Row: {
+          created_at: string
+          documento_id: string
+          id: string
+          modulo: string
+          observacoes: string | null
+          tipo_vinculacao: string | null
+          vinculo_id: string
+        }
+        Insert: {
+          created_at?: string
+          documento_id: string
+          id?: string
+          modulo: string
+          observacoes?: string | null
+          tipo_vinculacao?: string | null
+          vinculo_id: string
+        }
+        Update: {
+          created_at?: string
+          documento_id?: string
+          id?: string
+          modulo?: string
+          observacoes?: string | null
+          tipo_vinculacao?: string | null
+          vinculo_id?: string
+        }
+        Relationships: []
+      }
       empresas: {
         Row: {
           ativo: boolean
@@ -1573,6 +1759,10 @@ export type Database = {
           p_changed_fields?: string[]
         }
         Returns: undefined
+      }
+      documento_pertence_empresa: {
+        Args: { documento_id: string }
+        Returns: boolean
       }
       generate_temp_password: {
         Args: Record<PropertyKey, never>
