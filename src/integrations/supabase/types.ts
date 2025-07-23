@@ -3022,6 +3022,10 @@ export type Database = {
         Args: { auditoria_id: string }
         Returns: boolean
       }
+      can_update_assessment_via_token: {
+        Args: { assessment_link_token: string }
+        Returns: boolean
+      }
       conta_privilegiada_pertence_empresa: {
         Args: { conta_id: string }
         Returns: boolean
