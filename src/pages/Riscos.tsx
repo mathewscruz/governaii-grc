@@ -396,10 +396,6 @@ export function Riscos() {
                       <Settings className="mr-2 h-4 w-4" />
                       Configurar Matriz
                     </Button>
-                    <Button onClick={openCreateDialog} size="sm">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Novo Risco
-                    </Button>
                   </div>
                 </div>
               </CardHeader>

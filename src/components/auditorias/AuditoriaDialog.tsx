@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import AuditorSelect from "./AuditorSelect";
+
 
 interface AuditoriaDialogProps {
   open: boolean;
@@ -29,7 +29,6 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
     tipo: '',
     status: 'planejamento',
     prioridade: 'media',
-    auditor_responsavel: '',
     auditor_equipe: [] as string[],
     data_inicio: null as Date | null,
     data_fim_prevista: null as Date | null,
@@ -50,7 +49,7 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
         tipo: auditoria.tipo || '',
         status: auditoria.status || 'planejamento',
         prioridade: auditoria.prioridade || 'media',
-        auditor_responsavel: auditoria.auditor_responsavel || '',
+        
         auditor_equipe: auditoria.auditor_equipe || [],
         data_inicio: auditoria.data_inicio ? new Date(auditoria.data_inicio) : null,
         data_fim_prevista: auditoria.data_fim_prevista ? new Date(auditoria.data_fim_prevista) : null,
@@ -66,7 +65,7 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
         tipo: '',
         status: 'planejamento',
         prioridade: 'media',
-        auditor_responsavel: '',
+        
         auditor_equipe: [],
         data_inicio: null,
         data_fim_prevista: null,
@@ -126,7 +125,7 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
         empresa_id: profile.empresa_id,
         data_inicio: formData.data_inicio?.toISOString().split('T')[0] || null,
         data_fim_prevista: formData.data_fim_prevista?.toISOString().split('T')[0] || null,
-        auditor_responsavel: formData.auditor_responsavel || null,
+        
       };
 
       if (auditoria) {
@@ -233,14 +232,6 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="auditor_responsavel">Auditor Responsável</Label>
-              <AuditorSelect
-                value={formData.auditor_responsavel}
-                onChange={(value) => setFormData({ ...formData, auditor_responsavel: value })}
-                placeholder="Selecione o auditor responsável"
-              />
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="framework">Framework</Label>

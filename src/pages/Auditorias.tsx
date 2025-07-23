@@ -64,17 +64,6 @@ const AuditoriaCard = ({ auditoria, usuarios, onEdit, onDelete, onOpenTrabalhos,
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          <div className="text-sm text-muted-foreground">
-            <strong>Auditor Responsável:</strong>{' '}
-            {auditorResponsavel ? (
-              <div className="inline-flex items-center gap-1">
-                <User className="w-3 h-3" />
-                {auditorResponsavel.nome}
-              </div>
-            ) : (
-              'Não atribuído'
-            )}
-          </div>
           
           {auditoria.data_inicio && (
             <div className="text-sm text-muted-foreground">
