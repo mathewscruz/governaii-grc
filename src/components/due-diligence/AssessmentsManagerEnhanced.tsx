@@ -46,7 +46,7 @@ function ReminderDialog({ assessment, open, onOpenChange, onSuccess }: ReminderD
     try {
       setSending(true);
       
-      const assessmentLink = `${window.location.origin}/assessment/${assessment.token}`;
+      const assessmentLink = `${window.location.origin}/assessment/${assessment.link_token}`;
       
       await supabase.functions.invoke('send-due-diligence-email', {
         body: {
@@ -235,13 +235,13 @@ export function AssessmentsManagerEnhanced() {
   };
 
   const viewAssessment = (assessment: Assessment) => {
-    const url = `${window.location.origin}/assessment/${assessment.token}`;
+    const url = `${window.location.origin}/assessment/${assessment.link_token}`;
     window.open(url, '_blank');
   };
 
   const resendAssessment = async (assessment: Assessment) => {
     try {
-      const assessmentLink = `${window.location.origin}/assessment/${assessment.token}`;
+      const assessmentLink = `${window.location.origin}/assessment/${assessment.link_token}`;
       
       await supabase.functions.invoke('send-due-diligence-email', {
         body: {

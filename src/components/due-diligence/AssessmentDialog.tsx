@@ -170,10 +170,35 @@ export function AssessmentDialog({
 
       if (error) throw error;
 
-      toast({
-        title: "Avaliação criada",
-        description: `Avaliação para "${formData.fornecedor_nome}" criada com sucesso.`,
-      });
+      // Enviar email de convite automaticamente
+      const assessmentLink = `${window.location.origin}/assessment/${linkToken}`;
+      
+      try {
+        await supabase.functions.invoke('send-due-diligence-email', {
+          body: {
+            type: 'invitation',
+            assessment_id: newAssessment.id,
+            fornecedor_nome: formData.fornecedor_nome,
+            fornecedor_email: formData.fornecedor_email,
+            template_nome: 'Due Diligence',
+            assessment_link: assessmentLink,
+            data_expiracao: dataExpiracao.toISOString(),
+            empresa_nome: 'GovernAI'
+          }
+        });
+
+        toast({
+          title: "Avaliação criada e enviada",
+          description: `Avaliação para "${formData.fornecedor_nome}" criada e convite enviado por email.`,
+        });
+      } catch (emailError: any) {
+        console.error('Erro ao enviar email:', emailError);
+        toast({
+          title: "Avaliação criada",
+          description: `Avaliação criada, mas houve erro no envio do email: ${emailError.message}`,
+          variant: "destructive",
+        });
+      }
 
       onSuccess();
     } catch (error: any) {

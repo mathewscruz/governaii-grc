@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,24 +29,51 @@ export function FornecedorSelector({ value, onChange }: FornecedorSelectorProps)
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
-  const [manualMode, setManualMode] = useState(false);
+  const [manualMode, setManualMode] = useState(true); // Começar sempre no modo manual
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchFornecedores();
-  }, []);
 
   const fetchFornecedores = async () => {
     try {
       setLoading(true);
       
-      // Por enquanto, usar entrada manual
-      // TODO: Integrar com contratos quando o schema estiver correto
-      setManualMode(true);
+      // Buscar fornecedores da tabela
+      const { data: fornecedoresData, error } = await supabase
+        .from('fornecedores')
+        .select('id, nome, email, telefone, cnpj');
+
+      if (error) {
+        console.error('Erro ao buscar fornecedores:', error);
+        toast({
+          title: "Informação",
+          description: "Nenhum fornecedor encontrado. Use a entrada manual.",
+        });
+        setManualMode(true);
+        return;
+      }
+
+      if (fornecedoresData && fornecedoresData.length > 0) {
+        setFornecedores(fornecedoresData as Fornecedor[]);
+        setManualMode(false);
+        toast({
+          title: "Fornecedores carregados",
+          description: `${fornecedoresData.length} fornecedor(es) encontrado(s).`,
+        });
+      } else {
+        setManualMode(true);
+        toast({
+          title: "Informação",
+          description: "Nenhum fornecedor cadastrado. Use a entrada manual.",
+        });
+      }
       
     } catch (error: any) {
       console.error('Erro ao buscar fornecedores:', error);
       setManualMode(true);
+      toast({
+        title: "Erro",
+        description: "Erro ao buscar fornecedores. Use a entrada manual.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -56,7 +82,7 @@ export function FornecedorSelector({ value, onChange }: FornecedorSelectorProps)
   const filteredFornecedores = fornecedores.filter(f =>
     f.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     f.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    f.cnpj?.includes(searchTerm)
+    (f.cnpj && f.cnpj.includes(searchTerm))
   );
 
   const handleSelectFornecedor = (fornecedor: Fornecedor) => {
@@ -95,17 +121,16 @@ export function FornecedorSelector({ value, onChange }: FornecedorSelectorProps)
           </div>
         </div>
 
-        {!manualMode && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setManualMode(false)}
-            className="w-full"
-          >
-            <Building2 className="mr-2 h-4 w-4" />
-            Buscar nos Contratos Cadastrados
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={fetchFornecedores}
+          className="w-full"
+          disabled={loading}
+        >
+          <Building2 className="mr-2 h-4 w-4" />
+          {loading ? 'Carregando...' : 'Buscar Fornecedores Cadastrados'}
+        </Button>
       </div>
     );
   }

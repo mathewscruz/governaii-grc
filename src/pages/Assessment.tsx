@@ -13,8 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, AlertCircle, Upload, Clock } from 'lucide-react';
 
 // Constantes do Supabase
-const SUPABASE_URL = 'https://zruqnhfnokktlohfptnm.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpydXFuaGZub2trdGxvaGZwdG5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjE2NTU2NjUsImV4cCI6MjAzNzIzMTY2NX0.jCMhQ_ZM68nOQB63OYv4aJkLjyiPG2-4Yy0eK-9q2Rs';
+const SUPABASE_URL = 'https://lnlkahtugwmkznasapfd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubGthaHR1Z3dta3puYXNhcGZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxOTk4MjcsImV4cCI6MjA2ODc3NTgyN30.DRHZ_55_8aH8fEDghoY84fl3rChFNgVyPA9UM3y-KCY';
 
 interface QuestionData {
   id: string;
@@ -105,7 +105,7 @@ export default function Assessment() {
 
       // Buscar assessment pelo token
       const assessmentData = await supabaseRequest(
-        `due_diligence_assessments?token=eq.${token}&select=id,fornecedor_nome,fornecedor_email,status,data_inicio,data_conclusao,data_expiracao,template_id`
+        `due_diligence_assessments?link_token=eq.${token}&select=id,fornecedor_nome,fornecedor_email,status,data_inicio,data_conclusao,data_expiracao,template_id`
       );
       
       if (!assessmentData || assessmentData.length === 0) {
