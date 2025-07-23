@@ -2030,33 +2030,33 @@ export type Database = {
       due_diligence_scores: {
         Row: {
           assessment_id: string
-          categoria: string | null
           classificacao: string | null
           created_at: string
           id: string
-          percentual: number
-          pontuacao_maxima: number
-          pontuacao_obtida: number
+          observacoes_ia: string | null
+          score_breakdown: Json
+          score_total: number
+          updated_at: string
         }
         Insert: {
           assessment_id: string
-          categoria?: string | null
           classificacao?: string | null
           created_at?: string
           id?: string
-          percentual?: number
-          pontuacao_maxima?: number
-          pontuacao_obtida?: number
+          observacoes_ia?: string | null
+          score_breakdown?: Json
+          score_total?: number
+          updated_at?: string
         }
         Update: {
           assessment_id?: string
-          categoria?: string | null
           classificacao?: string | null
           created_at?: string
           id?: string
-          percentual?: number
-          pontuacao_maxima?: number
-          pontuacao_obtida?: number
+          observacoes_ia?: string | null
+          score_breakdown?: Json
+          score_total?: number
+          updated_at?: string
         }
         Relationships: [
           {

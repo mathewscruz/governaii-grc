@@ -43,7 +43,7 @@ export function ReportsViewer() {
 
       const totalAssessments = assessments.data?.length || 0;
       const completedAssessments = assessments.data?.filter(a => a.status === 'concluido').length || 0;
-      const avgScore = scores.data?.reduce((acc, s) => acc + (s.percentual || 0), 0) / (scores.data?.length || 1) || 0;
+      const avgScore = scores.data?.reduce((acc, s) => acc + (s.score_total || 0), 0) / (scores.data?.length || 1) || 0;
 
       setReportData({
         assessments: assessments.data || [],

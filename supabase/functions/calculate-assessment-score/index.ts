@@ -12,7 +12,6 @@ interface Question {
   texto: string;
   tipo: string;
   peso: number;
-  categoria: string;
 }
 
 interface Response {
@@ -50,8 +49,7 @@ serve(async (req) => {
           id,
           titulo,
           tipo,
-          peso,
-          categoria
+          peso
         )
       `)
       .eq('assessment_id', assessment_id);
@@ -69,7 +67,7 @@ serve(async (req) => {
       question: r.question.titulo,
       answer: r.resposta,
       type: r.question.tipo,
-      category: r.question.categoria || 'geral',
+      category: 'geral', // Categoria padrão já que removemos essa coluna
       weight: r.question.peso || 1
     }));
 

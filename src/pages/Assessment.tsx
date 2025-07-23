@@ -473,20 +473,23 @@ export default function Assessment() {
       }
 
       // Finalizar assessment usando Supabase client
-      assessmentLogger.info('Finalizando assessment');
-      const { error: updateError } = await supabase
+      assessmentLogger.info('Finalizando assessment', { assessmentId: assessment.id, token });
+      const { data: updateData, error: updateError } = await supabase
         .from('due_diligence_assessments')
         .update({
           status: 'concluido',
           data_conclusao: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
-        .eq('link_token', token);
+        .eq('link_token', token)
+        .select();
 
       if (updateError) {
         assessmentLogger.error('Erro ao finalizar assessment:', updateError);
         throw new Error(`Erro ao finalizar assessment: ${updateError.message}`);
       }
+
+      assessmentLogger.info('Assessment atualizado com sucesso:', updateData);
 
       // Calcular score com IA
       assessmentLogger.info('Iniciando cálculo de score com IA...');
