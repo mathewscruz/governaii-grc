@@ -139,14 +139,15 @@ export function CategoriasDenuncia() {
           description: "Categoria atualizada com sucesso"
         });
       } else {
-        // Criar nova categoria - empresa_id será definido pelo DEFAULT na tabela
+        // Criar nova categoria - empresa_id será sobrescrito pelo DEFAULT na tabela
         const { error } = await supabase
           .from('denuncias_categorias')
-          .insert([{
+          .insert({
             nome: formData.nome.trim(),
             descricao: formData.descricao.trim(),
-            cor: formData.cor
-          }]);
+            cor: formData.cor,
+            empresa_id: '00000000-0000-0000-0000-000000000000' // Placeholder, será sobrescrito pelo DEFAULT
+          });
 
         if (error) throw error;
 
