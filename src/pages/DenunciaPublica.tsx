@@ -60,54 +60,79 @@ export default function DenunciaPublica() {
   const [arquivos, setArquivos] = useState<File[]>([]);
 
   useEffect(() => {
+    console.log('🚀 [DEBUG] DenunciaPublica iniciada - empresa slug:', empresaSlug);
+    console.log('🚀 [DEBUG] URL atual:', window.location.href);
+    console.log('🚀 [DEBUG] Parâmetros de rota capturados:', { empresaSlug });
+    
     if (empresaSlug) {
       carregarConfiguracao();
+    } else {
+      console.log('❌ [ERROR] Slug da empresa não fornecido');
+      navigate('/');
     }
   }, [empresaSlug]);
 
   const carregarConfiguracao = async () => {
     try {
+      setLoading(true);
+      console.log('🔍 [DEBUG] Carregando configuração para empresa slug:', empresaSlug);
+      
+      // Normalizar slug (lowercase, trim)
+      const slugNormalizado = empresaSlug?.toLowerCase().trim();
+      console.log('🔍 [DEBUG] Slug normalizado:', slugNormalizado);
+      
       // Buscar empresa por slug
       const { data: empresaData, error: empresaError } = await supabase
         .from('empresas')
         .select('id, nome, slug')
-        .eq('slug', empresaSlug)
+        .eq('slug', slugNormalizado)
         .eq('ativo', true)
         .single();
+      
+      console.log('🔍 [DEBUG] Resultado busca empresa:', { empresaData, empresaError });
 
       if (empresaError || !empresaData) {
+        console.log('❌ [ERROR] Empresa não encontrada para slug:', slugNormalizado);
+        console.log('❌ [ERROR] Erro de busca:', empresaError);
         toast({
-          title: "Erro",
-          description: "Empresa não encontrada",
+          title: "Empresa não encontrada",
+          description: "A empresa especificada não foi encontrada.",
           variant: "destructive"
         });
         navigate('/');
         return;
       }
 
+      console.log('✅ [SUCCESS] Empresa carregada:', empresaData.nome);
       setEmpresa(empresaData);
 
       // Buscar configuração da empresa
+      console.log('🔍 [DEBUG] Buscando configuração de denúncias para empresa ID:', empresaData.id);
       const { data: configData, error: configError } = await supabase
         .from('denuncias_configuracoes')
         .select('*')
         .eq('empresa_id', empresaData.id)
         .eq('ativo', true)
         .single();
+      
+      console.log('🔍 [DEBUG] Configuração de denúncias:', { configData, configError });
 
       if (configError || !configData) {
+        console.log('❌ [ERROR] Configuração não encontrada:', configError);
         toast({
-          title: "Erro",
-          description: "Canal de denúncia não está ativo para esta empresa",
+          title: "Canal não disponível",
+          description: "O canal de denúncias não está configurado para esta empresa.",
           variant: "destructive"
         });
         navigate('/');
         return;
       }
 
+      console.log('✅ [SUCCESS] Configuração carregada - Canal ativo');
       setConfig(configData);
 
       // Buscar categorias
+      console.log('🔍 [DEBUG] Buscando categorias para empresa ID:', empresaData.id);
       const { data: categoriasData, error: categoriasError } = await supabase
         .from('denuncias_categorias')
         .select('*')
@@ -115,14 +140,17 @@ export default function DenunciaPublica() {
         .eq('ativo', true)
         .order('nome');
 
+      console.log('🔍 [DEBUG] Categorias encontradas:', { categoriasData, categoriasError });
+
       if (!categoriasError && categoriasData) {
+        console.log('✅ [SUCCESS] Categorias carregadas:', categoriasData.length);
         setCategorias(categoriasData);
       }
     } catch (error) {
-      console.error('Erro ao carregar configuração:', error);
+      console.error('❌ [ERROR] Erro geral ao carregar configuração:', error);
       toast({
         title: "Erro",
-        description: "Erro interno do sistema",
+        description: "Erro inesperado. Tente novamente mais tarde.",
         variant: "destructive"
       });
       navigate('/');
