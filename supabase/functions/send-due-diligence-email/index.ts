@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 interface EmailRequest {
-  type: 'send' | 'reminder' | 'completion';
+  type: 'send' | 'reminder' | 'completion' | 'invitation';
   assessment_id: string;
   fornecedor_nome: string;
   fornecedor_email: string;
@@ -37,10 +37,13 @@ const handler = async (req: Request): Promise<Response> => {
       empresa_nome 
     }: EmailRequest = await req.json();
 
+    console.log(`Processando email tipo: ${type} para ${fornecedor_email}`);
+
     let emailContent: { subject: string; html: string };
 
     switch (type) {
       case 'send':
+      case 'invitation': // Aceita ambos os tipos para compatibilidade
         emailContent = {
           subject: `Due Diligence - ${template_nome}`,
           html: `
@@ -145,7 +148,8 @@ const handler = async (req: Request): Promise<Response> => {
         break;
 
       default:
-        throw new Error('Tipo de e-mail inválido');
+        console.error(`Tipo de e-mail inválido: ${type}`);
+        throw new Error(`Tipo de e-mail inválido: ${type}. Tipos aceitos: send, invitation, reminder, completion`);
     }
 
     console.log(`Enviando e-mail ${type} para ${fornecedor_email}`);

@@ -170,22 +170,37 @@ export function AssessmentDialog({
 
       if (error) throw error;
 
+      // Buscar nome do template selecionado
+      const selectedTemplate = templates.find(t => t.id === formData.template_id);
+      const templateNome = selectedTemplate?.nome || 'Due Diligence';
+
       // Enviar email de convite automaticamente
       const assessmentLink = `${window.location.origin}/assessment/${linkToken}`;
       
+      console.log('Enviando email de convite...', {
+        type: 'send',
+        assessment_id: newAssessment.id,
+        fornecedor_nome: formData.fornecedor_nome,
+        fornecedor_email: formData.fornecedor_email,
+        template_nome: templateNome,
+        assessment_link: assessmentLink
+      });
+
       try {
-        await supabase.functions.invoke('send-due-diligence-email', {
+        const emailResponse = await supabase.functions.invoke('send-due-diligence-email', {
           body: {
-            type: 'invitation',
+            type: 'send',
             assessment_id: newAssessment.id,
             fornecedor_nome: formData.fornecedor_nome,
             fornecedor_email: formData.fornecedor_email,
-            template_nome: 'Due Diligence',
+            template_nome: templateNome,
             assessment_link: assessmentLink,
             data_expiracao: dataExpiracao.toISOString(),
             empresa_nome: 'GovernAI'
           }
         });
+
+        console.log('Resposta do email:', emailResponse);
 
         toast({
           title: "Avaliação criada e enviada",
