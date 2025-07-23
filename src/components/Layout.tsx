@@ -57,7 +57,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Breadcrumb>
                 <BreadcrumbList>
                   {breadcrumbs.map((breadcrumb, index) => (
-                    <React.Fragment key={breadcrumb.path}>
+                    <div key={breadcrumb.path} className="flex items-center">
                       <BreadcrumbItem>
                         {index === breadcrumbs.length - 1 ? (
                           <BreadcrumbPage className="font-semibold">
@@ -73,7 +73,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         )}
                       </BreadcrumbItem>
                       {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
-                    </React.Fragment>
+                    </div>
                   ))}
                 </BreadcrumbList>
               </Breadcrumb>
