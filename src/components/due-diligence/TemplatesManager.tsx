@@ -165,6 +165,8 @@ export function TemplatesManager() {
   const getCategoryColor = (categoria: string) => {
     const colors: Record<string, string> = {
       'seguranca': 'bg-red-100 text-red-800',
+      'Segurança': 'bg-red-100 text-red-800', 
+      'Privacidade': 'bg-blue-100 text-blue-800',
       'compliance': 'bg-blue-100 text-blue-800',
       'financeiro': 'bg-green-100 text-green-800',
       'operacional': 'bg-purple-100 text-purple-800',
