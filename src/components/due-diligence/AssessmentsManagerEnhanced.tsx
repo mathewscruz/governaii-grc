@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw } from 'lucide-react';
+import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw, Award, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AssessmentDialog } from './AssessmentDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { ScoreVisualization } from './ScoreVisualization';
 
 interface Assessment {
   id: string;
@@ -163,6 +164,15 @@ export function AssessmentsManagerEnhanced() {
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; assessment: Assessment | null }>({
     open: false,
     assessment: null
+  });
+  const [scoreDialog, setScoreDialog] = useState<{ 
+    open: boolean; 
+    assessment: Assessment | null; 
+    scoreData: any 
+  }>({
+    open: false,
+    assessment: null,
+    scoreData: null
   });
   const { toast } = useToast();
 
@@ -453,9 +463,22 @@ export function AssessmentsManagerEnhanced() {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Score:</span>
-                  <p className={`font-medium ${getScoreColor(assessment.score_final)}`}>
-                    {assessment.score_final ? `${assessment.score_final.toFixed(1)}%` : 'N/A'}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    {assessment.score_final && assessment.score_final > 0 ? (
+                      <>
+                        <span className={`font-medium ${getScoreColor(assessment.score_final)}`}>
+                          {assessment.score_final.toFixed(1)}
+                        </span>
+                        <Badge variant={getScoreBadge(assessment.score_final).variant} className="text-xs">
+                          {getScoreBadge(assessment.score_final).text}
+                        </Badge>
+                      </>
+                    ) : assessment.status === 'concluido' ? (
+                      <span className="text-sm text-muted-foreground">Calculando...</span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Pendente</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -478,6 +501,17 @@ export function AssessmentsManagerEnhanced() {
                     <Eye className="h-4 w-4 mr-1" />
                     Visualizar
                   </Button>
+
+                  {assessment.score_final && assessment.score_final > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setScoreDialog({ open: true, assessment, scoreData: null })}
+                    >
+                      <Award className="h-4 w-4 mr-1" />
+                      Ver Score
+                    </Button>
+                  )}
 
                   <Button
                     variant="outline"
@@ -562,6 +596,78 @@ export function AssessmentsManagerEnhanced() {
         confirmText="Excluir"
         cancelText="Cancelar"
       />
+
+      {/* Dialog de Score */}
+      <Dialog open={scoreDialog.open} onOpenChange={(open) => setScoreDialog({ open, assessment: null, scoreData: null })}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              Resultado da Avaliação
+            </DialogTitle>
+          </DialogHeader>
+          
+          {scoreDialog.assessment && (
+            <ScoreVisualizationWrapper assessment={scoreDialog.assessment} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+// Wrapper component para buscar dados do score
+function ScoreVisualizationWrapper({ assessment }: { assessment: Assessment }) {
+  const [scoreData, setScoreData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchScoreData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('due_diligence_scores')
+          .select('*')
+          .eq('assessment_id', assessment.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          throw error;
+        }
+
+        setScoreData(data);
+      } catch (error) {
+        console.error('Erro ao buscar dados do score:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchScoreData();
+  }, [assessment.id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!scoreData) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Score ainda não calculado para esta avaliação.</p>
+      </div>
+    );
+  }
+
+  return (
+    <ScoreVisualization 
+      scoreData={scoreData}
+      assessmentData={{
+        fornecedor_nome: assessment.fornecedor_nome,
+        template: assessment.template
+      }}
+    />
   );
 }
