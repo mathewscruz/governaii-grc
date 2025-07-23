@@ -10,7 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, AlertCircle, Upload, Clock } from 'lucide-react';
+import { CheckCircle, AlertCircle, Upload, Clock, ChevronLeft, ChevronRight, Building } from 'lucide-react';
 
 // Constantes do Supabase
 const SUPABASE_URL = 'https://lnlkahtugwmkznasapfd.supabase.co';
@@ -36,6 +36,8 @@ interface AssessmentData {
   data_conclusao?: string;
   data_expiracao: string;
   template_id: string;
+  empresa_nome?: string;
+  empresa_logo_url?: string;
   template?: {
     nome: string;
     descricao?: string;
@@ -78,10 +80,13 @@ export default function Assessment() {
   const [assessment, setAssessment] = useState<AssessmentData | null>(null);
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [responses, setResponses] = useState<Record<string, ResponseData>>({});
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({});
+  const [autoSaving, setAutoSaving] = useState(false);
+
+  const QUESTIONS_PER_PAGE = 20;
 
   useEffect(() => {
     if (token) {
@@ -108,7 +113,7 @@ export default function Assessment() {
 
       // Buscar assessment pelo token
       const assessmentData = await supabaseRequest(
-        `due_diligence_assessments?link_token=eq.${token}&select=id,fornecedor_nome,fornecedor_email,status,data_inicio,data_conclusao,data_expiracao,template_id`
+        `due_diligence_assessments?link_token=eq.${token}&select=id,fornecedor_nome,fornecedor_email,status,data_inicio,data_conclusao,data_expiracao,template_id,empresa_id`
       );
       
       if (!assessmentData || assessmentData.length === 0) {
@@ -158,9 +163,30 @@ export default function Assessment() {
       );
       const template = templateData && templateData.length > 0 ? templateData[0] : { nome: 'Template', descricao: '', categoria: 'geral' };
 
+      // Buscar dados da empresa
+      let empresaNome = '';
+      let empresaLogoUrl = '';
+      
+      if (assessment.empresa_id) {
+        try {
+          const empresaData = await supabaseRequest(
+            `empresas?id=eq.${assessment.empresa_id}&select=nome,logo_url`
+          );
+          
+          if (empresaData && empresaData[0]) {
+            empresaNome = empresaData[0].nome;
+            empresaLogoUrl = empresaData[0].logo_url;
+          }
+        } catch (error) {
+          console.log('Erro ao buscar dados da empresa:', error);
+        }
+      }
+
       setAssessment({
         ...assessment,
-        template
+        template,
+        empresa_nome: empresaNome,
+        empresa_logo_url: empresaLogoUrl
       });
 
       // Marcar como iniciado se ainda não foi
@@ -233,6 +259,9 @@ export default function Assessment() {
            { resposta_texto: value })
       }
     }));
+    
+    // Auto-save após mudança
+    setTimeout(() => saveResponse(questionId), 500);
   };
 
   const handleFileUpload = async (questionId: string, file: File) => {
@@ -271,6 +300,7 @@ export default function Assessment() {
     if (!assessment || !responses[questionId]) return;
 
     try {
+      setAutoSaving(true);
       const response = responses[questionId];
       
       await supabaseRequest('due_diligence_responses', {
@@ -290,6 +320,8 @@ export default function Assessment() {
 
     } catch (error: any) {
       console.error('Erro ao salvar resposta:', error);
+    } finally {
+      setAutoSaving(false);
     }
   };
 
@@ -409,7 +441,7 @@ export default function Assessment() {
         variant: "default"
       });
 
-      setCurrentStep(questions.length); // Mostrar tela de conclusão
+      // Redirect para tela de conclusão será feito pelo status
 
     } catch (error: any) {
       console.error('Erro ao enviar assessment:', error);
@@ -432,25 +464,28 @@ export default function Assessment() {
           <Textarea
             value={response?.resposta_texto || ''}
             onChange={(e) => handleResponseChange(question.id, e.target.value, 'texto')}
-            onBlur={() => saveResponse(question.id)}
             placeholder="Digite sua resposta..."
             rows={4}
+            className="resize-none"
           />
         );
 
       case 'multipla_escolha':
+      case 'radio':
         return (
           <RadioGroup
             value={response?.resposta_texto || ''}
             onValueChange={(value) => {
               handleResponseChange(question.id, value, 'texto');
-              setTimeout(() => saveResponse(question.id), 100);
             }}
+            className="space-y-3"
           >
             {question.opcoes?.map((opcao, index) => (
-              <div key={index} className="flex items-center space-x-2">
+              <div key={index} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                 <RadioGroupItem value={opcao} id={`${question.id}-${index}`} />
-                <Label htmlFor={`${question.id}-${index}`}>{opcao}</Label>
+                <Label htmlFor={`${question.id}-${index}`} className="flex-1 cursor-pointer">
+                  {opcao}
+                </Label>
               </div>
             ))}
           </RadioGroup>
@@ -462,41 +497,44 @@ export default function Assessment() {
             value={response?.resposta_texto || ''}
             onValueChange={(value) => {
               handleResponseChange(question.id, value, 'texto');
-              setTimeout(() => saveResponse(question.id), 100);
             }}
+            className="flex gap-4"
           >
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors flex-1">
               <RadioGroupItem value="Sim" id={`${question.id}-sim`} />
-              <Label htmlFor={`${question.id}-sim`}>Sim</Label>
+              <Label htmlFor={`${question.id}-sim`} className="cursor-pointer">Sim</Label>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors flex-1">
               <RadioGroupItem value="Não" id={`${question.id}-nao`} />
-              <Label htmlFor={`${question.id}-nao`}>Não</Label>
+              <Label htmlFor={`${question.id}-nao`} className="cursor-pointer">Não</Label>
             </div>
           </RadioGroup>
         );
 
       case 'score':
         return (
-          <RadioGroup
-            value={response?.score?.toString() || ''}
-            onValueChange={(value) => {
-              handleResponseChange(question.id, value, 'score');
-              setTimeout(() => saveResponse(question.id), 100);
-            }}
-          >
-            <div className="flex gap-4">
+          <div className="space-y-4">
+            <RadioGroup
+              value={response?.score?.toString() || ''}
+              onValueChange={(value) => {
+                handleResponseChange(question.id, value, 'score');
+              }}
+              className="flex gap-2"
+            >
               {[1, 2, 3, 4, 5].map(score => (
-                <div key={score} className="flex items-center space-x-2">
-                  <RadioGroupItem value={score.toString()} id={`${question.id}-${score}`} />
-                  <Label htmlFor={`${question.id}-${score}`}>{score}</Label>
+                <div key={score} className="flex items-center justify-center p-3 border rounded-lg hover:bg-muted/50 transition-colors flex-1">
+                  <RadioGroupItem value={score.toString()} id={`${question.id}-${score}`} className="sr-only" />
+                  <Label htmlFor={`${question.id}-${score}`} className="cursor-pointer font-medium">
+                    {score}
+                  </Label>
                 </div>
               ))}
+            </RadioGroup>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>1 = Muito ruim</span>
+              <span>5 = Excelente</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              1 = Muito ruim | 5 = Excelente
-            </p>
-          </RadioGroup>
+          </div>
         );
 
       case 'arquivo':
@@ -581,7 +619,7 @@ export default function Assessment() {
     );
   }
 
-  if (assessment.status === 'concluido' && currentStep < questions.length) {
+  if (assessment.status === 'concluido') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -597,143 +635,202 @@ export default function Assessment() {
     );
   }
 
-  if (currentStep >= questions.length) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="text-center py-8">
-            <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Questionário Concluído!</h2>
-            <p className="text-muted-foreground mb-4">
-              Obrigado por completar o questionário. Suas respostas foram enviadas com sucesso.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Você pode fechar esta página.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Tela de conclusão não é mais necessária aqui pois usamos o status
 
-  const currentQuestion = questions[currentStep];
-  const progress = ((currentStep) / questions.length) * 100;
+  const totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
+  const startIndex = currentPage * QUESTIONS_PER_PAGE;
+  const endIndex = Math.min(startIndex + QUESTIONS_PER_PAGE, questions.length);
+  const currentPageQuestions = questions.slice(startIndex, endIndex);
+  
+  const progress = (Object.keys(responses).length / questions.length) * 100;
   const answeredQuestions = Object.keys(responses).length;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+      {/* Header com Logo */}
+      <div className="bg-white border-b shadow-sm">
+        <div className="container max-w-4xl mx-auto py-6">
+          <div className="flex items-center gap-4">
+            {assessment.empresa_logo_url ? (
+              <img 
+                src={assessment.empresa_logo_url} 
+                alt={`Logo ${assessment.empresa_nome}`}
+                className="h-12 w-auto object-contain"
+              />
+            ) : (
+              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Building className="h-6 w-6 text-primary" />
+              </div>
+            )}
+            <div>
+              <h1 className="text-xl font-semibold text-foreground">
+                {assessment.empresa_nome || 'Due Diligence'}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Assessment de Fornecedor
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="container max-w-4xl mx-auto py-8">
-        {/* Header */}
-        <Card className="mb-6">
-          <CardHeader>
+        {/* Header do Assessment */}
+        <Card className="mb-6 border-0 shadow-md">
+          <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-2xl">{assessment.template?.nome}</CardTitle>
+                <CardTitle className="text-2xl text-foreground">{assessment.template?.nome}</CardTitle>
                 <CardDescription className="text-base mt-1">
                   {assessment.template?.descricao}
                 </CardDescription>
               </div>
-              <Badge className="text-sm">
+              <Badge variant="secondary" className="text-sm">
                 {assessment.template?.categoria}
               </Badge>
             </div>
             
-            <div className="space-y-2 pt-4">
+            <div className="space-y-3 pt-4">
               <div className="flex justify-between text-sm">
-                <span>Progresso</span>
-                <span>{currentStep + 1} de {questions.length}</span>
+                <span className="flex items-center gap-2">
+                  Progresso Geral
+                  {autoSaving && <span className="text-xs text-muted-foreground">(Salvando...)</span>}
+                </span>
+                <span>{answeredQuestions} de {questions.length} respondidas</span>
               </div>
-              <Progress value={progress} className="h-2" />
+              <Progress value={progress} className="h-3" />
+              
+              {totalPages > 1 && (
+                <div className="flex justify-between text-xs text-muted-foreground pt-2">
+                  <span>Página {currentPage + 1} de {totalPages}</span>
+                  <span>{currentPageQuestions.length} perguntas nesta página</span>
+                </div>
+              )}
             </div>
           </CardHeader>
         </Card>
 
         {/* Informações do fornecedor */}
-        <Card className="mb-6">
+        <Card className="mb-6 border-0 shadow-md">
           <CardContent className="pt-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">Empresa</Label>
-                <p className="text-base">{assessment.fornecedor_nome}</p>
+                <Label className="text-sm font-medium text-muted-foreground">Empresa Avaliada</Label>
+                <p className="text-base font-medium">{assessment.fornecedor_nome}</p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-muted-foreground">E-mail</Label>
+                <Label className="text-sm font-medium text-muted-foreground">E-mail de Contato</Label>
                 <p className="text-base">{assessment.fornecedor_email}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Pergunta atual */}
-        {currentQuestion && (
-          <Card className="mb-6">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    {currentQuestion.titulo}
-                    {currentQuestion.obrigatoria && (
-                      <Badge variant="destructive" className="text-xs">
-                        Obrigatória
-                      </Badge>
-                    )}
-                  </CardTitle>
-                  {currentQuestion.descricao && (
-                    <CardDescription className="mt-2 text-base">
-                      {currentQuestion.descricao}
-                    </CardDescription>
-                  )}
-                </div>
-                <Badge variant="outline">
-                  Peso: {currentQuestion.peso}
-                </Badge>
-              </div>
-            </CardHeader>
+        {/* Perguntas da página atual */}
+        {currentPageQuestions.length > 0 && (
+          <div className="space-y-6">
+            {currentPageQuestions.map((question, index) => (
+              <Card key={question.id} className="border-0 shadow-md">
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <span className="text-sm font-normal text-muted-foreground mr-2">
+                          {startIndex + index + 1}.
+                        </span>
+                        {question.titulo}
+                        {question.obrigatoria && (
+                          <Badge variant="destructive" className="text-xs">
+                            Obrigatória
+                          </Badge>
+                        )}
+                        {responses[question.id] && (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        )}
+                      </CardTitle>
+                      {question.descricao && (
+                        <CardDescription className="mt-2 text-base">
+                          {question.descricao}
+                        </CardDescription>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      Peso: {question.peso}
+                    </Badge>
+                  </div>
+                </CardHeader>
 
-            <CardContent className="space-y-4">
-              {renderQuestion(currentQuestion)}
-            </CardContent>
-          </Card>
+                <CardContent className="space-y-4">
+                  {renderQuestion(question)}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
 
-        {/* Navegação */}
-        <div className="flex justify-between items-center">
+        {/* Navegação por páginas */}
+        <div className="flex justify-between items-center mt-8">
           <Button
             variant="outline"
-            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-            disabled={currentStep === 0}
+            onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+            disabled={currentPage === 0}
+            className="flex items-center gap-2"
           >
-            Anterior
+            <ChevronLeft className="h-4 w-4" />
+            Página Anterior
           </Button>
 
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            <span>{answeredQuestions} de {questions.length} respondidas</span>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>{answeredQuestions} de {questions.length} respondidas</span>
+            </div>
+            {totalPages > 1 && (
+              <Badge variant="outline">
+                Página {currentPage + 1} de {totalPages}
+              </Badge>
+            )}
           </div>
 
-          {currentStep === questions.length - 1 ? (
+          {currentPage === totalPages - 1 ? (
             <Button
               onClick={submitAssessment}
               disabled={submitting}
-              className="min-w-32"
+              className="min-w-40 flex items-center gap-2"
             >
-              {submitting ? 'Enviando...' : 'Finalizar'}
+              {submitting ? (
+                <>
+                  <div className="h-4 w-4 animate-spin border-2 border-current border-t-transparent rounded-full" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4" />
+                  Finalizar Assessment
+                </>
+              )}
             </Button>
           ) : (
             <Button
-              onClick={() => setCurrentStep(Math.min(questions.length - 1, currentStep + 1))}
+              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+              className="flex items-center gap-2"
             >
-              Próxima
+              Próxima Página
+              <ChevronRight className="h-4 w-4" />
             </Button>
           )}
         </div>
 
         {/* Alert de expiração */}
-        <Alert className="mt-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Este questionário expira em {new Date(assessment.data_expiracao).toLocaleDateString('pt-BR')} às {new Date(assessment.data_expiracao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.
-            Certifique-se de concluir antes do prazo.
+        <Alert className="mt-6 border-amber-200 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            <strong>Prazo de entrega:</strong> Este questionário expira em{' '}
+            <span className="font-medium">
+              {new Date(assessment.data_expiracao).toLocaleDateString('pt-BR')} às{' '}
+              {new Date(assessment.data_expiracao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </span>.
+            Suas respostas são salvas automaticamente.
           </AlertDescription>
         </Alert>
       </div>
