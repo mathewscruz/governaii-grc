@@ -1411,6 +1411,210 @@ export type Database = {
         }
         Relationships: []
       }
+      incidentes: {
+        Row: {
+          ativos_afetados: string[] | null
+          categoria: string | null
+          created_at: string
+          created_by: string | null
+          criticidade: string
+          dados_afetados: string | null
+          data_deteccao: string
+          data_ocorrencia: string | null
+          data_resolucao: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          impacto_estimado: string | null
+          origem_deteccao: string | null
+          responsavel_deteccao: string | null
+          responsavel_tratamento: string | null
+          riscos_relacionados: string[] | null
+          sistemas_afetados: string[] | null
+          status: string
+          tipo_incidente: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativos_afetados?: string[] | null
+          categoria?: string | null
+          created_at?: string
+          created_by?: string | null
+          criticidade?: string
+          dados_afetados?: string | null
+          data_deteccao?: string
+          data_ocorrencia?: string | null
+          data_resolucao?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          impacto_estimado?: string | null
+          origem_deteccao?: string | null
+          responsavel_deteccao?: string | null
+          responsavel_tratamento?: string | null
+          riscos_relacionados?: string[] | null
+          sistemas_afetados?: string[] | null
+          status?: string
+          tipo_incidente?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ativos_afetados?: string[] | null
+          categoria?: string | null
+          created_at?: string
+          created_by?: string | null
+          criticidade?: string
+          dados_afetados?: string | null
+          data_deteccao?: string
+          data_ocorrencia?: string | null
+          data_resolucao?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          impacto_estimado?: string | null
+          origem_deteccao?: string | null
+          responsavel_deteccao?: string | null
+          responsavel_tratamento?: string | null
+          riscos_relacionados?: string[] | null
+          sistemas_afetados?: string[] | null
+          status?: string
+          tipo_incidente?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      incidentes_comunicacoes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_comunicacao: string
+          destinatario: string
+          id: string
+          incidente_id: string
+          meio_comunicacao: string
+          observacoes: string | null
+          template_usado: string | null
+          tipo_comunicacao: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_comunicacao?: string
+          destinatario: string
+          id?: string
+          incidente_id: string
+          meio_comunicacao?: string
+          observacoes?: string | null
+          template_usado?: string | null
+          tipo_comunicacao: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_comunicacao?: string
+          destinatario?: string
+          id?: string
+          incidente_id?: string
+          meio_comunicacao?: string
+          observacoes?: string | null
+          template_usado?: string | null
+          tipo_comunicacao?: string
+        }
+        Relationships: []
+      }
+      incidentes_evidencias: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_tamanho: number | null
+          arquivo_tipo: string | null
+          arquivo_url: string | null
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          incidente_id: string
+          nome: string
+          tipo_evidencia: string
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          incidente_id: string
+          nome: string
+          tipo_evidencia?: string
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          incidente_id?: string
+          nome?: string
+          tipo_evidencia?: string
+        }
+        Relationships: []
+      }
+      incidentes_tratamentos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_conclusao: string | null
+          data_prazo: string | null
+          descricao: string
+          id: string
+          incidente_id: string
+          observacoes: string | null
+          responsavel_id: string | null
+          status: string
+          tipo_acao: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_conclusao?: string | null
+          data_prazo?: string | null
+          descricao: string
+          id?: string
+          incidente_id: string
+          observacoes?: string | null
+          responsavel_id?: string | null
+          status?: string
+          tipo_acao?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_conclusao?: string | null
+          data_prazo?: string | null
+          descricao?: string
+          id?: string
+          incidente_id?: string
+          observacoes?: string | null
+          responsavel_id?: string | null
+          status?: string
+          tipo_acao?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1961,6 +2165,10 @@ export type Database = {
       get_user_empresa_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      incidente_pertence_empresa: {
+        Args: { incidente_id: string }
+        Returns: boolean
       }
       is_admin_or_super_admin: {
         Args: Record<PropertyKey, never>
