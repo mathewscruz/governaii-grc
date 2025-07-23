@@ -39,12 +39,15 @@ serve(async (req) => {
 
     console.log('Calculating score for assessment:', assessment_id);
 
-    // Buscar respostas e perguntas
+    // Buscar respostas, evidências, justificativas e perguntas
     const { data: responses, error: responsesError } = await supabase
       .from('due_diligence_responses')
       .select(`
         question_id,
         resposta,
+        evidencia,
+        justificativa,
+        arquivo_url,
         question:question_id(
           id,
           titulo,
@@ -62,10 +65,13 @@ serve(async (req) => {
 
     console.log('Found responses:', responses.length);
 
-    // Preparar dados para análise da IA
+    // Preparar dados para análise da IA incluindo evidências e justificativas
     const analysisData = responses.map(r => ({
       question: r.question.titulo,
       answer: r.resposta,
+      evidencia: r.evidencia || null,
+      justificativa: r.justificativa || null,
+      arquivo_anexado: r.arquivo_url ? true : false,
       type: r.question.tipo,
       category: 'geral', // Categoria padrão já que removemos essa coluna
       weight: r.question.peso || 1
@@ -74,19 +80,20 @@ serve(async (req) => {
     // Analisar com OpenAI
     const aiAnalysis = await analyzeWithAI(analysisData, openaiKey);
     
-    // Calcular score final
+    // Calcular score final em porcentagem (0-100%)
     const totalWeight = analysisData.reduce((sum, item) => sum + item.weight, 0);
     const weightedScore = aiAnalysis.scores.reduce((sum, score, index) => {
       return sum + (score * analysisData[index].weight);
     }, 0);
     
-    const finalScore = (weightedScore / totalWeight);
+    // Converter para porcentagem (0-100)
+    const finalScore = (weightedScore / totalWeight) * 10; // score de 0-10 vira 0-100
     
-    // Determinar classificação
+    // Determinar classificação baseada em porcentagem
     let classification = 'ruim';
-    if (finalScore >= 8) classification = 'excelente';
-    else if (finalScore >= 6) classification = 'bom';
-    else if (finalScore >= 4) classification = 'regular';
+    if (finalScore >= 80) classification = 'excelente';
+    else if (finalScore >= 60) classification = 'bom';
+    else if (finalScore >= 40) classification = 'regular';
 
     console.log('Final score calculated:', finalScore, 'Classification:', classification);
 
@@ -144,11 +151,21 @@ Analise as seguintes respostas de um questionário de due diligence e atribua um
 - Adequação aos padrões de compliance e governança
 - Demonstração de controles e processos adequados
 - Transparência e evidências fornecidas
+- EVIDÊNCIAS: Se há evidência textual detalhada, adicione 1-2 pontos ao score
+- DOCUMENTOS: Se há arquivo anexado como evidência, adicione 1 ponto extra ao score  
+- JUSTIFICATIVAS: Para respostas "Não", avalie se a justificativa é adequada e mostra planos de melhoria
+
+IMPORTANTE: 
+- Para respostas "Sim" com evidências detalhadas + documento anexado: score deve ser 8-10
+- Para respostas "Sim" com evidências básicas: score deve ser 6-8
+- Para respostas "Sim" sem evidências: score deve ser 4-6
+- Para respostas "Não" com boa justificativa e planos: score deve ser 2-4
+- Para respostas "Não" sem justificativa adequada: score deve ser 0-2
 
 Dados para análise:
 ${JSON.stringify(analysisData, null, 2)}
 
-Responda APENAS em formato JSON válido com esta estrutura:
+Responda APENAS em formato JSON válido (sem markdown) com esta estrutura:
 {
   "scores": [array de números de 0-10 para cada resposta na ordem apresentada],
   "breakdown": {
@@ -188,7 +205,10 @@ Responda APENAS em formato JSON válido com esta estrutura:
   }
 
   const data = await response.json();
-  const aiResponse = data.choices[0].message.content;
+  let aiResponse = data.choices[0].message.content;
+  
+  // Limpar resposta da IA removendo possíveis markdown
+  aiResponse = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
   
   try {
     return JSON.parse(aiResponse);

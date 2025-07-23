@@ -80,19 +80,19 @@ export function ScoreVisualization({ scoreData, assessmentData }: ScoreVisualiza
           <div className="text-center space-y-4">
             <div className="space-y-2">
               <div className={`text-4xl font-bold ${getClassificationColor(scoreData.classificacao)}`}>
-                {scoreData.score_total.toFixed(1)}
+                {scoreData.score_total.toFixed(1)}%
               </div>
               <div className="text-lg text-muted-foreground">
-                de 10.0 pontos
+                de atendimento
               </div>
             </div>
             
             <div className="w-full max-w-sm mx-auto">
               <Progress 
-                value={scoreData.score_total * 10} 
+                value={scoreData.score_total} 
                 className="h-3"
                 style={{
-                  '--progress-background': getScoreColor(scoreData.score_total)
+                  '--progress-background': getScoreColor(scoreData.score_total / 10)
                 } as React.CSSProperties}
               />
             </div>
@@ -124,16 +124,16 @@ export function ScoreVisualization({ scoreData, assessmentData }: ScoreVisualiza
                   <div className="flex justify-between items-center">
                     <span className="font-medium capitalize">{categoria}</span>
                     <span className={`font-semibold ${getClassificationColor(
-                      score >= 8 ? 'excelente' : score >= 6 ? 'bom' : score >= 4 ? 'regular' : 'ruim'
+                      score >= 80 ? 'excelente' : score >= 60 ? 'bom' : score >= 40 ? 'regular' : 'ruim'
                     )}`}>
-                      {score.toFixed(1)}
+                      {score.toFixed(1)}%
                     </span>
                   </div>
                   <Progress 
-                    value={score * 10} 
+                    value={score} 
                     className="h-2"
                     style={{
-                      '--progress-background': getScoreColor(score)
+                      '--progress-background': getScoreColor(score / 10)
                     } as React.CSSProperties}
                   />
                 </div>

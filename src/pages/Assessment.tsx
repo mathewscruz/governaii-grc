@@ -259,7 +259,7 @@ export default function Assessment() {
           return [];
         }),
         supabaseRequest(
-          `due_diligence_responses?select=question_id,resposta,pontuacao,evidencia,justificativa&assessment_id=eq.${assessment.id}`,
+          `due_diligence_responses?select=question_id,resposta,pontuacao,evidencia,justificativa,arquivo_url&assessment_id=eq.${assessment.id}`,
           { method: 'GET' }
         ).catch(error => {
           assessmentLogger.warn('Erro ao carregar respostas existentes:', error);
@@ -277,6 +277,9 @@ export default function Assessment() {
         }
         if (response.justificativa) {
           responsesMap[`${response.question_id}_justificativa`] = response.justificativa;
+        }
+        if (response.arquivo_url) {
+          responsesMap[`${response.question_id}_arquivo`] = response.arquivo_url;
         }
       });
 
@@ -327,11 +330,12 @@ export default function Assessment() {
     try {
       assessmentLogger.info('Salvando resposta', { questionId, value });
 
-      // Verificar se é uma evidência ou justificativa
+      // Verificar se é uma evidência, justificativa ou arquivo
       const isEvidencia = questionId.endsWith('_evidencia');
       const isJustificativa = questionId.endsWith('_justificativa');
-      const baseQuestionId = isEvidencia || isJustificativa ? 
-        questionId.replace(/_evidencia|_justificativa$/, '') : questionId;
+      const isArquivo = questionId.endsWith('_arquivo');
+      const baseQuestionId = isEvidencia || isJustificativa || isArquivo ? 
+        questionId.replace(/_evidencia|_justificativa|_arquivo$/, '') : questionId;
 
       const question = questions.find(q => q.id === baseQuestionId);
       const responseData: any = {
@@ -339,8 +343,8 @@ export default function Assessment() {
         question_id: baseQuestionId
       };
 
-      // Se for evidência ou justificativa, buscar resposta existente para atualizar
-      if (isEvidencia || isJustificativa) {
+      // Se for evidência, justificativa ou arquivo, buscar resposta existente para atualizar
+      if (isEvidencia || isJustificativa || isArquivo) {
         try {
           const existingResponse = await supabaseRequest(
             `due_diligence_responses?assessment_id=eq.${assessment.id}&question_id=eq.${baseQuestionId}`,
@@ -354,6 +358,8 @@ export default function Assessment() {
               updateData.evidencia = value;
             } else if (isJustificativa) {
               updateData.justificativa = value;
+            } else if (isArquivo) {
+              updateData.arquivo_url = value;
             }
 
             await supabaseRequest(
@@ -364,11 +370,13 @@ export default function Assessment() {
               }
             );
           } else {
-            // Criar nova resposta com evidência/justificativa
+            // Criar nova resposta com evidência/justificativa/arquivo
             if (isEvidencia) {
               responseData.evidencia = value;
             } else if (isJustificativa) {
               responseData.justificativa = value;
+            } else if (isArquivo) {
+              responseData.arquivo_url = value;
             }
             await supabaseRequest('due_diligence_responses', {
               method: 'POST',
@@ -548,11 +556,11 @@ export default function Assessment() {
   // Renderizar erro se assessment não encontrado
   if (!assessment) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-card border-border shadow-xl">
           <CardContent className="pt-6 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Questionário não encontrado</h2>
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2 text-foreground">Questionário não encontrado</h2>
             <p className="text-muted-foreground">
               O link pode ter expirado ou ser inválido.
             </p>
@@ -565,24 +573,24 @@ export default function Assessment() {
   // Se já concluído, mostrar tela de sucesso
   if (assessment.status === 'concluido') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
         <div className="text-center max-w-lg mx-auto">
           <div className="relative mb-8 animate-scale-in">
-            <div className="w-24 h-24 bg-gradient-to-br from-success to-success/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-success/20">
+            <div className="w-24 h-24 bg-gradient-to-br from-success to-success/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
               <Check className="w-12 h-12 text-white animate-fade-in" />
             </div>
             <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-primary to-primary/80 rounded-full animate-pulse"></div>
           </div>
           
           <div className="space-y-4 animate-fade-in">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+            <h2 className="text-3xl font-bold text-foreground">
               Questionário Enviado!
             </h2>
             <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
               Obrigado por responder ao questionário. Suas respostas foram enviadas com sucesso e estão sendo analisadas.
             </p>
             
-            <div className="mt-8 p-6 bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg shadow-sm">
+            <div className="mt-8 p-6 bg-card border border-border rounded-lg shadow-sm">
               <div className="flex items-center justify-center space-x-2 text-success">
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Concluído com sucesso</span>
@@ -597,13 +605,13 @@ export default function Assessment() {
   // Renderizar se já concluído
   if (isFinished) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
         <div className="text-center max-w-lg mx-auto">
           {/* Header com logo da empresa melhorado */}
           <div className="mb-8 animate-fade-in">
             <div className="flex items-center justify-center mb-6">
               {assessment.empresa.logo_url && !logoError ? (
-                <div className="relative p-4 bg-card rounded-2xl shadow-lg border border-border/50">
+                <div className="relative p-4 bg-card rounded-2xl shadow-lg border border-border">
                   {logoLoading && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -627,14 +635,14 @@ export default function Assessment() {
           </div>
 
           <div className="relative mb-8 animate-scale-in">
-            <div className="w-24 h-24 bg-gradient-to-br from-success to-success/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-success/20">
+            <div className="w-24 h-24 bg-gradient-to-br from-success to-success/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
               <CheckCircle className="w-12 h-12 text-white animate-fade-in" />
             </div>
             <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-primary to-primary/80 rounded-full animate-pulse"></div>
           </div>
           
           <div className="space-y-6 animate-fade-in">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+            <h2 className="text-3xl font-bold text-foreground">
               Questionário Concluído!
             </h2>
             <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
@@ -642,7 +650,7 @@ export default function Assessment() {
               Suas respostas foram enviadas com sucesso e estão sendo analisadas.
             </p>
             
-            <div className="mt-8 p-6 bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm">
+            <div className="mt-8 p-6 bg-card border border-border rounded-xl shadow-sm">
               <div className="flex items-center justify-center space-x-3 text-success mb-3">
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Concluído com sucesso</span>
@@ -663,14 +671,14 @@ export default function Assessment() {
   const progress = calculateProgress();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header com logo da empresa melhorado */}
         <div className="mb-8 text-center animate-fade-in">
-          <Card className="inline-block p-6 shadow-lg border-border/50 bg-white">
+          <Card className="inline-block p-6 shadow-lg border-border bg-card">
             <div className="flex items-center justify-center mb-4">
               {assessment.empresa.logo_url && !logoError ? (
-                <div className="relative p-3 bg-white rounded-xl shadow-sm">
+                <div className="relative p-3 bg-card rounded-xl shadow-sm">
                   {logoLoading && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -690,7 +698,7 @@ export default function Assessment() {
                 </div>
                 )}
               </div>
-              <h1 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+              <h1 className="text-xl font-semibold text-foreground">
                 Due Diligence - {assessment.template.nome}
               </h1>
             </Card>
@@ -698,7 +706,7 @@ export default function Assessment() {
 
         {/* Progress bar */}
         <div className="mb-8 animate-fade-in">
-          <Card className="p-6 shadow-sm border-border/50 bg-white">
+          <Card className="p-6 shadow-sm border-border bg-card">
             <div className="flex justify-between items-center mb-4">
               <span className="text-sm font-medium text-muted-foreground">
                 Página {currentPage + 1} de {totalPages}
@@ -715,8 +723,8 @@ export default function Assessment() {
         </div>
 
         {/* Perguntas */}
-        <Card className="mb-8 shadow-lg border-border/50 bg-white animate-fade-in">
-          <CardHeader className="bg-white border-b border-border/50">
+        <Card className="mb-8 shadow-lg border-border bg-card animate-fade-in">
+          <CardHeader className="bg-card border-b border-border">
             <CardTitle className="text-xl flex items-center space-x-2">
               <FileText className="w-5 h-5 text-primary" />
               <span>Questionário</span>
@@ -724,7 +732,7 @@ export default function Assessment() {
           </CardHeader>
           <CardContent className="p-8 space-y-8">
             {currentQuestions.map((question, index) => (
-              <div key={question.id} className="space-y-4 p-6 bg-white rounded-xl border border-border shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
+              <div key={question.id} className="space-y-4 p-6 bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-muted-foreground block">
                     {question.titulo}
@@ -837,18 +845,51 @@ export default function Assessment() {
                 {question.configuracoes && responses[question.id] && (
                   <>
                     {/* Campo de evidência */}
-                    {question.configuracoes.mostrar_evidencia_quando && 
+                     {question.configuracoes.mostrar_evidencia_quando && 
                      question.configuracoes.mostrar_evidencia_quando.split(',').includes(responses[question.id]) && (
                       <div className="mt-4 p-4 bg-success/5 border border-success/20 rounded-lg animate-fade-in">
-                        <Label className="text-sm font-medium text-success mb-2 block">
+                        <Label className="text-sm font-medium text-success mb-3 block">
                           {question.configuracoes.label_evidencia || 'Evidência:'}
                         </Label>
+                        
+                        {/* Campo de texto para evidência */}
                         <Textarea
                           value={responses[`${question.id}_evidencia`] || ''}
                           onChange={(e) => handleResponseChange(`${question.id}_evidencia`, e.target.value)}
                           placeholder="Descreva as evidências que comprovam sua resposta..."
-                          className="min-h-[100px] bg-white border-border/50 focus:border-success/50 focus:ring-2 focus:ring-success/20 transition-all duration-200"
+                          className="min-h-[100px] bg-white border-border/50 focus:border-success/50 focus:ring-2 focus:ring-success/20 transition-all duration-200 mb-4"
                         />
+                        
+                        {/* Campo de upload de arquivo para evidência */}
+                        <div className="space-y-3">
+                          <Label className="text-sm font-medium text-success block">
+                            Anexar documento (opcional):
+                          </Label>
+                          <div className="border-2 border-dashed border-success/30 hover:border-success/50 rounded-lg p-4 text-center transition-colors duration-200 bg-white">
+                            <Upload className="h-6 w-6 text-success/60 mx-auto mb-2" />
+                            <p className="text-xs text-success/60 mb-2">
+                              Clique para selecionar um arquivo
+                            </p>
+                            <Input
+                              type="file"
+                              className="text-xs bg-white border-success/30 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-success/10 file:text-success"
+                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleResponseChange(`${question.id}_arquivo`, file.name);
+                                  toast.success('Arquivo anexado com sucesso!');
+                                }
+                              }}
+                            />
+                          </div>
+                          {responses[`${question.id}_arquivo`] && (
+                            <div className="flex items-center space-x-2 text-xs text-success bg-success/10 p-2 rounded border border-success/20">
+                              <FileText className="h-3 w-3" />
+                              <span>Arquivo: {responses[`${question.id}_arquivo`]}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
 
