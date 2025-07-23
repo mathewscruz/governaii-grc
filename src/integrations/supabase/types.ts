@@ -3025,6 +3025,10 @@ export type Database = {
         Args: { auditoria_id: string }
         Returns: boolean
       }
+      calculate_due_diligence_score: {
+        Args: { assessment_id_param: string }
+        Returns: undefined
+      }
       can_update_assessment_via_token: {
         Args: { assessment_link_token: string }
         Returns: boolean
