@@ -137,20 +137,19 @@ export function AppSidebar() {
 
   return (
     <Sidebar
-      className={isCollapsed ? 'w-14' : 'w-60'}
+      className={`transition-all duration-300 ease-out ${isCollapsed ? 'w-14' : 'w-60'}`}
       collapsible="icon"
     >
-      <SidebarHeader className="border-b border-sidebar-border h-14">
+      <SidebarHeader className="border-b border-sidebar-border h-14 overflow-hidden">
         <div className="flex items-center justify-center px-1 py-2 h-full">
           <img 
-            key={`sidebar-logo-${logoUpdateKey}-${Date.now()}`} // Chave única que força re-render completo
+            key={`sidebar-logo-${logoUpdateKey}-${Date.now()}`}
             src={getLogoSrc()} 
             alt={getLogoAlt()} 
-            className={`object-contain transition-all duration-300 ${
+            className={`object-contain transition-all duration-300 ease-out ${
               isCollapsed ? 'h-12 w-12' : 'h-12 w-auto max-w-[200px]'
             }`}
             onError={(e) => {
-              // Fallback para logo padrão em caso de erro
               const target = e.target as HTMLImageElement;
               target.src = isCollapsed ? logoMini : "https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/sign/logotipo/Governiaa%20(500%20x%20200%20px)%20(15).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NTdhMjYzYS1jZjc1LTQ3OGYtYjNkMy01NWM2ODViMTQ0MTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvdGlwby9Hb3Zlcm5pYWEgKDUwMCB4IDIwMCBweCkgKDE1KS5wbmciLCJpYXQiOjE3NTMyMDEzODIsImV4cCI6MTc4NDczNzM4Mn0.AjG5UVNIcJcoMc_MVu3tIGUbLQGe77VhUeeSlEa5-1o";
             }}
@@ -158,10 +157,10 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="py-2">
+      <SidebarContent className="py-2 transition-all duration-300 ease-out">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-2">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.subItems ? (
@@ -170,19 +169,25 @@ export function AppSidebar() {
                       onOpenChange={() => toggleGroup(item.title)}
                     >
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full justify-between hover:bg-sidebar-accent/50 transition-all duration-200 h-10 px-3 group">
-                          <div className="flex items-center">
-                            <item.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ${
-                              openGroups.includes(item.title) ? 'text-primary scale-110' : ''
+                        <SidebarMenuButton className="w-full justify-between hover:bg-sidebar-accent/50 transition-all duration-300 ease-out h-11 px-3 group hover:scale-105 hover:shadow-sm">
+                          <div className="flex items-center min-w-0">
+                            <item.icon className={`h-5 w-5 mr-3 flex-shrink-0 transition-all duration-300 ease-out ${
+                              openGroups.includes(item.title) ? 'text-primary scale-110 rotate-3' : 'group-hover:scale-110'
                             }`} />
-                            {!isCollapsed && <span className="text-sm font-medium transition-colors duration-200">{item.title}</span>}
+                            {!isCollapsed && (
+                              <span className={`text-sm font-medium transition-all duration-300 ease-out truncate ${
+                                openGroups.includes(item.title) ? 'text-primary' : ''
+                              }`}>
+                                {item.title}
+                              </span>
+                            )}
                           </div>
                           {!isCollapsed && (
                             <ChevronDown 
                               className={`h-4 w-4 transition-all duration-500 ease-out flex-shrink-0 ${
                                 openGroups.includes(item.title) 
                                   ? 'transform rotate-180 text-primary scale-110' 
-                                  : 'group-hover:scale-105'
+                                  : 'group-hover:scale-110 group-hover:rotate-12'
                               }`} 
                             />
                           )}
@@ -190,19 +195,19 @@ export function AppSidebar() {
                       </CollapsibleTrigger>
                       {!isCollapsed && (
                         <CollapsibleContent className="transition-all duration-500 ease-out overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                          <div className="space-y-1 mt-1 ml-4 animate-fade-in">
+                          <div className="space-y-1 mt-2 ml-6 pl-2 border-l-2 border-sidebar-border/30 animate-fade-in">
                             {item.subItems.map((subItem, index) => (
                               <SidebarMenuButton 
                                 key={subItem.title} 
                                 asChild
-                                className="transform transition-all duration-200 hover:translate-x-1 hover:scale-105"
+                                className="transform transition-all duration-300 ease-out hover:translate-x-2 hover:scale-105 hover:shadow-sm h-9"
                                 style={{ 
-                                  animationDelay: openGroups.includes(item.title) ? `${index * 50}ms` : '0ms'
+                                  animationDelay: openGroups.includes(item.title) ? `${index * 75}ms` : '0ms'
                                 }}
                               >
                                 <NavLink to={subItem.url} className={getNavCls}>
-                                  <subItem.icon className="h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200" />
-                                  <span className="text-sm transition-colors duration-200">{subItem.title}</span>
+                                  <subItem.icon className="h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out" />
+                                  <span className="text-sm transition-all duration-300 ease-out truncate">{subItem.title}</span>
                                 </NavLink>
                               </SidebarMenuButton>
                             ))}
@@ -211,10 +216,14 @@ export function AppSidebar() {
                       )}
                     </Collapsible>
                   ) : (
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-11">
                       <NavLink to={item.url} className={getNavCls}>
-                        <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                        {!isCollapsed && <span className="text-sm font-medium">{item.title}</span>}
+                        <item.icon className="h-5 w-5 mr-3 flex-shrink-0 transition-all duration-300 ease-out" />
+                        {!isCollapsed && (
+                          <span className="text-sm font-medium transition-all duration-300 ease-out truncate">
+                            {item.title}
+                          </span>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   )}
@@ -226,12 +235,16 @@ export function AppSidebar() {
 
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-11">
                   <NavLink to="/configuracoes" className={getNavCls}>
-                    <Settings className="h-4 w-4 mr-3 flex-shrink-0" />
-                    {!isCollapsed && <span className="text-sm font-medium">Configurações</span>}
+                    <Settings className="h-5 w-5 mr-3 flex-shrink-0 transition-all duration-300 ease-out" />
+                    {!isCollapsed && (
+                      <span className="text-sm font-medium transition-all duration-300 ease-out truncate">
+                        Configurações
+                      </span>
+                    )}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -240,18 +253,22 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-3">
+      <SidebarFooter className="border-t border-sidebar-border p-3 transition-all duration-300 ease-out">
         <div>
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={handleSignOut}
-            className={`w-full text-sidebar-foreground hover:bg-sidebar-accent/50 h-10 px-3 ${
+            className={`w-full text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-11 px-3 ${
               isCollapsed ? 'justify-center' : 'justify-start'
             }`}
           >
-            <LogOut className={`h-4 w-4 flex-shrink-0 ${!isCollapsed ? 'mr-3' : ''}`} />
-            {!isCollapsed && <span className="text-sm font-medium">Sair</span>}
+            <LogOut className={`h-5 w-5 flex-shrink-0 transition-all duration-300 ease-out ${!isCollapsed ? 'mr-3' : ''}`} />
+            {!isCollapsed && (
+              <span className="text-sm font-medium transition-all duration-300 ease-out truncate">
+                Sair
+              </span>
+            )}
           </Button>
         </div>
       </SidebarFooter>
