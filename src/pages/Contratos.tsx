@@ -13,9 +13,9 @@ import { FornecedorDialog } from '@/components/contratos/FornecedorDialog';
 import { MarcosDialog } from '@/components/contratos/MarcosDialog';
 import { DocumentosDialog } from '@/components/contratos/DocumentosDialog';
 import { AditivosDialog } from '@/components/contratos/AditivosDialog';
-import NotificacoesContratos from '@/components/contratos/NotificacoesContratos';
 import RelatoriosContratos from '@/components/contratos/RelatoriosContratos';
 import IntegracaoModulos from '@/components/contratos/IntegracaoModulos';
+import { useContratosStats } from '@/hooks/useContratosStats';
 import TemplatesContratos from '@/components/contratos/TemplatesContratos';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -390,7 +390,6 @@ export default function Contratos() {
               </Select>
             </div>
               <div className="flex gap-2">
-                <NotificacoesContratos />
                 <RelatoriosContratos />
                 <TemplatesContratos />
                 <Button onClick={() => { setSelectedContrato(null); setDialogOpen(true); }}>

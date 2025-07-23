@@ -43,67 +43,150 @@ const NotificationCenter: React.FC = () => {
     },
   });
 
-  // Buscar documentos vencendo para notificações automáticas
-  const { data: documentosNotifications = [] } = useQuery({
-    queryKey: ['documentos-notifications'],
+  // Buscar todas as notificações automáticas do sistema
+  const { data: automaticNotifications = [] } = useQuery({
+    queryKey: ['automatic-notifications'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const notificacoes: Notification[] = [];
+      
+      // Buscar documentos vencendo
+      const { data: documentos } = await supabase
         .from('documentos')
         .select('id, nome, data_vencimento, tipo')
         .not('data_vencimento', 'is', null)
         .eq('status', 'ativo');
 
-      if (error) throw error;
+      // Buscar contratos vencendo
+      const { data: contratos } = await supabase
+        .from('contratos')
+        .select('id, nome, data_fim, renovacao_automatica')
+        .not('data_fim', 'is', null)
+        .eq('status', 'ativo');
+
+      // Buscar controles para avaliação
+      const { data: controles } = await supabase
+        .from('controles')
+        .select('id, nome, proxima_avaliacao')
+        .not('proxima_avaliacao', 'is', null)
+        .eq('status', 'ativo');
+
+      // Buscar incidentes críticos abertos
+      const { data: incidentes } = await supabase
+        .from('incidentes')
+        .select('id, titulo, criticidade, status')
+        .in('status', ['aberto', 'investigacao'])
+        .eq('criticidade', 'critica');
 
       const hoje = new Date();
-      const notificacoes = data
-        .map(doc => {
-          const diasParaVencimento = differenceInDays(new Date(doc.data_vencimento!), hoje);
-          
-          if (diasParaVencimento < 0) {
-            return {
-              id: `doc-vencido-${doc.id}`,
-              title: 'Documento Vencido',
-              message: `O documento "${doc.nome}" está vencido há ${Math.abs(diasParaVencimento)} dias`,
-              type: 'error',
-              read: false,
-              link_to: '/documentos',
-              created_at: new Date().toISOString(),
-              isAutomatic: true
-            };
-          } else if (diasParaVencimento === 0) {
-            return {
-              id: `doc-hoje-${doc.id}`,
-              title: 'Documento Vence Hoje',
-              message: `O documento "${doc.nome}" vence hoje`,
-              type: 'warning',
-              read: false,
-              link_to: '/documentos',
-              created_at: new Date().toISOString(),
-              isAutomatic: true
-            };
-          } else if (diasParaVencimento <= 7) {
-            return {
-              id: `doc-7dias-${doc.id}`,
-              title: 'Documento Vence em Breve',
-              message: `O documento "${doc.nome}" vence em ${diasParaVencimento} dias`,
-              type: 'warning',
-              read: false,
-              link_to: '/documentos',
-              created_at: new Date().toISOString(),
-              isAutomatic: true
-            };
-          }
-          return null;
-        })
-        .filter(notif => notif !== null);
+
+      // Processar documentos
+      (documentos || []).forEach(doc => {
+        const diasParaVencimento = differenceInDays(new Date(doc.data_vencimento!), hoje);
+        
+        if (diasParaVencimento < 0) {
+          notificacoes.push({
+            id: `doc-vencido-${doc.id}`,
+            title: 'Documento Vencido',
+            message: `O documento "${doc.nome}" está vencido há ${Math.abs(diasParaVencimento)} dias`,
+            type: 'error',
+            read: false,
+            link_to: '/documentos',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        } else if (diasParaVencimento === 0) {
+          notificacoes.push({
+            id: `doc-hoje-${doc.id}`,
+            title: 'Documento Vence Hoje',
+            message: `O documento "${doc.nome}" vence hoje`,
+            type: 'warning',
+            read: false,
+            link_to: '/documentos',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        } else if (diasParaVencimento <= 7) {
+          notificacoes.push({
+            id: `doc-7dias-${doc.id}`,
+            title: 'Documento Vence em Breve',
+            message: `O documento "${doc.nome}" vence em ${diasParaVencimento} dias`,
+            type: 'warning',
+            read: false,
+            link_to: '/documentos',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        }
+      });
+
+      // Processar contratos
+      (contratos || []).forEach(contrato => {
+        const diasParaVencimento = differenceInDays(new Date(contrato.data_fim!), hoje);
+        
+        if (diasParaVencimento < 0) {
+          notificacoes.push({
+            id: `contrato-vencido-${contrato.id}`,
+            title: 'Contrato Vencido',
+            message: `O contrato "${contrato.nome}" venceu há ${Math.abs(diasParaVencimento)} dias`,
+            type: 'error',
+            read: false,
+            link_to: '/contratos',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        } else if (diasParaVencimento <= 30) {
+          const renovacaoMsg = contrato.renovacao_automatica ? ' (renovação automática ativada)' : '';
+          notificacoes.push({
+            id: `contrato-30dias-${contrato.id}`,
+            title: 'Contrato Próximo ao Vencimento',
+            message: `O contrato "${contrato.nome}" vence em ${diasParaVencimento} dias${renovacaoMsg}`,
+            type: 'warning',
+            read: false,
+            link_to: '/contratos',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        }
+      });
+
+      // Processar controles
+      (controles || []).forEach(controle => {
+        const diasParaAvaliacao = differenceInDays(new Date(controle.proxima_avaliacao!), hoje);
+        
+        if (diasParaAvaliacao <= 15 && diasParaAvaliacao >= 0) {
+          notificacoes.push({
+            id: `controle-avaliacao-${controle.id}`,
+            title: 'Avaliação de Controle Pendente',
+            message: `O controle "${controle.nome}" precisa ser avaliado em ${diasParaAvaliacao} dias`,
+            type: 'warning',
+            read: false,
+            link_to: '/controles',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        }
+      });
+
+      // Processar incidentes críticos
+      (incidentes || []).forEach(incidente => {
+        notificacoes.push({
+          id: `incidente-critico-${incidente.id}`,
+          title: 'Incidente Crítico Aberto',
+          message: `O incidente "${incidente.titulo}" está ${incidente.status} e requer atenção imediata`,
+          type: 'error',
+          read: false,
+          link_to: '/incidentes',
+          created_at: new Date().toISOString(),
+          isAutomatic: true
+        });
+      });
 
       return notificacoes;
     },
   });
 
   // Combinar notificações manuais e automáticas
-  const allNotifications = [...notifications, ...documentosNotifications]
+  const allNotifications = [...notifications, ...automaticNotifications]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 20);
 

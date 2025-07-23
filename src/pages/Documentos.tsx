@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, XCircle, Clock, History, Bell } from 'lucide-react';
+import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, XCircle, Clock, History, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,10 +18,10 @@ import { DocumentosRelatorios } from '@/components/documentos/DocumentosRelatori
 import { BuscaAvancadaDocumentos } from '@/components/documentos/BuscaAvancadaDocumentos';
 import { UploadMultiplosDialog } from '@/components/documentos/UploadMultiplosDialog';
 import { DocumentoPreview } from '@/components/documentos/DocumentoPreview';
-import { NotificacoesDocumentos } from '@/components/documentos/NotificacoesDocumentos';
 import { TrilhaAuditoriaDocumentos } from '@/components/documentos/TrilhaAuditoriaDocumentos';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useDocumentosStats } from '@/hooks/useDocumentosStats';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -390,10 +390,6 @@ export function Documentos() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="lista">Lista de Documentos</TabsTrigger>
-          <TabsTrigger value="notificacoes">
-            <Bell className="h-4 w-4 mr-2" />
-            Notificações
-          </TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
         </TabsList>
@@ -597,9 +593,6 @@ export function Documentos() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="notificacoes">
-          <NotificacoesDocumentos />
-        </TabsContent>
 
         <TabsContent value="dashboard">
           <DocumentosDashboard documentos={documentos} categorias={categorias} />

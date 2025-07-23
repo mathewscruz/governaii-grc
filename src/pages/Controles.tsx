@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3 } from "lucide-react";
+import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +12,7 @@ import CategoriasDialog from "@/components/controles/CategoriasDialog";
 import TestesList from "@/components/controles/TestesList";
 import ControlesVinculacaoDialog from "@/components/controles/ControlesVinculacaoDialog";
 import ControlesDashboard from "@/components/controles/ControlesDashboard";
+import { useControlesStats } from "@/hooks/useControlesStats";
 
 interface Controle {
   id: string;
@@ -49,6 +49,9 @@ export default function Controles() {
   const [selectedControleForVinculacao, setSelectedControleForVinculacao] = useState<Controle | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Buscar estatísticas dos controles
+  const { data: stats } = useControlesStats();
 
   // Buscar controles
   const { data: controles = [], isLoading } = useQuery({
@@ -150,12 +153,12 @@ export default function Controles() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto py-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-1/4"></div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-48 bg-muted rounded-lg"></div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded-lg"></div>
             ))}
           </div>
         </div>
@@ -164,29 +167,86 @@ export default function Controles() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto py-6">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Controles Internos</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Controles</h1>
           <p className="text-muted-foreground">
-            Gerencie e monitore os controles internos da organização
+            Gerencie e monitore seus controles de segurança
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
+          <Button 
+            variant="outline" 
             onClick={() => setCategoriasDialogOpen(true)}
           >
             Categorias
           </Button>
           <Button onClick={() => setControleDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Novo Controle
           </Button>
         </div>
       </div>
 
-        <Tabs defaultValue="dashboard" className="w-full">
+      {/* Cards de KPI */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Controles</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.total || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.ativos || 0} ativos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Críticos & Altos</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{(stats?.criticos || 0) + (stats?.altos || 0)}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.criticos || 0} críticos, {stats?.altos || 0} altos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avaliações Pendentes</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.vencendoAvaliacao || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Próximos 30 dias
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Efetividade</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats?.total ? Math.round((stats?.preventivos / stats?.total) * 100) : 0}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Controles preventivos
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="dashboard" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="controles">Controles</TabsTrigger>
@@ -203,55 +263,6 @@ export default function Controles() {
         </TabsContent>
 
         <TabsContent value="controles" className="space-y-6">
-          {/* Métricas */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total de Controles</CardTitle>
-                <Shield className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{controles.length}</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Controles Ativos</CardTitle>
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {controles.filter(c => c.status === 'ativo').length}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Em Revisão</CardTitle>
-                <Clock className="h-4 w-4 text-yellow-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {controles.filter(c => c.status === 'em_revisao').length}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Criticidade Alta</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {controles.filter(c => ['alto', 'critico'].includes(c.criticidade)).length}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Lista de Controles */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {controles.map((controle) => (
