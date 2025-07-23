@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       ativos: {
         Row: {
+          cliente: string | null
           created_at: string
           criticidade: string | null
           data_aquisicao: string | null
@@ -23,9 +24,11 @@ export type Database = {
           empresa_id: string
           fornecedor: string | null
           id: string
+          imei: string | null
           localizacao: string | null
           nome: string
           proprietario: string | null
+          quantidade: number | null
           status: string | null
           tags: string[] | null
           tipo: string
@@ -34,6 +37,7 @@ export type Database = {
           versao: string | null
         }
         Insert: {
+          cliente?: string | null
           created_at?: string
           criticidade?: string | null
           data_aquisicao?: string | null
@@ -41,9 +45,11 @@ export type Database = {
           empresa_id: string
           fornecedor?: string | null
           id?: string
+          imei?: string | null
           localizacao?: string | null
           nome: string
           proprietario?: string | null
+          quantidade?: number | null
           status?: string | null
           tags?: string[] | null
           tipo: string
@@ -52,6 +58,7 @@ export type Database = {
           versao?: string | null
         }
         Update: {
+          cliente?: string | null
           created_at?: string
           criticidade?: string | null
           data_aquisicao?: string | null
@@ -59,9 +66,11 @@ export type Database = {
           empresa_id?: string
           fornecedor?: string | null
           id?: string
+          imei?: string | null
           localizacao?: string | null
           nome?: string
           proprietario?: string | null
+          quantidade?: number | null
           status?: string | null
           tags?: string[] | null
           tipo?: string
@@ -78,6 +87,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ativos_localizacoes: {
+        Row: {
+          ativo: boolean | null
+          created_at: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       audit_logs: {
         Row: {

@@ -14,6 +14,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useAtivosStats } from '@/hooks/useAtivosStats';
+import LocalizacaoSelect from '@/components/ativos/LocalizacaoSelect';
 
 interface Ativo {
   id: string;
@@ -29,6 +30,9 @@ interface Ativo {
   fornecedor: string | null;
   versao: string | null;
   tags: string[] | null;
+  imei: string | null;
+  cliente: string | null;
+  quantidade: number | null;
   created_at: string;
 }
 
@@ -83,6 +87,10 @@ const Ativos = () => {
     data_aquisicao: '',
     fornecedor: '',
     versao: '',
+    tags: '',
+    imei: '',
+    cliente: '',
+    quantidade: 1,
   });
 
   useEffect(() => {
@@ -119,6 +127,7 @@ const Ativos = () => {
         ...formData,
         empresa_id: profile.empresa_id,
         data_aquisicao: formData.data_aquisicao || null,
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : null,
       };
 
       if (editingAtivo) {
@@ -165,6 +174,10 @@ const Ativos = () => {
       data_aquisicao: ativo.data_aquisicao || '',
       fornecedor: ativo.fornecedor || '',
       versao: ativo.versao || '',
+      tags: ativo.tags ? ativo.tags.join(', ') : '',
+      imei: ativo.imei || '',
+      cliente: ativo.cliente || '',
+      quantidade: ativo.quantidade || 1,
     });
     setIsDialogOpen(true);
   };
@@ -205,13 +218,20 @@ const Ativos = () => {
       data_aquisicao: '',
       fornecedor: '',
       versao: '',
+      tags: '',
+      imei: '',
+      cliente: '',
+      quantidade: 1,
     });
   };
 
   const filteredAtivos = ativos.filter(ativo =>
     ativo.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ativo.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ativo.proprietario?.toLowerCase().includes(searchTerm.toLowerCase())
+    ativo.proprietario?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ativo.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ativo.imei?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ativo.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const getCriticidadeColor = (criticidade: string) => {
@@ -309,10 +329,50 @@ const Ativos = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="localizacao">Localização</Label>
-                  <Input
-                    id="localizacao"
+                  <LocalizacaoSelect
                     value={formData.localizacao}
-                    onChange={(e) => setFormData(prev => ({...prev, localizacao: e.target.value}))}
+                    onValueChange={(value) => setFormData(prev => ({...prev, localizacao: value}))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cliente">Cliente</Label>
+                  <Input
+                    id="cliente"
+                    value={formData.cliente}
+                    onChange={(e) => setFormData(prev => ({...prev, cliente: e.target.value}))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="imei">IMEI</Label>
+                  <Input
+                    id="imei"
+                    value={formData.imei}
+                    onChange={(e) => setFormData(prev => ({...prev, imei: e.target.value}))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="tags">Tags</Label>
+                  <Input
+                    id="tags"
+                    value={formData.tags}
+                    onChange={(e) => setFormData(prev => ({...prev, tags: e.target.value}))}
+                    placeholder="Ex: servidor, crítico, backup (separadas por vírgula)"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quantidade">Quantidade</Label>
+                  <Input
+                    id="quantidade"
+                    type="number"
+                    min="1"
+                    value={formData.quantidade}
+                    onChange={(e) => setFormData(prev => ({...prev, quantidade: parseInt(e.target.value) || 1}))}
                   />
                 </div>
               </div>
@@ -491,7 +551,9 @@ const Ativos = () => {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Tipo</TableHead>
-                <TableHead>Proprietário</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Localização</TableHead>
+                <TableHead>Qtd</TableHead>
                 <TableHead>Criticidade</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Ações</TableHead>
@@ -500,11 +562,26 @@ const Ativos = () => {
             <TableBody>
               {filteredAtivos.map((ativo) => (
                 <TableRow key={ativo.id}>
-                  <TableCell className="font-medium">{ativo.nome}</TableCell>
+                  <TableCell className="font-medium">
+                    <div>
+                      {ativo.nome}
+                      {ativo.tags && ativo.tags.length > 0 && (
+                        <div className="flex gap-1 mt-1">
+                          {ativo.tags.map((tag, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     {ativo.tipo.replace('_', ' ').charAt(0).toUpperCase() + ativo.tipo.replace('_', ' ').slice(1)}
                   </TableCell>
-                  <TableCell>{ativo.proprietario || '-'}</TableCell>
+                  <TableCell>{ativo.cliente || '-'}</TableCell>
+                  <TableCell>{ativo.localizacao || '-'}</TableCell>
+                  <TableCell>{ativo.quantidade || 1}</TableCell>
                   <TableCell>
                     <Badge variant={getCriticidadeColor(ativo.criticidade) as any}>
                       {criticidades.find(c => c.value === ativo.criticidade)?.label || ativo.criticidade}
