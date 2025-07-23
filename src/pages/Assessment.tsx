@@ -134,7 +134,7 @@ export default function Assessment() {
     setLogoError(true);
   }, []);
 
-  // Função para buscar dados do assessment
+  // PLANO IMPLEMENTADO: Queries separadas para evitar problemas de RLS
   const fetchAssessment = useCallback(async () => {
     if (!token) {
       assessmentLogger.error('Token não fornecido');
@@ -145,8 +145,9 @@ export default function Assessment() {
       setLoading(true);
       assessmentLogger.info('Iniciando busca do assessment', { token });
 
+      // ETAPA 1: Query simples para assessment básico
       const assessmentData = await supabaseRequest(
-        `due_diligence_assessments?select=*,empresas:empresa_id(nome,logo_url),due_diligence_templates:template_id(nome,descricao)&link_token=eq.${token}`,
+        `due_diligence_assessments?select=*&link_token=eq.${token}`,
         { method: 'GET' }
       );
 
@@ -156,7 +157,40 @@ export default function Assessment() {
       }
 
       const assessment = assessmentData[0];
-      
+      assessmentLogger.info('Assessment básico carregado', { id: assessment.id, status: assessment.status });
+
+      // ETAPA 2: Query separada para dados da empresa (com fallback)
+      let empresaData = { nome: 'Empresa', logo_url: null };
+      try {
+        assessmentLogger.info('Buscando dados da empresa');
+        const empresaResponse = await supabaseRequest(
+          `empresas?select=nome,logo_url&id=eq.${assessment.empresa_id}`,
+          { method: 'GET' }
+        );
+        if (empresaResponse && empresaResponse.length > 0) {
+          empresaData = empresaResponse[0];
+          assessmentLogger.info('Dados da empresa carregados', { nome: empresaData.nome });
+        }
+      } catch (error) {
+        assessmentLogger.warn('Erro ao carregar dados da empresa, usando fallback:', error);
+      }
+
+      // ETAPA 3: Query separada para dados do template (com fallback)
+      let templateData = { nome: 'Assessment', descricao: null };
+      try {
+        assessmentLogger.info('Buscando dados do template');
+        const templateResponse = await supabaseRequest(
+          `due_diligence_templates?select=nome,descricao&id=eq.${assessment.template_id}`,
+          { method: 'GET' }
+        );
+        if (templateResponse && templateResponse.length > 0) {
+          templateData = templateResponse[0];
+          assessmentLogger.info('Dados do template carregados', { nome: templateData.nome });
+        }
+      } catch (error) {
+        assessmentLogger.warn('Erro ao carregar dados do template, usando fallback:', error);
+      }
+
       // Verificar se já está concluído
       if (assessment.status === 'concluido') {
         assessmentLogger.info('Assessment já concluído');
@@ -169,14 +203,8 @@ export default function Assessment() {
           data_envio: assessment.data_envio,
           data_limite: assessment.data_limite,
           data_conclusao: assessment.data_conclusao,
-          empresa: {
-            nome: assessment.empresas?.nome || 'Empresa',
-            logo_url: assessment.empresas?.logo_url
-          },
-          template: {
-            nome: assessment.due_diligence_templates?.nome || 'Assessment',
-            descricao: assessment.due_diligence_templates?.descricao
-          }
+          empresa: empresaData,
+          template: templateData
         });
         return;
       }
@@ -184,29 +212,39 @@ export default function Assessment() {
       // Marcar como em andamento se ainda não estiver
       if (assessment.status === 'enviado') {
         assessmentLogger.info('Marcando assessment como em andamento');
-        await supabaseRequest(`due_diligence_assessments?id=eq.${assessment.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ 
-            status: 'em_andamento',
-            data_inicio: new Date().toISOString()
-          })
-        });
-        assessment.status = 'em_andamento';
+        try {
+          await supabaseRequest(`due_diligence_assessments?id=eq.${assessment.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ 
+              status: 'em_andamento',
+              data_inicio: new Date().toISOString()
+            })
+          });
+          assessment.status = 'em_andamento';
+          assessmentLogger.info('Status atualizado para em_andamento');
+        } catch (error) {
+          assessmentLogger.warn('Erro ao atualizar status para em_andamento:', error);
+        }
       }
 
-      // Buscar perguntas
-      assessmentLogger.info('Buscando perguntas do template');
-      const questionsData = await supabaseRequest(
-        `due_diligence_questions?template_id=eq.${assessment.template_id}&order=ordem.asc`,
-        { method: 'GET' }
-      );
-
-      // Buscar respostas existentes
-      assessmentLogger.info('Buscando respostas existentes');
-      const responsesData = await supabaseRequest(
-        `due_diligence_responses?assessment_id=eq.${assessment.id}`,
-        { method: 'GET' }
-      );
+      // ETAPA 4: Queries em paralelo para perguntas e respostas
+      assessmentLogger.info('Buscando perguntas e respostas em paralelo');
+      const [questionsData, responsesData] = await Promise.all([
+        supabaseRequest(
+          `due_diligence_questions?template_id=eq.${assessment.template_id}&order=ordem.asc`,
+          { method: 'GET' }
+        ).catch(error => {
+          assessmentLogger.error('Erro ao carregar perguntas:', error);
+          return [];
+        }),
+        supabaseRequest(
+          `due_diligence_responses?assessment_id=eq.${assessment.id}`,
+          { method: 'GET' }
+        ).catch(error => {
+          assessmentLogger.warn('Erro ao carregar respostas existentes:', error);
+          return [];
+        })
+      ]);
 
       // Montar respostas em objeto
       const responsesMap: Record<string, any> = {};
@@ -214,6 +252,7 @@ export default function Assessment() {
         responsesMap[response.question_id] = response.response_text || response.response_file_url || response.response_score;
       });
 
+      // ETAPA 5: Montar objeto final do assessment
       setAssessment({
         id: assessment.id,
         fornecedor_nome: assessment.fornecedor_nome,
@@ -222,14 +261,8 @@ export default function Assessment() {
         data_envio: assessment.data_envio,
         data_limite: assessment.data_limite,
         data_conclusao: assessment.data_conclusao,
-        empresa: {
-          nome: assessment.empresas?.nome || 'Empresa',
-          logo_url: assessment.empresas?.logo_url
-        },
-        template: {
-          nome: assessment.due_diligence_templates?.nome || 'Assessment',
-          descricao: assessment.due_diligence_templates?.descricao
-        }
+        empresa: empresaData,
+        template: templateData
       });
       
       setQuestions(questionsData.map((q: any) => ({
@@ -243,7 +276,10 @@ export default function Assessment() {
       })));
       setResponses(responsesMap);
       
-      assessmentLogger.info('Assessment carregado com sucesso');
+      assessmentLogger.info('Assessment carregado com sucesso completamente', {
+        questionsCount: questionsData.length,
+        responsesCount: Object.keys(responsesMap).length
+      });
 
     } catch (error) {
       assessmentLogger.error('Erro ao carregar assessment:', error);
