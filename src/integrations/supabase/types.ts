@@ -2050,6 +2050,7 @@ export type Database = {
       }
       due_diligence_responses: {
         Row: {
+          arquivo_url: string | null
           assessment_id: string
           created_at: string
           evidencia: string | null
@@ -2063,6 +2064,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          arquivo_url?: string | null
           assessment_id: string
           created_at?: string
           evidencia?: string | null
@@ -2076,6 +2078,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          arquivo_url?: string | null
           assessment_id?: string
           created_at?: string
           evidencia?: string | null
