@@ -1135,6 +1135,228 @@ export type Database = {
           },
         ]
       }
+      dados_fluxos: {
+        Row: {
+          aprovacao_necessaria: boolean | null
+          created_at: string
+          criptografia_transit: boolean | null
+          dados_pessoais_id: string
+          empresa_id: string
+          frequencia: string | null
+          id: string
+          mapeamento_campos: Json | null
+          nome_fluxo: string
+          observacoes: string | null
+          responsavel_fluxo: string | null
+          sistema_destino: string
+          sistema_origem: string
+          status: string
+          tipo_transferencia: string
+          updated_at: string
+          volume_aproximado: string | null
+        }
+        Insert: {
+          aprovacao_necessaria?: boolean | null
+          created_at?: string
+          criptografia_transit?: boolean | null
+          dados_pessoais_id: string
+          empresa_id: string
+          frequencia?: string | null
+          id?: string
+          mapeamento_campos?: Json | null
+          nome_fluxo: string
+          observacoes?: string | null
+          responsavel_fluxo?: string | null
+          sistema_destino: string
+          sistema_origem: string
+          status?: string
+          tipo_transferencia: string
+          updated_at?: string
+          volume_aproximado?: string | null
+        }
+        Update: {
+          aprovacao_necessaria?: boolean | null
+          created_at?: string
+          criptografia_transit?: boolean | null
+          dados_pessoais_id?: string
+          empresa_id?: string
+          frequencia?: string | null
+          id?: string
+          mapeamento_campos?: Json | null
+          nome_fluxo?: string
+          observacoes?: string | null
+          responsavel_fluxo?: string | null
+          sistema_destino?: string
+          sistema_origem?: string
+          status?: string
+          tipo_transferencia?: string
+          updated_at?: string
+          volume_aproximado?: string | null
+        }
+        Relationships: []
+      }
+      dados_mapeamento: {
+        Row: {
+          ativo_id: string
+          controles_acesso: string | null
+          created_at: string
+          criptografia_aplicada: boolean | null
+          dados_pessoais_id: string
+          frequencia_acesso: string | null
+          id: string
+          localizacao_dados: string | null
+          observacoes: string | null
+          tipo_armazenamento: string
+          updated_at: string
+          volume_aproximado: string | null
+        }
+        Insert: {
+          ativo_id: string
+          controles_acesso?: string | null
+          created_at?: string
+          criptografia_aplicada?: boolean | null
+          dados_pessoais_id: string
+          frequencia_acesso?: string | null
+          id?: string
+          localizacao_dados?: string | null
+          observacoes?: string | null
+          tipo_armazenamento?: string
+          updated_at?: string
+          volume_aproximado?: string | null
+        }
+        Update: {
+          ativo_id?: string
+          controles_acesso?: string | null
+          created_at?: string
+          criptografia_aplicada?: boolean | null
+          dados_pessoais_id?: string
+          frequencia_acesso?: string | null
+          id?: string
+          localizacao_dados?: string | null
+          observacoes?: string | null
+          tipo_armazenamento?: string
+          updated_at?: string
+          volume_aproximado?: string | null
+        }
+        Relationships: []
+      }
+      dados_pessoais: {
+        Row: {
+          base_legal: string
+          categoria_dados: string
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          empresa_id: string
+          finalidade_tratamento: string
+          forma_coleta: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          origem_coleta: string | null
+          prazo_retencao: string | null
+          sensibilidade: string
+          tipo_dados: string
+          updated_at: string
+        }
+        Insert: {
+          base_legal: string
+          categoria_dados: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id: string
+          finalidade_tratamento: string
+          forma_coleta?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          origem_coleta?: string | null
+          prazo_retencao?: string | null
+          sensibilidade?: string
+          tipo_dados: string
+          updated_at?: string
+        }
+        Update: {
+          base_legal?: string
+          categoria_dados?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          finalidade_tratamento?: string
+          forma_coleta?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          origem_coleta?: string | null
+          prazo_retencao?: string | null
+          sensibilidade?: string
+          tipo_dados?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dados_solicitacoes_titular: {
+        Row: {
+          canal_solicitacao: string | null
+          created_at: string
+          dados_solicitados: string | null
+          dados_titular: Json
+          data_resposta: string | null
+          data_solicitacao: string
+          empresa_id: string
+          evidencias_atendimento: string | null
+          id: string
+          justificativa: string | null
+          observacoes_internas: string | null
+          prazo_resposta: string
+          responsavel_analise: string | null
+          resposta_titular: string | null
+          status: string
+          tipo_solicitacao: string
+          updated_at: string
+        }
+        Insert: {
+          canal_solicitacao?: string | null
+          created_at?: string
+          dados_solicitados?: string | null
+          dados_titular: Json
+          data_resposta?: string | null
+          data_solicitacao?: string
+          empresa_id: string
+          evidencias_atendimento?: string | null
+          id?: string
+          justificativa?: string | null
+          observacoes_internas?: string | null
+          prazo_resposta: string
+          responsavel_analise?: string | null
+          resposta_titular?: string | null
+          status?: string
+          tipo_solicitacao: string
+          updated_at?: string
+        }
+        Update: {
+          canal_solicitacao?: string | null
+          created_at?: string
+          dados_solicitados?: string | null
+          dados_titular?: Json
+          data_resposta?: string | null
+          data_solicitacao?: string
+          empresa_id?: string
+          evidencias_atendimento?: string | null
+          id?: string
+          justificativa?: string | null
+          observacoes_internas?: string | null
+          prazo_resposta?: string
+          responsavel_analise?: string | null
+          resposta_titular?: string | null
+          status?: string
+          tipo_solicitacao?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       documentos: {
         Row: {
           aprovado_por: string | null
@@ -2053,6 +2275,114 @@ export type Database = {
           },
         ]
       }
+      ropa_dados_vinculados: {
+        Row: {
+          created_at: string
+          dados_pessoais_id: string
+          finalidade_especifica: string | null
+          id: string
+          observacoes: string | null
+          ropa_id: string
+        }
+        Insert: {
+          created_at?: string
+          dados_pessoais_id: string
+          finalidade_especifica?: string | null
+          id?: string
+          observacoes?: string | null
+          ropa_id: string
+        }
+        Update: {
+          created_at?: string
+          dados_pessoais_id?: string
+          finalidade_especifica?: string | null
+          id?: string
+          observacoes?: string | null
+          ropa_id?: string
+        }
+        Relationships: []
+      }
+      ropa_registros: {
+        Row: {
+          adequacao_destino: string | null
+          base_legal: string
+          categoria_titulares: string
+          compartilhamento_dados: string | null
+          controlador_conjunto: string | null
+          created_at: string
+          created_by: string | null
+          data_fim: string | null
+          data_inicio: string | null
+          empresa_id: string
+          encarregado_dados: string | null
+          finalidade: string
+          id: string
+          medidas_seguranca: string | null
+          nome_tratamento: string
+          observacoes: string | null
+          operador_dados: string | null
+          origem_dados: string | null
+          pais_destino: string | null
+          prazo_retencao: string
+          responsavel_tratamento: string | null
+          status: string
+          transferencia_internacional: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          adequacao_destino?: string | null
+          base_legal: string
+          categoria_titulares: string
+          compartilhamento_dados?: string | null
+          controlador_conjunto?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          empresa_id: string
+          encarregado_dados?: string | null
+          finalidade: string
+          id?: string
+          medidas_seguranca?: string | null
+          nome_tratamento: string
+          observacoes?: string | null
+          operador_dados?: string | null
+          origem_dados?: string | null
+          pais_destino?: string | null
+          prazo_retencao: string
+          responsavel_tratamento?: string | null
+          status?: string
+          transferencia_internacional?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          adequacao_destino?: string | null
+          base_legal?: string
+          categoria_titulares?: string
+          compartilhamento_dados?: string | null
+          controlador_conjunto?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          empresa_id?: string
+          encarregado_dados?: string | null
+          finalidade?: string
+          id?: string
+          medidas_seguranca?: string | null
+          nome_tratamento?: string
+          observacoes?: string | null
+          operador_dados?: string | null
+          origem_dados?: string | null
+          pais_destino?: string | null
+          prazo_retencao?: string
+          responsavel_tratamento?: string | null
+          status?: string
+          transferencia_internacional?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sistemas_privilegiados: {
         Row: {
           ativo: boolean | null
@@ -2154,6 +2484,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      dados_pessoais_pertence_empresa: {
+        Args: { dados_id: string }
+        Returns: boolean
+      }
       documento_pertence_empresa: {
         Args: { documento_id: string }
         Returns: boolean
@@ -2184,6 +2518,10 @@ export type Database = {
       }
       risco_pertence_empresa: {
         Args: { risco_id: string }
+        Returns: boolean
+      }
+      ropa_pertence_empresa: {
+        Args: { ropa_id: string }
         Returns: boolean
       }
     }
