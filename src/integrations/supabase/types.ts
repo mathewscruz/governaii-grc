@@ -2072,6 +2072,7 @@ export type Database = {
           empresa_id: string
           id: string
           nome: string
+          padrao: boolean | null
           updated_at: string
           versao: number
         }
@@ -2084,6 +2085,7 @@ export type Database = {
           empresa_id: string
           id?: string
           nome: string
+          padrao?: boolean | null
           updated_at?: string
           versao?: number
         }
@@ -2096,6 +2098,7 @@ export type Database = {
           empresa_id?: string
           id?: string
           nome?: string
+          padrao?: boolean | null
           updated_at?: string
           versao?: number
         }
