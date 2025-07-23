@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { useAuth } from '@/components/AuthProvider';
@@ -8,6 +8,7 @@ import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbP
 import UserProfile from '@/components/UserProfile';
 import NotificationCenter from '@/components/NotificationCenter';
 import PasswordChangeRequired from '@/components/PasswordChangeRequired';
+import PageTransition from '@/components/PageTransition';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, loading, hasTemporaryPassword, checkTemporaryPassword } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const breadcrumbs = useBreadcrumb();
 
   if (loading) {
@@ -86,7 +88,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </header>
 
           <main className="flex-1 p-6 overflow-auto">
-            {children}
+            <PageTransition routeKey={location.pathname}>
+              {children}
+            </PageTransition>
           </main>
         </div>
       </div>
