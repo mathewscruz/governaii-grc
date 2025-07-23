@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Shield, 
@@ -90,11 +90,32 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   
-  // Start with all groups collapsed
+  // Function to get which group contains the active route
+  const getActiveGroup = () => {
+    for (const item of menuItems) {
+      if (item.subItems) {
+        const hasActiveSubItem = item.subItems.some(subItem => currentPath === subItem.url);
+        if (hasActiveSubItem) {
+          return item.title;
+        }
+      }
+    }
+    return null;
+  };
+
+  // Start with groups that contain active routes open
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
   const isCollapsed = state === 'collapsed';
+
+  // Open group automatically when it contains the active route
+  useEffect(() => {
+    const activeGroup = getActiveGroup();
+    if (activeGroup && !openGroups.includes(activeGroup)) {
+      setOpenGroups(prev => [...prev, activeGroup]);
+    }
+  }, [currentPath]);
 
   const toggleGroup = (groupTitle: string) => {
     setOpenGroups(prev => 
@@ -107,7 +128,7 @@ export function AppSidebar() {
   const isActive = (path: string) => currentPath === path;
   
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent/50';
+    isActive ? 'bg-primary/10 text-primary border-l-2 border-primary font-medium' : 'hover:bg-sidebar-accent/50';
 
   const handleSignOut = () => {
     setShowLogoutConfirm(true);
@@ -194,7 +215,7 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       {!isCollapsed && (
-                        <CollapsibleContent className="transition-all duration-500 ease-out overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                        <CollapsibleContent className="transition-all duration-300 ease-out overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                           <div className="space-y-1 mt-2 ml-6 pl-2 border-l-2 border-sidebar-border/30 animate-fade-in">
                             {item.subItems.map((subItem, index) => (
                               <SidebarMenuButton 
