@@ -17,6 +17,7 @@ interface EmailRequest {
   assessment_link?: string;
   data_expiracao?: string;
   empresa_nome?: string;
+  empresa_logo_url?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -28,13 +29,14 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { 
       type, 
-      assessment_id,
+      assessment_id, 
       fornecedor_nome, 
       fornecedor_email, 
-      template_nome,
-      assessment_link,
-      data_expiracao,
-      empresa_nome 
+      template_nome, 
+      assessment_link, 
+      data_expiracao, 
+      empresa_nome,
+      empresa_logo_url
     }: EmailRequest = await req.json();
 
     console.log(`Processando email tipo: ${type} para ${fornecedor_email}`);
@@ -45,14 +47,19 @@ const handler = async (req: Request): Promise<Response> => {
       case 'send':
       case 'invitation': // Aceita ambos os tipos para compatibilidade
         emailContent = {
-          subject: `Due Diligence - ${template_nome}`,
+          subject: `${empresa_nome || 'GovernAI'} - Te enviou uma avaliação de "${template_nome}"`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              ${empresa_logo_url ? `
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <img src="${empresa_logo_url}" alt="${empresa_nome || 'GovernAI'}" style="max-height: 80px; max-width: 200px;">
+                </div>
+              ` : ''}
               <h1 style="color: #2563eb;">Questionário de Due Diligence</h1>
               
               <p>Olá <strong>${fornecedor_nome}</strong>,</p>
               
-              <p>Você foi convidado(a) a responder um questionário de due diligence para <strong>${empresa_nome || 'nossa empresa'}</strong>.</p>
+              <p>Você foi convidado(a) a responder um questionário de due diligence para <strong>${empresa_nome || 'GovernAI'}</strong>.</p>
               
               <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <h3 style="margin: 0 0 10px 0;">Template: ${template_nome}</h3>
@@ -73,7 +80,7 @@ const handler = async (req: Request): Promise<Response> => {
               <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
               
               <p style="color: #64748b; font-size: 14px;">
-                Este é um e-mail automático. Em caso de dúvidas, entre em contato conosco.
+                Este é um e-mail automático da <strong>${empresa_nome || 'GovernAI'}</strong>. Em caso de dúvidas, entre em contato conosco.
               </p>
             </div>
           `
@@ -82,14 +89,19 @@ const handler = async (req: Request): Promise<Response> => {
 
       case 'reminder':
         emailContent = {
-          subject: `Lembrete - Due Diligence: ${template_nome}`,
+          subject: `Lembrete: ${empresa_nome || 'GovernAI'} - Avaliação de "${template_nome}"`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              ${empresa_logo_url ? `
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <img src="${empresa_logo_url}" alt="${empresa_nome || 'GovernAI'}" style="max-height: 80px; max-width: 200px;">
+                </div>
+              ` : ''}
               <h1 style="color: #f59e0b;">Lembrete - Questionário Pendente</h1>
               
               <p>Olá <strong>${fornecedor_nome}</strong>,</p>
               
-              <p>Este é um lembrete sobre o questionário de due diligence pendente:</p>
+              <p>Este é um lembrete sobre o questionário de due diligence da <strong>${empresa_nome || 'GovernAI'}</strong> que ainda não foi respondido.</p>
               
               <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
                 <h3 style="margin: 0 0 10px 0;">Template: ${template_nome}</h3>
@@ -110,7 +122,7 @@ const handler = async (req: Request): Promise<Response> => {
               <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
               
               <p style="color: #64748b; font-size: 14px;">
-                Este é um e-mail automático. Em caso de dúvidas, entre em contato conosco.
+                Este é um e-mail automático da <strong>${empresa_nome || 'GovernAI'}</strong>. Em caso de dúvidas, entre em contato conosco.
               </p>
             </div>
           `
@@ -119,14 +131,19 @@ const handler = async (req: Request): Promise<Response> => {
 
       case 'completion':
         emailContent = {
-          subject: `Questionário Concluído - ${template_nome}`,
+          subject: `${empresa_nome || 'GovernAI'} - Due Diligence Concluído - "${template_nome}"`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              ${empresa_logo_url ? `
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <img src="${empresa_logo_url}" alt="${empresa_nome || 'GovernAI'}" style="max-height: 80px; max-width: 200px;">
+                </div>
+              ` : ''}
               <h1 style="color: #16a34a;">Questionário Concluído ✅</h1>
               
               <p>Olá <strong>${fornecedor_nome}</strong>,</p>
               
-              <p>Confirmamos o recebimento das suas respostas para o questionário de due diligence:</p>
+              <p>Confirmamos o recebimento das suas respostas para o questionário de due diligence da <strong>${empresa_nome || 'GovernAI'}</strong>:</p>
               
               <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #16a34a;">
                 <h3 style="margin: 0 0 10px 0;">Template: ${template_nome}</h3>
@@ -140,7 +157,7 @@ const handler = async (req: Request): Promise<Response> => {
               <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
               
               <p style="color: #64748b; font-size: 14px;">
-                Este é um e-mail automático. Em caso de dúvidas, entre em contato conosco.
+                Este é um e-mail automático da <strong>${empresa_nome || 'GovernAI'}</strong>. Em caso de dúvidas, entre em contato conosco.
               </p>
             </div>
           `

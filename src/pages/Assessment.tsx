@@ -351,6 +351,25 @@ export default function Assessment() {
 
       // Enviar email de conclusão (simplificado)
       try {
+        // Buscar dados da empresa do assessment
+        const { data: assessmentData } = await supabaseRequest(
+          `due_diligence_assessments?id=eq.${assessment.id}&select=empresa_id`
+        );
+        
+        let empresaNome = 'GovernAI';
+        let empresaLogoUrl = null;
+
+        if (assessmentData && assessmentData[0]?.empresa_id) {
+          const { data: empresaData } = await supabaseRequest(
+            `empresas?id=eq.${assessmentData[0].empresa_id}&select=nome,logo_url`
+          );
+          
+          if (empresaData && empresaData[0]) {
+            empresaNome = empresaData[0].nome;
+            empresaLogoUrl = empresaData[0].logo_url;
+          }
+        }
+
         await fetch(`${SUPABASE_URL}/functions/v1/send-due-diligence-email`, {
           method: 'POST',
           headers: {
@@ -363,7 +382,8 @@ export default function Assessment() {
             fornecedor_nome: assessment.fornecedor_nome,
             fornecedor_email: assessment.fornecedor_email,
             template_nome: assessment.template?.nome,
-            empresa_nome: 'GovernAI'
+            empresa_nome: empresaNome,
+            empresa_logo_url: empresaLogoUrl
           })
         });
       } catch (emailError) {

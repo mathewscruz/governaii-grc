@@ -174,6 +174,29 @@ export function AssessmentDialog({
       const selectedTemplate = templates.find(t => t.id === formData.template_id);
       const templateNome = selectedTemplate?.nome || 'Due Diligence';
 
+      // Buscar dados da empresa atual
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      let empresaNome = 'GovernAI';
+      let empresaLogoUrl = null;
+
+      if (profileData?.empresa_id) {
+        const { data: empresaData } = await supabase
+          .from('empresas')
+          .select('nome, logo_url')
+          .eq('id', profileData.empresa_id)
+          .single();
+        
+        if (empresaData) {
+          empresaNome = empresaData.nome;
+          empresaLogoUrl = empresaData.logo_url;
+        }
+      }
+
       // Enviar email de convite automaticamente
       const assessmentLink = `${window.location.origin}/assessment/${linkToken}`;
       
@@ -183,7 +206,9 @@ export function AssessmentDialog({
         fornecedor_nome: formData.fornecedor_nome,
         fornecedor_email: formData.fornecedor_email,
         template_nome: templateNome,
-        assessment_link: assessmentLink
+        assessment_link: assessmentLink,
+        empresa_nome: empresaNome,
+        empresa_logo_url: empresaLogoUrl
       });
 
       try {
@@ -196,7 +221,8 @@ export function AssessmentDialog({
             template_nome: templateNome,
             assessment_link: assessmentLink,
             data_expiracao: dataExpiracao.toISOString(),
-            empresa_nome: 'GovernAI'
+            empresa_nome: empresaNome,
+            empresa_logo_url: empresaLogoUrl
           }
         });
 

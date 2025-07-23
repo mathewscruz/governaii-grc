@@ -46,6 +46,29 @@ function ReminderDialog({ assessment, open, onOpenChange, onSuccess }: ReminderD
     try {
       setSending(true);
       
+      // Buscar dados da empresa atual
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      let empresaNome = 'GovernAI';
+      let empresaLogoUrl = null;
+
+      if (profileData?.empresa_id) {
+        const { data: empresaData } = await supabase
+          .from('empresas')
+          .select('nome, logo_url')
+          .eq('id', profileData.empresa_id)
+          .single();
+        
+        if (empresaData) {
+          empresaNome = empresaData.nome;
+          empresaLogoUrl = empresaData.logo_url;
+        }
+      }
+
       const assessmentLink = `${window.location.origin}/assessment/${assessment.link_token}`;
       
       await supabase.functions.invoke('send-due-diligence-email', {
@@ -57,7 +80,8 @@ function ReminderDialog({ assessment, open, onOpenChange, onSuccess }: ReminderD
           template_nome: assessment.template.nome,
           assessment_link: assessmentLink,
           data_expiracao: assessment.data_expiracao,
-          empresa_nome: 'GovernAI'
+          empresa_nome: empresaNome,
+          empresa_logo_url: empresaLogoUrl
         }
       });
 
@@ -241,18 +265,42 @@ export function AssessmentsManagerEnhanced() {
 
   const resendAssessment = async (assessment: Assessment) => {
     try {
+      // Buscar dados da empresa atual
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      let empresaNome = 'GovernAI';
+      let empresaLogoUrl = null;
+
+      if (profileData?.empresa_id) {
+        const { data: empresaData } = await supabase
+          .from('empresas')
+          .select('nome, logo_url')
+          .eq('id', profileData.empresa_id)
+          .single();
+        
+        if (empresaData) {
+          empresaNome = empresaData.nome;
+          empresaLogoUrl = empresaData.logo_url;
+        }
+      }
+
       const assessmentLink = `${window.location.origin}/assessment/${assessment.link_token}`;
       
       await supabase.functions.invoke('send-due-diligence-email', {
         body: {
-          type: 'invitation',
+          type: 'send',
           assessment_id: assessment.id,
           fornecedor_nome: assessment.fornecedor_nome,
           fornecedor_email: assessment.fornecedor_email,
           template_nome: assessment.template.nome,
           assessment_link: assessmentLink,
           data_expiracao: assessment.data_expiracao,
-          empresa_nome: 'GovernAI'
+          empresa_nome: empresaNome,
+          empresa_logo_url: empresaLogoUrl
         }
       });
 
