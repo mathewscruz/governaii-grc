@@ -10,7 +10,8 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, AlertCircle, Upload, Clock, ChevronLeft, ChevronRight, Building } from 'lucide-react';
+import { CheckCircle, AlertCircle, Upload, Clock, ChevronLeft, ChevronRight, Building, Calendar } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 // Constantes do Supabase
 const SUPABASE_URL = 'https://lnlkahtugwmkznasapfd.supabase.co';
@@ -85,6 +86,8 @@ export default function Assessment() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({});
   const [autoSaving, setAutoSaving] = useState(false);
+  const [showFinishDialog, setShowFinishDialog] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
 
   const QUESTIONS_PER_PAGE = 20;
 
@@ -146,11 +149,7 @@ export default function Assessment() {
       // Verificar se já foi concluído
       if (assessment.status === 'concluido') {
         console.log('ASSESSMENT DEBUG: Assessment já concluído');
-        toast({
-          title: "Assessment já concluído",
-          description: "Este questionário já foi respondido anteriormente.",
-          variant: "destructive"
-        });
+        setIsFinished(true);
         setAssessment({ ...assessment, status: 'concluido' } as AssessmentData);
         return;
       }
@@ -394,6 +393,9 @@ export default function Assessment() {
         })
       });
 
+      setIsFinished(true);
+      setShowFinishDialog(false);
+
       // Enviar email de conclusão (simplificado)
       try {
         // Buscar dados da empresa do assessment
@@ -436,12 +438,9 @@ export default function Assessment() {
       }
 
       toast({
-        title: "Questionário enviado",
-        description: "Obrigado! Suas respostas foram enviadas com sucesso.",
-        variant: "default"
+        title: "Questionário respondido com sucesso!",
+        description: "Obrigado por completar nossa avaliação.",
       });
-
-      // Redirect para tela de conclusão será feito pelo status
 
     } catch (error: any) {
       console.error('Erro ao enviar assessment:', error);
@@ -481,7 +480,7 @@ export default function Assessment() {
             className="space-y-3"
           >
             {question.opcoes?.map((opcao, index) => (
-              <div key={index} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+              <div key={index} className="flex items-center space-x-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
                 <RadioGroupItem value={opcao} id={`${question.id}-${index}`} />
                 <Label htmlFor={`${question.id}-${index}`} className="flex-1 cursor-pointer">
                   {opcao}
@@ -498,82 +497,87 @@ export default function Assessment() {
             onValueChange={(value) => {
               handleResponseChange(question.id, value, 'texto');
             }}
-            className="flex gap-4"
+            className="space-y-3"
           >
-            <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors flex-1">
+            <div className="flex items-center space-x-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
               <RadioGroupItem value="Sim" id={`${question.id}-sim`} />
-              <Label htmlFor={`${question.id}-sim`} className="cursor-pointer">Sim</Label>
+              <Label htmlFor={`${question.id}-sim`} className="flex-1 cursor-pointer">Sim</Label>
             </div>
-            <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors flex-1">
+            <div className="flex items-center space-x-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
               <RadioGroupItem value="Não" id={`${question.id}-nao`} />
-              <Label htmlFor={`${question.id}-nao`} className="cursor-pointer">Não</Label>
+              <Label htmlFor={`${question.id}-nao`} className="flex-1 cursor-pointer">Não</Label>
             </div>
           </RadioGroup>
         );
 
       case 'score':
         return (
-          <div className="space-y-4">
-            <RadioGroup
-              value={response?.score?.toString() || ''}
-              onValueChange={(value) => {
-                handleResponseChange(question.id, value, 'score');
-              }}
-              className="flex gap-2"
-            >
-              {[1, 2, 3, 4, 5].map(score => (
-                <div key={score} className="flex items-center justify-center p-3 border rounded-lg hover:bg-muted/50 transition-colors flex-1">
-                  <RadioGroupItem value={score.toString()} id={`${question.id}-${score}`} className="sr-only" />
-                  <Label htmlFor={`${question.id}-${score}`} className="cursor-pointer font-medium">
-                    {score}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>1 = Muito ruim</span>
-              <span>5 = Excelente</span>
-            </div>
-          </div>
+          <RadioGroup
+            value={response?.score?.toString() || ''}
+            onValueChange={(value) => {
+              handleResponseChange(question.id, value, 'score');
+            }}
+            className="flex space-x-6"
+          >
+            {[1, 2, 3, 4, 5].map((score) => (
+              <div key={score} className="flex flex-col items-center space-y-2">
+                <RadioGroupItem value={score.toString()} id={`${question.id}-${score}`} />
+                <Label htmlFor={`${question.id}-${score}`} className="text-sm cursor-pointer">
+                  {score}
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
         );
 
       case 'arquivo':
         return (
-          <div className="space-y-2">
+          <div className="space-y-4">
             <Input
               type="file"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) handleFileUpload(question.id, file);
+                if (file) {
+                  handleFileUpload(question.id, file);
+                }
               }}
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
               disabled={uploadingFiles[question.id]}
+              className="cursor-pointer"
             />
             {uploadingFiles[question.id] && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Upload className="h-4 w-4 animate-spin" />
-                Enviando arquivo...
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <span>Enviando arquivo...</span>
               </div>
             )}
             {response?.arquivo_nome && (
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <CheckCircle className="h-4 w-4" />
-                {response.arquivo_nome}
+              <div className="flex items-center space-x-2 p-2 bg-muted rounded">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm">{response.arquivo_nome}</span>
               </div>
             )}
           </div>
         );
 
       default:
-        return null;
+        return (
+          <Input
+            value={response?.resposta_texto || ''}
+            onChange={(e) => handleResponseChange(question.id, e.target.value, 'texto')}
+            placeholder="Digite sua resposta..."
+          />
+        );
     }
   };
 
+  // Status não válidos ou carregamento
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p>Carregando questionário...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando avaliação...</p>
         </div>
       </div>
     );
@@ -581,35 +585,49 @@ export default function Assessment() {
 
   if (!assessment) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+        <Card className="max-w-md mx-auto shadow-xl border-destructive/20">
           <CardContent className="text-center py-8">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Assessment não encontrado</h2>
+            <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Assessment Não Encontrado
+            </h2>
             <p className="text-muted-foreground">
               O link fornecido não é válido ou expirou.
             </p>
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => window.location.reload()}
-            >
-              Tentar novamente
-            </Button>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // Verificar se assessment foi marcado como expirado ou concluído
+  if (isFinished || assessment.status === 'concluido') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+        <Card className="max-w-md mx-auto shadow-xl border-primary/20">
+          <CardContent className="text-center py-8">
+            <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Assessment Finalizado
+            </h2>
+            <p className="text-muted-foreground">
+              Este questionário já foi respondido e não está mais disponível.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (assessment.status === 'expirado') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+        <Card className="max-w-md mx-auto shadow-xl border-destructive/20">
           <CardContent className="text-center py-8">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Assessment Expirado</h2>
+            <Clock className="h-16 w-16 text-destructive mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Assessment Expirado
+            </h2>
             <p className="text-muted-foreground">
               O prazo para responder este questionário já expirou.
             </p>
@@ -619,220 +637,194 @@ export default function Assessment() {
     );
   }
 
-  if (assessment.status === 'concluido') {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="text-center py-8">
-            <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Assessment já Concluído</h2>
-            <p className="text-muted-foreground">
-              Este questionário já foi respondido anteriormente.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Tela de conclusão não é mais necessária aqui pois usamos o status
-
+  // Cálculos para paginação
   const totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
   const startIndex = currentPage * QUESTIONS_PER_PAGE;
-  const endIndex = Math.min(startIndex + QUESTIONS_PER_PAGE, questions.length);
-  const currentPageQuestions = questions.slice(startIndex, endIndex);
+  const endIndex = startIndex + QUESTIONS_PER_PAGE;
+  const currentQuestions = questions.slice(startIndex, endIndex);
   
-  const progress = (Object.keys(responses).length / questions.length) * 100;
+  // Cálculos de progresso
   const answeredQuestions = Object.keys(responses).length;
+  const totalProgress = (answeredQuestions / questions.length) * 100;
+
+  const canProceedToNext = () => {
+    const currentPageQuestions = currentQuestions;
+    const requiredInPage = currentPageQuestions.filter(q => q.obrigatoria);
+    return requiredInPage.every(q => responses[q.id]);
+  };
+
+  const canFinish = () => {
+    const requiredQuestions = questions.filter(q => q.obrigatoria);
+    return requiredQuestions.every(q => responses[q.id]);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      {/* Header com Logo */}
-      <div className="bg-white border-b shadow-sm">
-        <div className="container max-w-4xl mx-auto py-6">
-          <div className="flex items-center gap-4">
-            {assessment.empresa_logo_url ? (
-              <img 
-                src={assessment.empresa_logo_url} 
-                alt={`Logo ${assessment.empresa_nome}`}
-                className="h-12 w-auto object-contain"
-              />
-            ) : (
-              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Building className="h-6 w-6 text-primary" />
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      {/* Header Profissional */}
+      <div className="bg-card shadow-lg border-b border-border/50">
+        <div className="container mx-auto py-6 px-4 max-w-6xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              {/* Logo da Empresa */}
+              <div className="flex items-center space-x-3">
+                {assessment?.empresa_logo_url ? (
+                  <img 
+                    src={assessment.empresa_logo_url} 
+                    alt={`Logo ${assessment.empresa_nome}`}
+                    className="h-12 w-12 object-contain rounded-lg border border-border shadow-sm"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <div className={`h-12 w-12 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-md ${assessment?.empresa_logo_url ? 'hidden' : ''}`}>
+                  <Building className="h-6 w-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">
+                    {assessment?.empresa_nome || 'Empresa'}
+                  </h1>
+                  <p className="text-sm text-muted-foreground">Due Diligence Assessment</p>
+                </div>
               </div>
-            )}
-            <div>
-              <h1 className="text-xl font-semibold text-foreground">
-                {assessment.empresa_nome || 'Due Diligence'}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Assessment de Fornecedor
-              </p>
+            </div>
+            
+            {/* Data de Expiração */}
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-2 bg-primary/10 px-3 py-2 rounded-lg border border-primary/20">
+                <Calendar className="h-4 w-4 text-primary" />
+                <div className="text-right">
+                  <p className="text-sm font-medium text-foreground">
+                    Prazo até
+                  </p>
+                  <p className="text-xs text-primary font-semibold">
+                    {assessment.data_expiracao ? new Date(assessment.data_expiracao).toLocaleDateString('pt-BR') : 'Sem prazo'}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-medium text-foreground">
+                  {assessment.template?.nome}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {questions.length} questões
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container max-w-4xl mx-auto py-8">
-        {/* Header do Assessment */}
-        <Card className="mb-6 border-0 shadow-md">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-2xl text-foreground">{assessment.template?.nome}</CardTitle>
-                <CardDescription className="text-base mt-1">
-                  {assessment.template?.descricao}
-                </CardDescription>
-              </div>
-              <Badge variant="secondary" className="text-sm">
-                {assessment.template?.categoria}
-              </Badge>
-            </div>
-            
-            <div className="space-y-3 pt-4">
-              <div className="flex justify-between text-sm">
-                <span className="flex items-center gap-2">
-                  Progresso Geral
-                  {autoSaving && <span className="text-xs text-muted-foreground">(Salvando...)</span>}
-                </span>
-                <span>{answeredQuestions} de {questions.length} respondidas</span>
-              </div>
-              <Progress value={progress} className="h-3" />
-              
-              {totalPages > 1 && (
-                <div className="flex justify-between text-xs text-muted-foreground pt-2">
-                  <span>Página {currentPage + 1} de {totalPages}</span>
-                  <span>{currentPageQuestions.length} perguntas nesta página</span>
-                </div>
-              )}
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Informações do fornecedor */}
-        <Card className="mb-6 border-0 shadow-md">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Empresa Avaliada</Label>
-                <p className="text-base font-medium">{assessment.fornecedor_nome}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">E-mail de Contato</Label>
-                <p className="text-base">{assessment.fornecedor_email}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Perguntas da página atual */}
-        {currentPageQuestions.length > 0 && (
-          <div className="space-y-6">
-            {currentPageQuestions.map((question, index) => (
-              <Card key={question.id} className="border-0 shadow-md">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <span className="text-sm font-normal text-muted-foreground mr-2">
-                          {startIndex + index + 1}.
-                        </span>
-                        {question.titulo}
-                        {question.obrigatoria && (
-                          <Badge variant="destructive" className="text-xs">
-                            Obrigatória
-                          </Badge>
-                        )}
-                        {responses[question.id] && (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        )}
-                      </CardTitle>
-                      {question.descricao && (
-                        <CardDescription className="mt-2 text-base">
-                          {question.descricao}
-                        </CardDescription>
-                      )}
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      Peso: {question.peso}
-                    </Badge>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  {renderQuestion(question)}
-                </CardContent>
-              </Card>
-            ))}
+      {/* Progresso */}
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
+        <div className="bg-card rounded-xl shadow-sm border border-border/50 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-foreground">
+              Progresso do Assessment
+            </h2>
+            <span className="text-sm text-muted-foreground">
+              Página {currentPage + 1} de {totalPages}
+            </span>
           </div>
-        )}
+          <Progress value={totalProgress} className="h-3 mb-2" />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{answeredQuestions} de {questions.length} respondidas</span>
+            <span>{Math.round(totalProgress)}% completo</span>
+          </div>
+          {autoSaving && (
+            <div className="flex items-center mt-2 text-xs text-primary">
+              <div className="animate-spin rounded-full h-3 w-3 border-b border-primary mr-2"></div>
+              Salvando automaticamente...
+            </div>
+          )}
+        </div>
 
-        {/* Navegação por páginas */}
-        <div className="flex justify-between items-center mt-8">
+        {/* Questões */}
+        <div className="space-y-6">
+          {currentQuestions.map((question, index) => (
+            <Card key={question.id} className="shadow-sm border border-border/50 hover:shadow-md hover:border-primary/30 transition-all duration-200">
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between">
+                  <CardTitle className="text-base font-medium text-foreground pr-4">
+                    {startIndex + index + 1}. {question.titulo}
+                  </CardTitle>
+                  {question.obrigatoria && (
+                    <Badge variant="destructive" className="text-xs px-2 py-1">
+                      Obrigatória
+                    </Badge>
+                  )}
+                </div>
+                {question.descricao && (
+                  <p className="text-sm text-muted-foreground mt-2">{question.descricao}</p>
+                )}
+              </CardHeader>
+              <CardContent>
+                {renderQuestion(question)}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Navegação e Finalização */}
+        <div className="flex justify-between items-center mt-8 pt-6 border-t border-border/50">
           <Button
             variant="outline"
-            onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+            onClick={() => setCurrentPage(currentPage - 1)}
             disabled={currentPage === 0}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 hover:bg-primary/10 hover:border-primary/30"
           >
             <ChevronLeft className="h-4 w-4" />
             Página Anterior
           </Button>
 
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <span>{answeredQuestions} de {questions.length} respondidas</span>
-            </div>
-            {totalPages > 1 && (
-              <Badge variant="outline">
-                Página {currentPage + 1} de {totalPages}
-              </Badge>
+          <div className="flex gap-4">
+            {currentPage < totalPages - 1 ? (
+              <Button
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90"
+                disabled={!canProceedToNext()}
+              >
+                Próxima Página
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setShowFinishDialog(true)}
+                disabled={submitting || !canFinish()}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-lg"
+              >
+                <CheckCircle className="h-4 w-4" />
+                Finalizar Assessment
+              </Button>
             )}
           </div>
-
-          {currentPage === totalPages - 1 ? (
-            <Button
-              onClick={submitAssessment}
-              disabled={submitting}
-              className="min-w-40 flex items-center gap-2"
-            >
-              {submitting ? (
-                <>
-                  <div className="h-4 w-4 animate-spin border-2 border-current border-t-transparent rounded-full" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4" />
-                  Finalizar Assessment
-                </>
-              )}
-            </Button>
-          ) : (
-            <Button
-              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
-              className="flex items-center gap-2"
-            >
-              Próxima Página
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          )}
         </div>
 
-        {/* Alert de expiração */}
-        <Alert className="mt-6 border-amber-200 bg-amber-50">
-          <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800">
-            <strong>Prazo de entrega:</strong> Este questionário expira em{' '}
-            <span className="font-medium">
-              {new Date(assessment.data_expiracao).toLocaleDateString('pt-BR')} às{' '}
-              {new Date(assessment.data_expiracao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-            </span>.
-            Suas respostas são salvas automaticamente.
-          </AlertDescription>
-        </Alert>
+        {/* Dialog de Confirmação */}
+        <AlertDialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Finalizar Assessment</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja finalizar este assessment? Esta ação não pode ser desfeita e você não poderá mais modificar suas respostas.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={submitAssessment} disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Finalizando...
+                  </>
+                ) : (
+                  'Confirmar Finalização'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
