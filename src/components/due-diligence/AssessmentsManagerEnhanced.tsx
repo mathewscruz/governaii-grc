@@ -187,11 +187,11 @@ export function AssessmentsManagerEnhanced() {
 
   useEffect(() => {
     fetchAssessments();
-  }, []);
+  }, []); // Removido fetchAssessments das dependências
 
   useEffect(() => {
     filterAssessments();
-  }, [assessments, searchTerm, statusFilter]);
+  }, [assessments, searchTerm, statusFilter]); // Mantido apenas as dependências necessárias
 
   const fetchAssessments = async () => {
     try {

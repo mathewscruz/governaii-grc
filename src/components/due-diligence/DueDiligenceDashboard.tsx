@@ -29,7 +29,7 @@ export function DueDiligenceDashboard() {
 
   useEffect(() => {
     fetchDashboardStats();
-  }, []);
+  }, []); // Removido fetchDashboardStats das dependências
 
   const fetchDashboardStats = async () => {
     try {

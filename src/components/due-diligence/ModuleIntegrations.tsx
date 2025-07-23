@@ -193,7 +193,10 @@ export function ModuleIntegrations() {
 
       if (error) throw error;
       return data as IntegrationRule[];
-    }
+    },
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
   const createMutation = useMutation({

@@ -61,7 +61,10 @@ export function FornecedoresManager() {
 
       if (error) throw error;
       return data;
-    }
+    },
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
   const createMutation = useMutation({
