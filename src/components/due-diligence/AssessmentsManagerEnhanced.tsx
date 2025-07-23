@@ -85,6 +85,12 @@ function ReminderDialog({ assessment, open, onOpenChange, onSuccess }: ReminderD
         }
       });
 
+      // Atualizar último lembrete enviado
+      await supabase
+        .from('due_diligence_assessments')
+        .update({ ultimo_lembrete_enviado: new Date().toISOString() })
+        .eq('id', assessment.id);
+
       toast({
         title: "Lembrete enviado",
         description: `Lembrete enviado para ${assessment.fornecedor_nome}`,
@@ -162,6 +168,10 @@ export function AssessmentsManagerEnhanced() {
 
   useEffect(() => {
     fetchAssessments();
+    
+    // Auto-refresh a cada 30 segundos para capturar mudanças de status
+    const interval = setInterval(fetchAssessments, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -182,23 +192,33 @@ export function AssessmentsManagerEnhanced() {
 
       if (error) throw error;
 
-      const formattedAssessments: Assessment[] = (data || []).map(assessment => ({
-        id: assessment.id,
-        fornecedor_nome: assessment.fornecedor_nome,
-        fornecedor_email: assessment.fornecedor_email,
-        status: assessment.status,
-        data_inicio: assessment.data_inicio,
-        data_conclusao: assessment.data_conclusao,
-        data_expiracao: assessment.data_expiracao,
-        data_envio: assessment.data_envio,
-        score_final: assessment.score_final,
-        token: assessment.link_token,
-        link_token: assessment.link_token,
-        template: {
-          nome: assessment.templates?.nome || 'Template não encontrado',
-          categoria: assessment.templates?.categoria || 'N/A'
+      // Processar status baseado na data de expiração e conclusão
+      const formattedAssessments: Assessment[] = (data || []).map(assessment => {
+        let status = assessment.status;
+        
+        // Se expirou e não foi concluído
+        if (new Date() > new Date(assessment.data_expiracao) && status !== 'concluido') {
+          status = 'expirado';
         }
-      }));
+        
+        return {
+          id: assessment.id,
+          fornecedor_nome: assessment.fornecedor_nome,
+          fornecedor_email: assessment.fornecedor_email,
+          status: status,
+          data_inicio: assessment.data_inicio,
+          data_conclusao: assessment.data_conclusao,
+          data_expiracao: assessment.data_expiracao,
+          data_envio: assessment.data_envio,
+          score_final: assessment.score_final,
+          token: assessment.link_token,
+          link_token: assessment.link_token,
+          template: {
+            nome: assessment.templates?.nome || 'Template não encontrado',
+            categoria: assessment.templates?.categoria || 'N/A'
+          }
+        };
+      });
 
       setAssessments(formattedAssessments);
     } catch (error: any) {

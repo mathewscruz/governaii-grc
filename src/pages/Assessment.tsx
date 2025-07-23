@@ -39,6 +39,7 @@ interface AssessmentData {
   template_id: string;
   empresa_nome?: string;
   empresa_logo_url?: string;
+  score_final?: number;
   template?: {
     nome: string;
     descricao?: string;
@@ -116,7 +117,7 @@ export default function Assessment() {
 
       // Buscar assessment pelo token
       const assessmentData = await supabaseRequest(
-        `due_diligence_assessments?link_token=eq.${token}&select=id,fornecedor_nome,fornecedor_email,status,data_inicio,data_conclusao,data_expiracao,template_id,empresa_id`
+        `due_diligence_assessments?link_token=eq.${token}&select=id,fornecedor_nome,fornecedor_email,status,data_inicio,data_conclusao,data_expiracao,template_id,empresa_id,score_final`
       );
       
       if (!assessmentData || assessmentData.length === 0) {
@@ -603,18 +604,71 @@ export default function Assessment() {
 
   if (isFinished || assessment.status === 'concluido') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
-        <Card className="max-w-md mx-auto shadow-xl border-primary/20">
-          <CardContent className="text-center py-8">
-            <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-foreground mb-2">
-              Assessment Finalizado
-            </h2>
-            <p className="text-muted-foreground">
-              Este questionário já foi respondido e não está mais disponível.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+        {/* Header mesmo para finalizado */}
+        <div style={{ backgroundColor: 'hsl(var(--sidebar-background))' }} className="shadow-lg border-b border-border/50">
+          <div className="container mx-auto py-6 px-4 max-w-6xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
+                  {assessment?.empresa_logo_url ? (
+                    <img 
+                      src={assessment.empresa_logo_url} 
+                      alt={`Logo ${assessment.empresa_nome}`}
+                      className="h-12 w-12 object-contain rounded-lg border border-sidebar-border shadow-sm bg-white"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 bg-sidebar-accent rounded-lg flex items-center justify-center shadow-md">
+                      <Building className="h-6 w-6 text-sidebar-foreground" />
+                    </div>
+                  )}
+                  <div>
+                    <h1 className="text-2xl font-bold text-sidebar-foreground">
+                      {assessment?.empresa_nome || 'Empresa'}
+                    </h1>
+                    <p className="text-sm text-sidebar-foreground/70">Due Diligence Assessment</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2 bg-sidebar-accent px-3 py-2 rounded-lg border border-sidebar-border">
+                <Calendar className="h-4 w-4 text-sidebar-foreground" />
+                <div className="text-right">
+                  <p className="text-sm font-medium text-sidebar-foreground">
+                    Prazo até
+                  </p>
+                  <p className="text-xs text-sidebar-foreground font-semibold">
+                    {assessment.data_expiracao ? new Date(assessment.data_expiracao).toLocaleDateString('pt-BR') : 'Sem prazo'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Conteúdo de finalização */}
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="max-w-md mx-auto shadow-xl border-primary/20">
+            <CardContent className="text-center py-8">
+              <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-foreground mb-2">
+                Questionário respondido com sucesso!
+              </h2>
+              <p className="text-muted-foreground mb-4">
+                Obrigado por participar da nossa avaliação de Due Diligence. 
+                Suas respostas foram registradas e serão analisadas em breve.
+              </p>
+              {assessment.score_final && (
+                <div className="mt-4 p-4 bg-primary/5 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Score Final</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {assessment.score_final.toFixed(1)}%
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -661,7 +715,7 @@ export default function Assessment() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header Profissional */}
-      <div className="bg-card shadow-lg border-b border-border/50">
+      <div style={{ backgroundColor: 'hsl(var(--sidebar-background))' }} className="shadow-lg border-b border-border/50">
         <div className="container mx-auto py-6 px-4 max-w-6xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -671,43 +725,44 @@ export default function Assessment() {
                   <img 
                     src={assessment.empresa_logo_url} 
                     alt={`Logo ${assessment.empresa_nome}`}
-                    className="h-12 w-12 object-contain rounded-lg border border-border shadow-sm"
+                    className="h-12 w-12 object-contain rounded-lg border border-sidebar-border shadow-sm bg-white"
                     onError={(e) => {
+                      console.log('Erro ao carregar logo da empresa:', e);
                       e.currentTarget.style.display = 'none';
                       e.currentTarget.nextElementSibling?.classList.remove('hidden');
                     }}
                   />
                 ) : null}
-                <div className={`h-12 w-12 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-md ${assessment?.empresa_logo_url ? 'hidden' : ''}`}>
-                  <Building className="h-6 w-6 text-primary-foreground" />
+                <div className={`h-12 w-12 bg-sidebar-accent rounded-lg flex items-center justify-center shadow-md ${assessment?.empresa_logo_url ? 'hidden' : ''}`}>
+                  <Building className="h-6 w-6 text-sidebar-foreground" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">
+                  <h1 className="text-2xl font-bold text-sidebar-foreground">
                     {assessment?.empresa_nome || 'Empresa'}
                   </h1>
-                  <p className="text-sm text-muted-foreground">Due Diligence Assessment</p>
+                  <p className="text-sm text-sidebar-foreground/70">Due Diligence Assessment</p>
                 </div>
               </div>
             </div>
             
             {/* Data de Expiração */}
             <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2 bg-primary/10 px-3 py-2 rounded-lg border border-primary/20">
-                <Calendar className="h-4 w-4 text-primary" />
+              <div className="flex items-center space-x-2 bg-sidebar-accent px-3 py-2 rounded-lg border border-sidebar-border">
+                <Calendar className="h-4 w-4 text-sidebar-foreground" />
                 <div className="text-right">
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="text-sm font-medium text-sidebar-foreground">
                     Prazo até
                   </p>
-                  <p className="text-xs text-primary font-semibold">
+                  <p className="text-xs text-sidebar-foreground font-semibold">
                     {assessment.data_expiracao ? new Date(assessment.data_expiracao).toLocaleDateString('pt-BR') : 'Sem prazo'}
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-sm font-medium text-sidebar-foreground">
                   {assessment.template?.nome}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-sidebar-foreground/70">
                   {questions.length} questões
                 </p>
               </div>
