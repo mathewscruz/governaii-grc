@@ -5,13 +5,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, FileText, Calendar, DollarSign, Users, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Plus, Search, FileText, Calendar, DollarSign, Users, AlertCircle, CheckCircle, Clock, XCircle, Edit, FileEdit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ContratoDialog } from '@/components/contratos/ContratoDialog';
 import { FornecedorDialog } from '@/components/contratos/FornecedorDialog';
 import { MarcosDialog } from '@/components/contratos/MarcosDialog';
 import { DocumentosDialog } from '@/components/contratos/DocumentosDialog';
+import { AditivosDialog } from '@/components/contratos/AditivosDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -88,6 +89,7 @@ export default function Contratos() {
   const [marcosDialogOpen, setMarcosDialogOpen] = useState(false);
   const [documentosDialogOpen, setDocumentosDialogOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState('contratos');
+  const [aditivosDialogOpen, setAditivosDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -430,7 +432,7 @@ export default function Contratos() {
                         }
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -450,8 +452,17 @@ export default function Contratos() {
                       <Button 
                         variant="outline" 
                         size="sm"
+                        onClick={() => { setSelectedContrato(contrato); setAditivosDialogOpen(true); }}
+                      >
+                        <FileEdit className="h-4 w-4 mr-1" />
+                        Aditivos
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
                         onClick={() => handleEdit(contrato, 'contrato')}
                       >
+                        <Edit className="h-4 w-4 mr-1" />
                         Editar
                       </Button>
                     </div>
@@ -570,6 +581,12 @@ export default function Contratos() {
         contrato={selectedContrato}
         open={documentosDialogOpen}
         onOpenChange={setDocumentosDialogOpen}
+      />
+
+      <AditivosDialog
+        contrato={selectedContrato}
+        open={aditivosDialogOpen}
+        onOpenChange={setAditivosDialogOpen}
       />
     </div>
   );
