@@ -187,10 +187,6 @@ export function AssessmentsManagerEnhanced() {
 
   useEffect(() => {
     fetchAssessments();
-    
-    // Auto-refresh a cada 30 segundos para capturar mudanças de status
-    const interval = setInterval(fetchAssessments, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -401,13 +397,23 @@ export function AssessmentsManagerEnhanced() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Gestão de Assessments</h2>
-        <Button 
-          onClick={() => setAssessmentDialog({ open: true, assessment: null, mode: 'create' })}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Nova Avaliação
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={fetchAssessments}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Atualizar
+          </Button>
+          <Button 
+            onClick={() => setAssessmentDialog({ open: true, assessment: null, mode: 'create' })}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Nova Avaliação
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}

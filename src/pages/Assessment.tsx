@@ -108,6 +108,15 @@ export default function Assessment() {
     (currentPage + 1) * questionsPerPage
   );
 
+  // Calcular progresso baseado em respostas preenchidas
+  const calculateProgress = () => {
+    if (questions.length === 0) return 0;
+    const answeredQuestions = questions.filter(q => 
+      responses[q.id] && responses[q.id].toString().trim() !== ''
+    ).length;
+    return (answeredQuestions / questions.length) * 100;
+  };
+
   // ETAPA 2: Validação de status no código
   const validateStatusTransition = useCallback((currentStatus: string, newStatus: string): boolean => {
     const validTransitions = {
@@ -464,10 +473,10 @@ export default function Assessment() {
   // Renderizar loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando questionário...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white/80">Carregando questionário...</p>
         </div>
       </div>
     );
@@ -476,10 +485,10 @@ export default function Assessment() {
   // Renderizar erro se assessment não encontrado
   if (!assessment) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Questionário não encontrado</h2>
             <p className="text-muted-foreground">
               O link pode ter expirado ou ser inválido.
@@ -493,7 +502,7 @@ export default function Assessment() {
   // Se já concluído, mostrar tela de sucesso
   if (assessment.status === 'concluido') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
         <div className="text-center max-w-lg mx-auto">
           <div className="relative mb-8 animate-scale-in">
             <div className="w-24 h-24 bg-gradient-to-br from-success to-success/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-success/20">
@@ -525,7 +534,7 @@ export default function Assessment() {
   // Renderizar se já concluído
   if (isFinished) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
         <div className="text-center max-w-lg mx-auto">
           {/* Header com logo da empresa melhorado */}
           <div className="mb-8 animate-fade-in">
@@ -588,10 +597,10 @@ export default function Assessment() {
     );
   }
 
-  const progress = totalPages > 0 ? ((currentPage + 1) / totalPages) * 100 : 0;
+  const progress = calculateProgress();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header com logo da empresa melhorado */}
         <div className="mb-8 text-center animate-fade-in">
@@ -632,7 +641,7 @@ export default function Assessment() {
                 Página {currentPage + 1} de {totalPages}
               </span>
               <span className="text-sm font-medium text-muted-foreground">
-                {Math.round(progress)}% concluído
+                {Math.round(progress)}% das perguntas respondidas
               </span>
             </div>
             <div className="relative">
