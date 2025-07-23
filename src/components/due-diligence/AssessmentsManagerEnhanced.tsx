@@ -133,38 +133,31 @@ export function AssessmentsManagerEnhanced() {
       
       const { data, error } = await supabase
         .from('due_diligence_assessments')
-        .select('*')
+        .select(`
+          *,
+          templates:template_id(nome, categoria)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Mock data para demonstração enquanto o schema não está completo
-      const mockAssessments: Assessment[] = [
-        {
-          id: '1',
-          fornecedor_nome: 'Tech Solutions LTDA',
-          fornecedor_email: 'contato@techsolutions.com',
-          status: 'concluido',
-          data_inicio: '2024-01-10',
-          data_conclusao: '2024-01-15',
-          data_expiracao: '2024-01-25',
-          score_final: 85.2,
-          token: 'abc123',
-          template: { nome: 'Avaliação de Segurança', categoria: 'seguranca' }
-        },
-        {
-          id: '2',
-          fornecedor_nome: 'Inovação Digital',
-          fornecedor_email: 'comercial@inovacao.com',
-          status: 'em_andamento',
-          data_inicio: '2024-01-20',
-          data_expiracao: '2024-01-30',
-          token: 'def456',
-          template: { nome: 'Compliance Geral', categoria: 'compliance' }
+      const formattedAssessments: Assessment[] = (data || []).map(assessment => ({
+        id: assessment.id,
+        fornecedor_nome: assessment.fornecedor_nome,
+        fornecedor_email: assessment.fornecedor_email,
+        status: assessment.status,
+        data_inicio: assessment.data_inicio,
+        data_conclusao: assessment.data_conclusao,
+        data_expiracao: assessment.data_expiracao,
+        score_final: assessment.score_final,
+        token: assessment.link_token,
+        template: {
+          nome: assessment.templates?.nome || 'Template não encontrado',
+          categoria: assessment.templates?.categoria || 'N/A'
         }
-      ];
+      }));
 
-      setAssessments(mockAssessments);
+      setAssessments(formattedAssessments);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar assessments",
@@ -196,13 +189,14 @@ export function AssessmentsManagerEnhanced() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      'enviado': { variant: 'outline' as const, text: 'Enviado' },
+      'pendente': { variant: 'outline' as const, text: 'Pendente' },
+      'ativo': { variant: 'secondary' as const, text: 'Ativo' },
       'em_andamento': { variant: 'secondary' as const, text: 'Em Andamento' },
       'concluido': { variant: 'default' as const, text: 'Concluído' },
       'expirado': { variant: 'destructive' as const, text: 'Expirado' }
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['enviado'];
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['pendente'];
     return <Badge variant={config.variant}>{config.text}</Badge>;
   };
 
@@ -250,9 +244,11 @@ export function AssessmentsManagerEnhanced() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os status</SelectItem>
-            <SelectItem value="enviado">Enviado</SelectItem>
+            <SelectItem value="pendente">Pendente</SelectItem>
+            <SelectItem value="ativo">Ativo</SelectItem>
             <SelectItem value="em_andamento">Em Andamento</SelectItem>
             <SelectItem value="concluido">Concluído</SelectItem>
+            <SelectItem value="expirado">Expirado</SelectItem>
           </SelectContent>
         </Select>
       </div>

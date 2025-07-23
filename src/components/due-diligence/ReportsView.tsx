@@ -1,11 +1,46 @@
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart3, TrendingUp, Users, FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useReportsData } from '@/hooks/useReportsData';
 
 export function ReportsView() {
+  const { data: reportsData, isLoading, error } = useReportsData();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96 mt-2" />
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-4 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-3 w-24 mt-2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-8">
+        <p className="text-muted-foreground">Erro ao carregar dados dos relatórios</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -23,9 +58,11 @@ export function ReportsView() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">87.3%</div>
+            <div className="text-2xl font-bold text-primary">
+              {reportsData?.overallMetrics.averageScore.toFixed(1)}%
+            </div>
             <p className="text-xs text-muted-foreground">
-              +5.2% em relação ao mês anterior
+              Baseado em avaliações concluídas
             </p>
           </CardContent>
         </Card>
@@ -36,9 +73,9 @@ export function ReportsView() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
+            <div className="text-2xl font-bold">{reportsData?.overallMetrics.totalSuppliers}</div>
             <p className="text-xs text-muted-foreground">
-              8 novos este mês
+              Fornecedores únicos
             </p>
           </CardContent>
         </Card>
@@ -49,9 +86,11 @@ export function ReportsView() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">92%</div>
+            <div className="text-2xl font-bold">
+              {reportsData?.overallMetrics.responseRate.toFixed(0)}%
+            </div>
             <p className="text-xs text-muted-foreground">
-              Excelente engajamento
+              Assessments concluídos
             </p>
           </CardContent>
         </Card>
@@ -62,7 +101,9 @@ export function ReportsView() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4.2 dias</div>
+            <div className="text-2xl font-bold">
+              {reportsData?.overallMetrics.averageCompletionTime.toFixed(1)} dias
+            </div>
             <p className="text-xs text-muted-foreground">
               Para conclusão da avaliação
             </p>
@@ -80,37 +121,31 @@ export function ReportsView() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Badge className="bg-green-100 text-green-800">Financeiro</Badge>
-                <span className="font-medium">94.2%</span>
-              </div>
-              <Progress value={94.2} className="w-32" />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Badge className="bg-blue-100 text-blue-800">Compliance</Badge>
-                <span className="font-medium">89.7%</span>
-              </div>
-              <Progress value={89.7} className="w-32" />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Badge className="bg-purple-100 text-purple-800">Operacional</Badge>
-                <span className="font-medium">85.1%</span>
-              </div>
-              <Progress value={85.1} className="w-32" />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Badge className="bg-red-100 text-red-800">Segurança</Badge>
-                <span className="font-medium">78.9%</span>
-              </div>
-              <Progress value={78.9} className="w-32" />
-            </div>
+            {reportsData?.categoryPerformance.map((category, index) => {
+              const colors = [
+                'bg-green-100 text-green-800',
+                'bg-blue-100 text-blue-800', 
+                'bg-purple-100 text-purple-800',
+                'bg-orange-100 text-orange-800',
+                'bg-red-100 text-red-800'
+              ];
+              return (
+                <div key={category.category} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Badge className={colors[index % colors.length]}>
+                      {category.category}
+                    </Badge>
+                    <span className="font-medium">{category.score.toFixed(1)}%</span>
+                  </div>
+                  <Progress value={category.score} className="w-32" />
+                </div>
+              );
+            })}
+            {(!reportsData?.categoryPerformance || reportsData.categoryPerformance.length === 0) && (
+              <p className="text-center text-muted-foreground py-4">
+                Nenhuma categoria encontrada
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -126,24 +161,23 @@ export function ReportsView() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {[
-                { nome: 'TechCorp Solutions', score: 96.8, categoria: 'Tecnologia' },
-                { nome: 'SecureData Inc', score: 94.2, categoria: 'Segurança' },
-                { nome: 'FinanceMax Ltd', score: 92.7, categoria: 'Financeiro' },
-                { nome: 'OptiLogistics', score: 91.3, categoria: 'Logística' },
-                { nome: 'CloudServ Pro', score: 89.9, categoria: 'Cloud' }
-              ].map((fornecedor, index) => (
+              {reportsData?.topSuppliers.map((fornecedor, index) => (
                 <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <p className="font-medium">{fornecedor.nome}</p>
                     <p className="text-sm text-muted-foreground">{fornecedor.categoria}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-green-600">{fornecedor.score}%</p>
+                    <p className="font-bold text-green-600">{fornecedor.score.toFixed(1)}%</p>
                     <p className="text-xs text-muted-foreground">#{index + 1}</p>
                   </div>
                 </div>
               ))}
+              {(!reportsData?.topSuppliers || reportsData.topSuppliers.length === 0) && (
+                <p className="text-center text-muted-foreground py-4">
+                  Nenhum fornecedor avaliado
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -157,24 +191,25 @@ export function ReportsView() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {[
-                { nome: 'Basic Services', score: 58.2, categoria: 'Serviços', status: 'Crítico' },
-                { nome: 'QuickFix Co', score: 62.1, categoria: 'Manutenção', status: 'Atenção' },
-                { nome: 'StandardCorp', score: 67.8, categoria: 'Materiais', status: 'Baixo' }
-              ].map((fornecedor, index) => (
+              {reportsData?.lowPerformingSuppliers.map((fornecedor, index) => (
                 <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <p className="font-medium">{fornecedor.nome}</p>
                     <p className="text-sm text-muted-foreground">{fornecedor.categoria}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-red-600">{fornecedor.score}%</p>
+                    <p className="font-bold text-red-600">{fornecedor.score.toFixed(1)}%</p>
                     <Badge variant="destructive" className="text-xs">
                       {fornecedor.status}
                     </Badge>
                   </div>
                 </div>
               ))}
+              {(!reportsData?.lowPerformingSuppliers || reportsData.lowPerformingSuppliers.length === 0) && (
+                <p className="text-center text-muted-foreground py-4">
+                  Todos os fornecedores têm boa performance
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

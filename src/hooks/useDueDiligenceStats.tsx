@@ -17,14 +17,14 @@ export const useDueDiligenceStats = () => {
     queryFn: async (): Promise<DueDiligenceStats> => {
       const { data: assessments, error } = await supabase
         .from('due_diligence_assessments')
-        .select('status, created_at');
+        .select('status, created_at, data_expiracao, fornecedor_email');
 
       if (error) throw error;
 
-      const { data: fornecedores } = await supabase
-        .from('fornecedores')
-        .select('id')
-        .eq('status', 'ativo');
+      // Contar fornecedores únicos nos assessments
+      const uniqueFornecedores = new Set(
+        assessments?.map(a => a.fornecedor_email) || []
+      ).size;
 
       const total = assessments?.length || 0;
       const active = assessments?.filter(a => a.status === 'ativo').length || 0;
@@ -32,8 +32,10 @@ export const useDueDiligenceStats = () => {
       const completed = assessments?.filter(a => a.status === 'concluido').length || 0;
       
       const hoje = new Date();
-      // Temporariamente zerado até ajustar a estrutura da tabela
-      const expired = 0;
+      // Assessments expirados
+      const expired = assessments?.filter(a => {
+        return a.data_expiracao && new Date(a.data_expiracao) < hoje && a.status !== 'concluido';
+      }).length || 0;
 
       // Assessments deste mês
       const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
@@ -47,7 +49,7 @@ export const useDueDiligenceStats = () => {
         pendingAssessments: pending,
         completedAssessments: completed,
         expiredAssessments: expired,
-        totalFornecedores: fornecedores?.length || 0,
+        totalFornecedores: uniqueFornecedores,
         assessmentsThisMonth: thisMonth
       };
     },

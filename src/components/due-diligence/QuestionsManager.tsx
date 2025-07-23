@@ -19,7 +19,7 @@ interface Question {
   template_id: string;
   titulo: string;
   descricao?: string;
-  tipo: 'texto' | 'multipla_escolha' | 'arquivo' | 'score' | 'sim_nao';
+  tipo: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'file' | 'score' | 'date';
   opcoes?: string[];
   obrigatoria: boolean;
   peso: number;
@@ -47,7 +47,7 @@ export function QuestionsManager({ templateId, templateName }: QuestionsManagerP
   const [formData, setFormData] = useState({
     titulo: '',
     descricao: '',
-    tipo: 'texto' as Question['tipo'],
+    tipo: 'text' as Question['tipo'],
     opcoes: [''],
     obrigatoria: true,
     peso: 1
@@ -83,7 +83,7 @@ export function QuestionsManager({ templateId, templateName }: QuestionsManagerP
     setFormData({
       titulo: '',
       descricao: '',
-      tipo: 'texto',
+      tipo: 'text',
       opcoes: [''],
       obrigatoria: true,
       peso: 1
@@ -100,8 +100,8 @@ export function QuestionsManager({ templateId, templateName }: QuestionsManagerP
         titulo: formData.titulo,
         descricao: formData.descricao || null,
         tipo: formData.tipo,
-        opcoes: ['multipla_escolha', 'sim_nao'].includes(formData.tipo) ? 
-          (formData.tipo === 'sim_nao' ? ['Sim', 'Não'] : formData.opcoes.filter(o => o.trim())) : null,
+        opcoes: ['select', 'radio', 'checkbox'].includes(formData.tipo) ? 
+          formData.opcoes.filter(o => o.trim()) : null,
         obrigatoria: formData.obrigatoria,
         peso: formData.peso,
         ordem: editingQuestion ? editingQuestion.ordem : questions.length + 1
@@ -233,22 +233,28 @@ export function QuestionsManager({ templateId, templateName }: QuestionsManagerP
 
   const getTypeLabel = (type: string) => {
     const types = {
-      'texto': 'Texto',
-      'multipla_escolha': 'Múltipla Escolha',
-      'arquivo': 'Arquivo',
-      'score': 'Score',
-      'sim_nao': 'Sim/Não'
+      'text': 'Texto',
+      'textarea': 'Texto Longo',
+      'select': 'Seleção',
+      'radio': 'Escolha Única',
+      'checkbox': 'Múltipla Escolha',
+      'file': 'Arquivo',
+      'score': 'Score (1-5)',
+      'date': 'Data'
     };
     return types[type as keyof typeof types] || type;
   };
 
   const getTypeColor = (type: string) => {
     const colors = {
-      'texto': 'bg-blue-100 text-blue-800',
-      'multipla_escolha': 'bg-green-100 text-green-800',
-      'arquivo': 'bg-purple-100 text-purple-800',
+      'text': 'bg-blue-100 text-blue-800',
+      'textarea': 'bg-blue-100 text-blue-800',
+      'select': 'bg-green-100 text-green-800',
+      'radio': 'bg-green-100 text-green-800',
+      'checkbox': 'bg-green-100 text-green-800',
+      'file': 'bg-purple-100 text-purple-800',
       'score': 'bg-orange-100 text-orange-800',
-      'sim_nao': 'bg-gray-100 text-gray-800'
+      'date': 'bg-gray-100 text-gray-800'
     };
     return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
@@ -324,11 +330,14 @@ export function QuestionsManager({ templateId, templateName }: QuestionsManagerP
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="texto">Texto</SelectItem>
-                      <SelectItem value="multipla_escolha">Múltipla Escolha</SelectItem>
-                      <SelectItem value="arquivo">Arquivo</SelectItem>
+                      <SelectItem value="text">Texto</SelectItem>
+                      <SelectItem value="textarea">Texto Longo</SelectItem>
+                      <SelectItem value="select">Seleção</SelectItem>
+                      <SelectItem value="radio">Escolha Única</SelectItem>
+                      <SelectItem value="checkbox">Múltipla Escolha</SelectItem>
+                      <SelectItem value="file">Arquivo</SelectItem>
                       <SelectItem value="score">Score (1-5)</SelectItem>
-                      <SelectItem value="sim_nao">Sim/Não</SelectItem>
+                      <SelectItem value="date">Data</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -344,7 +353,7 @@ export function QuestionsManager({ templateId, templateName }: QuestionsManagerP
                 />
               </div>
 
-              {formData.tipo === 'multipla_escolha' && (
+              {['select', 'radio', 'checkbox'].includes(formData.tipo) && (
                 <div className="space-y-2">
                   <Label>Opções de Resposta</Label>
                   {formData.opcoes.map((opcao, index) => (
