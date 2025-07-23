@@ -90,6 +90,7 @@ export default function Assessment() {
   const [autoSaving, setAutoSaving] = useState(false);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   const QUESTIONS_PER_PAGE = 20;
 
@@ -344,7 +345,7 @@ export default function Assessment() {
           pontuacao: response.score
         }),
         headers: {
-          'Prefer': 'resolution=merge-duplicates'
+          'Prefer': 'resolution=upsert-duplicates'
         }
       });
 
@@ -648,25 +649,20 @@ export default function Assessment() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-3">
-                  <div className="relative h-12 w-12">
-                    {assessment?.empresa_logo_url ? (
-                      <img 
-                        src={assessment.empresa_logo_url} 
-                        alt={`Logo ${assessment.empresa_nome || 'Empresa'}`}
-                        className="h-12 w-12 object-contain rounded-lg border border-sidebar-border shadow-sm bg-white"
-                        onError={(e) => {
-                          console.log('ASSESSMENT DEBUG: Erro ao carregar logo na tela de sucesso:', assessment.empresa_logo_url);
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                        onLoad={() => {
-                          console.log('ASSESSMENT DEBUG: Logo carregada com sucesso na tela de sucesso:', assessment.empresa_logo_url);
-                        }}
-                      />
-                    ) : null}
-                    <div className="h-12 w-12 bg-sidebar-accent rounded-lg flex items-center justify-center shadow-md" style={{ display: assessment?.empresa_logo_url ? 'none' : 'flex' }}>
-                      <Building className="h-6 w-6 text-sidebar-foreground" />
-                    </div>
-                  </div>
+                 <div className="relative h-12 w-12">
+                   {assessment?.empresa_logo_url && !logoError ? (
+                     <img 
+                       src={assessment.empresa_logo_url} 
+                       alt={`Logo ${assessment.empresa_nome || 'Empresa'}`}
+                       className="h-12 w-12 object-contain rounded-lg border border-sidebar-border shadow-sm bg-white"
+                       onError={() => setLogoError(true)}
+                     />
+                   ) : (
+                     <div className="h-12 w-12 bg-sidebar-accent rounded-lg flex items-center justify-center shadow-md">
+                       <Building className="h-6 w-6 text-sidebar-foreground" />
+                     </div>
+                   )}
+                 </div>
                   <div>
                     <h1 className="text-2xl font-bold text-sidebar-foreground">
                       {assessment?.empresa_nome || 'Empresa'}
@@ -766,25 +762,20 @@ export default function Assessment() {
             <div className="flex items-center space-x-4">
               {/* Logo da Empresa */}
               <div className="flex items-center space-x-3">
-                <div className="relative h-12 w-12">
-                  {assessment?.empresa_logo_url ? (
-                    <img 
-                      src={assessment.empresa_logo_url} 
-                      alt={`Logo ${assessment.empresa_nome || 'Empresa'}`}
-                      className="h-12 w-12 object-contain rounded-lg border border-sidebar-border shadow-sm bg-white"
-                      onError={(e) => {
-                        console.log('ASSESSMENT DEBUG: Erro ao carregar logo:', assessment.empresa_logo_url);
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                      onLoad={() => {
-                        console.log('ASSESSMENT DEBUG: Logo carregada com sucesso:', assessment.empresa_logo_url);
-                      }}
-                    />
-                  ) : null}
-                  <div className="h-12 w-12 bg-sidebar-accent rounded-lg flex items-center justify-center shadow-md" style={{ display: assessment?.empresa_logo_url ? 'none' : 'flex' }}>
-                    <Building className="h-6 w-6 text-sidebar-foreground" />
-                  </div>
-                </div>
+                 <div className="relative h-12 w-12">
+                   {assessment?.empresa_logo_url && !logoError ? (
+                     <img 
+                       src={assessment.empresa_logo_url} 
+                       alt={`Logo ${assessment.empresa_nome || 'Empresa'}`}
+                       className="h-12 w-12 object-contain rounded-lg border border-sidebar-border shadow-sm bg-white"
+                       onError={() => setLogoError(true)}
+                     />
+                   ) : (
+                     <div className="h-12 w-12 bg-sidebar-accent rounded-lg flex items-center justify-center shadow-md">
+                       <Building className="h-6 w-6 text-sidebar-foreground" />
+                     </div>
+                   )}
+                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-sidebar-foreground">
                     {assessment?.empresa_nome || 'Empresa'}
