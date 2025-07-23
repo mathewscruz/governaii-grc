@@ -10,12 +10,16 @@ const routeMap: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/ativos': 'Gestão de Ativos',
   '/riscos': 'Gestão de Riscos',
+  '/controles': 'Controles Internos',
   '/auditorias': 'Auditorias',
-  '/conformidade': 'Conformidade',
-  '/relatorios': 'Relatórios',
+  '/contratos': 'Contratos',
+  '/documentos': 'Documentos',
+  '/contas-privilegiadas': 'Contas Privilegiadas',
+  '/incidentes': 'Incidentes',
+  '/dados': 'Proteção de Dados',
   '/configuracoes': 'Configurações',
-  '/usuarios': 'Usuários',
-  '/empresas': 'Empresas'
+  '/due-diligence': 'Due Diligence',
+  '/denuncia': 'Canal de Denúncia'
 };
 
 export const useBreadcrumb = () => {
