@@ -1869,6 +1869,7 @@ export type Database = {
           score_final: number | null
           status: string
           template_id: string
+          ultimo_lembrete_enviado: string | null
           updated_at: string
         }
         Insert: {
@@ -1887,6 +1888,7 @@ export type Database = {
           score_final?: number | null
           status?: string
           template_id: string
+          ultimo_lembrete_enviado?: string | null
           updated_at?: string
         }
         Update: {
@@ -1905,6 +1907,7 @@ export type Database = {
           score_final?: number | null
           status?: string
           template_id?: string
+          ultimo_lembrete_enviado?: string | null
           updated_at?: string
         }
         Relationships: [
