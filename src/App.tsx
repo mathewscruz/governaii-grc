@@ -18,6 +18,7 @@ import Dados from '@/pages/Dados';
 import DueDiligence from '@/pages/DueDiligence';
 import Assessment from '@/pages/Assessment';
 import Denuncia from '@/pages/Denuncia';
+import DenunciaInterno from '@/pages/DenunciaInterno';
 import DenunciaExterna from '@/pages/DenunciaExterna';
 import DenunciaMenu from '@/pages/DenunciaMenu';
 import DenunciaFormulario from '@/pages/DenunciaFormulario';
@@ -53,7 +54,8 @@ function App() {
             <Route path="/incidentes" element={<Layout><Incidentes /></Layout>} />
             <Route path="/dados" element={<Layout><Dados /></Layout>} />
             <Route path="/due-diligence" element={<Layout><DueDiligence /></Layout>} />
-            <Route path="/denuncia" element={<Layout><Denuncia /></Layout>} />
+            <Route path="/denuncia" element={<Layout><DenunciaInterno /></Layout>} />
+            <Route path="/denuncia/admin" element={<Layout><Denuncia /></Layout>} />
             <Route path="/configuracoes" element={<Layout><Configuracoes /></Layout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

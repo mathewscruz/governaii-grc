@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DenunciasDashboard } from '@/components/denuncia/DenunciasDashboard';
 import { ConfiguracoesDenuncia } from '@/components/denuncia/ConfiguracoesDenuncia';
@@ -6,7 +7,15 @@ import { CategoriasDenuncia } from '@/components/denuncia/CategoriasDenuncia';
 import { RelatoriosDenuncia } from '@/components/denuncia/RelatoriosDenuncia';
 
 export default function Denuncia() {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['dashboard', 'configuracoes', 'categorias', 'relatorios'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
