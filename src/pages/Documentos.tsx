@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, XCircle, Clock, History, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,9 @@ import { DocumentosDashboard } from '@/components/documentos/DocumentosDashboard
 import { DocumentosRelatorios } from '@/components/documentos/DocumentosRelatorios';
 import { BuscaAvancadaDocumentos } from '@/components/documentos/BuscaAvancadaDocumentos';
 import { UploadMultiplosDialog } from '@/components/documentos/UploadMultiplosDialog';
+import { DocumentoPreview } from '@/components/documentos/DocumentoPreview';
+import { NotificacoesDocumentos } from '@/components/documentos/NotificacoesDocumentos';
+import { TrilhaAuditoriaDocumentos } from '@/components/documentos/TrilhaAuditoriaDocumentos';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -54,6 +57,7 @@ interface Categoria {
 
 export function Documentos() {
   const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const [documentosFiltrados, setDocumentosFiltrados] = useState<Documento[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,15 +69,22 @@ export function Documentos() {
   const [vinculacoesDialog, setVinculacoesDialog] = useState<{ open: boolean; documento?: Documento }>({ open: false });
   const [aprovacaoDialog, setAprovacaoDialog] = useState<{ open: boolean; documento?: Documento }>({ open: false });
   const [comentariosDialog, setComentariosDialog] = useState<{ open: boolean; documento?: Documento }>({ open: false });
+  const [previewDialog, setPreviewDialog] = useState<{ open: boolean; documento?: Documento }>({ open: false });
+  const [auditoriaDialog, setAuditoriaDialog] = useState<{ open: boolean; documento?: Documento }>({ open: false });
   const [buscaAvancada, setBuscaAvancada] = useState(false);
   const [uploadMultiplos, setUploadMultiplos] = useState(false);
   const [activeTab, setActiveTab] = useState('lista');
+  const [filtrosAvancados, setFiltrosAvancados] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchDocumentos();
     fetchCategorias();
   }, []);
+
+  useEffect(() => {
+    aplicarFiltros();
+  }, [documentos, searchTerm, selectedCategoria, selectedStatus, selectedTipo, filtrosAvancados]);
 
   const fetchDocumentos = async () => {
     try {
@@ -110,6 +121,98 @@ export function Documentos() {
     }
   };
 
+  const aplicarFiltros = () => {
+    let filtered = [...documentos];
+
+    // Filtro de busca simples
+    if (searchTerm) {
+      filtered = filtered.filter(documento => 
+        documento.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        documento.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        documento.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    // Filtros básicos
+    if (selectedCategoria !== 'all') {
+      filtered = filtered.filter(doc => doc.categoria === selectedCategoria);
+    }
+
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter(doc => doc.status === selectedStatus);
+    }
+
+    if (selectedTipo !== 'all') {
+      filtered = filtered.filter(doc => doc.tipo === selectedTipo);
+    }
+
+    // Filtros avançados
+    if (filtrosAvancados) {
+      if (filtrosAvancados.dataInicio) {
+        filtered = filtered.filter(doc => 
+          new Date(doc.created_at) >= filtrosAvancados.dataInicio
+        );
+      }
+
+      if (filtrosAvancados.dataFim) {
+        filtered = filtered.filter(doc => 
+          new Date(doc.created_at) <= filtrosAvancados.dataFim
+        );
+      }
+
+      if (filtrosAvancados.dataVencimentoInicio && filtrosAvancados.dataVencimentoInicio) {
+        filtered = filtered.filter(doc => 
+          doc.data_vencimento && 
+          new Date(doc.data_vencimento) >= filtrosAvancados.dataVencimentoInicio
+        );
+      }
+
+      if (filtrosAvancados.dataVencimentoFim) {
+        filtered = filtered.filter(doc => 
+          doc.data_vencimento && 
+          new Date(doc.data_vencimento) <= filtrosAvancados.dataVencimentoFim
+        );
+      }
+
+      if (filtrosAvancados.confidencial !== undefined) {
+        filtered = filtered.filter(doc => doc.confidencial === filtrosAvancados.confidencial);
+      }
+
+      if (filtrosAvancados.comArquivo !== undefined) {
+        if (filtrosAvancados.comArquivo) {
+          filtered = filtered.filter(doc => doc.arquivo_url);
+        } else {
+          filtered = filtered.filter(doc => !doc.arquivo_url);
+        }
+      }
+
+      if (filtrosAvancados.tamanhoMin) {
+        const minBytes = filtrosAvancados.tamanhoMin * 1024 * 1024; // MB para bytes
+        filtered = filtered.filter(doc => 
+          doc.arquivo_tamanho && doc.arquivo_tamanho >= minBytes
+        );
+      }
+
+      if (filtrosAvancados.tamanhoMax) {
+        const maxBytes = filtrosAvancados.tamanhoMax * 1024 * 1024; // MB para bytes
+        filtered = filtered.filter(doc => 
+          doc.arquivo_tamanho && doc.arquivo_tamanho <= maxBytes
+        );
+      }
+
+      if (filtrosAvancados.tags) {
+        const searchTags = filtrosAvancados.tags.split(',').map((tag: string) => tag.trim().toLowerCase());
+        filtered = filtered.filter(doc => 
+          doc.tags && searchTags.some(searchTag => 
+            doc.tags!.some(docTag => docTag.toLowerCase().includes(searchTag))
+          )
+        );
+      }
+    }
+
+    setDocumentosFiltrados(filtered);
+  };
+
   const handleDeleteDocumento = async (id: string) => {
     try {
       const { error } = await supabase
@@ -135,44 +238,24 @@ export function Documentos() {
     }
   };
 
-  const handleDownloadDocumento = async (documento: Documento) => {
-    if (!documento.arquivo_url) {
-      toast({
-        title: "Arquivo não encontrado",
-        description: "Este documento não possui arquivo anexado.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleBuscaAvancada = (filtros: any) => {
+    setFiltrosAvancados(filtros);
+    toast({
+      title: "Filtros aplicados",
+      description: "Os filtros avançados foram aplicados com sucesso.",
+    });
+  };
 
-    try {
-      const { data, error } = await supabase.storage
-        .from('documentos')
-        .download(documento.arquivo_url);
-
-      if (error) throw error;
-
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = documento.arquivo_nome || documento.nome;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "Download iniciado",
-        description: "O arquivo está sendo baixado.",
-      });
-    } catch (error) {
-      console.error('Erro ao baixar documento:', error);
-      toast({
-        title: "Erro ao baixar documento",
-        description: "Tente novamente em alguns instantes.",
-        variant: "destructive",
-      });
-    }
+  const limparFiltros = () => {
+    setSearchTerm('');
+    setSelectedCategoria('all');
+    setSelectedStatus('all');
+    setSelectedTipo('all');
+    setFiltrosAvancados(null);
+    toast({
+      title: "Filtros limpos",
+      description: "Todos os filtros foram removidos.",
+    });
   };
 
   const formatFileSize = (bytes?: number) => {
@@ -214,16 +297,6 @@ export function Documentos() {
       </Badge>
     );
   };
-
-  const filteredDocumentos = documentos.filter(documento => {
-    const matchesSearch = documento.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         documento.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategoria = selectedCategoria === 'all' || documento.categoria === selectedCategoria;
-    const matchesStatus = selectedStatus === 'all' || documento.status === selectedStatus;
-    const matchesTipo = selectedTipo === 'all' || documento.tipo === selectedTipo;
-
-    return matchesSearch && matchesCategoria && matchesStatus && matchesTipo;
-  });
 
   const stats = {
     total: documentos.length,
@@ -317,13 +390,17 @@ export function Documentos() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="lista">Lista de Documentos</TabsTrigger>
+          <TabsTrigger value="notificacoes">
+            <Bell className="h-4 w-4 mr-2" />
+            Notificações
+          </TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
         </TabsList>
 
         <TabsContent value="lista" className="space-y-4">
           {/* Filtros */}
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-4 items-center flex-wrap">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -333,6 +410,7 @@ export function Documentos() {
                 className="pl-10"
               />
             </div>
+            
             <Select value={selectedCategoria} onValueChange={setSelectedCategoria}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Categoria" />
@@ -346,6 +424,7 @@ export function Documentos() {
                 ))}
               </SelectContent>
             </Select>
+            
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Status" />
@@ -358,6 +437,7 @@ export function Documentos() {
                 <SelectItem value="vencido">Vencido</SelectItem>
               </SelectContent>
             </Select>
+            
             <Select value={selectedTipo} onValueChange={setSelectedTipo}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Tipo" />
@@ -373,6 +453,7 @@ export function Documentos() {
                 <SelectItem value="relatorio">Relatório</SelectItem>
               </SelectContent>
             </Select>
+            
             <Button
               variant="outline"
               onClick={() => setBuscaAvancada(true)}
@@ -380,7 +461,28 @@ export function Documentos() {
               <Filter className="h-4 w-4 mr-2" />
               Busca Avançada
             </Button>
+            
+            {(filtrosAvancados || searchTerm || selectedCategoria !== 'all' || selectedStatus !== 'all' || selectedTipo !== 'all') && (
+              <Button
+                variant="ghost"
+                onClick={limparFiltros}
+                className="text-muted-foreground"
+              >
+                Limpar Filtros
+              </Button>
+            )}
           </div>
+
+          {/* Indicador de filtros aplicados */}
+          {filtrosAvancados && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Filter className="h-4 w-4" />
+              Filtros avançados aplicados
+              <Badge variant="secondary">
+                {Object.keys(filtrosAvancados).length} filtro(s)
+              </Badge>
+            </div>
+          )}
 
           {/* Tabela de documentos */}
           <Card>
@@ -398,7 +500,7 @@ export function Documentos() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDocumentos.map((documento) => (
+                {documentosFiltrados.map((documento) => (
                   <TableRow key={documento.id}>
                     <TableCell>
                       <div className="space-y-1">
@@ -433,19 +535,17 @@ export function Documentos() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
+                            onClick={() => setPreviewDialog({ open: true, documento })}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Preview
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onClick={() => setDocumentoDialog({ open: true, documento })}
                           >
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
                           </DropdownMenuItem>
-                          {documento.arquivo_url && (
-                            <DropdownMenuItem
-                              onClick={() => handleDownloadDocumento(documento)}
-                            >
-                              <Download className="mr-2 h-4 w-4" />
-                              Download
-                            </DropdownMenuItem>
-                          )}
                           <DropdownMenuItem
                             onClick={() => setVinculacoesDialog({ open: true, documento })}
                           >
@@ -465,6 +565,12 @@ export function Documentos() {
                             Aprovação
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            onClick={() => setAuditoriaDialog({ open: true, documento })}
+                          >
+                            <History className="mr-2 h-4 w-4" />
+                            Auditoria
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onClick={() => handleDeleteDocumento(documento.id)}
                             className="text-red-600"
                           >
@@ -478,7 +584,21 @@ export function Documentos() {
                 ))}
               </TableBody>
             </Table>
+
+            {documentosFiltrados.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                {filtrosAvancados || searchTerm || selectedCategoria !== 'all' || selectedStatus !== 'all' || selectedTipo !== 'all' 
+                  ? 'Nenhum documento encontrado com os filtros aplicados.'
+                  : 'Nenhum documento cadastrado.'
+                }
+              </div>
+            )}
           </Card>
+        </TabsContent>
+
+        <TabsContent value="notificacoes">
+          <NotificacoesDocumentos />
         </TabsContent>
 
         <TabsContent value="dashboard">
@@ -533,13 +653,27 @@ export function Documentos() {
         />
       )}
 
+      {previewDialog.documento && (
+        <DocumentoPreview
+          open={previewDialog.open}
+          onOpenChange={(open) => setPreviewDialog({ open })}
+          documento={previewDialog.documento}
+        />
+      )}
+
+      {auditoriaDialog.documento && (
+        <TrilhaAuditoriaDocumentos
+          open={auditoriaDialog.open}
+          onOpenChange={(open) => setAuditoriaDialog({ open })}
+          documentoId={auditoriaDialog.documento.id}
+          documentoNome={auditoriaDialog.documento.nome}
+        />
+      )}
+
       <BuscaAvancadaDocumentos
         open={buscaAvancada}
         onOpenChange={setBuscaAvancada}
-        onSearch={(filters) => {
-          // Aplicar filtros avançados
-          console.log('Filtros avançados:', filters);
-        }}
+        onSearch={handleBuscaAvancada}
         categorias={categorias}
       />
 

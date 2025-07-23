@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Bell, Check, ExternalLink } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { differenceInDays } from 'date-fns';
 
 interface Notification {
   id: string;
@@ -25,6 +27,7 @@ const NotificationCenter: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Buscar notificações manuais
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
@@ -39,14 +42,81 @@ const NotificationCenter: React.FC = () => {
     },
   });
 
-  const markAsReadMutation = useMutation({
-    mutationFn: async (notificationId: string) => {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
+  // Buscar documentos vencendo para notificações automáticas
+  const { data: documentosNotifications = [] } = useQuery({
+    queryKey: ['documentos-notifications'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('documentos')
+        .select('id, nome, data_vencimento, tipo')
+        .not('data_vencimento', 'is', null)
+        .eq('status', 'ativo');
 
       if (error) throw error;
+
+      const hoje = new Date();
+      const notificacoes = data
+        .map(doc => {
+          const diasParaVencimento = differenceInDays(new Date(doc.data_vencimento!), hoje);
+          
+          if (diasParaVencimento < 0) {
+            return {
+              id: `doc-vencido-${doc.id}`,
+              title: 'Documento Vencido',
+              message: `O documento "${doc.nome}" está vencido há ${Math.abs(diasParaVencimento)} dias`,
+              type: 'error',
+              read: false,
+              link_to: '/documentos',
+              created_at: new Date().toISOString(),
+              isAutomatic: true
+            };
+          } else if (diasParaVencimento === 0) {
+            return {
+              id: `doc-hoje-${doc.id}`,
+              title: 'Documento Vence Hoje',
+              message: `O documento "${doc.nome}" vence hoje`,
+              type: 'warning',
+              read: false,
+              link_to: '/documentos',
+              created_at: new Date().toISOString(),
+              isAutomatic: true
+            };
+          } else if (diasParaVencimento <= 7) {
+            return {
+              id: `doc-7dias-${doc.id}`,
+              title: 'Documento Vence em Breve',
+              message: `O documento "${doc.nome}" vence em ${diasParaVencimento} dias`,
+              type: 'warning',
+              read: false,
+              link_to: '/documentos',
+              created_at: new Date().toISOString(),
+              isAutomatic: true
+            };
+          }
+          return null;
+        })
+        .filter(notif => notif !== null);
+
+      return notificacoes;
+    },
+  });
+
+  // Combinar notificações manuais e automáticas
+  const allNotifications = [...notifications, ...documentosNotifications]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 20);
+
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      // Só marcar como lida se não for uma notificação automática
+      if (!notificationId.startsWith('doc-')) {
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('id', notificationId);
+
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -60,10 +130,10 @@ const NotificationCenter: React.FC = () => {
     },
   });
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = allNotifications.filter(n => !n.read).length;
 
-  const handleNotificationClick = (notification: Notification) => {
-    if (!notification.read) {
+  const handleNotificationClick = (notification: any) => {
+    if (!notification.read && !notification.isAutomatic) {
       markAsReadMutation.mutate(notification.id);
     }
 
@@ -115,13 +185,13 @@ const NotificationCenter: React.FC = () => {
             <div className="p-4 text-center text-muted-foreground">
               Carregando...
             </div>
-          ) : notifications.length === 0 ? (
+          ) : allNotifications.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
               Nenhuma notificação
             </div>
           ) : (
             <div className="space-y-1">
-              {notifications.map((notification) => (
+              {allNotifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={`p-3 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors ${
@@ -150,7 +220,9 @@ const NotificationCenter: React.FC = () => {
                       
                       <div className="flex items-center justify-between mt-2">
                         <span className={`text-xs px-2 py-1 rounded-full border ${getTypeColor(notification.type)}`}>
-                          {notification.type}
+                          {notification.type === 'error' ? 'Urgente' : 
+                           notification.type === 'warning' ? 'Atenção' : 
+                           notification.type === 'success' ? 'Sucesso' : 'Info'}
                         </span>
                         
                         <div className="flex items-center gap-1">
@@ -164,7 +236,7 @@ const NotificationCenter: React.FC = () => {
                       </div>
                     </div>
                     
-                    {!notification.read && (
+                    {!notification.read && !notification.isAutomatic && (
                       <Button
                         variant="ghost"
                         size="sm"
