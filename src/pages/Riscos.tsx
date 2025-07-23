@@ -310,20 +310,10 @@ export function Riscos() {
               Identifique, avalie e monitore riscos organizacionais de forma estruturada
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)}>
-              <Tag className="mr-2 h-4 w-4" />
-              Categorias
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)}>
-              <Settings className="mr-2 h-4 w-4" />
-              Configurar Matriz
-            </Button>
-            <Button onClick={openCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Risco
-            </Button>
-          </div>
+          <Button onClick={openCreateDialog}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Risco
+          </Button>
         </div>
 
         {/* KPI Cards */}
@@ -396,9 +386,6 @@ export function Riscos() {
                       <AlertTriangle className="h-5 w-5" />
                       Riscos Identificados
                     </CardTitle>
-                    <CardDescription>
-                      Gerencie e monitore todos os riscos da organização
-                    </CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)}>
