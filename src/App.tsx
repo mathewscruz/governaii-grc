@@ -17,6 +17,8 @@ import Incidentes from '@/pages/Incidentes';
 import Dados from '@/pages/Dados';
 import DueDiligence from '@/pages/DueDiligence';
 import Assessment from '@/pages/Assessment';
+import Denuncia from '@/pages/Denuncia';
+import DenunciaExterna from '@/pages/DenunciaExterna';
 import Configuracoes from '@/pages/Configuracoes';
 import NotFound from '@/pages/NotFound';
 
@@ -30,6 +32,7 @@ function App() {
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/assessment/:token" element={<Assessment />} />
+            <Route path="/denuncia/externa/:token" element={<DenunciaExterna />} />
             <Route path="/" element={<Layout><Navigate to="/dashboard" replace /></Layout>} />
             <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
             <Route path="/ativos" element={<Layout><Ativos /></Layout>} />
@@ -42,7 +45,7 @@ function App() {
             <Route path="/incidentes" element={<Layout><Incidentes /></Layout>} />
             <Route path="/dados" element={<Layout><Dados /></Layout>} />
             <Route path="/due-diligence" element={<Layout><DueDiligence /></Layout>} />
-            <Route path="/denuncia" element={<Layout><div className="p-6"><h1 className="text-2xl font-bold">Canal de Denúncia</h1><p className="text-muted-foreground">Módulo em desenvolvimento</p></div></Layout>} />
+            <Route path="/denuncia" element={<Layout><Denuncia /></Layout>} />
             <Route path="/configuracoes" element={<Layout><Configuracoes /></Layout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

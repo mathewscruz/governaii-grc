@@ -1357,6 +1357,262 @@ export type Database = {
         }
         Relationships: []
       }
+      denuncias: {
+        Row: {
+          anonima: boolean | null
+          categoria_id: string | null
+          created_at: string | null
+          data_atribuicao: string | null
+          data_conclusao: string | null
+          data_inicio_investigacao: string | null
+          descricao: string
+          email_denunciante: string | null
+          empresa_id: string
+          gravidade: string | null
+          id: string
+          ip_origem: unknown | null
+          nome_denunciante: string | null
+          parecer_final: string | null
+          politica_aceita: boolean | null
+          protocolo: string
+          responsavel_id: string | null
+          status: string | null
+          titulo: string
+          token_publico: string
+          updated_at: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          anonima?: boolean | null
+          categoria_id?: string | null
+          created_at?: string | null
+          data_atribuicao?: string | null
+          data_conclusao?: string | null
+          data_inicio_investigacao?: string | null
+          descricao: string
+          email_denunciante?: string | null
+          empresa_id: string
+          gravidade?: string | null
+          id?: string
+          ip_origem?: unknown | null
+          nome_denunciante?: string | null
+          parecer_final?: string | null
+          politica_aceita?: boolean | null
+          protocolo: string
+          responsavel_id?: string | null
+          status?: string | null
+          titulo: string
+          token_publico: string
+          updated_at?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          anonima?: boolean | null
+          categoria_id?: string | null
+          created_at?: string | null
+          data_atribuicao?: string | null
+          data_conclusao?: string | null
+          data_inicio_investigacao?: string | null
+          descricao?: string
+          email_denunciante?: string | null
+          empresa_id?: string
+          gravidade?: string | null
+          id?: string
+          ip_origem?: unknown | null
+          nome_denunciante?: string | null
+          parecer_final?: string | null
+          politica_aceita?: boolean | null
+          protocolo?: string
+          responsavel_id?: string | null
+          status?: string | null
+          titulo?: string
+          token_publico?: string
+          updated_at?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "denuncias_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "denuncias_categorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      denuncias_anexos: {
+        Row: {
+          arquivo_url: string | null
+          created_at: string | null
+          denuncia_id: string
+          id: string
+          movimentacao_id: string | null
+          nome_arquivo: string
+          tamanho_arquivo: number | null
+          tipo_anexo: string | null
+          tipo_arquivo: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          arquivo_url?: string | null
+          created_at?: string | null
+          denuncia_id: string
+          id?: string
+          movimentacao_id?: string | null
+          nome_arquivo: string
+          tamanho_arquivo?: number | null
+          tipo_anexo?: string | null
+          tipo_arquivo: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          arquivo_url?: string | null
+          created_at?: string | null
+          denuncia_id?: string
+          id?: string
+          movimentacao_id?: string | null
+          nome_arquivo?: string
+          tamanho_arquivo?: number | null
+          tipo_anexo?: string | null
+          tipo_arquivo?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "denuncias_anexos_denuncia_id_fkey"
+            columns: ["denuncia_id"]
+            isOneToOne: false
+            referencedRelation: "denuncias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "denuncias_anexos_movimentacao_id_fkey"
+            columns: ["movimentacao_id"]
+            isOneToOne: false
+            referencedRelation: "denuncias_movimentacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      denuncias_categorias: {
+        Row: {
+          ativo: boolean | null
+          cor: string | null
+          created_at: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          cor?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          cor?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      denuncias_configuracoes: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          emails_notificacao: string[] | null
+          empresa_id: string
+          id: string
+          notificar_administradores: boolean | null
+          permitir_anonimas: boolean | null
+          politica_privacidade: string | null
+          requerer_email: boolean | null
+          texto_apresentacao: string | null
+          token_publico: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          emails_notificacao?: string[] | null
+          empresa_id: string
+          id?: string
+          notificar_administradores?: boolean | null
+          permitir_anonimas?: boolean | null
+          politica_privacidade?: string | null
+          requerer_email?: boolean | null
+          texto_apresentacao?: string | null
+          token_publico: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          emails_notificacao?: string[] | null
+          empresa_id?: string
+          id?: string
+          notificar_administradores?: boolean | null
+          permitir_anonimas?: boolean | null
+          politica_privacidade?: string | null
+          requerer_email?: boolean | null
+          texto_apresentacao?: string | null
+          token_publico?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      denuncias_movimentacoes: {
+        Row: {
+          acao: string
+          created_at: string | null
+          denuncia_id: string
+          id: string
+          observacoes: string | null
+          status_anterior: string | null
+          status_novo: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          denuncia_id: string
+          id?: string
+          observacoes?: string | null
+          status_anterior?: string | null
+          status_novo?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          denuncia_id?: string
+          id?: string
+          observacoes?: string | null
+          status_anterior?: string | null
+          status_novo?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "denuncias_movimentacoes_denuncia_id_fkey"
+            columns: ["denuncia_id"]
+            isOneToOne: false
+            referencedRelation: "denuncias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentos: {
         Row: {
           aprovado_por: string | null
@@ -2734,11 +2990,23 @@ export type Database = {
         Args: { dados_id: string }
         Returns: boolean
       }
+      denuncia_pertence_empresa: {
+        Args: { denuncia_id: string }
+        Returns: boolean
+      }
       documento_pertence_empresa: {
         Args: { documento_id: string }
         Returns: boolean
       }
       generate_temp_password: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      gerar_protocolo_denuncia: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      gerar_token_publico: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
