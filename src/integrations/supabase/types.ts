@@ -465,6 +465,147 @@ export type Database = {
         }
         Relationships: []
       }
+      contas_aprovacoes: {
+        Row: {
+          aprovador_id: string
+          comentarios: string | null
+          conta_id: string
+          created_at: string | null
+          data_aprovacao: string | null
+          id: string
+          nivel_aprovacao: number | null
+          status: string
+        }
+        Insert: {
+          aprovador_id: string
+          comentarios?: string | null
+          conta_id: string
+          created_at?: string | null
+          data_aprovacao?: string | null
+          id?: string
+          nivel_aprovacao?: number | null
+          status?: string
+        }
+        Update: {
+          aprovador_id?: string
+          comentarios?: string | null
+          conta_id?: string
+          created_at?: string | null
+          data_aprovacao?: string | null
+          id?: string
+          nivel_aprovacao?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
+      contas_auditoria: {
+        Row: {
+          acao: string
+          conta_id: string
+          data_acao: string | null
+          detalhes_alteracao: Json | null
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          conta_id: string
+          data_acao?: string | null
+          detalhes_alteracao?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          conta_id?: string
+          data_acao?: string | null
+          detalhes_alteracao?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
+      contas_privilegiadas: {
+        Row: {
+          alerta_15_dias: boolean | null
+          alerta_30_dias: boolean | null
+          alerta_7_dias: boolean | null
+          aprovado_por: string | null
+          concedido_por: string | null
+          created_at: string | null
+          created_by: string | null
+          data_aprovacao: string | null
+          data_concessao: string
+          data_expiracao: string | null
+          email_beneficiario: string | null
+          empresa_id: string
+          id: string
+          justificativa_negocio: string
+          nivel_privilegio: string
+          observacoes: string | null
+          renovavel: boolean | null
+          sistema_id: string
+          status: string
+          tipo_acesso: string
+          updated_at: string | null
+          usuario_beneficiario: string
+        }
+        Insert: {
+          alerta_15_dias?: boolean | null
+          alerta_30_dias?: boolean | null
+          alerta_7_dias?: boolean | null
+          aprovado_por?: string | null
+          concedido_por?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data_aprovacao?: string | null
+          data_concessao: string
+          data_expiracao?: string | null
+          email_beneficiario?: string | null
+          empresa_id: string
+          id?: string
+          justificativa_negocio: string
+          nivel_privilegio: string
+          observacoes?: string | null
+          renovavel?: boolean | null
+          sistema_id: string
+          status?: string
+          tipo_acesso: string
+          updated_at?: string | null
+          usuario_beneficiario: string
+        }
+        Update: {
+          alerta_15_dias?: boolean | null
+          alerta_30_dias?: boolean | null
+          alerta_7_dias?: boolean | null
+          aprovado_por?: string | null
+          concedido_por?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data_aprovacao?: string | null
+          data_concessao?: string
+          data_expiracao?: string | null
+          email_beneficiario?: string | null
+          empresa_id?: string
+          id?: string
+          justificativa_negocio?: string
+          nivel_privilegio?: string
+          observacoes?: string | null
+          renovavel?: boolean | null
+          sistema_id?: string
+          status?: string
+          tipo_acesso?: string
+          updated_at?: string | null
+          usuario_beneficiario?: string
+        }
+        Relationships: []
+      }
       contrato_aditivos: {
         Row: {
           aprovado_por: string | null
@@ -1708,6 +1849,51 @@ export type Database = {
           },
         ]
       }
+      sistemas_privilegiados: {
+        Row: {
+          ativo: boolean | null
+          categoria: string | null
+          created_at: string | null
+          criticidade: string
+          empresa_id: string
+          id: string
+          nome_sistema: string
+          observacoes: string | null
+          responsavel_sistema: string | null
+          tipo_sistema: string
+          updated_at: string | null
+          url_sistema: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria?: string | null
+          created_at?: string | null
+          criticidade?: string
+          empresa_id: string
+          id?: string
+          nome_sistema: string
+          observacoes?: string | null
+          responsavel_sistema?: string | null
+          tipo_sistema: string
+          updated_at?: string | null
+          url_sistema?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string | null
+          created_at?: string | null
+          criticidade?: string
+          empresa_id?: string
+          id?: string
+          nome_sistema?: string
+          observacoes?: string | null
+          responsavel_sistema?: string | null
+          tipo_sistema?: string
+          updated_at?: string | null
+          url_sistema?: string | null
+        }
+        Relationships: []
+      }
       temporary_passwords: {
         Row: {
           created_at: string | null
@@ -1739,6 +1925,10 @@ export type Database = {
     Functions: {
       auditoria_pertence_empresa: {
         Args: { auditoria_id: string }
+        Returns: boolean
+      }
+      conta_privilegiada_pertence_empresa: {
+        Args: { conta_id: string }
         Returns: boolean
       }
       contrato_pertence_empresa: {
