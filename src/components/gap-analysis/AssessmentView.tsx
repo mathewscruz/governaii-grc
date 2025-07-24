@@ -117,7 +117,7 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
       const { error } = await supabase
         .from('gap_analysis_evaluations')
         .upsert(evaluationsArray, {
-          onConflict: 'requirement_id,framework_id'
+          onConflict: 'framework_id,requirement_id'
         });
 
       if (error) throw error;

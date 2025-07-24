@@ -2472,7 +2472,7 @@ export type Database = {
       gap_analysis_evaluations: {
         Row: {
           action_preview: string | null
-          assessment_id: string
+          assessment_id: string | null
           conformity_status: string | null
           created_at: string
           created_by: string | null
@@ -2495,7 +2495,7 @@ export type Database = {
         }
         Insert: {
           action_preview?: string | null
-          assessment_id: string
+          assessment_id?: string | null
           conformity_status?: string | null
           created_at?: string
           created_by?: string | null
@@ -2518,7 +2518,7 @@ export type Database = {
         }
         Update: {
           action_preview?: string | null
-          assessment_id?: string
+          assessment_id?: string | null
           conformity_status?: string | null
           created_at?: string
           created_by?: string | null
@@ -2540,13 +2540,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "gap_analysis_evaluations_assessment_id_fkey"
-            columns: ["assessment_id"]
-            isOneToOne: false
-            referencedRelation: "gap_analysis_assessments"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "gap_analysis_evaluations_requirement_id_fkey"
             columns: ["requirement_id"]
