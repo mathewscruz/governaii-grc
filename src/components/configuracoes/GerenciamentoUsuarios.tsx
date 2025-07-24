@@ -291,13 +291,36 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
     try {
       setActionLoading(prev => ({ ...prev, [`delete-${usuarioToDelete.id}`]: true }));
       
+      // Debug: Verificar contexto do usuário antes da exclusão
+      const { data: debugData, error: debugError } = await supabase
+        .rpc('debug_user_context');
+      
+      console.log('Debug - Contexto do usuário:', debugData);
+      if (debugError) console.error('Erro no debug:', debugError);
+      
+      // Verificar se o usuário pode deletar (teste manual)
+      const { data: canDeleteTest, error: testError } = await supabase
+        .from('profiles')
+        .select('id, nome, role, empresa_id')
+        .eq('id', usuarioToDelete.id);
+      
+      console.log('Debug - Usuário alvo encontrado:', canDeleteTest);
+      if (testError) console.error('Erro ao buscar usuário alvo:', testError);
+      
+      // Tentar a exclusão
+      console.log('Tentando excluir usuário ID:', usuarioToDelete.id);
       const { error } = await supabase
         .from('profiles')
         .delete()
         .eq('id', usuarioToDelete.id);
 
       if (error) {
-        console.error('Erro detalhado ao excluir usuário:', error);
+        console.error('Erro detalhado ao excluir usuário:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw new Error(error.message || 'Erro ao excluir usuário');
       }
       

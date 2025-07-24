@@ -3317,6 +3317,10 @@ export type Database = {
         Args: { dados_id: string }
         Returns: boolean
       }
+      debug_user_context: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       denuncia_pertence_empresa: {
         Args: { denuncia_id: string }
         Returns: boolean
