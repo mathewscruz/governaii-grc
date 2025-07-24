@@ -12,6 +12,7 @@ import { AssessmentDialog } from '@/components/gap-analysis/AssessmentDialog';
 import { RequirementsManager } from '@/components/gap-analysis/RequirementsManager';
 import { AssessmentEvaluationView } from '@/components/gap-analysis/AssessmentEvaluationView';
 import { AssessmentsList } from '@/components/gap-analysis/AssessmentsList';
+import { ActiveGapsTabsView } from '@/components/gap-analysis/ActiveGapsTabsView';
 
 interface Framework {
   id: string;
@@ -134,8 +135,24 @@ export default function GapAnalysis() {
     setCurrentView('requirements');
   };
 
-  const handleSelectAssessment = (assessment: Assessment) => {
-    setSelectedAssessment(assessment);
+  const handleSelectAssessment = (assessment: Assessment | any) => {
+    // Convert ActiveAssessment to Assessment format if needed
+    const convertedAssessment: Assessment = {
+      id: assessment.id,
+      nome: assessment.nome,
+      descricao: assessment.descricao || '',
+      status: assessment.status,
+      data_inicio: assessment.data_inicio,
+      data_conclusao_prevista: assessment.data_prevista_conclusao || assessment.data_conclusao_prevista,
+      data_conclusao: assessment.data_conclusao || '',
+      framework_id: assessment.framework?.id || assessment.framework_id,
+      framework: {
+        id: assessment.framework?.id || assessment.framework_id,
+        nome: assessment.framework?.nome || '',
+        tipo: assessment.framework?.tipo_framework || assessment.framework?.tipo || ''
+      }
+    };
+    setSelectedAssessment(convertedAssessment);
     setCurrentView('evaluation');
   };
 
@@ -207,19 +224,10 @@ export default function GapAnalysis() {
             Gerencie frameworks de conformidade e avalie maturidade organizacional
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={() => setCurrentView('assessments')}
-          >
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Ver Avaliações
-          </Button>
-          <Button onClick={() => setIsFrameworkDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Framework
-          </Button>
-        </div>
+        <Button onClick={() => setIsFrameworkDialogOpen(true)} size="lg">
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Framework
+        </Button>
       </div>
 
       {/* Statistics Cards */}
@@ -240,6 +248,21 @@ export default function GapAnalysis() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Active Gaps Tabs */}
+      <ActiveGapsTabsView onSelectAssessment={handleSelectAssessment} />
+
+      {/* Navigation to All Assessments */}
+      <div className="flex justify-center">
+        <Button 
+          variant="ghost"
+          onClick={() => setCurrentView('assessments')}
+          className="text-muted-foreground"
+        >
+          <BarChart3 className="h-4 w-4 mr-2" />
+          Ver Todas as Avaliações
+        </Button>
       </div>
 
       {/* Frameworks List */}
