@@ -11,7 +11,7 @@ import ControleDialog from "@/components/controles/ControleDialog";
 import CategoriasDialog from "@/components/controles/CategoriasDialog";
 import TestesList from "@/components/controles/TestesList";
 import ControlesVinculacaoDialog from "@/components/controles/ControlesVinculacaoDialog";
-import ControlesDashboard from "@/components/controles/ControlesDashboard";
+import { RelatoriosDialog } from "@/components/controles/RelatoriosDialog";
 import { useControlesStats } from "@/hooks/useControlesStats";
 
 interface Controle {
@@ -47,6 +47,7 @@ export default function Controles() {
   const [selectedControleForTests, setSelectedControleForTests] = useState<Controle | null>(null);
   const [vinculacaoDialogOpen, setVinculacaoDialogOpen] = useState(false);
   const [selectedControleForVinculacao, setSelectedControleForVinculacao] = useState<Controle | null>(null);
+  const [relatoriosDialogOpen, setRelatoriosDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -182,6 +183,13 @@ export default function Controles() {
           >
             Categorias
           </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setRelatoriosDialogOpen(true)}
+          >
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Relatórios
+          </Button>
           <Button onClick={() => setControleDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Novo Controle
@@ -246,9 +254,8 @@ export default function Controles() {
         </Card>
       </div>
 
-      <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+      <Tabs defaultValue="controles" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="controles">Controles</TabsTrigger>
           <TabsTrigger value="testes" disabled={!selectedControleForTests}>
             Testes {selectedControleForTests && `- ${selectedControleForTests.nome}`}
@@ -257,10 +264,6 @@ export default function Controles() {
             Vinculações {selectedControleForVinculacao && `- ${selectedControleForVinculacao.nome}`}
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="dashboard" className="space-y-6">
-          <ControlesDashboard />
-        </TabsContent>
 
         <TabsContent value="controles" className="space-y-6">
           {/* Lista de Controles */}
@@ -458,6 +461,11 @@ export default function Controles() {
         onOpenChange={setVinculacaoDialogOpen}
         controleId={selectedControleForVinculacao?.id}
         controleNome={selectedControleForVinculacao?.nome}
+      />
+
+      <RelatoriosDialog
+        open={relatoriosDialogOpen}
+        onOpenChange={setRelatoriosDialogOpen}
       />
     </div>
   );
