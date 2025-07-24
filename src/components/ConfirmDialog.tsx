@@ -28,7 +28,6 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 }) => {
   const handleConfirm = () => {
     onConfirm();
-    onOpenChange(false);
   };
 
   return (
