@@ -100,7 +100,7 @@ export default function DenunciaMenu() {
   }
 
   return (
-    <div className="min-h-screen bg-sidebar-background py-8">
+    <div className="min-h-screen bg-[hsl(215,35%,12%)] py-8">
       <div className="container max-w-2xl mx-auto px-4">
         {/* Header com logotipo */}
         <div className="text-center mb-8">
