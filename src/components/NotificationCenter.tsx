@@ -77,6 +77,19 @@ const NotificationCenter: React.FC = () => {
         .in('status', ['aberto', 'investigacao'])
         .eq('criticidade', 'critica');
 
+      // Buscar ativos críticos e manutenções pendentes
+      const { data: ativos } = await supabase
+        .from('ativos')
+        .select('id, nome, criticidade, status')
+        .eq('criticidade', 'critico')
+        .eq('status', 'ativo');
+
+      const { data: manutencoesPendentes } = await supabase
+        .from('ativos_manutencoes')
+        .select('id, ativo_id, data_manutencao, tipo_manutencao, ativos(nome)')
+        .in('status', ['agendada', 'em_andamento'])
+        .not('data_manutencao', 'is', null);
+
       const hoje = new Date();
 
       // Processar documentos
@@ -179,6 +192,38 @@ const NotificationCenter: React.FC = () => {
           created_at: new Date().toISOString(),
           isAutomatic: true
         });
+      });
+
+      // Processar ativos críticos
+      (ativos || []).forEach(ativo => {
+        notificacoes.push({
+          id: `ativo-critico-${ativo.id}`,
+          title: 'Ativo Crítico Ativo',
+          message: `O ativo "${ativo.nome}" está marcado como crítico e requer atenção especial`,
+          type: 'warning',
+          read: false,
+          link_to: '/ativos',
+          created_at: new Date().toISOString(),
+          isAutomatic: true
+        });
+      });
+
+      // Processar manutenções pendentes
+      (manutencoesPendentes || []).forEach(manutencao => {
+        const diasParaManutencao = differenceInDays(new Date(manutencao.data_manutencao!), hoje);
+        
+        if (diasParaManutencao <= 7 && diasParaManutencao >= 0) {
+          notificacoes.push({
+            id: `manutencao-${manutencao.id}`,
+            title: 'Manutenção Agendada',
+            message: `Manutenção ${manutencao.tipo_manutencao} do ativo "${(manutencao as any).ativos?.nome}" agendada para ${diasParaManutencao === 0 ? 'hoje' : `${diasParaManutencao} dias`}`,
+            type: 'warning',
+            read: false,
+            link_to: '/ativos',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        }
       });
 
       return notificacoes;
