@@ -2478,6 +2478,7 @@ export type Database = {
           created_by: string | null
           data_avaliacao: string | null
           empresa_id: string
+          evidence_files: Json | null
           evidence_implemented: string | null
           evidence_status: string | null
           framework_id: string | null
@@ -2500,6 +2501,7 @@ export type Database = {
           created_by?: string | null
           data_avaliacao?: string | null
           empresa_id?: string
+          evidence_files?: Json | null
           evidence_implemented?: string | null
           evidence_status?: string | null
           framework_id?: string | null
@@ -2522,6 +2524,7 @@ export type Database = {
           created_by?: string | null
           data_avaliacao?: string | null
           empresa_id?: string
+          evidence_files?: Json | null
           evidence_implemented?: string | null
           evidence_status?: string | null
           framework_id?: string | null
@@ -3676,6 +3679,10 @@ export type Database = {
       }
       documento_pertence_empresa: {
         Args: { documento_id: string }
+        Returns: boolean
+      }
+      evaluation_pertence_empresa: {
+        Args: { evaluation_id: string }
         Returns: boolean
       }
       generate_temp_password: {
