@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Building2, Settings, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
-import GerenciamentoUsuarios from '@/components/configuracoes/GerenciamentoUsuarios';
+import GerenciamentoUsuariosEnhanced from '@/components/configuracoes/GerenciamentoUsuariosEnhanced';
+import { PermissionMatrix } from '@/components/configuracoes/PermissionMatrix';
 import ConfiguracoesGerais from '@/components/configuracoes/ConfiguracoesGerais';
 
 const Configuracoes = () => {
@@ -60,7 +61,7 @@ const Configuracoes = () => {
       </div>
 
       <Tabs defaultValue="usuarios" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3">
+        <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
           {isSuperAdmin && (
             <TabsTrigger value="empresas" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
@@ -71,6 +72,12 @@ const Configuracoes = () => {
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Usuários</span>
           </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="permissoes" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              <span className="hidden sm:inline">Permissões</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="geral" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Geral</span>
@@ -102,10 +109,16 @@ const Configuracoes = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <GerenciamentoUsuarios userRole={userRole} />
+              <GerenciamentoUsuariosEnhanced userRole={userRole} />
             </CardContent>
           </Card>
         </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="permissoes">
+            <PermissionMatrix />
+          </TabsContent>
+        )}
 
         <TabsContent value="geral">
           <Card>
