@@ -100,9 +100,9 @@ export default function DenunciaMenu() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 py-8">
+    <div className="min-h-screen bg-sidebar-background py-8">
       <div className="container max-w-2xl mx-auto px-4">
-        {/* Header com logotipo e informações da empresa */}
+        {/* Header com logotipo */}
         <div className="text-center mb-8">
           {/* Logotipo da empresa */}
           {logoUrl && (
@@ -116,18 +116,14 @@ export default function DenunciaMenu() {
             </div>
           )}
           
-          <h1 className="text-3xl font-bold mb-2">
-            {empresa.nome}
-          </h1>
-          
           <div className="flex items-center justify-center gap-2 mb-4">
             <Shield className="w-6 h-6 text-primary" />
-            <h2 className="text-xl text-muted-foreground">Canal de Denúncias</h2>
+            <h2 className="text-xl text-sidebar-foreground">Canal de Denúncias</h2>
           </div>
         </div>
 
         {/* Card principal com opções */}
-        <Card className="mb-8">
+        <Card className="mb-8 bg-white">
           <CardContent className="p-8">
             <div className="text-center mb-8">
               <h3 className="text-2xl font-semibold mb-2">Como podemos ajudá-lo?</h3>
@@ -173,7 +169,7 @@ export default function DenunciaMenu() {
         </Card>
 
         {/* Informações complementares */}
-        <Card className="bg-primary/5 border-primary/20">
+        <Card className="bg-white border-primary/20">
           <CardContent className="p-6">
             <div className="text-center">
               <Shield className="w-8 h-8 text-primary mx-auto mb-3" />
