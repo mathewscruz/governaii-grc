@@ -113,8 +113,11 @@ export function Riscos() {
                          risco.responsavel?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !statusFilter || statusFilter === 'all' || risco.status === statusFilter;
     const matchesNivel = !nivelFilter || nivelFilter === 'all' || risco.nivel_risco_inicial === nivelFilter;
+    const matchesAceito = !aceitoFilter || aceitoFilter === 'all' || 
+                         (aceitoFilter === 'aceito' && risco.aceito) ||
+                         (aceitoFilter === 'nao_aceito' && !risco.aceito);
 
-    return matchesSearch && matchesStatus && matchesNivel;
+    return matchesSearch && matchesStatus && matchesNivel && matchesAceito;
   });
 
   const handleEdit = (risco: Risco) => {
@@ -368,6 +371,16 @@ export function Riscos() {
                         <SelectItem value="Alto">Alto</SelectItem>
                         <SelectItem value="Médio">Médio</SelectItem>
                         <SelectItem value="Baixo">Baixo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={aceitoFilter} onValueChange={setAceitoFilter}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Aceito" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="aceito">Aceitos</SelectItem>
+                        <SelectItem value="nao_aceito">Não Aceitos</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

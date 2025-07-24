@@ -133,7 +133,7 @@ export function RiscoAnexosUpload({
 
       toast({
         title: "Arquivo enviado com sucesso",
-        description: `${file.name} foi adicionado aos anexos.`
+        description: `${file.name} foi anexado aos anexos de aceite.`
       });
 
     } catch (error: any) {
