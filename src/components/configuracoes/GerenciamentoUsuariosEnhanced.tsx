@@ -266,6 +266,98 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     setShowPermissionMatrix(true);
   };
 
+  const openDeleteDialog = (usuario: Usuario) => {
+    setUsuarioToDelete(usuario);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!usuarioToDelete) return;
+    
+    console.log('Iniciando exclusão do usuário:', usuarioToDelete);
+    
+    try {
+      // 1. Verificar se o usuário está autenticado
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.error('Usuário não autenticado:', userError);
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+      
+      console.log('Usuário autenticado:', user.id);
+      
+      // 2. Verificar contexto detalhado do usuário
+      const { data: debugData, error: debugError } = await supabase
+        .rpc('debug_user_context');
+      
+      console.log('Debug - Contexto do usuário logado:', debugData);
+      if (debugError) {
+        console.error('Erro no debug:', debugError);
+        throw new Error('Erro ao verificar permissões do usuário');
+      }
+      
+      // 3. Verificar dados do usuário alvo
+      const { data: targetUser, error: targetError } = await supabase
+        .from('profiles')
+        .select('id, nome, role, empresa_id, user_id')
+        .eq('id', usuarioToDelete.id)
+        .single();
+      
+      if (targetError || !targetUser) {
+        console.error('Erro ao buscar usuário alvo:', targetError);
+        throw new Error('Usuário não encontrado');
+      }
+      
+      console.log('Debug - Usuário alvo:', targetUser);
+      
+      // 4. Verificar se pode deletar baseado nas regras de negócio
+      const debugInfo = debugData as any;
+      const currentUserRole = debugInfo?.user_role;
+      const currentUserEmpresa = debugInfo?.user_empresa_id;
+      
+      if (currentUserRole === 'super_admin') {
+        console.log('Super admin pode deletar qualquer usuário');
+      } else if (currentUserRole === 'admin') {
+        if (targetUser.empresa_id !== currentUserEmpresa) {
+          throw new Error('Você só pode excluir usuários da sua empresa');
+        }
+        if (['admin', 'super_admin'].includes(targetUser.role)) {
+          throw new Error('Você não pode excluir outros administradores');
+        }
+        console.log('Admin pode deletar este usuário');
+      } else {
+        throw new Error('Você não tem permissão para excluir usuários');
+      }
+      
+      // 5. Tentar a exclusão
+      console.log('Tentando excluir usuário ID:', usuarioToDelete.id);
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', usuarioToDelete.id);
+
+      if (error) {
+        console.error('Erro detalhado ao excluir usuário:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw new Error(error.message || 'Erro ao excluir usuário');
+      }
+      
+      console.log('Usuário excluído com sucesso');
+      toast.success('Usuário excluído com sucesso');
+      await fetchUsuarios();
+      setDeleteDialogOpen(false);
+      setUsuarioToDelete(null);
+    } catch (error: any) {
+      console.error('Erro completo ao excluir usuário:', error);
+      toast.error(error.message || 'Erro ao excluir usuário');
+    }
+  };
+
   const getRoleBadge = (role: string) => {
     const variants = {
       super_admin: 'default',
@@ -561,10 +653,13 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                           Gerenciar Permissões
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Excluir
-                        </DropdownMenuItem>
+                         <DropdownMenuItem 
+                           className="text-destructive"
+                           onClick={() => openDeleteDialog(usuario)}
+                         >
+                           <Trash2 className="h-4 w-4 mr-2" />
+                           Excluir
+                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -580,6 +675,17 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
           Nenhum usuário encontrado
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Excluir Usuário"
+        description={`Tem certeza que deseja excluir o usuário "${usuarioToDelete?.nome}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };
