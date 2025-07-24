@@ -10,7 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CalendarIcon, Bot, Sparkles, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -35,11 +37,20 @@ interface TratamentoFormProps {
   riscoId: string;
   tratamento?: any;
   onSuccess: () => void;
+  riscoData?: {
+    nome: string;
+    descricao: string;
+    categoria?: string;
+    nivel_risco_inicial?: string;
+  };
 }
 
-export function TratamentoForm({ riscoId, tratamento, onSuccess }: TratamentoFormProps) {
+export function TratamentoForm({ riscoId, tratamento, onSuccess, riscoData }: TratamentoFormProps) {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [iaSuggestionLoading, setIaSuggestionLoading] = useState(false);
+  const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
+  const [iaSuggestions, setIaSuggestions] = useState<any>(null);
 
   const form = useForm<TratamentoFormData>({
     resolver: zodResolver(tratamentoSchema),
@@ -97,6 +108,50 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess }: TratamentoFor
     }
   };
 
+  const handleIaSuggestion = async () => {
+    if (!riscoData) {
+      toast.error('Dados do risco não disponíveis para sugestão');
+      return;
+    }
+
+    setIaSuggestionLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-risk-treatment', {
+        body: {
+          nome: riscoData.nome,
+          descricao: riscoData.descricao,
+          categoria: riscoData.categoria,
+          nivel_risco: riscoData.nivel_risco_inicial
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        setIaSuggestions(data.data);
+        setSuggestionDialogOpen(true);
+      } else {
+        throw new Error(data.error || 'Erro ao gerar sugestões');
+      }
+    } catch (error: any) {
+      toast.error('Erro ao gerar sugestões: ' + error.message);
+    } finally {
+      setIaSuggestionLoading(false);
+    }
+  };
+
+  const applySuggestion = (suggestion: string, type: 'mitigar' | 'transferir' | 'aceitar' | 'evitar') => {
+    form.setValue('tipo_tratamento', type);
+    form.setValue('descricao', suggestion);
+    setSuggestionDialogOpen(false);
+    toast.success('Sugestão aplicada! Revise e ajuste conforme necessário.');
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Texto copiado para a área de transferência');
+  };
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -141,11 +196,36 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess }: TratamentoFor
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="descricao">Descrição do Tratamento *</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="descricao">Descrição do Tratamento *</Label>
+          {riscoData && !tratamento && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleIaSuggestion}
+              disabled={iaSuggestionLoading}
+              className="ml-2"
+            >
+              {iaSuggestionLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-2"></div>
+                  Gerando...
+                </>
+              ) : (
+                <>
+                  <Bot className="mr-2 h-3 w-3" />
+                  <Sparkles className="mr-1 h-3 w-3" />
+                  Sugerir Tratamento
+                </>
+              )}
+            </Button>
+          )}
+        </div>
         <Textarea
           {...form.register('descricao')}
-          placeholder="Descreva detalhadamente o tratamento proposto..."
-          rows={3}
+          placeholder="Descreva detalhadamente o tratamento proposto... ou use o botão 'Sugerir Tratamento' para obter sugestões automáticas!"
+          rows={4}
         />
         {form.formState.errors.descricao && (
           <p className="text-sm text-destructive">{form.formState.errors.descricao.message}</p>
@@ -256,6 +336,97 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess }: TratamentoFor
           </Button>
         </div>
       </div>
+
+      {/* Modal de Sugestões da IA */}
+      <Dialog open={suggestionDialogOpen} onOpenChange={setSuggestionDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5" />
+              <Sparkles className="h-4 w-4" />
+              Sugestões Inteligentes de Tratamento
+            </DialogTitle>
+            <DialogDescription>
+              Baseado na análise do risco "{riscoData?.nome}", aqui estão as sugestões de tratamento:
+            </DialogDescription>
+          </DialogHeader>
+
+          {iaSuggestions && (
+            <div className="space-y-4 mt-4">
+              {iaSuggestions.mitigacao && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center justify-between">
+                      🛡️ Plano de Mitigação
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(iaSuggestions.mitigacao)}
+                        >
+                          <Copy className="h-3 w-3 mr-1" />
+                          Copiar
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => applySuggestion(iaSuggestions.mitigacao, 'mitigar')}
+                        >
+                          Aplicar Sugestão
+                        </Button>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="whitespace-pre-wrap text-sm">
+                      {iaSuggestions.mitigacao}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {iaSuggestions.contingenciamento && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center justify-between">
+                      🚨 Plano de Contingenciamento
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(iaSuggestions.contingenciamento)}
+                        >
+                          <Copy className="h-3 w-3 mr-1" />
+                          Copiar
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => applySuggestion(iaSuggestions.contingenciamento, 'transferir')}
+                        >
+                          Aplicar Sugestão
+                        </Button>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="whitespace-pre-wrap text-sm">
+                      {iaSuggestions.contingenciamento}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="mt-6 p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>Dica:</strong> Essas sugestões são geradas automaticamente com base nas informações do risco. 
+                  Revise e ajuste conforme necessário para adequar à realidade da sua organização.
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

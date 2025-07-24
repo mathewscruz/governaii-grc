@@ -6,15 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
+import { useRiscosStats } from '@/hooks/useRiscosStats';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { RiscoDialog } from '@/components/riscos/RiscoDialog';
 import { MatrizDialog } from '@/components/riscos/MatrizDialog';
-import { TratamentosList } from '@/components/riscos/TratamentosList';
+
 import { CategoriasDialog } from '@/components/riscos/CategoriasDialog';
 
 interface Risco {
@@ -31,18 +32,6 @@ interface Risco {
   created_at: string;
 }
 
-interface RiscoStats {
-  total: number;
-  criticos: number;
-  altos: number;
-  medios: number;
-  baixos: number;
-  tratamentos_pendentes: number;
-  tratamentos_andamento: number;
-  tratamentos_concluidos: number;
-  aceitos: number;
-  tratados: number;
-}
 
 interface MatrizConfig {
   niveis_risco: Array<{ min: number; max: number; nivel: string; cor?: string }>;
@@ -50,19 +39,8 @@ interface MatrizConfig {
 
 export function Riscos() {
   const { profile } = useAuth();
+  const { stats, refetch: refetchStats } = useRiscosStats();
   const [riscos, setRiscos] = useState<Risco[]>([]);
-  const [stats, setStats] = useState<RiscoStats>({
-    total: 0,
-    criticos: 0,
-    altos: 0,
-    medios: 0,
-    baixos: 0,
-    tratamentos_pendentes: 0,
-    tratamentos_andamento: 0,
-    tratamentos_concluidos: 0,
-    aceitos: 0,
-    tratados: 0
-  });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -72,8 +50,6 @@ export function Riscos() {
   const [editingRisco, setEditingRisco] = useState<Risco | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [riscoToDelete, setRiscoToDelete] = useState<Risco | null>(null);
-  const [selectedRiscoForTratamentos, setSelectedRiscoForTratamentos] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('riscos');
   const [matrizConfig, setMatrizConfig] = useState<MatrizConfig | null>(null);
   const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
 
@@ -98,7 +74,6 @@ export function Riscos() {
 
       if (error) throw error;
       setRiscos(data || []);
-      calculateStats(data || []);
     } catch (error: any) {
       toast.error('Erro ao carregar riscos: ' + error.message);
     } finally {
@@ -124,37 +99,6 @@ export function Riscos() {
     }
   };
 
-  const calculateStats = async (riscosData: Risco[]) => {
-    const newStats: RiscoStats = {
-      total: riscosData.length,
-      criticos: riscosData.filter(r => r.nivel_risco_inicial === 'Crítico' || r.nivel_risco_inicial === 'Muito Alto').length,
-      altos: riscosData.filter(r => r.nivel_risco_inicial === 'Alto').length,
-      medios: riscosData.filter(r => r.nivel_risco_inicial === 'Médio').length,
-      baixos: riscosData.filter(r => r.nivel_risco_inicial === 'Baixo' || r.nivel_risco_inicial === 'Muito Baixo').length,
-      tratamentos_pendentes: 0,
-      tratamentos_andamento: 0,
-      tratamentos_concluidos: 0,
-      aceitos: riscosData.filter(r => r.aceito).length,
-      tratados: riscosData.filter(r => r.nivel_risco_residual).length
-    };
-
-    try {
-      const { data: tratamentos } = await supabase
-        .from('riscos_tratamentos')
-        .select('status, risco_id')
-        .in('risco_id', riscosData.map(r => r.id));
-
-      if (tratamentos) {
-        newStats.tratamentos_pendentes = tratamentos.filter(t => t.status === 'pendente').length;
-        newStats.tratamentos_andamento = tratamentos.filter(t => t.status === 'em andamento').length;
-        newStats.tratamentos_concluidos = tratamentos.filter(t => t.status === 'concluído').length;
-      }
-    } catch (error) {
-      console.error('Erro ao buscar estatísticas de tratamentos:', error);
-    }
-
-    setStats(newStats);
-  };
 
   useEffect(() => {
     if (profile) {
@@ -211,6 +155,7 @@ export function Riscos() {
     setRiscoDialogOpen(false);
     setEditingRisco(null);
     fetchRiscos();
+    refetchStats();
   };
 
   const handleMatrizDialogSuccess = () => {
@@ -280,12 +225,6 @@ export function Riscos() {
     }
   };
 
-  const handleTratamentosClick = (riscoId: string, riscoNome: string) => {
-    setSelectedRiscoForTratamentos(riscoId);
-    setActiveTab('tratamentos');
-    console.log(`Navegando para tratamentos do risco: ${riscoNome} (ID: ${riscoId})`);
-    toast.success(`Visualizando tratamentos do risco: ${riscoNome}`);
-  };
 
   if (loading) {
     return (
@@ -371,13 +310,7 @@ export function Riscos() {
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="riscos">Riscos</TabsTrigger>
-            <TabsTrigger value="tratamentos">Tratamentos</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="riscos">
+        <div className="space-y-4">
             <Card>
               <CardHeader>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -523,21 +456,6 @@ export function Riscos() {
                                   </TooltipContent>
                                 </Tooltip>
 
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleTratamentosClick(risco.id, risco.nome)}
-                                      className="h-8 w-8 p-0"
-                                    >
-                                      <FileText className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Ver tratamentos</p>
-                                  </TooltipContent>
-                                </Tooltip>
 
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -564,48 +482,7 @@ export function Riscos() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="tratamentos">
-            {selectedRiscoForTratamentos ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold">Tratamentos do Risco</h2>
-                    <p className="text-muted-foreground">
-                      Risco selecionado: {riscos.find(r => r.id === selectedRiscoForTratamentos)?.nome}
-                    </p>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setSelectedRiscoForTratamentos(null);
-                      setActiveTab('riscos');
-                    }}
-                  >
-                    Voltar para Lista de Riscos
-                  </Button>
-                </div>
-                <TratamentosList riscoId={selectedRiscoForTratamentos} />
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="py-8">
-                  <div className="text-center">
-                    <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Selecione um Risco</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Para visualizar e gerenciar tratamentos, primeiro selecione um risco na aba "Riscos".
-                    </p>
-                    <Button onClick={() => setActiveTab('riscos')}>
-                      Ver Lista de Riscos
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+        </div>
 
         <RiscoDialog
           open={riscoDialogOpen}

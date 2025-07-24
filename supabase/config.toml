@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.apply-default-permissions-all-users]
 verify_jwt = true
+
+[functions.suggest-risk-treatment]
+verify_jwt = true

@@ -28,9 +28,15 @@ interface Tratamento {
 interface TratamentosListProps {
   riscoId: string;
   riscoNome?: string;
+  riscoData?: {
+    nome: string;
+    descricao: string;
+    categoria?: string;
+    nivel_risco_inicial?: string;
+  };
 }
 
-export function TratamentosList({ riscoId, riscoNome }: TratamentosListProps) {
+export function TratamentosList({ riscoId, riscoNome, riscoData }: TratamentosListProps) {
   const [tratamentos, setTratamentos] = useState<Tratamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [tratamentoDialogOpen, setTratamentoDialogOpen] = useState(false);
@@ -267,6 +273,7 @@ export function TratamentosList({ riscoId, riscoNome }: TratamentosListProps) {
         riscoId={riscoId}
         tratamento={editingTratamento}
         onSuccess={handleDialogSuccess}
+        riscoData={riscoData}
       />
 
       <ConfirmDialog

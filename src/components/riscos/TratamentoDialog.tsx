@@ -8,9 +8,15 @@ interface TratamentoDialogProps {
   riscoId: string;
   tratamento?: any;
   onSuccess: () => void;
+  riscoData?: {
+    nome: string;
+    descricao: string;
+    categoria?: string;
+    nivel_risco_inicial?: string;
+  };
 }
 
-export function TratamentoDialog({ open, onOpenChange, riscoId, tratamento, onSuccess }: TratamentoDialogProps) {
+export function TratamentoDialog({ open, onOpenChange, riscoId, tratamento, onSuccess, riscoData }: TratamentoDialogProps) {
   const handleSuccess = () => {
     onSuccess();
     onOpenChange(false);
@@ -33,7 +39,8 @@ export function TratamentoDialog({ open, onOpenChange, riscoId, tratamento, onSu
         <TratamentoForm 
           riscoId={riscoId} 
           tratamento={tratamento} 
-          onSuccess={handleSuccess} 
+          onSuccess={handleSuccess}
+          riscoData={riscoData}
         />
       </DialogContent>
     </Dialog>
