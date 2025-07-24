@@ -100,6 +100,16 @@ export function RiscoAnexosUpload({
 
       // Se temos um riscoId, salvar no banco
       if (riscoId) {
+        // Buscar dados do usuário
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData.user?.id;
+        
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('empresa_id')
+          .eq('user_id', userId)
+          .single();
+
         const { data, error } = await supabase
           .from('riscos_anexos')
           .insert({
@@ -109,8 +119,8 @@ export function RiscoAnexosUpload({
             tipo_arquivo: file.type,
             tamanho_arquivo: file.size,
             tipo_anexo: tipoAnexo,
-            empresa_id: (await supabase.from('profiles').select('empresa_id').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single()).data?.empresa_id,
-            created_by: (await supabase.auth.getUser()).data.user?.id
+            empresa_id: profileData?.empresa_id,
+            created_by: userId
           })
           .select()
           .single();

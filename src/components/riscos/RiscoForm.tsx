@@ -196,7 +196,18 @@ export function RiscoForm({ risco, onSuccess }: Props) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAnexosAceite(data || []);
+      
+      // Mapear os dados do banco para o formato esperado pelo componente
+      const anexosFormatados = (data || []).map(anexo => ({
+        id: anexo.id,
+        nome_arquivo: anexo.nome_arquivo,
+        url_arquivo: anexo.url_arquivo,
+        tipo_arquivo: anexo.tipo_arquivo,
+        tamanho_arquivo: anexo.tamanho_arquivo,
+        created_at: anexo.created_at
+      }));
+      
+      setAnexosAceite(anexosFormatados);
     } catch (error: any) {
       console.error('Erro ao buscar anexos:', error);
     }
@@ -291,6 +302,34 @@ export function RiscoForm({ risco, onSuccess }: Props) {
 
         if (error) throw error;
         riscoId = newRisco.id;
+        
+        // Para novos riscos, atualizar os anexos temporários com o ID real
+        for (const anexo of anexosAceite) {
+          if (!anexo.id && riscoId) {
+            try {
+              const { data: anexoData } = await supabase
+                .from('riscos_anexos')
+                .insert({
+                  risco_id: riscoId,
+                  nome_arquivo: anexo.nome_arquivo,
+                  url_arquivo: anexo.url_arquivo,
+                  tipo_arquivo: anexo.tipo_arquivo,
+                  tamanho_arquivo: anexo.tamanho_arquivo,
+                  tipo_anexo: 'aceite',
+                  empresa_id: profile.empresa_id,
+                  created_by: profile.user_id
+                })
+                .select()
+                .single();
+              
+              if (anexoData) {
+                anexo.id = anexoData.id;
+              }
+            } catch (anexoError) {
+              console.error('Erro ao salvar anexo:', anexoError);
+            }
+          }
+        }
       }
 
       // Atualizar vínculos com ativos
