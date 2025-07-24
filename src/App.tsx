@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/components/AuthProvider';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
 import Auth from '@/pages/Auth';
 import Dashboard from '@/pages/Dashboard';
@@ -44,19 +45,97 @@ function App() {
             <Route path="/:empresa/denuncia/consulta" element={<DenunciaConsulta />} />
             <Route path="/404" element={<NotFound />} />
             <Route path="/" element={<Layout><Navigate to="/dashboard" replace /></Layout>} />
-            <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-            <Route path="/ativos" element={<Layout><Ativos /></Layout>} />
-            <Route path="/riscos" element={<Layout><Riscos /></Layout>} />
-            <Route path="/controles" element={<Layout><Controles /></Layout>} />
-            <Route path="/auditorias" element={<Layout><Auditorias /></Layout>} />
-            <Route path="/contratos" element={<Layout><Contratos /></Layout>} />
-            <Route path="/documentos" element={<Layout><Documentos /></Layout>} />
-            <Route path="/contas-privilegiadas" element={<Layout><ContasPrivilegiadas /></Layout>} />
-            <Route path="/incidentes" element={<Layout><Incidentes /></Layout>} />
-            <Route path="/dados" element={<Layout><Dados /></Layout>} />
-            <Route path="/due-diligence" element={<Layout><DueDiligence /></Layout>} />
-            <Route path="/denuncia" element={<Layout><Denuncia /></Layout>} />
-            <Route path="/configuracoes" element={<Layout><Configuracoes /></Layout>} />
+            <Route path="/dashboard" element={
+              <Layout>
+                <ProtectedRoute moduleName="dashboard" fallbackToRoleCheck={false}>
+                  <Dashboard />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/ativos" element={
+              <Layout>
+                <ProtectedRoute moduleName="ativos" fallbackToRoleCheck={false}>
+                  <Ativos />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/riscos" element={
+              <Layout>
+                <ProtectedRoute moduleName="riscos" fallbackToRoleCheck={false}>
+                  <Riscos />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/controles" element={
+              <Layout>
+                <ProtectedRoute moduleName="controles" fallbackToRoleCheck={false}>
+                  <Controles />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/auditorias" element={
+              <Layout>
+                <ProtectedRoute moduleName="auditorias" fallbackToRoleCheck={false}>
+                  <Auditorias />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/contratos" element={
+              <Layout>
+                <ProtectedRoute moduleName="contratos" fallbackToRoleCheck={false}>
+                  <Contratos />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/documentos" element={
+              <Layout>
+                <ProtectedRoute moduleName="documentos" fallbackToRoleCheck={false}>
+                  <Documentos />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/contas-privilegiadas" element={
+              <Layout>
+                <ProtectedRoute moduleName="contas-privilegiadas" fallbackToRoleCheck={false}>
+                  <ContasPrivilegiadas />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/incidentes" element={
+              <Layout>
+                <ProtectedRoute moduleName="incidentes" fallbackToRoleCheck={false}>
+                  <Incidentes />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/dados" element={
+              <Layout>
+                <ProtectedRoute moduleName="dados" fallbackToRoleCheck={false}>
+                  <Dados />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/due-diligence" element={
+              <Layout>
+                <ProtectedRoute moduleName="due-diligence" fallbackToRoleCheck={false}>
+                  <DueDiligence />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/denuncia" element={
+              <Layout>
+                <ProtectedRoute moduleName="denuncia" fallbackToRoleCheck={false}>
+                  <Denuncia />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/configuracoes" element={
+              <Layout>
+                <ProtectedRoute moduleName="configuracoes" fallbackToRoleCheck={false}>
+                  <Configuracoes />
+                </ProtectedRoute>
+              </Layout>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>

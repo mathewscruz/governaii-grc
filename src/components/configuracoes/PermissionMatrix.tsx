@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Loader2, Save, RotateCcw, Shield, Eye, Plus, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Save, RotateCcw, Shield, Eye, Plus, Edit, Trash2, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -45,6 +45,7 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [applyingToAll, setApplyingToAll] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -183,6 +184,31 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
     }
   };
 
+  const applyDefaultPermissionsToAll = async () => {
+    try {
+      setApplyingToAll(true);
+      
+      const { data, error } = await supabase.functions.invoke('apply-default-permissions-all-users');
+
+      if (error) throw error;
+
+      if (data?.successful > 0) {
+        toast.success(`Permissões aplicadas para ${data.successful} usuários`);
+        if (data?.failed > 0) {
+          toast.warning(`${data.failed} usuários falharam na aplicação`);
+        }
+        await fetchData();
+      } else {
+        toast.error('Nenhuma permissão foi aplicada');
+      }
+    } catch (error) {
+      console.error('Error applying default permissions to all users:', error);
+      toast.error('Erro ao aplicar permissões padrão para todos os usuários');
+    } finally {
+      setApplyingToAll(false);
+    }
+  };
+
   const filteredUsers = users.filter(user => 
     selectedUserId ? user.id === selectedUserId : 
     user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -252,6 +278,15 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
             <Button onClick={savePermissions} disabled={saving}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
               Salvar Alterações
+            </Button>
+            
+            <Button 
+              onClick={applyDefaultPermissionsToAll}
+              disabled={applyingToAll}
+              variant="outline"
+            >
+              {applyingToAll ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Users className="h-4 w-4 mr-2" />}
+              Aplicar Padrão p/ Todos
             </Button>
           </div>
 
