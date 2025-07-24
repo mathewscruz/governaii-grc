@@ -2471,9 +2471,16 @@ export type Database = {
       }
       gap_analysis_evaluations: {
         Row: {
+          action_preview: string | null
           assessment_id: string
+          conformity_status: string | null
           created_at: string
+          created_by: string | null
           data_avaliacao: string | null
+          empresa_id: string
+          evidence_implemented: string | null
+          evidence_status: string | null
+          framework_id: string | null
           id: string
           observacoes: string | null
           plano_acao: string | null
@@ -2481,13 +2488,21 @@ export type Database = {
           prazo_implementacao: string | null
           requirement_id: string
           responsavel_avaliacao: string | null
+          responsible_area: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          action_preview?: string | null
           assessment_id: string
+          conformity_status?: string | null
           created_at?: string
+          created_by?: string | null
           data_avaliacao?: string | null
+          empresa_id?: string
+          evidence_implemented?: string | null
+          evidence_status?: string | null
+          framework_id?: string | null
           id?: string
           observacoes?: string | null
           plano_acao?: string | null
@@ -2495,13 +2510,21 @@ export type Database = {
           prazo_implementacao?: string | null
           requirement_id: string
           responsavel_avaliacao?: string | null
+          responsible_area?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          action_preview?: string | null
           assessment_id?: string
+          conformity_status?: string | null
           created_at?: string
+          created_by?: string | null
           data_avaliacao?: string | null
+          empresa_id?: string
+          evidence_implemented?: string | null
+          evidence_status?: string | null
+          framework_id?: string | null
           id?: string
           observacoes?: string | null
           plano_acao?: string | null
@@ -2509,6 +2532,7 @@ export type Database = {
           prazo_implementacao?: string | null
           requirement_id?: string
           responsavel_avaliacao?: string | null
+          responsible_area?: string | null
           status?: string
           updated_at?: string
         }

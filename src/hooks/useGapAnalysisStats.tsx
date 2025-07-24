@@ -20,27 +20,35 @@ export const useGapAnalysisStats = () => {
 
         if (assessmentsError) throw assessmentsError;
 
-        // Calcular conformidade média
+        // Calcular conformidade média baseada nas avaliações reais
         const { data: evaluations, error: evaluationsError } = await supabase
           .from('gap_analysis_evaluations')
-          .select('status');
+          .select('conformity_status');
 
         if (evaluationsError) throw evaluationsError;
 
         let averageCompliance = 0;
         if (evaluations && evaluations.length > 0) {
-          const conformeCount = evaluations.filter(e => e.status === 'conforme').length;
-          const totalEvaluated = evaluations.filter(e => e.status !== 'nao_avaliado').length;
+          const conformeCount = evaluations.filter(e => e.conformity_status === 'conforme').length;
+          const totalEvaluated = evaluations.filter(e => e.conformity_status && e.conformity_status !== 'nao_aplicavel').length;
           averageCompliance = totalEvaluated > 0 ? (conformeCount / totalEvaluated) * 100 : 0;
         }
 
-        // Itens pendentes (atribuições)
-        const { count: pendingItems, error: assignmentsError } = await supabase
-          .from('gap_analysis_assignments')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pendente');
+        // Itens pendentes (avaliações não conformes + evidências pendentes)
+        const { data: pendingEvaluations, error: pendingError } = await supabase
+          .from('gap_analysis_evaluations')
+          .select('conformity_status, evidence_status');
 
-        if (assignmentsError) throw assignmentsError;
+        let pendingItems = 0;
+        if (!pendingError && pendingEvaluations) {
+          const nonCompliantCount = pendingEvaluations.filter(e => 
+            e.conformity_status === 'nao_conforme' || e.conformity_status === 'parcial'
+          ).length;
+          const pendingEvidenceCount = pendingEvaluations.filter(e => 
+            e.evidence_status === 'pendente' || e.evidence_status === 'em_analise'
+          ).length;
+          pendingItems = nonCompliantCount + pendingEvidenceCount;
+        }
 
         return {
           data: {
