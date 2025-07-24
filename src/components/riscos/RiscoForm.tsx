@@ -86,18 +86,18 @@ export function RiscoForm({ risco, onSuccess }: Props) {
   const form = useForm<RiscoForm>({
     resolver: zodResolver(riscoSchema),
     defaultValues: {
-      nome: risco?.nome || '',
-      descricao: risco?.descricao || '',
-      matriz_id: risco?.matriz_id || '',
-      categoria_id: risco?.categoria_id || '',
-      probabilidade_inicial: risco?.probabilidade_inicial || '',
-      impacto_inicial: risco?.impacto_inicial || '',
-      probabilidade_residual: risco?.probabilidade_residual || '',
-      impacto_residual: risco?.impacto_residual || '',
-      status: risco?.status || 'identificado',
-      responsavel: risco?.responsavel || '',
-      controles_existentes: risco?.controles_existentes || '',
-      causas: risco?.causas || '',
+      nome: '',
+      descricao: '',
+      matriz_id: '',
+      categoria_id: '',
+      probabilidade_inicial: '',
+      impacto_inicial: '',
+      probabilidade_residual: '',
+      impacto_residual: '',
+      status: 'identificado',
+      responsavel: '',
+      controles_existentes: '',
+      causas: '',
       consequencias: risco?.consequencias || '',
       aceito: risco?.aceito || false,
       justificativa_aceite: risco?.justificativa_aceite || '',
@@ -120,6 +120,30 @@ export function RiscoForm({ risco, onSuccess }: Props) {
       fetchAnexosAceite(risco.id);
     }
   }, [risco]);
+
+  // Fix: Reset form when risco prop changes
+  useEffect(() => {
+    if (risco) {
+      form.reset({
+        nome: risco.nome || '',
+        descricao: risco.descricao || '',
+        matriz_id: risco.matriz_id || '',
+        categoria_id: risco.categoria_id || '',
+        probabilidade_inicial: risco.probabilidade_inicial || '',
+        impacto_inicial: risco.impacto_inicial || '',
+        probabilidade_residual: risco.probabilidade_residual || '',
+        impacto_residual: risco.impacto_residual || '',
+        status: risco.status || 'identificado',
+        responsavel: risco.responsavel || '',
+        controles_existentes: risco.controles_existentes || '',
+        causas: risco.causas || '',
+        consequencias: risco.consequencias || '',
+        aceito: risco.aceito || false,
+        justificativa_aceite: risco.justificativa_aceite || '',
+        ativos_vinculados: []
+      });
+    }
+  }, [risco, form]);
 
   useEffect(() => {
     if (watchMatrizId) {

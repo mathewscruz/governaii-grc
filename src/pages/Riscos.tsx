@@ -45,6 +45,7 @@ export function Riscos() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [nivelFilter, setNivelFilter] = useState<string>('');
+  const [aceitoFilter, setAceitoFilter] = useState<string>('');
   const [riscoDialogOpen, setRiscoDialogOpen] = useState(false);
   const [matrizDialogOpen, setMatrizDialogOpen] = useState(false);
   const [editingRisco, setEditingRisco] = useState<Risco | null>(null);
