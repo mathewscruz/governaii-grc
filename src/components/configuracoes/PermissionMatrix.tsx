@@ -128,41 +128,132 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
   };
 
   const savePermissions = async () => {
+    setSaving(true);
     try {
-      setSaving(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      const currentUserId = user?.id;
+      
+      // PROTEÇÃO CRÍTICA: Verificar se o usuário atual está perdendo permissões de configuração
+      const configuracaoModule = modules.find(m => m.name === 'configuracoes');
+      if (configuracaoModule && currentUserId) {
+        const currentUserConfigPermission = permissions.find(p => 
+          p.user_id === currentUserId && p.module_id === configuracaoModule.id
+        );
+        
+        if (currentUserConfigPermission && !currentUserConfigPermission.can_access) {
+          toast.error("⚠️ BLOQUEADO: Você não pode remover seu próprio acesso ao módulo de configurações!");
+          setSaving(false);
+          return;
+        }
+      }
 
-      // Filtrar apenas permissões que foram modificadas e têm pelo menos uma flag true
+      // Filtrar apenas permissões válidas (com pelo menos uma flag true)
       const validPermissions = permissions.filter(p => 
         p.can_access || p.can_create || p.can_read || p.can_update || p.can_delete
       );
 
-      // Deletar todas as permissões existentes dos usuários sendo editados
-      const userIds = Array.from(new Set(permissions.map(p => p.user_id)));
-      for (const userId of userIds) {
-        await supabase
-          .from('user_module_permissions')
-          .delete()
-          .eq('user_id', userId);
-      }
+      // Buscar permissões existentes para comparação
+      const { data: existingPermissions } = await supabase
+        .from('user_module_permissions')
+        .select('*');
 
-      // Inserir novas permissões
-      if (validPermissions.length > 0) {
-        const { data: { user } } = await supabase.auth.getUser();
+      const existingMap = new Map();
+      existingPermissions?.forEach(p => {
+        existingMap.set(`${p.user_id}-${p.module_id}`, p);
+      });
+
+      // Processar mudanças de forma incremental
+      const toInsert = [];
+      const toUpdate = [];
+      const toDelete = [];
+
+      // Identificar mudanças
+      validPermissions.forEach(permission => {
+        const key = `${permission.user_id}-${permission.module_id}`;
+        const existing = existingMap.get(key);
+        
+        if (existing) {
+          // Verificar se houve mudança
+          const hasChanged = 
+            existing.can_access !== permission.can_access ||
+            existing.can_create !== permission.can_create ||
+            existing.can_read !== permission.can_read ||
+            existing.can_update !== permission.can_update ||
+            existing.can_delete !== permission.can_delete;
+            
+          if (hasChanged) {
+            toUpdate.push({
+              ...permission,
+              granted_by: currentUserId,
+              granted_at: new Date().toISOString()
+            });
+          }
+        } else {
+          toInsert.push({
+            ...permission,
+            granted_by: currentUserId,
+            granted_at: new Date().toISOString()
+          });
+        }
+      });
+
+      // Identificar permissões a serem removidas (existem mas não estão mais na lista válida)
+      existingPermissions?.forEach(existing => {
+        const found = validPermissions.find(p => 
+          p.user_id === existing.user_id && p.module_id === existing.module_id
+        );
+        if (!found) {
+          toDelete.push(existing);
+        }
+      });
+
+      // Executar mudanças atomicamente
+      if (toInsert.length > 0) {
         const { error } = await supabase
           .from('user_module_permissions')
-          .insert(validPermissions.map(p => ({
-            ...p,
-            granted_by: user?.id,
-            granted_at: new Date().toISOString()
-          })));
-
+          .insert(toInsert);
         if (error) throw error;
       }
 
-      toast.success('Permissões salvas com sucesso');
-    } catch (error) {
+      if (toUpdate.length > 0) {
+        for (const permission of toUpdate) {
+          const { error } = await supabase
+            .from('user_module_permissions')
+            .update(permission)
+            .eq('user_id', permission.user_id)
+            .eq('module_id', permission.module_id);
+          if (error) throw error;
+        }
+      }
+
+      if (toDelete.length > 0) {
+        for (const permission of toDelete) {
+          // PROTEÇÃO: Não deletar permissões do usuário atual para configurações
+          if (permission.user_id === currentUserId && 
+              configuracaoModule && 
+              permission.module_id === configuracaoModule.id) {
+            continue;
+          }
+          
+          const { error } = await supabase
+            .from('user_module_permissions')
+            .delete()
+            .eq('user_id', permission.user_id)
+            .eq('module_id', permission.module_id);
+          if (error) throw error;
+        }
+      }
+
+      toast.success(`✅ Permissões salvas com sucesso! ${toInsert.length} inseridas, ${toUpdate.length} atualizadas, ${toDelete.length} removidas.`);
+      
+      // Recarregar dados para garantir consistência
+      await fetchData();
+    } catch (error: any) {
       console.error('Error saving permissions:', error);
-      toast.error('Erro ao salvar permissões');
+      toast.error(`❌ Erro ao salvar permissões: ${error.message}`);
+      
+      // Recarregar dados em caso de erro para garantir consistência
+      await fetchData();
     } finally {
       setSaving(false);
     }
