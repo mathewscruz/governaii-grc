@@ -3124,6 +3124,45 @@ export type Database = {
           },
         ]
       }
+      riscos_anexos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          empresa_id: string
+          id: string
+          nome_arquivo: string
+          risco_id: string
+          tamanho_arquivo: number | null
+          tipo_anexo: string
+          tipo_arquivo: string | null
+          url_arquivo: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          empresa_id: string
+          id?: string
+          nome_arquivo: string
+          risco_id: string
+          tamanho_arquivo?: number | null
+          tipo_anexo?: string
+          tipo_arquivo?: string | null
+          url_arquivo: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string
+          id?: string
+          nome_arquivo?: string
+          risco_id?: string
+          tamanho_arquivo?: number | null
+          tipo_anexo?: string
+          tipo_arquivo?: string | null
+          url_arquivo?: string
+        }
+        Relationships: []
+      }
       riscos_ativos: {
         Row: {
           ativo_id: string

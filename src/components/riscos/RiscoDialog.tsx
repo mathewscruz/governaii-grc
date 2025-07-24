@@ -31,8 +31,8 @@ export function RiscoDialog({ open, onOpenChange, risco, onSuccess }: RiscoDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>
             {risco ? 'Gerenciar Risco' : 'Novo Risco'}
           </DialogTitle>

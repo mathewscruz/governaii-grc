@@ -8,13 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DialogFooter } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
+import { RiscoAnexosUpload } from './RiscoAnexosUpload';
 
 const riscoSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -72,6 +73,15 @@ export function RiscoForm({ risco, onSuccess }: Props) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [ativos, setAtivos] = useState<Ativo[]>([]);
   const [selectedMatriz, setSelectedMatriz] = useState<Matriz | null>(null);
+  const [anexosAceite, setAnexosAceite] = useState<any[]>([]);
+  const [sectionsOpen, setSectionsOpen] = useState({
+    basic: true,
+    initial: true,
+    residual: true,
+    status: true,
+    assets: false,
+    acceptance: false
+  });
 
   const form = useForm<RiscoForm>({
     resolver: zodResolver(riscoSchema),
@@ -104,6 +114,12 @@ export function RiscoForm({ risco, onSuccess }: Props) {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (risco?.id) {
+      fetchAnexosAceite(risco.id);
+    }
+  }, [risco]);
 
   useEffect(() => {
     if (watchMatrizId) {
@@ -168,6 +184,29 @@ export function RiscoForm({ risco, onSuccess }: Props) {
     } catch (error: any) {
       toast.error('Erro ao carregar dados: ' + error.message);
     }
+  };
+
+  const fetchAnexosAceite = async (riscoId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('riscos_anexos')
+        .select('*')
+        .eq('risco_id', riscoId)
+        .eq('tipo_anexo', 'aceite')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAnexosAceite(data || []);
+    } catch (error: any) {
+      console.error('Erro ao buscar anexos:', error);
+    }
+  };
+
+  const toggleSection = (section: keyof typeof sectionsOpen) => {
+    setSectionsOpen(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
   const calcularNivelRisco = (probabilidade: string, impacto: string, metodoCalculo: 'multiplicacao' | 'soma' = 'multiplicacao'): string => {
@@ -296,405 +335,552 @@ export function RiscoForm({ risco, onSuccess }: Props) {
   );
 
   return (
-    <div className="space-y-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="nome"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do Risco</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="matriz_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Matriz de Risco</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma matriz" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {matrizes.map((matriz) => (
-                        <SelectItem key={matriz.id} value={matriz.id}>
-                          {matriz.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="categoria_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Categoria</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma categoria" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categorias.map((categoria) => (
-                        <SelectItem key={categoria.id} value={categoria.id}>
-                          <div className="flex items-center gap-2">
-                            {categoria.cor && (
-                              <div 
-                                className="w-3 h-3 rounded-full" 
-                                style={{ backgroundColor: categoria.cor }}
-                              />
-                            )}
-                            {categoria.nome}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="responsavel"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Responsável</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={form.control}
-            name="descricao"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Descrição</FormLabel>
-                <FormControl>
-                  <Textarea {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Separator />
-
-          {/* Avaliação Inicial */}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[75vh] overflow-y-auto">
+        {/* Informações Básicas */}
+        <Collapsible open={sectionsOpen.basic} onOpenChange={() => toggleSection('basic')}>
           <Card>
-            <CardHeader>
-              <CardTitle>Avaliação Inicial do Risco</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="probabilidade_inicial"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Probabilidade</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(selectedMatriz?.configuracao as any)?.escala_probabilidade?.map((prob: any) => (
-                            <SelectItem key={prob.valor} value={prob.valor}>
-                              {prob.valor} - {prob.descricao}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="impacto_inicial"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Impacto</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(selectedMatriz?.configuracao as any)?.escala_impacto?.map((imp: any) => (
-                            <SelectItem key={imp.valor} value={imp.valor}>
-                              {imp.valor} - {imp.descricao}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {nivelInicialCalculado && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Nível de Risco Calculado:</span>
-                  <Badge>{nivelInicialCalculado}</Badge>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <span>Informações Básicas</span>
+                    <Badge variant="secondary">Obrigatório</Badge>
+                  </CardTitle>
+                  {sectionsOpen.basic ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Avaliação Residual */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Avaliação Residual (Após Tratamento)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="probabilidade_residual"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Probabilidade Residual</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="nome"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Risco *</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
+                          <Input placeholder="Ex: Falha de backup de dados" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          {(selectedMatriz?.configuracao as any)?.escala_probabilidade?.map((prob: any) => (
-                            <SelectItem key={prob.valor} value={prob.valor}>
-                              {prob.valor} - {prob.descricao}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="impacto_residual"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Impacto Residual</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(selectedMatriz?.configuracao as any)?.escala_impacto?.map((imp: any) => (
-                            <SelectItem key={imp.valor} value={imp.valor}>
-                              {imp.valor} - {imp.descricao}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {nivelResidualCalculado && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Nível de Risco Residual:</span>
-                  <Badge>{nivelResidualCalculado}</Badge>
+                  <FormField
+                    control={form.control}
+                    name="categoria_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Categoria</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma categoria" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {categorias.map((categoria) => (
+                              <SelectItem key={categoria.id} value={categoria.id}>
+                                <div className="flex items-center gap-2">
+                                  {categoria.cor && (
+                                    <div 
+                                      className="w-3 h-3 rounded-full" 
+                                      style={{ backgroundColor: categoria.cor }}
+                                    />
+                                  )}
+                                  {categoria.nome}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          <Separator />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="identificado">Identificado</SelectItem>
-                      <SelectItem value="analisado">Analisado</SelectItem>
-                      <SelectItem value="tratado">Tratado</SelectItem>
-                      <SelectItem value="monitorado">Monitorado</SelectItem>
-                      <SelectItem value="aceito">Aceito</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="ativos_vinculados"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ativos Vinculados</FormLabel>
-                  <div className="space-y-2">
-                    {ativos.map((ativo) => (
-                      <div key={ativo.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={ativo.id}
-                          checked={field.value.includes(ativo.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              field.onChange([...field.value, ativo.id]);
-                            } else {
-                              field.onChange(field.value.filter(id => id !== ativo.id));
-                            }
-                          }}
-                        />
-                        <label htmlFor={ativo.id} className="text-sm">
-                          {ativo.nome} ({ativo.tipo})
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField
-              control={form.control}
-              name="causas"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Causas</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="consequencias"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Consequências</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="controles_existentes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Controles Existentes</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Aceite do Risco */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Aceite do Risco</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="aceito"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Risco aceito formalmente
-                      </FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {form.watch('aceito') && (
                 <FormField
                   control={form.control}
-                  name="justificativa_aceite"
+                  name="descricao"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Justificativa do Aceite</FormLabel>
+                      <FormLabel>Descrição</FormLabel>
                       <FormControl>
-                        <Textarea {...field} />
+                        <Textarea 
+                          placeholder="Descreva o risco de forma detalhada..." 
+                          className="min-h-[80px]"
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
-            </CardContent>
+
+                <FormField
+                  control={form.control}
+                  name="matriz_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Matriz de Risco *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma matriz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {matrizes.map((matriz) => (
+                            <SelectItem key={matriz.id} value={matriz.id}>
+                              {matriz.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </CollapsibleContent>
           </Card>
-        </form>
-      </Form>
-      
-      <DialogFooter className="gap-2">
-        <Button type="button" variant="outline" onClick={() => onSuccess()} disabled={loading}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={loading} onClick={form.handleSubmit(onSubmit)}>
-          {loading ? 'Salvando...' : (risco?.id ? 'Atualizar' : 'Cadastrar')}
-        </Button>
-      </DialogFooter>
-    </div>
+        </Collapsible>
+
+        {/* Avaliação Inicial */}
+        <Collapsible open={sectionsOpen.initial} onOpenChange={() => toggleSection('initial')}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <span>Avaliação Inicial do Risco</span>
+                    <Badge variant="secondary">Obrigatório</Badge>
+                  </CardTitle>
+                  {sectionsOpen.initial ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="probabilidade_inicial"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Probabilidade Inicial *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="1-5" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {(selectedMatriz?.configuracao as any)?.escala_probabilidade?.map((prob: any) => (
+                              <SelectItem key={prob.valor} value={prob.valor}>
+                                {prob.valor} - {prob.descricao}
+                              </SelectItem>
+                            )) || [1, 2, 3, 4, 5].map((value) => (
+                              <SelectItem key={value} value={value.toString()}>
+                                {value}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="impacto_inicial"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Impacto Inicial *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="1-5" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {(selectedMatriz?.configuracao as any)?.escala_impacto?.map((imp: any) => (
+                              <SelectItem key={imp.valor} value={imp.valor}>
+                                {imp.valor} - {imp.descricao}
+                              </SelectItem>
+                            )) || [1, 2, 3, 4, 5].map((value) => (
+                              <SelectItem key={value} value={value.toString()}>
+                                {value}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {nivelInicialCalculado && (
+                    <div className="flex items-center">
+                      <div className="w-full">
+                        <FormLabel>Nível Calculado</FormLabel>
+                        <div className="mt-2">
+                          <Badge variant="outline" className="text-sm font-medium">
+                            {nivelInicialCalculado}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="causas"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Causas</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Descreva as possíveis causas do risco..." 
+                            className="min-h-[80px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="consequencias"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Consequências</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Descreva as possíveis consequências..." 
+                            className="min-h-[80px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Avaliação Residual */}
+        <Collapsible open={sectionsOpen.residual} onOpenChange={() => toggleSection('residual')}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Avaliação Residual</CardTitle>
+                  {sectionsOpen.residual ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-4">
+                <FormField
+                  control={form.control}
+                  name="controles_existentes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Controles Existentes</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Descreva os controles já implementados..." 
+                          className="min-h-[80px]"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="probabilidade_residual"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Probabilidade Residual</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="1-5" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {(selectedMatriz?.configuracao as any)?.escala_probabilidade?.map((prob: any) => (
+                              <SelectItem key={prob.valor} value={prob.valor}>
+                                {prob.valor} - {prob.descricao}
+                              </SelectItem>
+                            )) || [1, 2, 3, 4, 5].map((value) => (
+                              <SelectItem key={value} value={value.toString()}>
+                                {value}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="impacto_residual"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Impacto Residual</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="1-5" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {(selectedMatriz?.configuracao as any)?.escala_impacto?.map((imp: any) => (
+                              <SelectItem key={imp.valor} value={imp.valor}>
+                                {imp.valor} - {imp.descricao}
+                              </SelectItem>
+                            )) || [1, 2, 3, 4, 5].map((value) => (
+                              <SelectItem key={value} value={value.toString()}>
+                                {value}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {nivelResidualCalculado && (
+                    <div className="flex items-center">
+                      <div className="w-full">
+                        <FormLabel>Nível Calculado</FormLabel>
+                        <div className="mt-2">
+                          <Badge variant="outline" className="text-sm font-medium">
+                            {nivelResidualCalculado}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Status e Responsável */}
+        <Collapsible open={sectionsOpen.status} onOpenChange={() => toggleSection('status')}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Status e Responsabilidades</CardTitle>
+                  {sectionsOpen.status ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="identificado">Identificado</SelectItem>
+                            <SelectItem value="analisado">Analisado</SelectItem>
+                            <SelectItem value="tratado">Tratado</SelectItem>
+                            <SelectItem value="monitorado">Monitorado</SelectItem>
+                            <SelectItem value="aceito">Aceito</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="responsavel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Responsável</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome do responsável" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Ativos Vinculados */}
+        <Collapsible open={sectionsOpen.assets} onOpenChange={() => toggleSection('assets')}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Ativos Vinculados</CardTitle>
+                  {sectionsOpen.assets ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Selecione os ativos que são afetados por este risco:
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto border rounded-lg p-4">
+                    <FormField
+                      control={form.control}
+                      name="ativos_vinculados"
+                      render={({ field }) => (
+                        <>
+                          {ativos.map((ativo) => (
+                            <div key={ativo.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={ativo.id}
+                                checked={field.value.includes(ativo.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    field.onChange([...field.value, ativo.id]);
+                                  } else {
+                                    field.onChange(field.value.filter(id => id !== ativo.id));
+                                  }
+                                }}
+                              />
+                              <label htmlFor={ativo.id} className="text-sm font-normal">
+                                {ativo.nome} ({ativo.tipo})
+                              </label>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Aceite do Risco */}
+        <Collapsible open={sectionsOpen.acceptance} onOpenChange={() => toggleSection('acceptance')}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Aceite do Risco</CardTitle>
+                  {sectionsOpen.acceptance ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-4">
+                <FormField
+                  control={form.control}
+                  name="aceito"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Risco aceito pela organização
+                        </FormLabel>
+                        <p className="text-xs text-muted-foreground">
+                          Marque se este risco foi formalmente aceito
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch('aceito') && (
+                  <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                    <FormField
+                      control={form.control}
+                      name="justificativa_aceite"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Justificativa do Aceite *</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Descreva a justificativa para aceitar este risco..." 
+                              className="min-h-[80px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Anexos de Aceite */}
+                    <div className="space-y-3">
+                      <FormLabel>Documentos de Aceite</FormLabel>
+                      <RiscoAnexosUpload
+                        riscoId={risco?.id}
+                        anexos={anexosAceite}
+                        onAnexosChange={setAnexosAceite}
+                        tipoAnexo="aceite"
+                        disabled={false}
+                      />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Botões */}
+        <div className="flex justify-end gap-4 pt-4 border-t bg-background sticky bottom-0 z-10 p-4 -m-4">
+          <Button type="button" variant="outline" onClick={() => onSuccess()} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Salvando...' : (risco?.id ? 'Atualizar' : 'Cadastrar')}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }
