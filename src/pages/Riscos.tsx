@@ -15,8 +15,8 @@ import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { RiscoDialog } from '@/components/riscos/RiscoDialog';
 import { MatrizDialog } from '@/components/riscos/MatrizDialog';
-
 import { CategoriasDialog } from '@/components/riscos/CategoriasDialog';
+import { RiscoAnexosIcone } from '@/components/riscos/RiscoAnexosIcone';
 
 interface Risco {
   id: string;
