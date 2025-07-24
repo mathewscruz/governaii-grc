@@ -2640,6 +2640,7 @@ export type Database = {
       }
       gap_analysis_requirements: {
         Row: {
+          area_responsavel: string | null
           categoria: string | null
           codigo: string | null
           created_at: string
@@ -2653,6 +2654,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          area_responsavel?: string | null
           categoria?: string | null
           codigo?: string | null
           created_at?: string
@@ -2666,6 +2668,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          area_responsavel?: string | null
           categoria?: string | null
           codigo?: string | null
           created_at?: string
