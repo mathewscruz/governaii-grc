@@ -214,34 +214,10 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
 
           {visibleFrameworksList.map((framework: Framework) => (
             <TabsContent key={framework.id} value={framework.id} className="mt-6">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div>
-                        <span>{framework.nome}</span>
-                        <Badge className="ml-2">{framework.versao}</Badge>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditFramework(framework)}
-                      >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Editar Framework
-                      </Button>
-                    </CardTitle>
-                    {framework.descricao && (
-                      <p className="text-muted-foreground">{framework.descricao}</p>
-                    )}
-                  </CardHeader>
-                </Card>
-
-                <AssessmentView
-                  frameworkId={framework.id}
-                  frameworkName={framework.nome}
-                />
-              </div>
+              <AssessmentView
+                frameworkId={framework.id}
+                frameworkName={framework.nome}
+              />
             </TabsContent>
           ))}
         </Tabs>
