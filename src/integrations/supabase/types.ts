@@ -2347,6 +2347,327 @@ export type Database = {
         }
         Relationships: []
       }
+      gap_analysis_assessments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_conclusao: string | null
+          data_inicio: string | null
+          data_prevista_conclusao: string | null
+          descricao: string | null
+          empresa_id: string
+          framework_id: string
+          id: string
+          nome: string
+          percentual_conclusao: number | null
+          responsavel_geral: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_prevista_conclusao?: string | null
+          descricao?: string | null
+          empresa_id: string
+          framework_id: string
+          id?: string
+          nome: string
+          percentual_conclusao?: number | null
+          responsavel_geral?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_prevista_conclusao?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          framework_id?: string
+          id?: string
+          nome?: string
+          percentual_conclusao?: number | null
+          responsavel_geral?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gap_analysis_assessments_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gap_analysis_assignments: {
+        Row: {
+          assessment_id: string
+          assigned_by: string
+          assigned_to: string
+          created_at: string
+          data_conclusao: string | null
+          id: string
+          instrucoes: string | null
+          notificado_em: string | null
+          observacoes_conclusao: string | null
+          prazo: string | null
+          requirement_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assessment_id: string
+          assigned_by: string
+          assigned_to: string
+          created_at?: string
+          data_conclusao?: string | null
+          id?: string
+          instrucoes?: string | null
+          notificado_em?: string | null
+          observacoes_conclusao?: string | null
+          prazo?: string | null
+          requirement_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assessment_id?: string
+          assigned_by?: string
+          assigned_to?: string
+          created_at?: string
+          data_conclusao?: string | null
+          id?: string
+          instrucoes?: string | null
+          notificado_em?: string | null
+          observacoes_conclusao?: string | null
+          prazo?: string | null
+          requirement_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gap_analysis_assignments_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gap_analysis_assignments_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gap_analysis_evaluations: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          data_avaliacao: string | null
+          id: string
+          observacoes: string | null
+          plano_acao: string | null
+          pontuacao: number | null
+          prazo_implementacao: string | null
+          requirement_id: string
+          responsavel_avaliacao: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          data_avaliacao?: string | null
+          id?: string
+          observacoes?: string | null
+          plano_acao?: string | null
+          pontuacao?: number | null
+          prazo_implementacao?: string | null
+          requirement_id: string
+          responsavel_avaliacao?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          data_avaliacao?: string | null
+          id?: string
+          observacoes?: string | null
+          plano_acao?: string | null
+          pontuacao?: number | null
+          prazo_implementacao?: string | null
+          requirement_id?: string
+          responsavel_avaliacao?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gap_analysis_evaluations_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gap_analysis_evaluations_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gap_analysis_evidences: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_tamanho: number | null
+          arquivo_tipo: string | null
+          arquivo_url: string | null
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          evaluation_id: string
+          id: string
+          link_externo: string | null
+          nome: string
+          tipo: string
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          evaluation_id: string
+          id?: string
+          link_externo?: string | null
+          nome: string
+          tipo?: string
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          evaluation_id?: string
+          id?: string
+          link_externo?: string | null
+          nome?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gap_analysis_evidences_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gap_analysis_frameworks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          tipo_framework: string | null
+          updated_at: string
+          versao: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          tipo_framework?: string | null
+          updated_at?: string
+          versao?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          tipo_framework?: string | null
+          updated_at?: string
+          versao?: string | null
+        }
+        Relationships: []
+      }
+      gap_analysis_requirements: {
+        Row: {
+          categoria: string | null
+          codigo: string | null
+          created_at: string
+          descricao: string | null
+          framework_id: string
+          id: string
+          obrigatorio: boolean | null
+          ordem: number | null
+          peso: number | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          categoria?: string | null
+          codigo?: string | null
+          created_at?: string
+          descricao?: string | null
+          framework_id: string
+          id?: string
+          obrigatorio?: boolean | null
+          ordem?: number | null
+          peso?: number | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string | null
+          codigo?: string | null
+          created_at?: string
+          descricao?: string | null
+          framework_id?: string
+          id?: string
+          obrigatorio?: boolean | null
+          ordem?: number | null
+          peso?: number | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gap_analysis_requirements_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidentes: {
         Row: {
           ativos_afetados: string[] | null
@@ -3278,6 +3599,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: undefined
       }
+      assessment_pertence_empresa: {
+        Args: { assessment_id: string }
+        Returns: boolean
+      }
       auditoria_pertence_empresa: {
         Args: { auditoria_id: string }
         Returns: boolean
@@ -3367,6 +3692,10 @@ export type Database = {
       }
       matriz_pertence_empresa: {
         Args: { matriz_id: string }
+        Returns: boolean
+      }
+      requirement_pertence_empresa: {
+        Args: { requirement_id: string }
         Returns: boolean
       }
       risco_pertence_empresa: {

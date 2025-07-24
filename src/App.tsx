@@ -9,6 +9,7 @@ import Auth from '@/pages/Auth';
 import Dashboard from '@/pages/Dashboard';
 import Ativos from '@/pages/Ativos';
 import { Riscos } from '@/pages/Riscos';
+import GapAnalysis from '@/pages/GapAnalysis';
 import Controles from '@/pages/Controles';
 import Contratos from '@/pages/Contratos';
 import Auditorias from '@/pages/Auditorias';
@@ -63,6 +64,13 @@ function App() {
               <Layout>
                 <ProtectedRoute moduleName="riscos" fallbackToRoleCheck={false}>
                   <Riscos />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/gap-analysis" element={
+              <Layout>
+                <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
+                  <GapAnalysis />
                 </ProtectedRoute>
               </Layout>
             } />

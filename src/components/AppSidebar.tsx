@@ -18,7 +18,8 @@ import {
   MessageSquare,
   Search,
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  BarChart3
 } from 'lucide-react';
 import logoMini from '@/assets/governaii-logo-mini.png';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -58,6 +59,12 @@ const menuItems = [
     url: '/riscos',
     icon: AlertTriangle,
     moduleName: 'riscos',
+  },
+  {
+    title: 'Gap Analysis',
+    url: '/gap-analysis',
+    icon: BarChart3,
+    moduleName: 'gap-analysis',
   },
   {
     title: 'Controles Internos',

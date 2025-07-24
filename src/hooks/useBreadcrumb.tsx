@@ -10,6 +10,7 @@ const routeMap: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/ativos': 'Gestão de Ativos',
   '/riscos': 'Gestão de Riscos',
+  '/gap-analysis': 'Gap Analysis',
   '/controles': 'Controles Internos',
   '/auditorias': 'Auditorias',
   '/contratos': 'Contratos',
