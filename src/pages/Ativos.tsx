@@ -40,15 +40,57 @@ interface Ativo {
 }
 
 const tiposAtivo = [
-  'servidor',
-  'aplicacao',
-  'banco_dados',
-  'rede',
-  'endpoint',
-  'dispositivo_movel',
-  'armazenamento',
-  'software',
-  'hardware',
+  // Tecnologia da Informação
+  { value: 'servidor', label: 'Servidor' },
+  { value: 'aplicacao', label: 'Aplicação' },
+  { value: 'banco_dados', label: 'Banco de Dados' },
+  { value: 'rede', label: 'Equipamento de Rede' },
+  { value: 'endpoint', label: 'Endpoint' },
+  { value: 'dispositivo_movel', label: 'Dispositivo Móvel' },
+  { value: 'armazenamento', label: 'Armazenamento' },
+  { value: 'software', label: 'Software' },
+  { value: 'hardware', label: 'Hardware' },
+  
+  // Almoxarifado
+  { value: 'almoxarifado_equipamento', label: 'Equipamento de Almoxarifado' },
+  { value: 'almoxarifado_ferramenta', label: 'Ferramenta' },
+  { value: 'almoxarifado_material', label: 'Material de Consumo' },
+  { value: 'almoxarifado_epi', label: 'Equipamento de Proteção Individual' },
+  
+  // Escritório
+  { value: 'mobiliario', label: 'Mobiliário' },
+  { value: 'equipamento_escritorio', label: 'Equipamento de Escritório' },
+  { value: 'equipamento_comunicacao', label: 'Equipamento de Comunicação' },
+  { value: 'material_escritorio', label: 'Material de Escritório' },
+  
+  // Veículos e Transporte
+  { value: 'veiculo_terrestre', label: 'Veículo Terrestre' },
+  { value: 'veiculo_aereo', label: 'Veículo Aéreo' },
+  { value: 'maquina_pesada', label: 'Máquina Pesada' },
+  { value: 'equipamento_transporte', label: 'Equipamento de Transporte' },
+  
+  // Instalações e Infraestrutura
+  { value: 'imovel', label: 'Imóvel' },
+  { value: 'estrutura_fisica', label: 'Estrutura Física' },
+  { value: 'instalacao_eletrica', label: 'Instalação Elétrica' },
+  { value: 'instalacao_hidraulica', label: 'Instalação Hidráulica' },
+  
+  // Segurança
+  { value: 'equipamento_seguranca', label: 'Equipamento de Segurança' },
+  { value: 'sistema_monitoramento', label: 'Sistema de Monitoramento' },
+  { value: 'controle_acesso', label: 'Controle de Acesso' },
+  { value: 'equipamento_bombeiro', label: 'Equipamento de Combate a Incêndio' },
+  
+  // Produção e Operações
+  { value: 'maquina_producao', label: 'Máquina de Produção' },
+  { value: 'ferramenta_producao', label: 'Ferramenta de Produção' },
+  { value: 'equipamento_medicao', label: 'Equipamento de Medição' },
+  { value: 'equipamento_teste', label: 'Equipamento de Teste' },
+  
+  // Outros
+  { value: 'equipamento_medico', label: 'Equipamento Médico' },
+  { value: 'equipamento_laboratorio', label: 'Equipamento de Laboratório' },
+  { value: 'outros', label: 'Outros' }
 ];
 
 const criticidades = [
@@ -74,6 +116,16 @@ const Ativos = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  
+  // Estados para filtros
+  const [filtros, setFiltros] = useState({
+    status: '',
+    criticidade: '',
+    tipo: '',
+    valor_negocio: '',
+    localizacao: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [manutencaoDialog, setManutencaoDialog] = useState<{open: boolean, ativoId: string, ativoNome: string}>({open: false, ativoId: '', ativoNome: ''});
   const [auditDialog, setAuditDialog] = useState<{open: boolean, ativoId?: string}>({open: false});
@@ -227,14 +279,43 @@ const Ativos = () => {
     });
   };
 
-  const filteredAtivos = ativos.filter(ativo =>
-    ativo.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ativo.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ativo.proprietario?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ativo.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ativo.imei?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ativo.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredAtivos = ativos.filter(ativo => {
+    // Filtro de busca por texto
+    const matchesSearch = !searchTerm || 
+      ativo.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ativo.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ativo.proprietario?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ativo.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ativo.imei?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ativo.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    // Filtros específicos
+    const matchesStatus = !filtros.status || ativo.status === filtros.status;
+    const matchesCriticidade = !filtros.criticidade || ativo.criticidade === filtros.criticidade;
+    const matchesTipo = !filtros.tipo || ativo.tipo === filtros.tipo;
+    const matchesValorNegocio = !filtros.valor_negocio || ativo.valor_negocio === filtros.valor_negocio;
+    const matchesLocalizacao = !filtros.localizacao || ativo.localizacao === filtros.localizacao;
+
+    return matchesSearch && matchesStatus && matchesCriticidade && matchesTipo && matchesValorNegocio && matchesLocalizacao;
+  });
+
+  const clearFilters = () => {
+    setFiltros({
+      status: '',
+      criticidade: '',
+      tipo: '',
+      valor_negocio: '',
+      localizacao: ''
+    });
+    setSearchTerm('');
+  };
+
+  const hasActiveFilters = Object.values(filtros).some(f => f !== '') || searchTerm !== '';
+
+  const getTipoLabel = (value: string) => {
+    const tipo = tiposAtivo.find(t => t.value === value);
+    return tipo?.label || value;
+  };
 
   const getCriticidadeColor = (criticidade: string) => {
     const crit = criticidades.find(c => c.value === criticidade);
@@ -348,8 +429,8 @@ const Ativos = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {tiposAtivo.map((tipo) => (
-                          <SelectItem key={tipo} value={tipo}>
-                            {tipo.replace('_', ' ').charAt(0).toUpperCase() + tipo.replace('_', ' ').slice(1)}
+                          <SelectItem key={tipo.value} value={tipo.value}>
+                            {tipo.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -572,17 +653,129 @@ const Ativos = () => {
       </div>
 
       {/* Busca e Filtros */}
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar ativos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Buscar e Filtrar</h3>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtros {hasActiveFilters && `(${Object.values(filtros).filter(f => f !== '').length + (searchTerm ? 1 : 0)})`}
+                </Button>
+                {hasActiveFilters && (
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    Limpar
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, tipo, proprietário, cliente, IMEI ou tags..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4 border-t">
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={filtros.status} onValueChange={(value) => setFiltros(prev => ({...prev, status: value}))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todos os status</SelectItem>
+                      {statusOptions.map((status) => (
+                        <SelectItem key={status.value} value={status.value}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Criticidade</Label>
+                  <Select value={filtros.criticidade} onValueChange={(value) => setFiltros(prev => ({...prev, criticidade: value}))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todas as criticidades</SelectItem>
+                      {criticidades.map((crit) => (
+                        <SelectItem key={crit.value} value={crit.value}>
+                          {crit.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <Select value={filtros.tipo} onValueChange={(value) => setFiltros(prev => ({...prev, tipo: value}))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todos os tipos</SelectItem>
+                      {tiposAtivo.map((tipo) => (
+                        <SelectItem key={tipo.value} value={tipo.value}>
+                          {tipo.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Valor de Negócio</Label>
+                  <Select value={filtros.valor_negocio} onValueChange={(value) => setFiltros(prev => ({...prev, valor_negocio: value}))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todos os valores</SelectItem>
+                      {valoresNegocio.map((valor) => (
+                        <SelectItem key={valor} value={valor}>
+                          {valor.charAt(0).toUpperCase() + valor.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Localização</Label>
+                  <Select value={filtros.localizacao} onValueChange={(value) => setFiltros(prev => ({...prev, localizacao: value}))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas as localizações" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todas as localizações</SelectItem>
+                      {Array.from(new Set(ativos.map(a => a.localizacao).filter(Boolean))).map((loc) => (
+                        <SelectItem key={loc} value={loc!}>
+                          {loc}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tabela de Ativos */}
       <Card>
@@ -645,7 +838,7 @@ const Ativos = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {ativo.tipo.replace('_', ' ').charAt(0).toUpperCase() + ativo.tipo.replace('_', ' ').slice(1)}
+                          {getTipoLabel(ativo.tipo)}
                         </Badge>
                       </TableCell>
                       <TableCell>
