@@ -120,7 +120,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       if (error) throw error;
 
       const usuariosData = data.map((usuario: any) => ({
-        id: usuario.user_id,
+        id: usuario.id,
         user_id: usuario.user_id,
         nome: usuario.nome,
         email: usuario.email,
