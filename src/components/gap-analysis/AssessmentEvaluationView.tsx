@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EvidenceDialog } from './EvidenceDialog';
 import { AssignmentDialog } from './AssignmentDialog';
+import { AreaResponsavelInlineSelect } from './AreaResponsavelInlineSelect';
 
 interface Requirement {
   id: string;
@@ -19,6 +20,7 @@ interface Requirement {
   titulo: string;
   descricao: string;
   categoria: string;
+  area_responsavel?: string | null;
   peso: number;
   obrigatorio: boolean;
   ordem: number;
@@ -53,9 +55,10 @@ export const AssessmentEvaluationView = ({
   const [isEvidenceDialogOpen, setIsEvidenceDialogOpen] = useState(false);
   const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [requirements, setRequirements] = useState<Requirement[]>([]);
   const { toast } = useToast();
 
-  const { data: requirements, loading: loadingRequirements } = useOptimizedQuery(
+  const { data: requirementsData, loading: loadingRequirements } = useOptimizedQuery(
     async () => {
       const { data, error } = await supabase
         .from('gap_analysis_requirements')
@@ -72,6 +75,13 @@ export const AssessmentEvaluationView = ({
       cacheKey: `gap-requirements-${frameworkId}`
     }
   );
+
+  // Sincronizar com estado local para permitir atualizações dinâmicas
+  useEffect(() => {
+    if (requirementsData) {
+      setRequirements(requirementsData);
+    }
+  }, [requirementsData]);
 
   const { data: existingEvaluations, loading: loadingEvaluations } = useOptimizedQuery(
     async () => {
@@ -111,6 +121,16 @@ export const AssessmentEvaluationView = ({
         data_avaliacao: new Date().toISOString()
       }
     }));
+  };
+
+  const handleAreaChange = (requirementId: string, area: string) => {
+    setRequirements(prev => 
+      prev.map(req => 
+        req.id === requirementId 
+          ? { ...req, area_responsavel: area }
+          : req
+      )
+    );
   };
 
   const handleSave = async () => {
@@ -225,24 +245,7 @@ export const AssessmentEvaluationView = ({
     <>
       <div className="space-y-6">
         <Card>
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Avaliação: {assessmentName}
-                </CardTitle>
-                <CardDescription>
-                  Framework: {frameworkName} • {requirements?.length || 0} requisitos
-                </CardDescription>
-              </div>
-              <Button onClick={handleSave} disabled={isSaving}>
-                <Save className="h-4 w-4 mr-2" />
-                {isSaving ? 'Salvando...' : 'Salvar Avaliação'}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">{stats.conforme}</div>
@@ -273,14 +276,28 @@ export const AssessmentEvaluationView = ({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-0">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Avaliação: {assessmentName}</h2>
+              <p className="text-muted-foreground">
+                Framework: {frameworkName} • {requirements?.length || 0} requisitos
+              </p>
+            </div>
+            <Button onClick={handleSave} disabled={isSaving}>
+              <Save className="h-4 w-4 mr-2" />
+              {isSaving ? 'Salvando...' : 'Salvar Avaliação'}
+            </Button>
+          </div>
+
+          <div className="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Código</TableHead>
                   <TableHead>Requisito</TableHead>
                   <TableHead>Categoria</TableHead>
+                  <TableHead>Área Responsável</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Peso</TableHead>
                   <TableHead>Ações</TableHead>
@@ -311,6 +328,13 @@ export const AssessmentEvaluationView = ({
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">{requirement.categoria}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <AreaResponsavelInlineSelect
+                          requirementId={requirement.id}
+                          currentArea={requirement.area_responsavel}
+                          onAreaChange={(area) => handleAreaChange(requirement.id, area)}
+                        />
                       </TableCell>
                       <TableCell>
                         <Select 
@@ -381,8 +405,8 @@ export const AssessmentEvaluationView = ({
                 })}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       <EvidenceDialog
