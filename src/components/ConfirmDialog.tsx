@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -11,6 +12,7 @@ interface ConfirmDialogProps {
   cancelText?: string;
   variant?: 'default' | 'destructive';
   onConfirm: () => void;
+  loading?: boolean;
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
@@ -22,6 +24,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   cancelText = 'Cancelar',
   variant = 'default',
   onConfirm,
+  loading = false,
 }) => {
   const handleConfirm = () => {
     onConfirm();
@@ -36,11 +39,13 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{cancelText}</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{cancelText}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
+            disabled={loading}
             className={variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
           >
+            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>

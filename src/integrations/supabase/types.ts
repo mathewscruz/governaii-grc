@@ -3349,6 +3349,10 @@ export type Database = {
         Args: { incidente_id: string }
         Returns: boolean
       }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_admin_or_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

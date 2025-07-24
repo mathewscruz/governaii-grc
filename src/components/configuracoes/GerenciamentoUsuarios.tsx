@@ -286,27 +286,31 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
   const handleDelete = async () => {
     if (!usuarioToDelete) return;
     
+    console.log('Iniciando exclusão do usuário:', usuarioToDelete);
+    
     try {
-      setLoading(true);
+      setActionLoading(prev => ({ ...prev, [`delete-${usuarioToDelete.id}`]: true }));
+      
       const { error } = await supabase
         .from('profiles')
         .delete()
         .eq('id', usuarioToDelete.id);
 
       if (error) {
-        console.error('Erro ao excluir usuário:', error);
+        console.error('Erro detalhado ao excluir usuário:', error);
         throw new Error(error.message || 'Erro ao excluir usuário');
       }
       
+      console.log('Usuário excluído com sucesso');
       toast.success('Usuário excluído com sucesso');
-      await fetchUsuarios(); // Aguardar recarregamento
+      await fetchUsuarios();
       setDeleteDialogOpen(false);
       setUsuarioToDelete(null);
     } catch (error: any) {
-      console.error('Erro ao excluir usuário:', error);
+      console.error('Erro completo ao excluir usuário:', error);
       toast.error(error.message || 'Erro ao excluir usuário');
     } finally {
-      setLoading(false);
+      setActionLoading(prev => ({ ...prev, [`delete-${usuarioToDelete.id}`]: false }));
     }
   };
 
@@ -811,6 +815,7 @@ const GerenciamentoUsuarios = ({ userRole }: Props) => {
         onConfirm={handleDelete}
         variant="destructive"
         confirmText="Excluir"
+        loading={usuarioToDelete ? actionLoading[`delete-${usuarioToDelete.id}`] : false}
       />
     </div>
   );
