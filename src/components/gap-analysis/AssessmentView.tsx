@@ -12,6 +12,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { supabase } from "@/integrations/supabase/client";
 import { RequirementsManagerDialog } from "./RequirementsManagerDialog";
 import { EvidenceUpload } from "./EvidenceUpload";
+import { AreaResponsavelInlineSelect } from "./AreaResponsavelInlineSelect";
 import { toast } from "sonner";
 import { Requirement } from "./types";
 import { cn } from "@/lib/utils";
@@ -216,7 +217,8 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
         <div className="space-y-4">
           <Card>
             <CardContent className="p-0">
-              <Table>
+              <div className="overflow-x-auto overflow-visible">
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[200px]">Código/Requisito</TableHead>
@@ -260,11 +262,10 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
                         />
                       </TableCell>
                       <TableCell>
-                        <Input
-                          placeholder="Área responsável..."
-                          value={evaluations[requirement.id]?.responsible_area || ""}
-                          onChange={(e) => handleEvaluationChange(requirement.id, 'responsible_area', e.target.value)}
-                          className="text-xs"
+                        <AreaResponsavelInlineSelect
+                          requirementId={requirement.id}
+                          currentArea={evaluations[requirement.id]?.responsible_area || requirement.area_responsavel}
+                          onAreaChange={(area) => handleEvaluationChange(requirement.id, 'responsible_area', area)}
                         />
                       </TableCell>
                       <TableCell>
@@ -281,7 +282,14 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
                           )}>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent 
+                            className="bg-background border-border shadow-lg"
+                            position="popper"
+                            side="bottom"
+                            align="start"
+                            sideOffset={4}
+                            style={{ zIndex: 9999 }}
+                          >
                             <SelectItem value="conforme" className="text-green-700">✓ Conforme</SelectItem>
                             <SelectItem value="nao_conforme" className="text-red-700">✗ Não conforme</SelectItem>
                             <SelectItem value="parcial" className="text-yellow-700">◐ Parcial</SelectItem>
@@ -311,7 +319,14 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
                           )}>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent 
+                            className="bg-background border-border shadow-lg"
+                            position="popper"
+                            side="bottom"
+                            align="start"
+                            sideOffset={4}
+                            style={{ zIndex: 9999 }}
+                          >
                             <SelectItem value="pendente" className="text-blue-600">⏳ Pendente</SelectItem>
                             <SelectItem value="em_analise" className="text-orange-700">🔍 Em análise</SelectItem>
                             <SelectItem value="aprovada" className="text-green-700">✓ Aprovada</SelectItem>
@@ -330,7 +345,8 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             </CardContent>
           </Card>
 
