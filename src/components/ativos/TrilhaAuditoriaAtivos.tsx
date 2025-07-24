@@ -50,7 +50,7 @@ const TrilhaAuditoriaAtivos: React.FC<TrilhaAuditoriaProps> = ({ ativoId, open, 
         query = query.eq('record_id', ativoId);
       }
 
-      if (filtroAcao) {
+      if (filtroAcao && filtroAcao !== 'ALL') {
         query = query.eq('action', filtroAcao);
       }
 
@@ -157,7 +157,7 @@ const TrilhaAuditoriaAtivos: React.FC<TrilhaAuditoriaProps> = ({ ativoId, open, 
                   <SelectValue placeholder="Todas as ações" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as ações</SelectItem>
+                  <SelectItem value="ALL">Todas as ações</SelectItem>
                   <SelectItem value="INSERT">Criação</SelectItem>
                   <SelectItem value="UPDATE">Atualização</SelectItem>
                   <SelectItem value="DELETE">Exclusão</SelectItem>
