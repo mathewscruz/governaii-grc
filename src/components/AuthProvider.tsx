@@ -33,6 +33,7 @@ interface AuthContextType {
   checkTemporaryPassword: () => Promise<void>;
   logoUpdateKey: number;
   forceLogoUpdate: () => void;
+  initializeUserPermissions: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -98,6 +99,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTimeout(() => {
       setLogoUpdateKey(prev => prev + 1);
     }, 100);
+  };
+
+  const initializeUserPermissions = async () => {
+    if (!user) return;
+
+    try {
+      console.log('Initializing permissions for user:', user.id);
+      const { error } = await supabase.rpc('apply_default_permissions_for_user', {
+        user_id_param: user.id
+      });
+
+      if (error) {
+        console.error('Error initializing user permissions:', error);
+      } else {
+        console.log('User permissions initialized successfully');
+      }
+    } catch (error) {
+      console.error('Error calling apply_default_permissions_for_user:', error);
+    }
   };
 
 
@@ -170,6 +190,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (isSubscribed) {
               await fetchProfile(session.user.id);
               await checkTemporaryPassword();
+              await initializeUserPermissions();
             }
           }, 0);
         } else {
@@ -195,6 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (isSubscribed) {
             await fetchProfile(session.user.id);
             await checkTemporaryPassword();
+            await initializeUserPermissions();
           }
         }, 0);
       }
@@ -224,6 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkTemporaryPassword,
     logoUpdateKey,
     forceLogoUpdate,
+    initializeUserPermissions,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

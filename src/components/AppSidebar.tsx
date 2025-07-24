@@ -38,48 +38,52 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/AuthProvider';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const menuItems = [
   {
     title: 'Dashboard',
     url: '/dashboard',
     icon: LayoutDashboard,
+    moduleName: 'dashboard',
   },
   {
     title: 'Gestão de Ativos',
     url: '/ativos',
     icon: Database,
+    moduleName: 'ativos',
   },
   {
     title: 'Gestão de Riscos',
     url: '/riscos',
     icon: AlertTriangle,
+    moduleName: 'riscos',
   },
   {
     title: 'Controles Internos',
     icon: FileCheck,
     subItems: [
-      { title: 'Controles', url: '/controles', icon: Shield },
-      { title: 'Auditorias', url: '/auditorias', icon: Search },
-      { title: 'Contratos', url: '/contratos', icon: Handshake },
-      { title: 'Documentos', url: '/documentos', icon: FileText },
+      { title: 'Controles', url: '/controles', icon: Shield, moduleName: 'controles' },
+      { title: 'Auditorias', url: '/auditorias', icon: Search, moduleName: 'auditorias' },
+      { title: 'Contratos', url: '/contratos', icon: Handshake, moduleName: 'contratos' },
+      { title: 'Documentos', url: '/documentos', icon: FileText, moduleName: 'documentos' },
     ],
   },
   {
     title: 'Segurança e Privacidade',
     icon: Lock,
     subItems: [
-      { title: 'Contas Privilegiadas', url: '/contas-privilegiadas', icon: Users },
-      { title: 'Incidentes', url: '/incidentes', icon: AlertCircle },
-      { title: 'Dados', url: '/dados', icon: HardDrive },
+      { title: 'Contas Privilegiadas', url: '/contas-privilegiadas', icon: Users, moduleName: 'contas-privilegiadas' },
+      { title: 'Incidentes', url: '/incidentes', icon: AlertCircle, moduleName: 'incidentes' },
+      { title: 'Dados', url: '/dados', icon: HardDrive, moduleName: 'dados' },
     ],
   },
   {
     title: 'Compliance',
     icon: CheckSquare,
     subItems: [
-      { title: 'Due Diligence', url: '/due-diligence', icon: BookOpen },
-      { title: 'Canal de Denúncia', url: '/denuncia', icon: MessageSquare },
+      { title: 'Due Diligence', url: '/due-diligence', icon: BookOpen, moduleName: 'due-diligence' },
+      { title: 'Canal de Denúncia', url: '/denuncia', icon: MessageSquare, moduleName: 'denuncia' },
     ],
   },
 ];
@@ -87,6 +91,7 @@ const menuItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const { signOut, company, logoUpdateKey } = useAuth();
+  const { canAccess } = usePermissions();
   const location = useLocation();
   const currentPath = location.pathname;
   
@@ -156,6 +161,33 @@ export function AppSidebar() {
     return company?.nome || "GovernAII";
   };
 
+  // Função para verificar se um item tem acesso
+  const hasAccess = (item: any) => {
+    if (!item.moduleName) return true; // Se não tem moduleName, mostra por padrão
+    return canAccess(item.moduleName);
+  };
+
+  // Filtrar itens do menu baseado nas permissões
+  const getVisibleMenuItems = () => {
+    return menuItems.filter(item => {
+      if (item.subItems) {
+        // Para grupos, mostrar se pelo menos um subitem tem acesso
+        const visibleSubItems = item.subItems.filter(hasAccess);
+        return visibleSubItems.length > 0;
+      }
+      return hasAccess(item);
+    }).map(item => {
+      if (item.subItems) {
+        // Filtrar subitems por permissão
+        return {
+          ...item,
+          subItems: item.subItems.filter(hasAccess)
+        };
+      }
+      return item;
+    });
+  };
+
   return (
     <Sidebar
       className={`transition-all duration-300 ease-out ${isCollapsed ? 'w-14' : 'w-60'}`}
@@ -182,7 +214,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
-              {menuItems.map((item) => (
+              {getVisibleMenuItems().map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.subItems ? (
                     <Collapsible
@@ -260,18 +292,20 @@ export function AppSidebar() {
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-9">
-                  <NavLink to="/configuracoes" className={({ isActive }) => getNavCls({ isActive })}>
-                    <Settings className="h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out" />
-                    {!isCollapsed && (
-                      <span className="text-sm font-medium transition-all duration-300 ease-out truncate">
-                        Configurações
-                      </span>
-                    )}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {canAccess('configuracoes') && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-9">
+                    <NavLink to="/configuracoes" className={({ isActive }) => getNavCls({ isActive })}>
+                      <Settings className="h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out" />
+                      {!isCollapsed && (
+                        <span className="text-sm font-medium transition-all duration-300 ease-out truncate">
+                          Configurações
+                        </span>
+                      )}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
