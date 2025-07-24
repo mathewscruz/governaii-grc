@@ -224,6 +224,25 @@ Deno.serve(async (req) => {
 
     console.log('Senha temporária registrada')
 
+    // Aplicar permissões padrão para o novo usuário
+    try {
+      console.log('Aplicando permissões padrão para o usuário...')
+      const { error: permissionsError } = await supabaseAdmin
+        .rpc('apply_default_permissions_for_user', { 
+          user_id_param: authData.user.id 
+        })
+
+      if (permissionsError) {
+        console.error('Erro ao aplicar permissões padrão:', permissionsError)
+        // Não falhar a criação do usuário por causa das permissões
+      } else {
+        console.log('Permissões padrão aplicadas com sucesso')
+      }
+    } catch (permError) {
+      console.error('Exceção ao aplicar permissões:', permError)
+      // Não falhar a criação do usuário por causa das permissões
+    }
+
     // Enviar e-mail de boas-vindas
     let emailSent = false;
     try {

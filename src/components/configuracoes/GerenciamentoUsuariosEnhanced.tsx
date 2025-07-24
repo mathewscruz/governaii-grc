@@ -77,6 +77,8 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
   const [accessInfoLoading, setAccessInfoLoading] = useState(false);
   const [showPermissionMatrix, setShowPermissionMatrix] = useState(false);
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<string | undefined>();
+  const [restoringPermissions, setRestoringPermissions] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const form = useForm<UsuarioForm>({
     resolver: zodResolver(usuarioSchema),
@@ -212,6 +214,8 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
 
   const handleSubmit = async (data: UsuarioForm) => {
     try {
+      setCreating(true);
+      
       if (editingUsuario) {
         // Editar usuário existente
         const { error } = await supabase
@@ -265,6 +269,8 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     } catch (error: any) {
       console.error('Erro ao salvar usuário:', error);
       toast.error(error.message || 'Erro ao salvar usuário');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -280,6 +286,33 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
   const handleManagePermissions = (userId?: string) => {
     setSelectedUserForPermissions(userId);
     setShowPermissionMatrix(true);
+  };
+
+  const handleRestoreAllPermissions = async () => {
+    try {
+      setRestoringPermissions(true);
+      
+      const { data, error } = await supabase.functions.invoke('apply-default-permissions-all-users');
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+      
+      toast.success(`Permissões restauradas para ${data?.successful || 0} usuários`);
+      
+      // Atualizar a lista de usuários para refletir as mudanças
+      await fetchUsuarios();
+      
+    } catch (error: any) {
+      console.error('Erro ao restaurar permissões:', error);
+      toast.error(error.message || "Erro ao restaurar permissões");
+    } finally {
+      setRestoringPermissions(false);
+    }
   };
 
   const openDeleteDialog = (usuario: Usuario) => {
@@ -482,6 +515,23 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         </div>
         
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleRestoreAllPermissions}
+            disabled={restoringPermissions}
+          >
+            {restoringPermissions ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                Restaurando...
+              </>
+            ) : (
+              <>
+                <Shield className="h-4 w-4 mr-2" />
+                Restaurar Permissões
+              </>
+            )}
+          </Button>
           <Button variant="outline" onClick={() => handleManagePermissions()}>
             <Shield className="h-4 w-4 mr-2" />
             Gerenciar Permissões
@@ -587,8 +637,15 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                     <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                       Cancelar
                     </Button>
-                    <Button type="submit">
-                      {editingUsuario ? 'Atualizar' : 'Criar'}
+                    <Button type="submit" disabled={creating}>
+                      {creating ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                          {editingUsuario ? 'Atualizando...' : 'Criando...'}
+                        </>
+                      ) : (
+                        editingUsuario ? 'Atualizar' : 'Criar'
+                      )}
                     </Button>
                   </div>
                 </form>
