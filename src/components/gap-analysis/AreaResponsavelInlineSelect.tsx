@@ -43,7 +43,7 @@ export const AreaResponsavelInlineSelect: React.FC<AreaResponsavelInlineSelectPr
   const [customAreas, setCustomAreas] = useState<string[]>([]);
   const [newArea, setNewArea] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedArea, setSelectedArea] = useState(currentArea || "");
+  const [selectedArea, setSelectedArea] = useState(currentArea || "sem_area");
   const { profile } = useAuth();
 
   const debouncedArea = useDebounce(selectedArea, 500);
@@ -64,7 +64,7 @@ export const AreaResponsavelInlineSelect: React.FC<AreaResponsavelInlineSelectPr
 
   // Sincronizar com prop externa
   useEffect(() => {
-    setSelectedArea(currentArea || "");
+    setSelectedArea(currentArea || "sem_area");
   }, [currentArea]);
 
   // Auto-save quando área é alterada (debounced)
@@ -76,19 +76,20 @@ export const AreaResponsavelInlineSelect: React.FC<AreaResponsavelInlineSelectPr
 
   const handleSaveArea = async (area: string) => {
     try {
+      const areaToSave = area === "sem_area" ? null : area;
       const { error } = await supabase
         .from('gap_analysis_requirements')
-        .update({ area_responsavel: area || null })
+        .update({ area_responsavel: areaToSave })
         .eq('id', requirementId);
 
       if (error) throw error;
 
-      onAreaChange?.(area);
+      onAreaChange?.(area === "sem_area" ? "" : area);
     } catch (error) {
       console.error('Erro ao salvar área responsável:', error);
       toast.error("Erro ao salvar área responsável");
       // Reverter para valor anterior em caso de erro
-      setSelectedArea(currentArea || "");
+      setSelectedArea(currentArea || "sem_area");
     }
   };
 
@@ -136,7 +137,7 @@ export const AreaResponsavelInlineSelect: React.FC<AreaResponsavelInlineSelectPr
           sideOffset={4}
           style={{ zIndex: 9999 }}
         >
-          <SelectItem value="">Nenhuma área</SelectItem>
+          <SelectItem value="sem_area">Nenhuma área</SelectItem>
           {allAreas.map((area) => (
             <SelectItem key={area} value={area}>
               {area}
