@@ -35,6 +35,7 @@ interface Assessment {
   framework_name: string;
   framework_version: string;
   framework_type: string;
+  framework_id?: string;
 }
 
 export default function GapAnalysis() {
@@ -151,7 +152,7 @@ export default function GapAnalysis() {
         {renderBackButton()}
         <AssessmentEvaluationView
           assessmentId={selectedAssessment.id}
-          frameworkId={selectedAssessment.id} // Usando o ID como framework_id para compatibilidade
+          frameworkId={selectedAssessment.framework_id || selectedAssessment.id}
           frameworkName={selectedAssessment.framework_name || selectedAssessment.name}
           assessmentName={selectedAssessment.name}
           onSave={() => console.log('Assessment saved')}

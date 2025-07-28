@@ -200,7 +200,7 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
               </Card>
             ) : (
               <Card className="flex-1 overflow-hidden flex flex-col">
-                <ScrollArea className="flex-1">
+                <ScrollArea className="h-[500px]">
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
