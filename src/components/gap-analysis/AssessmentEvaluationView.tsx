@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { FileText, Upload, User, Save, CheckCircle2, XCircle, AlertTriangle, Minus } from 'lucide-react';
+import { FileText, Upload, User, Save, CheckCircle2, XCircle, AlertTriangle, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +13,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EvidenceDialog } from './EvidenceDialog';
 import { AssignmentDialog } from './AssignmentDialog';
 import { AreaResponsavelInlineSelect } from './AreaResponsavelInlineSelect';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface Requirement {
   id: string;
@@ -56,6 +65,8 @@ export const AssessmentEvaluationView = ({
   const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const { toast } = useToast();
 
   const { data: requirementsData, loading: loadingRequirements } = useOptimizedQuery(
@@ -241,6 +252,17 @@ export const AssessmentEvaluationView = ({
   const stats = getConformityStats();
   const progress = calculateProgress();
 
+  // Paginação
+  const totalItems = requirements?.length || 0;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentRequirements = requirements?.slice(startIndex, endIndex) || [];
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   return (
     <>
       <div className="space-y-6">
@@ -281,8 +303,13 @@ export const AssessmentEvaluationView = ({
             <div>
               <h2 className="text-2xl font-bold">Avaliação: {assessmentName}</h2>
               <p className="text-muted-foreground">
-                Framework: {frameworkName} • {requirements?.length || 0} requisitos
+                Framework: {frameworkName} • {totalItems} requisitos
               </p>
+              {totalPages > 1 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Mostrando {startIndex + 1}-{Math.min(endIndex, totalItems)} de {totalItems} requisitos (Página {currentPage} de {totalPages})
+                </p>
+              )}
             </div>
             <Button onClick={handleSave} disabled={isSaving}>
               <Save className="h-4 w-4 mr-2" />
@@ -305,7 +332,7 @@ export const AssessmentEvaluationView = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {requirements?.map((requirement) => {
+                {currentRequirements.map((requirement) => {
                   const evaluation = evaluations[requirement.id];
                   const status = evaluation?.status || 'nao_avaliado';
                   
@@ -415,6 +442,91 @@ export const AssessmentEvaluationView = ({
               </Table>
             </div>
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Próxima
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) handlePageChange(currentPage - 1);
+                      }}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Mostrar apenas algumas páginas próximas
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handlePageChange(page);
+                            }}
+                            isActive={page === currentPage}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    } else if (
+                      page === currentPage - 2 ||
+                      page === currentPage + 2
+                    ) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      );
+                    }
+                    return null;
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                      }}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -199,112 +200,114 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
               </Card>
             ) : (
               <Card className="flex-1 overflow-hidden flex flex-col">
-                <div className="overflow-x-auto flex-1">
-                  <Table>
-                    <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-20">Ordem</TableHead>
-                      <TableHead className="w-24">Código</TableHead>
-                      <TableHead className="min-w-[200px]">Título</TableHead>
-                      <TableHead className="w-32">Categoria</TableHead>
-                      <TableHead className="w-32">Área Responsável</TableHead>
-                      <TableHead className="w-16">Peso</TableHead>
-                      <TableHead className="w-24">Obrigatório</TableHead>
-                      <TableHead className="w-20">Ações</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {requirements.map((requirement, index) => (
-                      <TableRow key={requirement.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline">{requirement.ordem || index + 1}</Badge>
-                            <div className="flex flex-col">
+                <ScrollArea className="flex-1">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-20">Ordem</TableHead>
+                        <TableHead className="w-24">Código</TableHead>
+                        <TableHead className="min-w-[200px]">Título</TableHead>
+                        <TableHead className="w-32">Categoria</TableHead>
+                        <TableHead className="w-32">Área Responsável</TableHead>
+                        <TableHead className="w-16">Peso</TableHead>
+                        <TableHead className="w-24">Obrigatório</TableHead>
+                        <TableHead className="w-20">Ações</TableHead>
+                      </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                      {requirements.map((requirement, index) => (
+                        <TableRow key={requirement.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline">{requirement.ordem || index + 1}</Badge>
+                              <div className="flex flex-col">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleMoveUp(requirement)}
+                                  disabled={index === 0}
+                                  className="h-5 w-5 p-0"
+                                >
+                                  <ChevronUp className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleMoveDown(requirement)}
+                                  disabled={index === requirements.length - 1}
+                                  className="h-5 w-5 p-0"
+                                >
+                                  <ChevronDown className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">
+                            {requirement.codigo || '-'}
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{requirement.titulo}</div>
+                              {requirement.descricao && (
+                                <div className="text-sm text-muted-foreground truncate max-w-xs">
+                                  {requirement.descricao}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {requirement.categoria && (
+                              <Badge variant="secondary">
+                                {requirement.categoria}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {requirement.area_responsavel && (
+                              <Badge variant="outline">
+                                {requirement.area_responsavel}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {requirement.peso && (
+                              <Badge variant="outline">
+                                {requirement.peso}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {requirement.obrigatorio ? (
+                              <Badge variant="destructive">Sim</Badge>
+                            ) : (
+                              <Badge variant="secondary">Não</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
                               <Button
                                 size="sm"
-                                variant="ghost"
-                                onClick={() => handleMoveUp(requirement)}
-                                disabled={index === 0}
-                                className="h-5 w-5 p-0"
+                                variant="outline"
+                                onClick={() => handleEdit(requirement)}
                               >
-                                <ChevronUp className="h-3 w-3" />
+                                <Edit className="h-4 w-4" />
                               </Button>
                               <Button
                                 size="sm"
-                                variant="ghost"
-                                onClick={() => handleMoveDown(requirement)}
-                                disabled={index === requirements.length - 1}
-                                className="h-5 w-5 p-0"
+                                variant="outline"
+                                onClick={() => handleDelete(requirement)}
                               >
-                                <ChevronDown className="h-3 w-3" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {requirement.codigo || '-'}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{requirement.titulo}</div>
-                            {requirement.descricao && (
-                              <div className="text-sm text-muted-foreground truncate max-w-xs">
-                                {requirement.descricao}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {requirement.categoria && (
-                            <Badge variant="secondary">
-                              {requirement.categoria}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {requirement.area_responsavel && (
-                            <Badge variant="outline">
-                              {requirement.area_responsavel}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {requirement.peso && (
-                            <Badge variant="outline">
-                              {requirement.peso}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {requirement.obrigatorio ? (
-                            <Badge variant="destructive">Sim</Badge>
-                          ) : (
-                            <Badge variant="secondary">Não</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEdit(requirement)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDelete(requirement)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                  </Table>
-                </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                    </Table>
+                  </div>
+                </ScrollArea>
               </Card>
             )}
           </div>
