@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, XCircle, Clock, History, Activity, Shield } from 'lucide-react';
+import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, XCircle, Clock, History, Activity, Shield, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,7 @@ import { BuscaAvancadaDocumentos } from '@/components/documentos/BuscaAvancadaDo
 import { UploadMultiplosDialog } from '@/components/documentos/UploadMultiplosDialog';
 import { DocumentoPreview } from '@/components/documentos/DocumentoPreview';
 import { TrilhaAuditoriaDocumentos } from '@/components/documentos/TrilhaAuditoriaDocumentos';
+import { DocGenDialog } from '@/components/documentos/DocGenDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
@@ -75,6 +76,7 @@ export function Documentos() {
   const [uploadMultiplos, setUploadMultiplos] = useState(false);
   const [activeTab, setActiveTab] = useState('lista');
   const [filtrosAvancados, setFiltrosAvancados] = useState<any>(null);
+  const [showDocGenDialog, setShowDocGenDialog] = useState(false);
   const { toast } = useToast();
   
   // Buscar estatísticas dos documentos
@@ -342,6 +344,10 @@ export function Documentos() {
           >
             <FolderOpen className="h-4 w-4 mr-2" />
             Categorias
+          </Button>
+          <Button onClick={() => setShowDocGenDialog(true)} className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+            <Brain className="h-4 w-4" />
+            DocGen 🧠
           </Button>
           <Button onClick={() => setDocumentoDialog({ open: true })}>
             <Plus className="h-4 w-4 mr-2" />
@@ -693,6 +699,15 @@ export function Documentos() {
         onOpenChange={setUploadMultiplos}
         onSuccess={fetchDocumentos}
         categorias={categorias}
+      />
+
+      <DocGenDialog
+        open={showDocGenDialog}
+        onOpenChange={setShowDocGenDialog}
+        onDocumentSaved={() => {
+          fetchDocumentos();
+          setShowDocGenDialog(false);
+        }}
       />
     </div>
   );

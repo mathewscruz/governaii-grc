@@ -1729,6 +1729,192 @@ export type Database = {
           },
         ]
       }
+      docgen_conversations: {
+        Row: {
+          contexto: Json | null
+          created_at: string
+          empresa_id: string
+          id: string
+          mensagens: Json
+          status: string
+          tipo_documento_identificado: string | null
+          titulo: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contexto?: Json | null
+          created_at?: string
+          empresa_id: string
+          id?: string
+          mensagens?: Json
+          status?: string
+          tipo_documento_identificado?: string | null
+          titulo?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contexto?: Json | null
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          mensagens?: Json
+          status?: string
+          tipo_documento_identificado?: string | null
+          titulo?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      docgen_generated_docs: {
+        Row: {
+          conteudo: Json
+          conversation_id: string
+          created_at: string
+          created_by: string | null
+          documento_id: string | null
+          empresa_id: string
+          framework_vinculado: string | null
+          id: string
+          layout_id: string | null
+          nome: string
+          status: string
+          template_id: string | null
+          tipo_documento: string
+          updated_at: string
+        }
+        Insert: {
+          conteudo: Json
+          conversation_id: string
+          created_at?: string
+          created_by?: string | null
+          documento_id?: string | null
+          empresa_id: string
+          framework_vinculado?: string | null
+          id?: string
+          layout_id?: string | null
+          nome: string
+          status?: string
+          template_id?: string | null
+          tipo_documento: string
+          updated_at?: string
+        }
+        Update: {
+          conteudo?: Json
+          conversation_id?: string
+          created_at?: string
+          created_by?: string | null
+          documento_id?: string | null
+          empresa_id?: string
+          framework_vinculado?: string | null
+          id?: string
+          layout_id?: string | null
+          nome?: string
+          status?: string
+          template_id?: string | null
+          tipo_documento?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      docgen_layouts: {
+        Row: {
+          classificacao_padrao: string | null
+          cores: Json | null
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          empresa_id: string
+          fontes: Json | null
+          footer_config: Json
+          frequencia_revisao: string | null
+          header_config: Json
+          id: string
+          is_default: boolean | null
+          logo_url: string | null
+          nome: string
+          responsaveis_padrao: Json | null
+          updated_at: string
+        }
+        Insert: {
+          classificacao_padrao?: string | null
+          cores?: Json | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id: string
+          fontes?: Json | null
+          footer_config?: Json
+          frequencia_revisao?: string | null
+          header_config?: Json
+          id?: string
+          is_default?: boolean | null
+          logo_url?: string | null
+          nome: string
+          responsaveis_padrao?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          classificacao_padrao?: string | null
+          cores?: Json | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          fontes?: Json | null
+          footer_config?: Json
+          frequencia_revisao?: string | null
+          header_config?: Json
+          id?: string
+          is_default?: boolean | null
+          logo_url?: string | null
+          nome?: string
+          responsaveis_padrao?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      docgen_templates: {
+        Row: {
+          campos_obrigatorios: Json | null
+          created_at: string
+          empresa_id: string
+          estrutura: Json
+          id: string
+          is_system: boolean | null
+          nome: string
+          tipo_documento: string
+          tooltips: Json | null
+          updated_at: string
+        }
+        Insert: {
+          campos_obrigatorios?: Json | null
+          created_at?: string
+          empresa_id: string
+          estrutura: Json
+          id?: string
+          is_system?: boolean | null
+          nome: string
+          tipo_documento: string
+          tooltips?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          campos_obrigatorios?: Json | null
+          created_at?: string
+          empresa_id?: string
+          estrutura?: Json
+          id?: string
+          is_system?: boolean | null
+          nome?: string
+          tipo_documento?: string
+          tooltips?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       documentos: {
         Row: {
           aprovado_por: string | null
