@@ -32,12 +32,17 @@ export const useGapAnalysisStats = () => {
           frameworkIds.has(e.framework_id)
         ) || [];
 
+        // Debug log para verificar avaliações
+        console.log('🔍 Stats Debug - Avaliações filtradas:', filteredEvaluations.length, filteredEvaluations);
+
         // Conformidade média
         let averageCompliance = 0;
         if (filteredEvaluations.length > 0) {
           const evaluatedItems = filteredEvaluations.filter(e => 
-            e.conformity_status && e.conformity_status !== 'nao_aplicavel'
+            e.conformity_status && e.conformity_status !== 'nao_aplicavel' && e.conformity_status !== null
           );
+          
+          console.log('📊 Stats Debug - Itens avaliados:', evaluatedItems.length, evaluatedItems);
           
           if (evaluatedItems.length > 0) {
             const totalScore = evaluatedItems.reduce((score, evaluation) => {
@@ -50,6 +55,7 @@ export const useGapAnalysisStats = () => {
             }, 0);
             
             averageCompliance = totalScore / evaluatedItems.length;
+            console.log('💯 Stats Debug - Score total:', totalScore, 'Média:', averageCompliance);
           }
         }
 
@@ -92,9 +98,9 @@ export const useGapAnalysisStats = () => {
     },
     [],
     {
-      staleTime: 30 * 1000, // 30 segundos
+      staleTime: 5 * 1000, // 5 segundos para atualização mais rápida
       cacheKey: 'gap-analysis-stats',
-      cacheDuration: 2 // 2 minutos
+      cacheDuration: 0.5 // 30 segundos para refresh mais frequente
     }
   );
 };

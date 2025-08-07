@@ -14,6 +14,14 @@ import { RequirementsManagerDialog } from "./RequirementsManagerDialog";
 import { EvidenceUpload } from "./EvidenceUpload";
 import { AreaResponsavelInlineSelect } from "./AreaResponsavelInlineSelect";
 import { ColumnVisibilityManager, ColumnConfig } from "./ColumnVisibilityManager";
+import { 
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { toast } from "sonner";
 import { Requirement } from "./types";
 import { cn } from "@/lib/utils";
@@ -31,6 +39,10 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
   const [evaluations, setEvaluations] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
   const debouncedEvaluations = useDebounce(evaluations, 1500);
+
+  // Estados para paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Configuração de colunas gerenciáveis
   const [columns, setColumns] = useState<ColumnConfig[]>([
@@ -260,7 +272,7 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {requirements.map((requirement) => (
+                  {requirements.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((requirement) => (
                     <TableRow key={requirement.id}>
                       {columns.find(c => c.key === 'code')?.visible && (
                         <TableCell className="font-medium">
@@ -392,6 +404,41 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
               </div>
             </CardContent>
           </Card>
+
+          {/* Paginação */}
+          {requirements.length > itemsPerPage && (
+            <div className="flex justify-center py-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: Math.ceil(requirements.length / itemsPerPage) }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => setCurrentPage(page)}
+                        isActive={currentPage === page}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(Math.min(Math.ceil(requirements.length / itemsPerPage), currentPage + 1))}
+                      className={currentPage === Math.ceil(requirements.length / itemsPerPage) ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
 
           {requirements.length > 0 && (
             <div className="flex justify-end pt-4">
