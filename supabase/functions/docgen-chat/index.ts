@@ -104,14 +104,20 @@ serve(async (req) => {
         .select('*')
         .or(`empresa_id.eq.${empresa_id},is_system.eq.true`);
 
-      // Buscar padrões de aprendizado para este tipo de documento
-      const { data: learningPatterns } = await supabase
-        .from('docgen_learning_patterns')
-        .select('*')
-        .eq('empresa_id', empresa_id)
-        .eq('tipo_documento', context.tipo_documento_identificado || 'geral')
-        .order('taxa_sucesso', { ascending: false })
-        .limit(5);
+      // Buscar padrões de aprendizado para este tipo de documento (se existir)
+      let learningPatterns = [];
+      try {
+        const { data: patterns } = await supabase
+          .from('docgen_learning_patterns')
+          .select('*')
+          .eq('empresa_id', empresa_id)
+          .eq('tipo_documento', context.tipo_documento_identificado || 'geral')
+          .order('taxa_sucesso', { ascending: false })
+          .limit(5);
+        learningPatterns = patterns || [];
+      } catch (error) {
+        console.log('Learning patterns not available:', error);
+      }
 
       // Preparar prompt para a IA
       const systemPrompt = `Você é o DocGen, um consultor especializado em criação de documentos corporativos com conhecimento especializado em normas e frameworks.
@@ -127,17 +133,26 @@ EXPERTISE E CONHECIMENTO:
 
 TIPOS DE DOCUMENTO DISPONÍVEIS:
 ${templates?.map(t => {
-  const template = t;
-  const secoes = template.secoes_obrigatorias ? JSON.parse(template.secoes_obrigatorias) : [];
-  const perguntas = template.perguntas_sequenciais ? JSON.parse(template.perguntas_sequenciais) : [];
+  // Acessar campos de forma segura
+  let secoes = [];
+  let perguntas = [];
+  let frameworks = [];
+  
+  try {
+    secoes = t.secoes_obrigatorias ? (typeof t.secoes_obrigatorias === 'string' ? JSON.parse(t.secoes_obrigatorias) : t.secoes_obrigatorias) : [];
+    perguntas = t.perguntas_sequenciais ? (typeof t.perguntas_sequenciais === 'string' ? JSON.parse(t.perguntas_sequenciais) : t.perguntas_sequenciais) : [];
+    frameworks = Array.isArray(t.frameworks_relacionados) ? t.frameworks_relacionados : [];
+  } catch (e) {
+    console.log('Error parsing template data:', e);
+  }
   
   return `- ${t.tipo_documento}: ${t.nome}
-  Seções obrigatórias: ${secoes.map((s: any) => s.nome).join(', ')}
-  Frameworks relacionados: ${template.frameworks_relacionados?.join(', ') || 'N/A'}`;
+  Seções obrigatórias: ${secoes.map((s: any) => s.nome).join(', ') || 'N/A'}
+  Frameworks relacionados: ${frameworks.join(', ') || 'N/A'}`;
 }).join('\n')}
 
 PADRÕES DE SUCESSO APRENDIDOS:
-${learningPatterns?.map(p => `- ${p.pergunta_padrao} (Taxa sucesso: ${(p.taxa_sucesso * 100).toFixed(1)}%)`).join('\n') || 'Nenhum padrão disponível'}
+${learningPatterns?.map((p: any) => `- ${p.pergunta_padrao} (Taxa sucesso: ${(p.taxa_sucesso * 100).toFixed(1)}%)`).join('\n') || 'Nenhum padrão disponível'}
 
 CONTEXTO ATUAL:
 - Etapa: ${context.etapa_atual}
@@ -222,25 +237,30 @@ Sempre responda em JSON com esta estrutura:
         }
       };
 
-      // Coletar dados para aprendizado contínuo
-      if (parsedResponse.tipo_documento_identificado && parsedResponse.message) {
-        // Registrar padrão de pergunta bem-sucedida
-        await supabase
-          .from('docgen_learning_patterns')
-          .upsert({
-            empresa_id,
-            tipo_documento: parsedResponse.tipo_documento_identificado,
-            pergunta_padrao: parsedResponse.message.substring(0, 200),
-            contexto_aplicacao: {
-              etapa: parsedResponse.etapa_atual,
-              frameworks_mencionados: parsedResponse.frameworks_relacionados || [],
-              user_input_context: message.substring(0, 100)
-            },
-            numero_usos: 1
-          }, {
-            onConflict: 'empresa_id,tipo_documento,pergunta_padrao',
-            ignoreDuplicates: false
-          });
+      // Coletar dados para aprendizado contínuo (opcional)
+      try {
+        if (parsedResponse.tipo_documento_identificado && parsedResponse.message) {
+          // Registrar padrão de pergunta bem-sucedida
+          await supabase
+            .from('docgen_learning_patterns')
+            .upsert({
+              empresa_id,
+              tipo_documento: parsedResponse.tipo_documento_identificado,
+              pergunta_padrao: parsedResponse.message.substring(0, 200),
+              contexto_aplicacao: {
+                etapa: parsedResponse.etapa_atual,
+                frameworks_mencionados: parsedResponse.frameworks_relacionados || [],
+                user_input_context: message.substring(0, 100)
+              },
+              numero_usos: 1
+            }, {
+              onConflict: 'empresa_id,tipo_documento,pergunta_padrao',
+              ignoreDuplicates: false
+            });
+        }
+      } catch (learningError) {
+        console.log('Learning data collection failed:', learningError);
+        // Não impedir o fluxo principal
       }
 
       // Salvar conversa atualizada
@@ -325,20 +345,25 @@ Responda APENAS com um JSON na seguinte estrutura:
       const docData = await docResponse.json();
       const documentContent = JSON.parse(docData.choices[0].message.content);
 
-      // Registrar feedback implícito de sucesso na geração
-      await supabase
-        .from('docgen_feedback_implicit')
-        .insert({
-          empresa_id,
-          conversation_id: conversation.id,
-          documento_salvo: true,
-          qualidade_estimada: 8, // Geração bem-sucedida
-          padroes_identificados: {
-            tipo_documento: context.tipo_documento_identificado,
-            secoes_geradas: documentContent.secoes?.length || 0,
-            frameworks_utilizados: context.informacoes_coletadas?.frameworks || []
-          }
-        });
+      // Registrar feedback implícito de sucesso na geração (opcional)
+      try {
+        await supabase
+          .from('docgen_feedback_implicit')
+          .insert({
+            empresa_id,
+            conversation_id: conversation.id,
+            documento_salvo: true,
+            qualidade_estimada: 8, // Geração bem-sucedida
+            padroes_identificados: {
+              tipo_documento: context.tipo_documento_identificado,
+              secoes_geradas: documentContent.secoes?.length || 0,
+              frameworks_utilizados: context.informacoes_coletadas?.frameworks || []
+            }
+          });
+      } catch (feedbackError) {
+        console.log('Feedback collection failed:', feedbackError);
+        // Não impedir o fluxo principal
+      }
 
       // Salvar documento gerado
       const { data: generatedDoc } = await supabase
