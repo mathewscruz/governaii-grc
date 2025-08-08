@@ -90,12 +90,28 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
 
     if (open) {
       fetchUserInfo();
+      // Carregar categorias para o diálogo de criação
+      const fetchCategorias = async () => {
+        try {
+          const { data } = await supabase
+            .from('documentos_categorias')
+            .select('*')
+            .order('nome');
+          setDocCategorias(data || []);
+        } catch (e) {
+          console.error('Erro ao carregar categorias:', e);
+        }
+      };
+      fetchCategorias();
       // Iniciar conversa com saudação
-      setMessages([{
-        role: 'assistant',
-        content: 'Olá! Sou o DocGen, seu assistente inteligente para criação de documentos. Estou aqui para ajudá-lo a criar qualquer tipo de documento que você precisa.\n\nPode me contar que tipo de documento você gostaria de criar?',
-        timestamp: new Date()
-      }]);
+      setMessages([
+        {
+          role: 'assistant',
+          content:
+            'Olá! Sou o DocGen, seu assistente inteligente para criação de documentos. Estou aqui para ajudá-lo a criar qualquer tipo de documento que você precisa.\n\nPode me contar que tipo de documento você gostaria de criar?',
+          timestamp: new Date(),
+        },
+      ]);
     }
   }, [open]);
 
@@ -164,7 +180,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           conversation_id: conversationId,
           user_id: userInfo.user_id,
           empresa_id: userInfo.empresa_id,
-          action: 'generate_document'
+          action: 'generate_document',
+          doc_type_hint: currentDocType
         }
       });
 
@@ -226,33 +243,124 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     }
   };
 
-  const exportDocument = () => {
+  // Geração e exportação de arquivos
+  const generateDocxBlob = async () => {
+    if (!generatedDocument) return null;
+    const children: any[] = [];
+    children.push(
+      new Paragraph({
+        text: generatedDocument.titulo || 'Documento',
+        heading: HeadingLevel.TITLE,
+      })
+    );
+    children.push(new Paragraph({ text: `Versão: ${generatedDocument.versao || ''}` }));
+    children.push(new Paragraph({ text: `Data: ${generatedDocument.data_criacao || ''}` }));
+
+    (generatedDocument.secoes || []).forEach((secao: any) => {
+      children.push(
+        new Paragraph({ text: ' ' }),
+      );
+      children.push(
+        new Paragraph({ text: secao.nome || 'Seção', heading: HeadingLevel.HEADING_2 })
+      );
+      const conteudo = (secao.conteudo || '').toString().split('\n');
+      conteudo.forEach((line: string) =>
+        children.push(new Paragraph({ children: [new TextRun(line)] }))
+      );
+    });
+
+    const doc = new DocxDocument({ sections: [{ properties: {}, children }] });
+    const blob = await Packer.toBlob(doc);
+    return blob;
+  };
+
+  const generatePdfBlob = () => {
+    if (!generatedDocument) return null;
+    const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+    const marginX = 40;
+    let y = 50;
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(16);
+    pdf.text(generatedDocument.titulo || 'Documento', marginX, y);
+    y += 24;
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+    pdf.text(`Versão: ${generatedDocument.versao || ''}`, marginX, y);
+    y += 16;
+    pdf.text(`Data: ${generatedDocument.data_criacao || ''}`, marginX, y);
+    y += 24;
+
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const maxWidth = pdf.internal.pageSize.getWidth() - marginX * 2;
+
+    (generatedDocument.secoes || []).forEach((secao: any, idx: number) => {
+      if (idx > 0) y += 10;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(13);
+      const titleLines = pdf.splitTextToSize(secao.nome || 'Seção', maxWidth);
+      titleLines.forEach((line: string) => {
+        if (y > pageHeight - 60) {
+          pdf.addPage();
+          y = 50;
+        }
+        pdf.text(line, marginX, y);
+        y += 18;
+      });
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      const lines = pdf.splitTextToSize((secao.conteudo || '').toString(), maxWidth);
+      lines.forEach((line: string) => {
+        if (y > pageHeight - 40) {
+          pdf.addPage();
+          y = 50;
+        }
+        pdf.text(line, marginX, y);
+        y += 16;
+      });
+    });
+
+    return pdf.output('blob');
+  };
+
+  const handleExport = async (format: 'pdf' | 'docx') => {
     if (!generatedDocument) return;
+    try {
+      const blob = format === 'pdf' ? generatePdfBlob() : await generateDocxBlob();
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${generatedDocument.titulo}.${format === 'pdf' ? 'pdf' : 'docx'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Documento Exportado', description: `Exportado como ${format.toUpperCase()}.` });
+    } catch (e) {
+      console.error('Erro ao exportar documento:', e);
+      toast({ title: 'Erro ao exportar', description: 'Tente novamente.', variant: 'destructive' });
+    }
+  };
 
-    // Criar conteúdo em texto para export
-    let content = `${generatedDocument.titulo}\n`;
-    content += `Versão: ${generatedDocument.versao}\n`;
-    content += `Data: ${generatedDocument.data_criacao}\n\n`;
-
-    generatedDocument.secoes?.forEach((secao: any) => {
-      content += `${secao.nome}\n`;
-      content += `${secao.conteudo}\n\n`;
-    });
-
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${generatedDocument.titulo}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    toast({
-      title: "Documento Exportado!",
-      description: "O documento foi exportado como arquivo de texto.",
-    });
+  const handleOpenCreateDialog = async () => {
+    if (!generatedDocument) return;
+    try {
+      const blob = await generateDocxBlob();
+      if (!blob) return;
+      const file = new File(
+        [blob],
+        `${generatedDocument.titulo}.docx`,
+        { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
+      );
+      setInitialGeneratedFile(file);
+      setShowCreateDialog(true);
+    } catch (e) {
+      console.error('Erro ao preparar arquivo:', e);
+      toast({ title: 'Erro', description: 'Falha ao preparar arquivo para salvar.', variant: 'destructive' });
+    }
   };
 
   const formatMessage = (content: string) => {
@@ -319,7 +427,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+      <DialogContent className="max-w-5xl h-[85vh] md:h-[80vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Brain className="h-5 w-5 text-primary" />
@@ -348,7 +456,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                         : 'bg-muted'
                     }`}>
                       <CardContent className="p-3">
-                        <div className="text-sm leading-relaxed">
+                        <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                           {message.role === 'assistant' ? (
                             <div 
                               dangerouslySetInnerHTML={formatMessage(message.content)}
@@ -422,22 +530,30 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
 
           {/* Document Preview */}
           {generatedDocument && (
-            <div className="w-1/2 border-l pl-4">
+            <div className="w-1/2 border-l pl-4 flex flex-col overflow-hidden">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold">{isEditingLayout ? 'Editor de Layout' : 'Preview do Documento'}</h3>
-                <div className="flex gap-2">
-                  <Button onClick={() => setIsEditingLayout(!isEditingLayout)} size="sm" variant="outline" className="gap-1">
-                    {isEditingLayout ? 'Concluir Layout' : 'Editar Layout'}
-                  </Button>
-                  <Button onClick={saveDocument} size="sm" className="gap-1">
-                    <Save className="h-3 w-3" />
-                    Salvar no Sistema
-                  </Button>
-                  <Button onClick={exportDocument} size="sm" variant="outline" className="gap-1">
-                    <Download className="h-3 w-3" />
-                    Exportar
-                  </Button>
-                </div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => setIsEditingLayout(!isEditingLayout)} size="sm" variant="outline" className="gap-1">
+                      {isEditingLayout ? 'Concluir Layout' : 'Editar Layout'}
+                    </Button>
+                    <Button onClick={handleOpenCreateDialog} size="sm" className="gap-1">
+                      <Save className="h-3 w-3" />
+                      Salvar no Sistema
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline" className="gap-1">
+                          <Download className="h-3 w-3" />
+                          Exportar
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleExport('pdf')}>Exportar como PDF</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('docx')}>Exportar como DOCX</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
               </div>
               
               {isEditingLayout ? (
@@ -445,8 +561,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                   <DocLayoutBuilder value={generatedDocument} onChange={setGeneratedDocument} />
                 </div>
               ) : (
-                <ScrollArea className="h-full">
-                  <div className="space-y-4 text-sm">
+                <ScrollArea className="flex-1 pr-2">
+                  <div className="space-y-5 text-sm leading-relaxed">
                     <div>
                       <h4 className="font-bold text-lg">{generatedDocument.titulo}</h4>
                       <p className="text-muted-foreground">
@@ -454,9 +570,9 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                       </p>
                     </div>
                     {generatedDocument.secoes?.map((secao: any, index: number) => (
-                      <div key={index}>
-                        <h5 className="font-semibold mb-2">{secao.nome}</h5>
-                        <p className="text-muted-foreground whitespace-pre-wrap">
+                      <div key={index} className="space-y-2">
+                        <h5 className="font-semibold">{secao.nome}</h5>
+                        <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
                           {secao.conteudo}
                         </p>
                       </div>
@@ -468,6 +584,27 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
             </div>
           )}
         </div>
+
+        {/* Dialogo de criação com dados do DocGen */}
+        <DocumentoDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+          onSuccess={() => {
+            onDocumentSaved?.();
+            setShowCreateDialog(false);
+            onOpenChange(false);
+          }}
+          categorias={docCategorias}
+          initialFile={initialGeneratedFile}
+          initialData={{
+            nome: generatedDocument?.titulo || '',
+            tipo: (currentDocType || 'documento') as any,
+            descricao: generatedDocument?.metadados?.descricao || '',
+            tags: generatedDocument?.metadados?.tags || [],
+            status: 'ativo',
+            confidencial: (generatedDocument?.metadados?.classificacao || '').toLowerCase() === 'confidencial',
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
