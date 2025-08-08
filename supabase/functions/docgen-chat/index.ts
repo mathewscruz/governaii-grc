@@ -289,14 +289,30 @@ FORMATO DE RESPOSTA JSON:
 
     } else if (action === 'generate_document') {
       // Gerar documento completo
+      // Buscar templates disponíveis (precisamos desta variável neste branch)
+      const { data: templates } = await supabase
+        .from('docgen_templates')
+        .select('*')
+        .or(`empresa_id.eq.${empresa_id},is_system.eq.true`);
+
       const template = templates?.find(t => t.tipo_documento === context.tipo_documento_identificado);
       if (!template) {
         throw new Error('Template não encontrado para o tipo de documento');
       }
 
+      // Garantir que a estrutura do template está em JSON
+      let templateEstrutura: any = template.estrutura;
+      try {
+        if (typeof templateEstrutura === 'string') {
+          templateEstrutura = JSON.parse(templateEstrutura);
+        }
+      } catch (_e) {
+        // Continua com a estrutura original se não for JSON válido
+      }
+
       const documentPrompt = `Gere um documento ${context.tipo_documento_identificado} completo baseado nas informações coletadas.
 
-TEMPLATE: ${JSON.stringify(template.estrutura)}
+TEMPLATE: ${JSON.stringify(templateEstrutura || template.estrutura)}
 INFORMAÇÕES COLETADAS: ${JSON.stringify(context.informacoes_coletadas)}
 EMPRESA: ${context.empresa_nome}
 
@@ -344,7 +360,26 @@ Responda APENAS com um JSON na seguinte estrutura:
       });
 
       const docData = await docResponse.json();
-      const documentContent = JSON.parse(docData.choices[0].message.content);
+      let documentContent;
+      try {
+        documentContent = JSON.parse(docData.choices[0].message.content);
+      } catch (_e) {
+        // Se a IA não retornar JSON puro, encapsular em um documento mínimo
+        documentContent = {
+          titulo: `Documento ${context.tipo_documento_identificado || ''}`.trim(),
+          versao: '1.0',
+          data_criacao: new Date().toISOString().slice(0, 10),
+          secoes: [
+            { nome: 'Conteúdo', conteudo: String(docData.choices[0].message.content || '') }
+          ],
+          metadados: {
+            classificacao: 'Interno',
+            responsavel_elaboracao: context.user_name,
+            responsavel_aprovacao: '',
+            frequencia_revisao: 'Anual'
+          }
+        };
+      }
 
       // Registrar feedback implícito de sucesso na geração (opcional)
       try {

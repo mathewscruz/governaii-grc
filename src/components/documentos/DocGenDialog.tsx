@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Brain, Send, FileText, Download, Save, Loader2 } from 'lucide-react';
+import DocLayoutBuilder from './DocLayoutBuilder';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -52,6 +53,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   const [currentDocType, setCurrentDocType] = useState<string | null>(null);
   const [generatedDocument, setGeneratedDocument] = useState<any>(null);
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
+  const [isEditingLayout, setIsEditingLayout] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Buscar informações do usuário
@@ -413,8 +415,11 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           {generatedDocument && (
             <div className="w-1/2 border-l pl-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Preview do Documento</h3>
+                <h3 className="font-semibold">{isEditingLayout ? 'Editor de Layout' : 'Preview do Documento'}</h3>
                 <div className="flex gap-2">
+                  <Button onClick={() => setIsEditingLayout(!isEditingLayout)} size="sm" variant="outline" className="gap-1">
+                    {isEditingLayout ? 'Concluir Layout' : 'Editar Layout'}
+                  </Button>
                   <Button onClick={saveDocument} size="sm" className="gap-1">
                     <Save className="h-3 w-3" />
                     Salvar no Sistema
@@ -426,25 +431,31 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                 </div>
               </div>
               
-              <ScrollArea className="h-full">
-                <div className="space-y-4 text-sm">
-                  <div>
-                    <h4 className="font-bold text-lg">{generatedDocument.titulo}</h4>
-                    <p className="text-muted-foreground">
-                      Versão: {generatedDocument.versao} | {generatedDocument.data_criacao}
-                    </p>
-                  </div>
-                  
-                  {generatedDocument.secoes?.map((secao: any, index: number) => (
-                    <div key={index}>
-                      <h5 className="font-semibold mb-2">{secao.nome}</h5>
-                      <p className="text-muted-foreground whitespace-pre-wrap">
-                        {secao.conteudo}
+              {isEditingLayout ? (
+                <div className="h-full">
+                  <DocLayoutBuilder value={generatedDocument} onChange={setGeneratedDocument} />
+                </div>
+              ) : (
+                <ScrollArea className="h-full">
+                  <div className="space-y-4 text-sm">
+                    <div>
+                      <h4 className="font-bold text-lg">{generatedDocument.titulo}</h4>
+                      <p className="text-muted-foreground">
+                        Versão: {generatedDocument.versao} | {generatedDocument.data_criacao}
                       </p>
                     </div>
-                  ))}
-                </div>
-              </ScrollArea>
+                    {generatedDocument.secoes?.map((secao: any, index: number) => (
+                      <div key={index}>
+                        <h5 className="font-semibold mb-2">{secao.nome}</h5>
+                        <p className="text-muted-foreground whitespace-pre-wrap">
+                          {secao.conteudo}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+
             </div>
           )}
         </div>
