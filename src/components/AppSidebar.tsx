@@ -207,7 +207,7 @@ export function AppSidebar() {
             src={getLogoSrc()} 
             alt={getLogoAlt()} 
             className={`object-contain transition-all duration-300 ease-out ${
-              isCollapsed ? 'h-12 w-12' : 'h-[90%] w-auto max-w-[90%]'
+              isCollapsed ? 'h-10 w-10' : 'h-12 w-auto max-w-full'
             }`}
             onError={(e) => {
               const target = e.target as HTMLImageElement;
