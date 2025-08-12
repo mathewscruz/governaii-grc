@@ -312,8 +312,26 @@ Responda sempre em português brasileiro.`;
       let template = templates?.find(t => (t.nome || '').toLowerCase() === hintName)
         || templates?.find(t => hintName && (t.nome || '').toLowerCase().includes(hintName))
         || templates?.find(t => t.tipo_documento === context.tipo_documento_identificado);
+      
+      // Se não encontrar template específico, usar template genérico baseado no tipo
       if (!template) {
-        throw new Error('Template não encontrado para o tipo/nome de documento');
+        const docType = context.tipo_documento_identificado || 'politica';
+        // Para políticas, usar o template de política
+        if (docType === 'politica' || hintName.includes('política') || hintName.includes('politica')) {
+          template = templates?.find(t => t.tipo_documento === 'politica') || templates?.[0];
+        }
+        // Para procedimentos, usar o template de procedimento
+        else if (docType === 'procedimento' || hintName.includes('procedimento')) {
+          template = templates?.find(t => t.tipo_documento === 'procedimento') || templates?.[0];
+        }
+        // Fallback para o primeiro template disponível
+        else {
+          template = templates?.[0];
+        }
+      }
+      
+      if (!template) {
+        throw new Error('Nenhum template disponível no sistema');
       }
 
       // Garantir que a estrutura do template está em JSON
