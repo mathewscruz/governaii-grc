@@ -227,6 +227,9 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
 
       if (error) throw error;
 
+      setIsDocumentSaved(true);
+      setHasUnsavedChanges(false);
+
       toast({
         title: "Documento Salvo!",
         description: "O documento foi salvo no sistema com sucesso.",
@@ -251,14 +254,21 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     const children: any[] = [];
 
     // Logo no topo (se houver)
-    const logoUrl: string | undefined = generatedDocument.metadados?.logo_url;
+    const logoUrl: string | undefined = generatedDocument.metadados?.logo_url || companyInfo?.logo_url;
     const logoAltura: number = parseInt(generatedDocument.metadados?.logo_altura || '48', 10);
+    const logoPosicao: string = generatedDocument.metadados?.logo_posicao || 'esquerda';
+    
     if (logoUrl) {
       try {
         const resp = await fetch(logoUrl);
         const buf = await resp.arrayBuffer();
+        
+        const alignment = logoPosicao === 'centro' ? 'center' : 
+                         logoPosicao === 'direita' ? 'right' : 'left';
+        
         children.push(
           new Paragraph({
+            alignment: alignment as any,
             children: [
               new ImageRun({ data: buf, transformation: { width: Math.round(logoAltura * 2), height: logoAltura } })
             ]
@@ -300,9 +310,11 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     const marginX = 40;
     let y = 50;
 
-    // Tentar carregar logo
-    const logoUrl: string | undefined = generatedDocument.metadados?.logo_url;
+    // Tentar carregar logo da empresa
+    const logoUrl: string | undefined = generatedDocument.metadados?.logo_url || companyInfo?.logo_url;
     const logoAltura: number = parseInt(generatedDocument.metadados?.logo_altura || '48', 10);
+    const logoPosicao: string = generatedDocument.metadados?.logo_posicao || 'esquerda';
+    
     if (logoUrl) {
       try {
         const resp = await fetch(logoUrl);
@@ -313,8 +325,18 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           reader.onerror = () => reject(new Error('Falha ao carregar logo'));
           reader.readAsDataURL(blob);
         });
+        
         const logoWidth = Math.round(logoAltura * 2);
-        pdf.addImage(dataUrl, (blob.type.includes('png') ? 'PNG' : 'JPEG') as any, marginX, y, logoWidth, logoAltura);
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        
+        let logoX = marginX; // posição padrão (esquerda)
+        if (logoPosicao === 'centro') {
+          logoX = (pageWidth - logoWidth) / 2;
+        } else if (logoPosicao === 'direita') {
+          logoX = pageWidth - marginX - logoWidth;
+        }
+        
+        pdf.addImage(dataUrl, (blob.type.includes('png') ? 'PNG' : 'JPEG') as any, logoX, y, logoWidth, logoAltura);
         y += logoAltura + 16;
       } catch (_) { /* ignora erro de logo */ }
     }
@@ -367,6 +389,17 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   const handleExport = async (format: 'pdf' | 'docx') => {
     if (!generatedDocument) return;
     try {
+      // Usar o logo da empresa automaticamente
+      if (companyInfo?.logo_url && !generatedDocument.metadados?.logo_url) {
+        setGeneratedDocument(prev => ({
+          ...prev,
+          metadados: {
+            ...prev.metadados,
+            logo_url: companyInfo.logo_url
+          }
+        }));
+      }
+
       const blob = format === 'pdf' ? await generatePdfBlob() : await generateDocxBlob();
       if (!blob) return;
       const url = URL.createObjectURL(blob);
@@ -377,6 +410,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      setIsDocumentExported(true);
+      setHasUnsavedChanges(false);
       toast({ title: 'Documento Exportado', description: `Exportado como ${format.toUpperCase()}.` });
     } catch (e) {
       console.error('Erro ao exportar documento:', e);
@@ -457,6 +492,45 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     return parts.length > 0 ? parts : [content];
   };
 
+  // Estado para tracking de mudanças não salvas
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isDocumentSaved, setIsDocumentSaved] = useState(false);
+  const [isDocumentExported, setIsDocumentExported] = useState(false);
+
+  // Buscar informações da empresa (incluindo logo)
+  const [companyInfo, setCompanyInfo] = useState<{ logo_url?: string } | null>(null);
+
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      if (userInfo?.empresa_id) {
+        try {
+          const { data: empresa } = await supabase
+            .from('empresas')
+            .select('logo_url')
+            .eq('id', userInfo.empresa_id)
+            .single();
+          
+          setCompanyInfo(empresa);
+        } catch (error) {
+          console.error('Erro ao buscar informações da empresa:', error);
+        }
+      }
+    };
+
+    if (userInfo) {
+      fetchCompanyInfo();
+    }
+  }, [userInfo]);
+
+  // Track mudanças no documento gerado
+  useEffect(() => {
+    if (generatedDocument) {
+      setHasUnsavedChanges(true);
+      setIsDocumentSaved(false);
+      setIsDocumentExported(false);
+    }
+  }, [generatedDocument]);
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -464,8 +538,40 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     }
   };
 
+  // Verificar mudanças antes de fechar
+  const handleDialogClose = (newOpen: boolean) => {
+    if (!newOpen && hasUnsavedChanges && !isDocumentSaved && !isDocumentExported) {
+      toast({
+        title: "Atenção!",
+        description: "Você possui mudanças não salvas. O documento será perdido se não for salvo no sistema ou exportado.",
+        variant: "destructive",
+        duration: 5000,
+      });
+      
+      // Ainda permite fechar, mas avisa o usuário
+      setTimeout(() => {
+        onOpenChange(newOpen);
+      }, 2000);
+      return;
+    }
+    onOpenChange(newOpen);
+  };
+
+  // Adicionar o logo da empresa automaticamente ao gerar documento
+  useEffect(() => {
+    if (generatedDocument && companyInfo?.logo_url && !generatedDocument.metadados?.logo_url) {
+      setGeneratedDocument(prev => ({
+        ...prev,
+        metadados: {
+          ...prev.metadados,
+          logo_url: companyInfo.logo_url
+        }
+      }));
+    }
+  }, [generatedDocument, companyInfo]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogContent className="max-w-5xl h-[85vh] md:h-[80vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
