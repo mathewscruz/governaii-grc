@@ -21,6 +21,44 @@ interface ConversationContext {
   etapa_atual?: string;
 }
 
+// Funções auxiliares para extração inteligente
+function extractDocumentType(messageText: string): string | null {
+  if (messageText.includes('política') || messageText.includes('politica')) return 'politica';
+  if (messageText.includes('procedimento')) return 'procedimento';
+  if (messageText.includes('norma')) return 'norma';
+  if (messageText.includes('manual')) return 'manual';
+  if (messageText.includes('código') || messageText.includes('codigo')) return 'codigo';
+  return null;
+}
+
+function extractDocumentName(messageText: string): string | null {
+  const patterns = [
+    /política de ([^\n\.,]+)/i,
+    /procedimento de ([^\n\.,]+)/i,
+    /norma de ([^\n\.,]+)/i,
+    /manual de ([^\n\.,]+)/i,
+    /código de ([^\n\.,]+)/i
+  ];
+  
+  for (const pattern of patterns) {
+    const match = messageText.match(pattern);
+    if (match) {
+      return match[0].trim();
+    }
+  }
+  return null;
+}
+
+function extractFrameworks(messageText: string): string[] {
+  const frameworks = [];
+  if (messageText.includes('iso 27001') || messageText.includes('iso27001')) frameworks.push('ISO 27001');
+  if (messageText.includes('lgpd')) frameworks.push('LGPD');
+  if (messageText.includes('coso')) frameworks.push('COSO');
+  if (messageText.includes('itil')) frameworks.push('ITIL');
+  if (messageText.includes('sox')) frameworks.push('SOX');
+  return frameworks;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -184,30 +222,35 @@ REGRAS PARA IDENTIFICAR QUANDO GERAR DOCUMENTO:
 - O usuário demonstra que tem as informações necessárias
 - Não há dúvidas críticas sobre o documento
 
-FORMATO DE RESPOSTA OBRIGATÓRIO (JSON):
-{
-  "message": "Sua resposta formatada com **negrito**, listas numeradas e estrutura clara. Termine sempre com perguntas específicas ou indicação de que está pronto para gerar o documento.",
-  "tipo_documento_identificado": "politica|procedimento|norma|manual|codigo",
-  "documento_nome_identificado": "Nome específico do documento",
-  "frameworks_relacionados": ["ISO 27001", "LGPD", "COSO"],
-  "informacoes_coletadas": {"chave": "valor das informações obtidas"},
-  "informacoes_necessarias": ["lista", "do", "que", "ainda", "precisa"],
-  "etapa_atual": "coleta|validacao|pronto",
-  "documento_pronto": false
-}
+FORMATO DE RESPOSTA OBRIGATÓRIO:
+Responda SOMENTE com uma mensagem limpa e formatada para o usuário. NÃO inclua JSON visível, metadados técnicos ou informações de configuração na sua resposta.
 
-EXEMPLO DE BOA RESPOSTA:
+Estruture sua resposta assim:
+1. **Cumprimento/Reconhecimento** (se apropriado)
+2. **Contexto do que foi identificado** (tipo de documento)
+3. **Perguntas específicas organizadas por temas**
+4. **Próximos passos claros**
+
+Use formatação em markdown para destacar:
+- **Negrito** para títulos e pontos importantes
+- Listas numeradas para perguntas organizadas
+- Listas com marcadores para itens relacionados
+
+QUANDO ESTIVER PRONTO PARA GERAR O DOCUMENTO:
+Diga claramente: "Tenho todas as informações necessárias! Agora posso gerar a [NOME DO DOCUMENTO] completa para a ${context.empresa_nome}. Clique no botão 'Gerar Documento' para prosseguir."
+
+EXEMPLO DE RESPOSTA IDEAL:
 "Perfeito! Identificei que você precisa de uma **Política de Senhas** para a ${context.empresa_nome}.
 
 Para criar um documento completo e alinhado com as melhores práticas de segurança, preciso entender melhor o ambiente da sua empresa:
 
 **1. Ambiente Tecnológico:**
    - Quais sistemas vocês utilizam? (Active Directory, Google Workspace, aplicações web?)
-   - Quantos usuários aproximadamente?
+   - Quantos usuários aproximadamente a política irá abranger?
 
 **2. Requisitos de Segurança:**
    - Vocês seguem algum framework específico? (ISO 27001, LGPD?)
-   - Já existem controles de senha atualmente?
+   - Já existem controles de senha implementados atualmente?
 
 **3. Estrutura Organizacional:**
    - Quem será responsável pela implementação desta política?
@@ -215,7 +258,7 @@ Para criar um documento completo e alinhado com as melhores práticas de seguran
 
 **4. Criticidade:**
    - Que tipo de informação sensível vocês processam?
-   - Já tiveram algum incidente relacionado a senhas?
+   - Já tiveram algum incidente relacionado a senhas frágeis?
 
 Com essas informações, posso criar uma política robusta e implementável!"
 
@@ -254,7 +297,7 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
         } else {
           // Tentar encontrar JSON no início da resposta
           const jsonStart = aiMessage.indexOf('{');
-          const jsonEnd = aiMessage.indexOf('}') + 1;
+          const jsonEnd = aiMessage.lastIndexOf('}') + 1;
           if (jsonStart !== -1 && jsonEnd > jsonStart) {
             const jsonString = aiMessage.substring(jsonStart, jsonEnd);
             parsedResponse = JSON.parse(jsonString);
@@ -263,37 +306,80 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
           }
         }
         
-        // Se não tem message no JSON, usar o texto completo
+        // Garantir que temos uma mensagem limpa
         if (!parsedResponse.message) {
-          parsedResponse.message = aiMessage;
+          // Se não tem message no JSON, extrair apenas a parte da mensagem antes de dados técnicos
+          const cleanMessage = aiMessage
+            .replace(/```json[\s\S]*?```/g, '')
+            .replace(/\{[\s\S]*?\}/g, '')
+            .trim();
+          parsedResponse.message = cleanMessage || aiMessage;
         }
+        
+        // Limpar a mensagem de informações técnicas desnecessárias
+        if (parsedResponse.message) {
+          parsedResponse.message = parsedResponse.message
+            .replace(/```json[\s\S]*?```/g, '')
+            .replace(/\{[\s\S]*?\}/g, '')
+            .replace(/tipo_documento_identificado[\s\S]*$/g, '')
+            .replace(/frameworks_relacionados[\s\S]*$/g, '')
+            .replace(/informacoes_[\s\S]*$/g, '')
+            .trim();
+        }
+        
       } catch (error) {
         console.log('Erro ao fazer parse da resposta JSON:', error);
-        // Fallback se não conseguir fazer parse
+        
+        // Fallback - limpar mensagem de dados técnicos
+        let cleanMessage = aiMessage
+          .replace(/```json[\s\S]*?```/g, '')
+          .replace(/\{[\s\S]*?\}/g, '')
+          .replace(/"[^"]*":\s*[^,}]*/g, '')
+          .replace(/tipo_documento_identificado[\s\S]*$/g, '')
+          .replace(/frameworks_relacionados[\s\S]*$/g, '')
+          .replace(/informacoes_[\s\S]*$/g, '')
+          .trim();
+        
         // Verificar se a resposta indica documento pronto
         const isDocumentReady = aiMessage.toLowerCase().includes('documento foi gerado') || 
                                aiMessage.toLowerCase().includes('documento está pronto') ||
                                aiMessage.toLowerCase().includes('política de senhas foi gerada') ||
-                               aiMessage.toLowerCase().includes('pronto para ser implementado');
+                               aiMessage.toLowerCase().includes('pronto para ser implementado') ||
+                               aiMessage.toLowerCase().includes('gerar_documento');
         
         parsedResponse = {
-          message: aiMessage,
+          message: cleanMessage || 'Resposta processada com sucesso.',
           tipo_documento_identificado: context.tipo_documento_identificado,
           etapa_atual: isDocumentReady ? 'pronto' : (context.etapa_atual || 'coleta'),
           documento_pronto: isDocumentReady
         };
       }
 
+      // Detectar se documento está pronto baseado na mensagem limpa
+      const messageText = parsedResponse.message.toLowerCase();
+      const isDocumentReady = messageText.includes('clique no botão') || 
+                             messageText.includes('gerar documento') ||
+                             messageText.includes('tenho todas as informações') ||
+                             messageText.includes('posso gerar') ||
+                             messageText.includes('documento completa') ||
+                             messageText.includes('documento está pronto');
+
       // Adicionar resposta da IA
       messages.push({ role: 'assistant', content: parsedResponse.message });
 
-      // Atualizar contexto
+      // Atualizar contexto com detecção inteligente do documento
       const updatedContext = {
         ...context,
-        tipo_documento_identificado: parsedResponse.tipo_documento_identificado || context.tipo_documento_identificado,
-        documento_nome_identificado: parsedResponse.documento_nome_identificado || (context as any).documento_nome_identificado,
-        frameworks_relacionados: parsedResponse.frameworks_relacionados || (context as any).frameworks_relacionados,
-        etapa_atual: parsedResponse.etapa_atual,
+        tipo_documento_identificado: parsedResponse.tipo_documento_identificado || 
+                                   extractDocumentType(messageText) || 
+                                   context.tipo_documento_identificado,
+        documento_nome_identificado: parsedResponse.documento_nome_identificado || 
+                                   extractDocumentName(messageText) || 
+                                   (context as any).documento_nome_identificado,
+        frameworks_relacionados: parsedResponse.frameworks_relacionados || 
+                               extractFrameworks(messageText) || 
+                               (context as any).frameworks_relacionados,
+        etapa_atual: isDocumentReady ? 'pronto' : (parsedResponse.etapa_atual || 'coleta'),
         informacoes_coletadas: {
           ...context.informacoes_coletadas,
           ...(parsedResponse.informacoes_coletadas || {})
@@ -340,11 +426,11 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
       return new Response(JSON.stringify({
         conversation_id: conversation.id,
         message: parsedResponse.message,
-        tipo_documento_identificado: parsedResponse.tipo_documento_identificado,
-        documento_nome_identificado: (updatedContext as any).documento_nome_identificado || null,
+        tipo_documento_identificado: updatedContext.tipo_documento_identificado,
+        documento_nome_identificado: updatedContext.documento_nome_identificado || null,
         termos_com_tooltip: parsedResponse.termos_com_tooltip || [],
-        etapa_atual: parsedResponse.etapa_atual,
-        documento_pronto: parsedResponse.documento_pronto || false,
+        etapa_atual: updatedContext.etapa_atual,
+        documento_pronto: isDocumentReady,
         informacoes_necessarias: parsedResponse.informacoes_necessarias || []
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
