@@ -101,7 +101,7 @@ serve(async (req) => {
 
     switch (platform) {
       case 'windows':
-        filename = `GovernAII-Agent-${agentConfig.empresa_name.replace(/[^a-zA-Z0-9]/g, '')}.bat`;
+        filename = `GovernAII-Agent-${agentConfig.empresa_name.replace(/[^a-zA-Z0-9]/g, '')}.exe`;
         contentType = 'application/octet-stream';
         installerContent = generateWindowsCSharpExe(agentConfig);
         break;
