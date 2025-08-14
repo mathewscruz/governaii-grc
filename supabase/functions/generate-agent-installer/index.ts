@@ -101,9 +101,9 @@ serve(async (req) => {
 
     switch (platform) {
       case 'windows':
-        filename = `GovernAII-Agent-${agentConfig.empresa_name.replace(/[^a-zA-Z0-9]/g, '')}.exe`;
+        filename = `GovernAII-Agent-${agentConfig.empresa_name.replace(/[^a-zA-Z0-9]/g, '')}.ps1`;
         contentType = 'application/octet-stream';
-        installerContent = generateWindowsCSharpExe(agentConfig);
+        installerContent = generateWindowsPowerShell(agentConfig);
         break;
       case 'linux':
         filename = `governaii-agent_${agentConfig.version}_amd64.deb`;
@@ -134,9 +134,58 @@ serve(async (req) => {
   }
 });
 
-function generateWindowsCSharpExe(config: any): string {
-  // Gera código C# completo que será compilado em executável
-  const csharpCode = `using System;
+function generateWindowsPowerShell(config: any): string {
+  return `# GovernAII Agent PowerShell Installer
+# Executa com bypass de politica e compila agente C# em tempo real
+
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+
+Write-Host "===============================================" -ForegroundColor Green
+Write-Host "   GovernAII Agent Installer v1.0.0" -ForegroundColor Green  
+Write-Host "===============================================" -ForegroundColor Green
+Write-Host ""
+
+# Verificar se .NET está instalado
+try {
+    $dotnetVersion = & dotnet --version 2>$null
+    Write-Host "✓ .NET detectado: $dotnetVersion" -ForegroundColor Green
+} catch {
+    Write-Host "✗ .NET não encontrado!" -ForegroundColor Red
+    Write-Host "Por favor, instale o .NET 6.0 ou superior de: https://dotnet.microsoft.com/download" -ForegroundColor Yellow
+    Read-Host "Pressione Enter para sair"
+    exit 1
+}
+
+# Criar diretório temporário
+$tempDir = Join-Path $env:TEMP "GovernAII_Build_$(Get-Random)"
+New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+Write-Host "✓ Diretório temporário criado: $tempDir" -ForegroundColor Green
+
+try {
+    # Criar arquivo de projeto
+    $projectContent = @'
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="7.0.0" />
+  </ItemGroup>
+</Project>
+'@
+    
+    $projectPath = Join-Path $tempDir "GovernAIIAgent.csproj"
+    $projectContent | Out-File -FilePath $projectPath -Encoding UTF8
+    Write-Host "✓ Arquivo de projeto criado" -ForegroundColor Green
+
+    # Criar código C# do agente
+    $csharpCode = @'
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -151,6 +200,433 @@ using System.Windows.Forms;
 using Microsoft.Win32;
 
 namespace GovernAIIAgent
+{
+    public class Program
+    {
+        private static NotifyIcon trayIcon;
+        private static Timer heartbeatTimer;
+        private static Timer syncTimer;
+        private static string installDir;
+        private static string logFile;
+        private static Config config;
+        private static HttpClient httpClient;
+
+        [STAThread]
+        public static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            try
+            {
+                InitializeAgent();
+                Application.Run();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro crítico: {ex.Message}", "GovernAII Agent", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private static void InitializeAgent()
+        {
+            // Configurar diretórios
+            installDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GovernAII", "Agent");
+            Directory.CreateDirectory(installDir);
+            logFile = Path.Combine(installDir, "agent.log");
+
+            // Criar configuração
+            CreateConfiguration();
+
+            // Inicializar HTTP client
+            httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("apikey", config.SupabaseAnonKey);
+
+            // Configurar system tray
+            SetupSystemTray();
+
+            // Configurar auto-inicialização
+            SetupAutoStart();
+
+            // Iniciar timers
+            StartTimers();
+
+            LogMessage("GovernAII Agent iniciado com sucesso");
+        }
+
+        private static void CreateConfiguration()
+        {
+            var configPath = Path.Combine(installDir, "config.json");
+            config = new Config
+            {
+                AgentId = "${config.agent_id}",
+                AgentToken = "${config.token}",
+                EmpresaId = "${config.empresa_id}",
+                EmpresaName = "${config.empresa_name}",
+                ApiUrl = "${config.api_url}",
+                SupabaseAnonKey = "${config.supabaseAnonKey}",
+                HeartbeatInterval = 60,
+                SyncInterval = 300
+            };
+
+            var jsonString = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(configPath, jsonString);
+        }
+
+        private static void SetupSystemTray()
+        {
+            trayIcon = new NotifyIcon()
+            {
+                Icon = CreateGovernAIIIcon(),
+                Text = "GovernAII Agent",
+                Visible = true
+            };
+
+            // Menu de contexto
+            var contextMenu = new ContextMenuStrip();
+            contextMenu.Items.Add("Status", null, ShowStatus);
+            contextMenu.Items.Add("Sincronizar Agora", null, SyncNow);
+            contextMenu.Items.Add("Ver Logs", null, ShowLogs);
+            contextMenu.Items.Add("-");
+            contextMenu.Items.Add("Sair", null, ExitApplication);
+
+            trayIcon.ContextMenuStrip = contextMenu;
+            trayIcon.DoubleClick += ShowStatus;
+
+            // Mostrar notificação de inicialização
+            trayIcon.ShowBalloonTip(3000, "GovernAII Agent", "Agente iniciado e monitorando sistema", ToolTipIcon.Info);
+        }
+
+        private static Icon CreateGovernAIIIcon()
+        {
+            // Criar ícone simples se não conseguir baixar
+            var bitmap = new Bitmap(16, 16);
+            using (var g = Graphics.FromImage(bitmap))
+            {
+                g.FillEllipse(Brushes.Blue, 2, 2, 12, 12);
+                g.DrawString("G", new Font("Arial", 8, FontStyle.Bold), Brushes.White, 4, 2);
+            }
+            return Icon.FromHandle(bitmap.GetHicon());
+        }
+
+        private static void SetupAutoStart()
+        {
+            try
+            {
+                var key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
+                key?.SetValue("GovernAIIAgent", Application.ExecutablePath);
+                key?.Close();
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Erro ao configurar auto-inicialização: {ex.Message}");
+            }
+        }
+
+        private static void StartTimers()
+        {
+            // Timer de heartbeat (1 minuto)
+            heartbeatTimer = new Timer(async _ => await SendHeartbeat(), null, TimeSpan.Zero, TimeSpan.FromSeconds(config.HeartbeatInterval));
+
+            // Timer de sincronização (5 minutos)
+            syncTimer = new Timer(async _ => await SyncAssets(), null, TimeSpan.FromMinutes(1), TimeSpan.FromSeconds(config.SyncInterval));
+        }
+
+        private static async Task SendHeartbeat()
+        {
+            try
+            {
+                var heartbeatData = new
+                {
+                    agent_token = config.AgentToken,
+                    hostname = Environment.MachineName,
+                    ip_address = GetLocalIPAddress(),
+                    status = "online",
+                    system_info = GetSystemInfo()
+                };
+
+                var json = JsonSerializer.Serialize(heartbeatData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PostAsync($"{config.ApiUrl}/functions/v1/agent-heartbeat", content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    LogMessage("Heartbeat enviado com sucesso");
+                }
+                else
+                {
+                    LogMessage($"Erro no heartbeat: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Erro ao enviar heartbeat: {ex.Message}");
+            }
+        }
+
+        private static async Task SyncAssets()
+        {
+            try
+            {
+                var assets = DiscoverAssets();
+                var syncData = new
+                {
+                    agent_token = config.AgentToken,
+                    hostname = Environment.MachineName,
+                    assets = assets
+                };
+
+                var json = JsonSerializer.Serialize(syncData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PostAsync($"{config.ApiUrl}/functions/v1/agent-sync-assets", content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    LogMessage($"Sincronização concluída - {assets.Count} ativos encontrados");
+                    trayIcon.ShowBalloonTip(2000, "GovernAII Agent", $"Sincronizados {assets.Count} ativos", ToolTipIcon.Info);
+                }
+                else
+                {
+                    LogMessage($"Erro na sincronização: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Erro ao sincronizar ativos: {ex.Message}");
+            }
+        }
+
+        private static List<object> DiscoverAssets()
+        {
+            var assets = new List<object>();
+
+            try
+            {
+                // Informações do computador
+                var computerInfo = new
+                {
+                    name = Environment.MachineName,
+                    type = "Computer",
+                    os = Environment.OSVersion.ToString(),
+                    domain = Environment.UserDomainName,
+                    user = Environment.UserName,
+                    processors = Environment.ProcessorCount,
+                    memory = GetTotalMemory()
+                };
+                assets.Add(computerInfo);
+
+                // Software instalado
+                var installedSoftware = GetInstalledSoftware();
+                assets.AddRange(installedSoftware);
+
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Erro ao descobrir ativos: {ex.Message}");
+            }
+
+            return assets;
+        }
+
+        private static string GetLocalIPAddress()
+        {
+            try
+            {
+                var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+                foreach (var ip in host.AddressList)
+                {
+                    if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    {
+                        return ip.ToString();
+                    }
+                }
+            }
+            catch { }
+            return "127.0.0.1";
+        }
+
+        private static object GetSystemInfo()
+        {
+            return new
+            {
+                os = Environment.OSVersion.ToString(),
+                machine_name = Environment.MachineName,
+                user_name = Environment.UserName,
+                domain_name = Environment.UserDomainName,
+                processor_count = Environment.ProcessorCount,
+                memory_gb = GetTotalMemory(),
+                dotnet_version = Environment.Version.ToString()
+            };
+        }
+
+        private static string GetTotalMemory()
+        {
+            try
+            {
+                var searcher = new System.Management.ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem");
+                foreach (var obj in searcher.Get())
+                {
+                    var totalMemory = Convert.ToDouble(obj["TotalPhysicalMemory"]);
+                    return Math.Round(totalMemory / (1024 * 1024 * 1024), 2).ToString() + " GB";
+                }
+            }
+            catch { }
+            return "Unknown";
+        }
+
+        private static List<object> GetInstalledSoftware()
+        {
+            var software = new List<object>();
+            try
+            {
+                var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
+                if (key != null)
+                {
+                    foreach (var subkeyName in key.GetSubKeyNames())
+                    {
+                        var subkey = key.OpenSubKey(subkeyName);
+                        var name = subkey?.GetValue("DisplayName")?.ToString();
+                        var version = subkey?.GetValue("DisplayVersion")?.ToString();
+                        
+                        if (!string.IsNullOrEmpty(name))
+                        {
+                            software.Add(new
+                            {
+                                name = name,
+                                type = "Software",
+                                version = version ?? "Unknown",
+                                install_location = subkey?.GetValue("InstallLocation")?.ToString()
+                            });
+                        }
+                        subkey?.Close();
+                    }
+                }
+                key?.Close();
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Erro ao listar software: {ex.Message}");
+            }
+            return software;
+        }
+
+        private static void ShowStatus(object sender, EventArgs e)
+        {
+            var status = $"GovernAII Agent\n\nEmpresa: {config.EmpresaName}\nStatus: Online\nÚltimo heartbeat: {DateTime.Now:HH:mm:ss}\nMáquina: {Environment.MachineName}";
+            MessageBox.Show(status, "Status do Agente", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private static async void SyncNow(object sender, EventArgs e)
+        {
+            await SyncAssets();
+        }
+
+        private static void ShowLogs(object sender, EventArgs e)
+        {
+            try
+            {
+                if (File.Exists(logFile))
+                {
+                    Process.Start("notepad.exe", logFile);
+                }
+                else
+                {
+                    MessageBox.Show("Arquivo de log não encontrado", "GovernAII Agent", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao abrir logs: {ex.Message}", "GovernAII Agent", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private static void ExitApplication(object sender, EventArgs e)
+        {
+            trayIcon.Visible = false;
+            Application.Exit();
+        }
+
+        private static void LogMessage(string message)
+        {
+            try
+            {
+                var logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}\n";
+                File.AppendAllText(logFile, logEntry);
+            }
+            catch { }
+        }
+    }
+
+    public class Config
+    {
+        public string AgentId { get; set; }
+        public string AgentToken { get; set; }
+        public string EmpresaId { get; set; }
+        public string EmpresaName { get; set; }
+        public string ApiUrl { get; set; }
+        public string SupabaseAnonKey { get; set; }
+        public int HeartbeatInterval { get; set; }
+        public int SyncInterval { get; set; }
+    }
+}
+'@
+
+    $csharpPath = Join-Path $tempDir "Program.cs"
+    $csharpCode | Out-File -FilePath $csharpPath -Encoding UTF8
+    Write-Host "✓ Código C# criado" -ForegroundColor Green
+
+    # Compilar o projeto
+    Write-Host "🔧 Compilando agente..." -ForegroundColor Yellow
+    Set-Location $tempDir
+    & dotnet publish -c Release -o output 2>$null
+
+    if ($LASTEXITCODE -eq 0 -and (Test-Path "output/GovernAIIAgent.exe")) {
+        # Criar diretório de instalação
+        $installDir = Join-Path $env:LOCALAPPDATA "GovernAII\Agent"
+        if (!(Test-Path $installDir)) {
+            New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+        }
+
+        # Copiar executável
+        Copy-Item "output/GovernAIIAgent.exe" "$installDir/GovernAIIAgent.exe" -Force
+        Write-Host "✓ Agente compilado e instalado com sucesso!" -ForegroundColor Green
+
+        Write-Host ""
+        Write-Host "===============================================" -ForegroundColor Green
+        Write-Host "   GovernAII Agent instalado com sucesso!" -ForegroundColor Green
+        Write-Host "===============================================" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Iniciando agente..." -ForegroundColor Yellow
+        
+        # Iniciar o agente
+        Start-Process "$installDir/GovernAIIAgent.exe"
+        
+        Write-Host "✓ O ícone do GovernAII deve aparecer na barra de tarefas." -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Localização: $installDir" -ForegroundColor Cyan
+        Write-Host "Token: ${config.token}" -ForegroundColor Cyan
+        Write-Host ""
+    } else {
+        Write-Host "✗ Erro na compilação do agente." -ForegroundColor Red
+        Write-Host "Verifique se o .NET 6.0 ou superior está instalado." -ForegroundColor Yellow
+    }
+
+} finally {
+    # Limpeza
+    Set-Location $env:TEMP
+    if (Test-Path $tempDir) {
+        Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Write-Host ""
+Write-Host "Pressione Enter para finalizar..." -ForegroundColor Yellow
+Read-Host`;
+}
+
+// Função removida - usando generateWindowsPowerShell agora
 {
     public class Program
     {
