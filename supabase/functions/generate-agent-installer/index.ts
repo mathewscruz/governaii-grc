@@ -236,17 +236,19 @@ function Send-Heartbeat {
     try {
         \$hostname = \$env:COMPUTERNAME;
         \$body = @{
-            agentToken = \$script:config.agentToken;
+            agent_token = \$script:config.agentToken;
             hostname = \$hostname;
-            timestamp = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ssZ');
             ip_address = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object {\$_.IPAddress -ne '127.0.0.1'} | Select-Object -First 1).IPAddress;
-            mac_address = (Get-NetAdapter | Where-Object Status -eq 'Up' | Select-Object -First 1).MacAddress;
-            operating_system = 'Windows';
-            os_version = [System.Environment]::OSVersion.VersionString;
+            status = 'online';
+            system_info = @{
+                mac_address = (Get-NetAdapter | Where-Object Status -eq 'Up' | Select-Object -First 1).MacAddress;
+                operating_system = 'Windows';
+                os_version = [System.Environment]::OSVersion.VersionString;
+            };
         } | ConvertTo-Json;
         
         \$headers = @{
-            'Authorization' = \"Bearer \$(\$script:config.agentToken)\";
+            'apikey' = \"\$(\$script:config.agentToken)\";
             'Content-Type' = 'application/json';
         };
         
@@ -292,12 +294,13 @@ function Sync-Assets {
         };
         
         \$body = @{
-            agentToken = \$script:config.agentToken;
+            agent_token = \$script:config.agentToken;
+            hostname = \$hostname;
             assets = \$assets;
         } | ConvertTo-Json -Depth 10;
         
         \$headers = @{
-            'Authorization' = \"Bearer \$(\$script:config.agentToken)\";
+            'apikey' = \"\$(\$script:config.agentToken)\";
             'Content-Type' = 'application/json';
         };
         
@@ -316,8 +319,39 @@ function Create-SystemTrayApp {
     \$script:isOnline = \$false;
     \$script:lastSync = Get-Date;
     
-    \$script:iconOnline = [System.Drawing.Icon]::ExtractAssociatedIcon(\"\$env:windir\\system32\\imageres.dll\");
-    \$script:iconOffline = [System.Drawing.Icon]::ExtractAssociatedIcon(\"\$env:windir\\system32\\shell32.dll\");
+    try {
+        \$iconUrl = \"https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/sign/logotipo/Governiaa%20(500%20x%20200%20px)%20(60%20x%2060%20px).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NTdhMjYzYS1jZjc1LTQ3OGYtYjNkMy01NWM2ODViMTQ0MTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvdGlwby9Hb3Zlcm5pYWEgKDUwMCB4IDIwMCBweCkgKDYwIHggNjAgcHgpLnBuZyIsImlhdCI6MTc1NTE5NzkyNSwiZXhwIjoxNzg2NzMzOTI1fQ.k7J54Hs_6D_LzkPNLYvvmYbMRX-cF7B5K9pp9kkEZf8\";
+        \$iconPath = \"\$script:installDir\\governaii-icon.png\";
+        \$icoPath = \"\$script:installDir\\governaii-icon.ico\";
+        
+        if (!(Test-Path \$icoPath) -or (Get-Item \$icoPath).CreationTime -lt (Get-Date).AddDays(-7)) {
+            \$webClient = New-Object System.Net.WebClient;
+            \$webClient.DownloadFile(\$iconUrl, \$iconPath);
+            
+            Add-Type -AssemblyName System.Drawing;
+            \$bitmap = New-Object System.Drawing.Bitmap(\$iconPath);
+            \$resized = New-Object System.Drawing.Bitmap(32, 32);
+            \$graphics = [System.Drawing.Graphics]::FromImage(\$resized);
+            \$graphics.DrawImage(\$bitmap, 0, 0, 32, 32);
+            \$icon = [System.Drawing.Icon]::FromHandle(\$resized.GetHicon());
+            
+            \$fileStream = New-Object System.IO.FileStream(\$icoPath, [System.IO.FileMode]::Create);
+            \$icon.Save(\$fileStream);
+            \$fileStream.Close();
+            \$graphics.Dispose();
+            \$bitmap.Dispose();
+            \$resized.Dispose();
+            
+            Write-Log \"Ícone do GovernAII baixado e convertido\";
+        };
+        
+        \$script:iconOnline = New-Object System.Drawing.Icon(\$icoPath);
+        \$script:iconOffline = New-Object System.Drawing.Icon(\$icoPath);
+    } catch {
+        Write-Log \"Erro ao baixar ícone do GovernAII, usando padrão: \$(\$_.Exception.Message)\";
+        \$script:iconOnline = [System.Drawing.Icon]::ExtractAssociatedIcon(\"\$env:windir\\system32\\imageres.dll\");
+        \$script:iconOffline = [System.Drawing.Icon]::ExtractAssociatedIcon(\"\$env:windir\\system32\\shell32.dll\");
+    };
     
     \$menuStatus = \$script:contextMenu.Items.Add('Status: Verificando...');
     \$menuStatus.Enabled = \$false;
