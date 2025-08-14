@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Filter, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, ArrowUpDown, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, ArrowUpDown, Download, Bot, Wifi, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,10 +14,12 @@ import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useAtivosStats } from '@/hooks/useAtivosStats';
+import { useAgentStats } from '@/hooks/useAgentsData';
 import LocalizacaoSelect from '@/components/ativos/LocalizacaoSelect';
 import ManutencaoDialog from '@/components/ativos/ManutencaoDialog';
 import TrilhaAuditoriaAtivos from '@/components/ativos/TrilhaAuditoriaAtivos';
 import ImportacaoAtivos from '@/components/ativos/ImportacaoAtivos';
+import { AgentInstallDialog } from '@/components/ativos/AgentInstallDialog';
 
 interface Ativo {
   id: string;
@@ -113,6 +115,8 @@ const Ativos = () => {
   const [ativos, setAtivos] = useState<Ativo[]>([]);
   const [loading, setLoading] = useState(true);
   const { data: stats, isLoading: statsLoading } = useAtivosStats();
+  const { data: agentStats } = useAgentStats();
+  const [agentInstallDialog, setAgentInstallDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -379,6 +383,10 @@ const Ativos = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => setAgentInstallDialog(true)} variant="outline">
+            <Bot className="h-4 w-4 mr-2" />
+            Instalar Agente
+          </Button>
           <Button onClick={exportData} variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Exportar
@@ -640,13 +648,16 @@ const Ativos = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Críticos</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Agentes</CardTitle>
+            <Bot className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats?.criticos || 0}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Requerem atenção imediata
+            <div className="text-2xl font-bold">{agentStats?.total || 0}</div>
+            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <Wifi className="h-3 w-3 text-green-500" />
+              {agentStats?.online || 0} online
+              <WifiOff className="h-3 w-3 text-red-500 ml-2" />
+              {agentStats?.offline || 0} offline
             </div>
           </CardContent>
         </Card>
@@ -915,6 +926,11 @@ const Ativos = () => {
         open={importDialog}
         onOpenChange={setImportDialog}
         onSuccess={fetchAtivos}
+      />
+
+      <AgentInstallDialog
+        open={agentInstallDialog}
+        onOpenChange={setAgentInstallDialog}
       />
     </div>
   );

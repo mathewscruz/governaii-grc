@@ -14,8 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      asset_agents: {
+        Row: {
+          agent_token: string
+          created_at: string | null
+          empresa_id: string
+          hostname: string
+          id: string
+          installed_at: string | null
+          ip_address: unknown | null
+          last_heartbeat: string | null
+          mac_address: string | null
+          operating_system: string | null
+          os_version: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agent_token: string
+          created_at?: string | null
+          empresa_id: string
+          hostname: string
+          id?: string
+          installed_at?: string | null
+          ip_address?: unknown | null
+          last_heartbeat?: string | null
+          mac_address?: string | null
+          operating_system?: string | null
+          os_version?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agent_token?: string
+          created_at?: string | null
+          empresa_id?: string
+          hostname?: string
+          id?: string
+          installed_at?: string | null
+          ip_address?: unknown | null
+          last_heartbeat?: string | null
+          mac_address?: string | null
+          operating_system?: string | null
+          os_version?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_agents_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ativos: {
         Row: {
+          agent_id: string | null
+          agent_status: string | null
           cliente: string | null
           created_at: string
           criticidade: string | null
@@ -23,20 +81,28 @@ export type Database = {
           descricao: string | null
           empresa_id: string
           fornecedor: string | null
+          hostname: string | null
           id: string
           imei: string | null
+          ip_address: unknown | null
+          last_sync: string | null
           localizacao: string | null
           nome: string
+          origem: string | null
           proprietario: string | null
           quantidade: number | null
+          sistema_operacional: string | null
           status: string | null
           tags: string[] | null
           tipo: string
           updated_at: string
           valor_negocio: string | null
           versao: string | null
+          versao_so: string | null
         }
         Insert: {
+          agent_id?: string | null
+          agent_status?: string | null
           cliente?: string | null
           created_at?: string
           criticidade?: string | null
@@ -44,20 +110,28 @@ export type Database = {
           descricao?: string | null
           empresa_id: string
           fornecedor?: string | null
+          hostname?: string | null
           id?: string
           imei?: string | null
+          ip_address?: unknown | null
+          last_sync?: string | null
           localizacao?: string | null
           nome: string
+          origem?: string | null
           proprietario?: string | null
           quantidade?: number | null
+          sistema_operacional?: string | null
           status?: string | null
           tags?: string[] | null
           tipo: string
           updated_at?: string
           valor_negocio?: string | null
           versao?: string | null
+          versao_so?: string | null
         }
         Update: {
+          agent_id?: string | null
+          agent_status?: string | null
           cliente?: string | null
           created_at?: string
           criticidade?: string | null
@@ -65,18 +139,24 @@ export type Database = {
           descricao?: string | null
           empresa_id?: string
           fornecedor?: string | null
+          hostname?: string | null
           id?: string
           imei?: string | null
+          ip_address?: unknown | null
+          last_sync?: string | null
           localizacao?: string | null
           nome?: string
+          origem?: string | null
           proprietario?: string | null
           quantidade?: number | null
+          sistema_operacional?: string | null
           status?: string | null
           tags?: string[] | null
           tipo?: string
           updated_at?: string
           valor_negocio?: string | null
           versao?: string | null
+          versao_so?: string | null
         }
         Relationships: [
           {
@@ -3993,6 +4073,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      agent_pertence_empresa: {
+        Args: { agent_id_param: string }
+        Returns: boolean
+      }
       apply_default_permissions_for_user: {
         Args: { user_id_param: string }
         Returns: undefined
