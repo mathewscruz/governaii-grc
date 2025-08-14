@@ -101,9 +101,9 @@ serve(async (req) => {
 
     switch (platform) {
       case 'windows':
-        filename = `GovernAII-Agent-${agentConfig.empresa_name.replace(/[^a-zA-Z0-9]/g, '')}.ps1`;
-        contentType = 'text/plain';
-        installerContent = generateWindowsExecutable(agentConfig);
+        filename = `GovernAII-Agent-${agentConfig.empresa_name.replace(/[^a-zA-Z0-9]/g, '')}.bat`;
+        contentType = 'application/octet-stream';
+        installerContent = generateWindowsBatchFile(agentConfig);
         break;
       case 'linux':
         filename = `governaii-agent_${agentConfig.version}_amd64.deb`;
@@ -134,330 +134,314 @@ serve(async (req) => {
   }
 });
 
-function generateWindowsExecutable(config: any): string {
-  return `# GovernAII Agent - Executável Transparente com System Tray
-# Empresa: ${config.empresa_name}
-# Token: ${config.token.substring(0, 8)}...
-# Gerado em: ${new Date().toISOString()}
+function generateWindowsBatchFile(config: any): string {
+  return `@echo off
+REM GovernAII Agent - Instalador Transparente (.bat)
+REM Empresa: ${config.empresa_name}
+REM Token: ${config.token.substring(0, 8)}...
+REM Gerado em: ${new Date().toISOString()}
 
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Drawing
+REM Verifica se tem privilegios administrativos
+net session >nul 2>&1
+if %errorLevel% == 0 (
+    goto :admin
+) else (
+    goto :elevate
+)
 
-# Configuração embutida no executável
-$script:config = @{
-    agentId = "${config.agent_id}"
-    agentToken = "${config.token}"
-    companyId = "${config.empresa_id}"
-    companyName = "${config.empresa_name}"
-    apiUrl = "${config.api_url}"
-    heartbeatInterval = 30
-    syncInterval = 300
-}
+:elevate
+echo Solicitando privilegios administrativos...
+powershell -Command "Start-Process '%~f0' -Verb RunAs"
+exit /b
 
-$script:installDir = "$env:LOCALAPPDATA\\GovernAII Agent"
-$script:logFile = "$script:installDir\\agent.log"
-$script:isInstalled = Test-Path "$script:installDir\\installed.flag"
+:admin
+REM Executa PowerShell em modo oculto com privilegios administrativos
+powershell -WindowStyle Hidden -ExecutionPolicy Bypass -Command "& {
+Add-Type -AssemblyName System.Windows.Forms;
+Add-Type -AssemblyName System.Drawing;
 
-# Função de Log
+\$script:config = @{
+    agentId = '${config.agent_id}';
+    agentToken = '${config.token}';
+    companyId = '${config.empresa_id}';
+    companyName = '${config.empresa_name}';
+    apiUrl = '${config.api_url}';
+    heartbeatInterval = 30;
+    syncInterval = 300;
+};
+
+\$script:installDir = \"\$env:LOCALAPPDATA\\GovernAII Agent\";
+\$script:logFile = \"\$script:installDir\\agent.log\";
+\$script:isInstalled = Test-Path \"\$script:installDir\\installed.flag\";
+
 function Write-Log {
-    param([string]$Message)
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    param([string]\$Message);
+    \$timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss';
     try {
-        if (!(Test-Path (Split-Path $script:logFile))) {
-            New-Item -ItemType Directory -Path (Split-Path $script:logFile) -Force | Out-Null
-        }
-        "$timestamp - $Message" | Out-File -FilePath $script:logFile -Append -Encoding UTF8
-    } catch {}
-}
+        if (!(Test-Path (Split-Path \$script:logFile))) {
+            New-Item -ItemType Directory -Path (Split-Path \$script:logFile) -Force | Out-Null;
+        };
+        \"\$timestamp - \$Message\" | Out-File -FilePath \$script:logFile -Append -Encoding UTF8;
+    } catch {};
+};
 
-# Instalação Transparente
 function Install-Agent {
     try {
-        Write-Log "Iniciando instalação transparente do GovernAII Agent..."
+        Write-Log 'Iniciando instalação transparente do GovernAII Agent...';
         
-        # Criar diretório de instalação
-        if (!(Test-Path $script:installDir)) {
-            New-Item -ItemType Directory -Path $script:installDir -Force | Out-Null
-        }
+        if (!(Test-Path \$script:installDir)) {
+            New-Item -ItemType Directory -Path \$script:installDir -Force | Out-Null;
+        };
         
-        # Salvar configuração
-        $script:config | ConvertTo-Json | Out-File -FilePath "$script:installDir\\config.json" -Encoding UTF8
+        \$script:config | ConvertTo-Json | Out-File -FilePath \"\$script:installDir\\config.json\" -Encoding UTF8;
         
-        # Copiar executável para diretório de instalação
-        $exePath = "$script:installDir\\GovernAII-Agent.exe"
-        Copy-Item $MyInvocation.MyCommand.Path $exePath -Force
+        \$batPath = \"\$script:installDir\\GovernAII-Agent.bat\";
+        Copy-Item \$MyInvocation.MyCommand.Path \$batPath -Force;
         
-        # Registrar no Registry para iniciar com Windows
-        $regPath = "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"
-        Set-ItemProperty -Path $regPath -Name "GovernAII Agent" -Value """$exePath"" --run"
+        \$regPath = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run';
+        Set-ItemProperty -Path \$regPath -Name 'GovernAII Agent' -Value \"\`\"\$batPath\`\" --run\";
         
-        # Criar flag de instalação
-        "installed" | Out-File -FilePath "$script:installDir\\installed.flag" -Encoding UTF8
+        'installed' | Out-File -FilePath \"\$script:installDir\\installed.flag\" -Encoding UTF8;
         
-        # Criar atalho na área de trabalho
         try {
-            $WshShell = New-Object -comObject WScript.Shell
-            $Shortcut = $WshShell.CreateShortcut("$env:USERPROFILE\\Desktop\\GovernAII Agent.lnk")
-            $Shortcut.TargetPath = $exePath
-            $Shortcut.Arguments = "--run"
-            $Shortcut.Description = "GovernAII Asset Discovery Agent - ${config.empresa_name}"
-            $Shortcut.Save()
-        } catch {}
+            \$WshShell = New-Object -comObject WScript.Shell;
+            \$Shortcut = \$WshShell.CreateShortcut(\"\$env:USERPROFILE\\Desktop\\GovernAII Agent.lnk\");
+            \$Shortcut.TargetPath = \$batPath;
+            \$Shortcut.Arguments = '--run';
+            \$Shortcut.Description = 'GovernAII Asset Discovery Agent - ${config.empresa_name}';
+            \$Shortcut.Save();
+        } catch {};
         
-        Write-Log "Instalação concluída com sucesso"
+        Write-Log 'Instalação concluída com sucesso';
         
-        # Notificação de sucesso
         try {
-            $balloon = New-Object System.Windows.Forms.NotifyIcon
-            $balloon.Icon = [System.Drawing.SystemIcons]::Information
-            $balloon.BalloonTipTitle = "GovernAII Agent"
-            $balloon.BalloonTipText = "Agente instalado e iniciado com sucesso para ${config.empresa_name}!"
-            $balloon.Visible = $true
-            $balloon.ShowBalloonTip(3000)
-            Start-Sleep 3
-            $balloon.Dispose()
-        } catch {}
+            \$balloon = New-Object System.Windows.Forms.NotifyIcon;
+            \$balloon.Icon = [System.Drawing.SystemIcons]::Information;
+            \$balloon.BalloonTipTitle = 'GovernAII Agent';
+            \$balloon.BalloonTipText = 'Agente instalado e iniciado com sucesso para ${config.empresa_name}!';
+            \$balloon.Visible = \$true;
+            \$balloon.ShowBalloonTip(3000);
+            Start-Sleep 3;
+            \$balloon.Dispose();
+        } catch {};
         
-        return $true
+        return \$true;
     } catch {
-        Write-Log "Erro na instalação: $($_.Exception.Message)"
-        return $false
-    }
-}
+        Write-Log \"Erro na instalação: \$(\$_.Exception.Message)\";
+        return \$false;
+    };
+};
 
-# Heartbeat
 function Send-Heartbeat {
     try {
-        $hostname = $env:COMPUTERNAME
-        $body = @{
-            agentToken = $script:config.agentToken
-            hostname = $hostname
-            timestamp = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
-            ip_address = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object {$_.IPAddress -ne "127.0.0.1"} | Select-Object -First 1).IPAddress
-            mac_address = (Get-NetAdapter | Where-Object Status -eq "Up" | Select-Object -First 1).MacAddress
-            operating_system = "Windows"
-            os_version = [System.Environment]::OSVersion.VersionString
-        } | ConvertTo-Json
+        \$hostname = \$env:COMPUTERNAME;
+        \$body = @{
+            agentToken = \$script:config.agentToken;
+            hostname = \$hostname;
+            timestamp = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ssZ');
+            ip_address = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object {\$_.IPAddress -ne '127.0.0.1'} | Select-Object -First 1).IPAddress;
+            mac_address = (Get-NetAdapter | Where-Object Status -eq 'Up' | Select-Object -First 1).MacAddress;
+            operating_system = 'Windows';
+            os_version = [System.Environment]::OSVersion.VersionString;
+        } | ConvertTo-Json;
         
-        $headers = @{
-            "Authorization" = "Bearer $($script:config.agentToken)"
-            "Content-Type" = "application/json"
-        }
+        \$headers = @{
+            'Authorization' = \"Bearer \$(\$script:config.agentToken)\";
+            'Content-Type' = 'application/json';
+        };
         
-        Invoke-RestMethod -Uri "$($script:config.apiUrl)/functions/v1/agent-heartbeat" -Method POST -Body $body -Headers $headers -TimeoutSec 10
-        Write-Log "Heartbeat enviado com sucesso"
-        return $true
+        Invoke-RestMethod -Uri \"\$(\$script:config.apiUrl)/functions/v1/agent-heartbeat\" -Method POST -Body \$body -Headers \$headers -TimeoutSec 10;
+        Write-Log 'Heartbeat enviado com sucesso';
+        return \$true;
     } catch {
-        Write-Log "Falha no heartbeat: $($_.Exception.Message)"
-        return $false
-    }
-}
+        Write-Log \"Falha no heartbeat: \$(\$_.Exception.Message)\";
+        return \$false;
+    };
+};
 
-# Sincronização de Ativos
 function Sync-Assets {
     try {
-        $assets = @()
+        \$assets = @();
         
-        # Informações do sistema
-        $computerInfo = Get-ComputerInfo
-        $assets += @{
-            nome = $computerInfo.CsName
-            tipo = "Computador"
-            categoria = "Hardware"
-            fabricante = $computerInfo.CsManufacturer
-            modelo = $computerInfo.CsModel
-            numeroSerie = $computerInfo.BiosSeralNumber
-            sistema_operacional = $computerInfo.WindowsProductName
-            versao_so = $computerInfo.WindowsVersion
-            memoria_ram = [math]::Round($computerInfo.TotalPhysicalMemory / 1GB, 2)
-            processador = ($computerInfo.CsProcessors | Select-Object -First 1).Name
-        }
+        \$computerInfo = Get-ComputerInfo;
+        \$assets += @{
+            nome = \$computerInfo.CsName;
+            tipo = 'Computador';
+            categoria = 'Hardware';
+            fabricante = \$computerInfo.CsManufacturer;
+            modelo = \$computerInfo.CsModel;
+            numeroSerie = \$computerInfo.BiosSeralNumber;
+            sistema_operacional = \$computerInfo.WindowsProductName;
+            versao_so = \$computerInfo.WindowsVersion;
+            memoria_ram = [math]::Round(\$computerInfo.TotalPhysicalMemory / 1GB, 2);
+            processador = (\$computerInfo.CsProcessors | Select-Object -First 1).Name;
+        };
         
-        # Software instalado (método mais rápido que Win32_Product)
-        $software = Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | 
-                   Where-Object {$_.DisplayName -and $_.DisplayVersion} |
-                   Select-Object DisplayName, DisplayVersion, Publisher -First 20
+        \$software = Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | 
+                   Where-Object {\$_.DisplayName -and \$_.DisplayVersion} |
+                   Select-Object DisplayName, DisplayVersion, Publisher -First 20;
         
-        foreach ($sw in $software) {
-            $assets += @{
-                nome = $sw.DisplayName
-                tipo = "Software"
-                categoria = "Aplicativo"
-                versao = $sw.DisplayVersion
-                fabricante = $sw.Publisher
-            }
-        }
+        foreach (\$sw in \$software) {
+            \$assets += @{
+                nome = \$sw.DisplayName;
+                tipo = 'Software';
+                categoria = 'Aplicativo';
+                versao = \$sw.DisplayVersion;
+                fabricante = \$sw.Publisher;
+            };
+        };
         
-        $body = @{
-            agentToken = $script:config.agentToken
-            assets = $assets
-        } | ConvertTo-Json -Depth 10
+        \$body = @{
+            agentToken = \$script:config.agentToken;
+            assets = \$assets;
+        } | ConvertTo-Json -Depth 10;
         
-        $headers = @{
-            "Authorization" = "Bearer $($script:config.agentToken)"
-            "Content-Type" = "application/json"
-        }
+        \$headers = @{
+            'Authorization' = \"Bearer \$(\$script:config.agentToken)\";
+            'Content-Type' = 'application/json';
+        };
         
-        Invoke-RestMethod -Uri "$($script:config.apiUrl)/functions/v1/agent-sync-assets" -Method POST -Body $body -Headers $headers -TimeoutSec 30
-        Write-Log "Ativos sincronizados com sucesso ($($assets.Count) itens)"
-        return $true
+        Invoke-RestMethod -Uri \"\$(\$script:config.apiUrl)/functions/v1/agent-sync-assets\" -Method POST -Body \$body -Headers \$headers -TimeoutSec 30;
+        Write-Log \"Ativos sincronizados com sucesso (\$(\$assets.Count) itens)\";
+        return \$true;
     } catch {
-        Write-Log "Falha na sincronização: $($_.Exception.Message)"
-        return $false
-    }
-}
+        Write-Log \"Falha na sincronização: \$(\$_.Exception.Message)\";
+        return \$false;
+    };
+};
 
-# Interface System Tray
 function Create-SystemTrayApp {
-    $script:notifyIcon = New-Object System.Windows.Forms.NotifyIcon
-    $script:contextMenu = New-Object System.Windows.Forms.ContextMenuStrip
-    $script:isOnline = $false
-    $script:lastSync = Get-Date
+    \$script:notifyIcon = New-Object System.Windows.Forms.NotifyIcon;
+    \$script:contextMenu = New-Object System.Windows.Forms.ContextMenuStrip;
+    \$script:isOnline = \$false;
+    \$script:lastSync = Get-Date;
     
-    # Ícones coloridos para status (usando ícones do sistema)
-    $script:iconOnline = [System.Drawing.Icon]::ExtractAssociatedIcon("$env:windir\\system32\\imageres.dll")
-    $script:iconOffline = [System.Drawing.Icon]::ExtractAssociatedIcon("$env:windir\\system32\\shell32.dll")
+    \$script:iconOnline = [System.Drawing.Icon]::ExtractAssociatedIcon(\"\$env:windir\\system32\\imageres.dll\");
+    \$script:iconOffline = [System.Drawing.Icon]::ExtractAssociatedIcon(\"\$env:windir\\system32\\shell32.dll\");
     
-    # Menu de contexto
-    $menuStatus = $script:contextMenu.Items.Add("Status: Verificando...")
-    $menuStatus.Enabled = $false
+    \$menuStatus = \$script:contextMenu.Items.Add('Status: Verificando...');
+    \$menuStatus.Enabled = \$false;
     
-    $script:contextMenu.Items.Add("-")
+    \$script:contextMenu.Items.Add('-');
     
-    $menuCompany = $script:contextMenu.Items.Add("Empresa: ${config.empresa_name}")
-    $menuCompany.Enabled = $false
+    \$menuCompany = \$script:contextMenu.Items.Add('Empresa: ${config.empresa_name}');
+    \$menuCompany.Enabled = \$false;
     
-    $script:contextMenu.Items.Add("-")
+    \$script:contextMenu.Items.Add('-');
     
-    $menuLogs = $script:contextMenu.Items.Add("Ver Logs")
-    $menuLogs.Add_Click({
-        if (Test-Path $script:logFile) {
-            Start-Process notepad.exe $script:logFile
+    \$menuLogs = \$script:contextMenu.Items.Add('Ver Logs');
+    \$menuLogs.Add_Click({
+        if (Test-Path \$script:logFile) {
+            Start-Process notepad.exe \$script:logFile;
         } else {
-            [System.Windows.Forms.MessageBox]::Show("Nenhum log encontrado.", "GovernAII Agent")
-        }
-    })
+            [System.Windows.Forms.MessageBox]::Show('Nenhum log encontrado.', 'GovernAII Agent');
+        };
+    });
     
-    $menuForceSync = $script:contextMenu.Items.Add("Sincronizar Agora")
-    $menuForceSync.Add_Click({
-        Write-Log "Sincronização forçada pelo usuário"
-        Sync-Assets
-        $script:lastSync = Get-Date
-    })
+    \$menuForceSync = \$script:contextMenu.Items.Add('Sincronizar Agora');
+    \$menuForceSync.Add_Click({
+        Write-Log 'Sincronização forçada pelo usuário';
+        Sync-Assets;
+        \$script:lastSync = Get-Date;
+    });
     
-    $menuConfig = $script:contextMenu.Items.Add("Sobre")
-    $menuConfig.Add_Click({
-        $aboutText = "GovernAII Asset Discovery Agent\\r\\n\\r\\n"
-        $aboutText += "Empresa: ${config.empresa_name}\\r\\n"
-        $aboutText += "Versão: 1.0\\r\\n"
-        $aboutText += "Status: " + $(if ($script:isOnline) { "Online" } else { "Offline" }) + "\\r\\n"
-        $aboutText += "Última Sincronização: " + $script:lastSync.ToString("dd/MM/yyyy HH:mm:ss")
-        [System.Windows.Forms.MessageBox]::Show($aboutText, "Sobre - GovernAII Agent")
-    })
+    \$menuConfig = \$script:contextMenu.Items.Add('Sobre');
+    \$menuConfig.Add_Click({
+        \$aboutText = 'GovernAII Asset Discovery Agent`r`n`r`n';
+        \$aboutText += 'Empresa: ${config.empresa_name}`r`n';
+        \$aboutText += 'Versão: 1.0`r`n';
+        \$aboutText += 'Status: ' + \$(if (\$script:isOnline) { 'Online' } else { 'Offline' }) + '`r`n';
+        \$aboutText += 'Última Sincronização: ' + \$script:lastSync.ToString('dd/MM/yyyy HH:mm:ss');
+        [System.Windows.Forms.MessageBox]::Show(\$aboutText, 'Sobre - GovernAII Agent');
+    });
     
-    $script:contextMenu.Items.Add("-")
+    \$script:contextMenu.Items.Add('-');
     
-    $menuExit = $script:contextMenu.Items.Add("Sair")
-    $menuExit.Add_Click({
-        Write-Log "Aplicação encerrada pelo usuário"
-        $script:notifyIcon.Visible = $false
-        $script:notifyIcon.Dispose()
-        [System.Windows.Forms.Application]::Exit()
-    })
+    \$menuExit = \$script:contextMenu.Items.Add('Sair');
+    \$menuExit.Add_Click({
+        Write-Log 'Aplicação encerrada pelo usuário';
+        \$script:notifyIcon.Visible = \$false;
+        \$script:notifyIcon.Dispose();
+        [System.Windows.Forms.Application]::Exit();
+    });
     
-    # Configurar NotifyIcon
-    $script:notifyIcon.ContextMenuStrip = $script:contextMenu
-    $script:notifyIcon.Icon = $script:iconOffline
-    $script:notifyIcon.Text = "GovernAII Agent - ${config.empresa_name}"
-    $script:notifyIcon.Visible = $true
+    \$script:notifyIcon.ContextMenuStrip = \$script:contextMenu;
+    \$script:notifyIcon.Icon = \$script:iconOffline;
+    \$script:notifyIcon.Text = 'GovernAII Agent - ${config.empresa_name}';
+    \$script:notifyIcon.Visible = \$true;
     
-    # Timer para heartbeat
-    $timer = New-Object System.Windows.Forms.Timer
-    $timer.Interval = $script:config.heartbeatInterval * 1000
-    $timer.Add_Tick({
-        $success = Send-Heartbeat
+    \$timer = New-Object System.Windows.Forms.Timer;
+    \$timer.Interval = \$script:config.heartbeatInterval * 1000;
+    \$timer.Add_Tick({
+        \$success = Send-Heartbeat;
         
-        if ($success) {
-            $script:isOnline = $true
-            $script:notifyIcon.Icon = $script:iconOnline
-            $menuStatus.Text = "Status: ✓ Online - Conectado"
-            $script:notifyIcon.Text = "GovernAII Agent - ${config.empresa_name} (Online)"
+        if (\$success) {
+            \$script:isOnline = \$true;
+            \$script:notifyIcon.Icon = \$script:iconOnline;
+            \$menuStatus.Text = 'Status: ✓ Online - Conectado';
+            \$script:notifyIcon.Text = 'GovernAII Agent - ${config.empresa_name} (Online)';
         } else {
-            $script:isOnline = $false
-            $script:notifyIcon.Icon = $script:iconOffline
-            $menuStatus.Text = "Status: ✗ Offline - Desconectado"
-            $script:notifyIcon.Text = "GovernAII Agent - ${config.empresa_name} (Offline)"
-        }
+            \$script:isOnline = \$false;
+            \$script:notifyIcon.Icon = \$script:iconOffline;
+            \$menuStatus.Text = 'Status: ✗ Offline - Desconectado';
+            \$script:notifyIcon.Text = 'GovernAII Agent - ${config.empresa_name} (Offline)';
+        };
         
-        # Sincronizar ativos periodicamente
-        if ((Get-Date) - $script:lastSync).TotalSeconds -ge $script:config.syncInterval) {
-            Sync-Assets
-            $script:lastSync = Get-Date
-        }
-    })
-    $timer.Start()
+        if ((Get-Date) - \$script:lastSync).TotalSeconds -ge \$script:config.syncInterval) {
+            Sync-Assets;
+            \$script:lastSync = Get-Date;
+        };
+    });
+    \$timer.Start();
     
-    # Primeira execução
-    Send-Heartbeat
-    Sync-Assets
+    Send-Heartbeat;
+    Sync-Assets;
     
-    Write-Log "Interface System Tray iniciada para ${config.empresa_name}"
-}
+    Write-Log 'Interface System Tray iniciada para ${config.empresa_name}';
+};
 
-# Função Principal
 function Main {
-    param([string[]]$Args)
+    param([string[]]\$Args);
     
-    # Se não tem argumentos e não está instalado, instalar
-    if ($Args.Count -eq 0 -and !$script:isInstalled) {
-        Write-Log "Iniciando instalação automática..."
+    if (\$Args.Count -eq 0 -and !\$script:isInstalled) {
+        Write-Log 'Iniciando instalação automática...';
         if (Install-Agent) {
-            # Após instalação, reiniciar em modo execução
-            Start-Process -FilePath "$script:installDir\\GovernAII-Agent.exe" -ArgumentList "--run"
-            return
+            Start-Process powershell -ArgumentList '-WindowStyle Hidden -ExecutionPolicy Bypass -File', \"\$script:installDir\\GovernAII-Agent.bat\", '--run';
+            return;
         } else {
-            [System.Windows.Forms.MessageBox]::Show("Falha na instalação do GovernAII Agent. Verifique os logs em $script:logFile", "Erro", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
-            return
-        }
-    }
+            [System.Windows.Forms.MessageBox]::Show(\"Falha na instalação do GovernAII Agent. Verifique os logs em \$script:logFile\", 'Erro', [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error);
+            return;
+        };
+    };
     
-    # Se tem argumento --run ou já está instalado, executar interface
-    if ($Args -contains "--run" -or $script:isInstalled) {
-        Write-Log "Iniciando GovernAII Agent para ${config.empresa_name}..."
+    if (\$Args -contains '--run' -or \$script:isInstalled) {
+        Write-Log 'Iniciando GovernAII Agent para ${config.empresa_name}...';
         
-        # Verificar se já está em execução
-        $processes = Get-Process | Where-Object {$_.ProcessName -like "*GovernAII*" -and $_.Id -ne $PID}
-        if ($processes) {
-            Write-Log "Agente já está em execução"
-            return
-        }
+        \$processes = Get-Process | Where-Object {\$_.ProcessName -like '*GovernAII*' -and \$_.Id -ne \$PID};
+        if (\$processes) {
+            Write-Log 'Agente já está em execução';
+            return;
+        };
         
-        # Carregar configuração se instalado
-        if ($script:isInstalled) {
+        if (\$script:isInstalled) {
             try {
-                $savedConfig = Get-Content "$script:installDir\\config.json" | ConvertFrom-Json
-                $script:config = $savedConfig
+                \$savedConfig = Get-Content \"\$script:installDir\\config.json\" | ConvertFrom-Json;
+                \$script:config = \$savedConfig;
             } catch {
-                Write-Log "Erro ao carregar configuração: $($_.Exception.Message)"
-            }
-        }
+                Write-Log \"Erro ao carregar configuração: \$(\$_.Exception.Message)\";
+            };
+        };
         
-        # Criar interface system tray
-        Create-SystemTrayApp
-        
-        # Loop da aplicação
-        [System.Windows.Forms.Application]::Run()
-    }
-}
+        Create-SystemTrayApp;
+        [System.Windows.Forms.Application]::Run();
+    };
+};
 
-# Ponto de entrada
-if ($MyInvocation.InvocationName -ne ".") {
-    Main -Args $args
-}
-
-# Para compilar este script em .exe, use:
-# Install-Module ps2exe
-# ps2exe -inputFile "GovernAII-Agent.ps1" -outputFile "GovernAII-Agent.exe" -iconFile "governaii.ico" -title "GovernAII Agent" -description "GovernAII Asset Discovery Agent" -version "1.0.0.0" -noConsole -requireAdmin
+if (\$MyInvocation.InvocationName -ne '.') {
+    Main -Args \$args;
+};
+}"
+exit /b
 `;
 }
 

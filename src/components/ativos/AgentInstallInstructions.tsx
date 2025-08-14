@@ -14,32 +14,32 @@ export function AgentInstallInstructions({ platform }: AgentInstallInstructionsP
     switch (platform) {
       case 'windows':
         return {
-          title: "Instalação Windows - Executável Transparente",
-          subtitle: "Instalação automática com ícone na barra de tarefas",
+          title: "Instalação Windows - Arquivo Executável (.bat)",
+          subtitle: "Instalação transparente com execução automática",
           steps: [
             {
               icon: <Download className="w-5 h-5" />,
-              title: "1. Download do Script",
-              description: "Baixe o arquivo PowerShell gerado (.ps1)",
-              details: "Este arquivo contém todo o código necessário para instalação transparente e interface system tray."
+              title: "1. Download do Instalador",
+              description: "Baixe o arquivo .bat executável",
+              details: "O instalador é um arquivo .bat que executa automaticamente quando clicado duas vezes."
             },
             {
               icon: <Terminal className="w-5 h-5" />,
-              title: "2. Executar Instalação",
-              description: "Duplo-clique no arquivo ou execute via PowerShell",
-              details: "Instalação é completamente transparente - sem telas ou configurações."
+              title: "2. Execução Automática",
+              description: "Duplo-clique no arquivo .bat para instalar",
+              details: "O Windows pode solicitar permissões de administrador - aceite para permitir a instalação."
             },
             {
               icon: <Settings className="w-5 h-5" />,
-              title: "3. Agente Instalado",
-              description: "Ícone aparece automaticamente na barra de tarefas",
-              details: "O agente instala-se automaticamente e cria ícone no system tray do Windows."
+              title: "3. Instalação Transparente",
+              description: "Instalação ocorre de forma completamente silenciosa",
+              details: "O agente é instalado e configurado automaticamente, sem janelas ou prompts desnecessários."
             },
             {
               icon: <CheckCircle className="w-5 h-5" />,
-              title: "4. Funcionamento Automático",
-              description: "Inicia com Windows e sincroniza automaticamente",
-              details: "Clique com botão direito no ícone para ver menu com status, logs e opções."
+              title: "4. Ícone na Barra de Tarefas",
+              description: "Ícone aparece imediatamente após a instalação",
+              details: "Menu completo disponível: status, logs, sincronização manual e configurações."
             }
           ]
         };
@@ -204,8 +204,8 @@ export function AgentInstallInstructions({ platform }: AgentInstallInstructionsP
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Erro "Este aplicativo não pode ser executado":</strong>
-                  O arquivo baixado é um script NSIS que precisa ser compilado primeiro.
+                  <strong>Execução Automática:</strong>
+                  O arquivo .bat executa automaticamente quando clicado duas vezes. Aceite as permissões de administrador quando solicitado.
                 </AlertDescription>
               </Alert>
               
