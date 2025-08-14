@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -2524,6 +2524,36 @@ export type Database = {
         }
         Relationships: []
       }
+      empresa_reminder_settings: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          id: string
+          max_reminders: number
+          reminder_intervals: number[]
+          reminders_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          id?: string
+          max_reminders?: number
+          reminder_intervals?: number[]
+          reminders_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          max_reminders?: number
+          reminder_intervals?: number[]
+          reminders_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       empresas: {
         Row: {
           ativo: boolean
@@ -3869,6 +3899,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_invitation_reminders: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          id: string
+          last_reminder_sent: string | null
+          next_reminder_due: string | null
+          reminder_count: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          id?: string
+          last_reminder_sent?: string | null
+          next_reminder_due?: string | null
+          reminder_count?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          last_reminder_sent?: string | null
+          next_reminder_due?: string | null
+          reminder_count?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_module_permissions: {
         Row: {
           can_access: boolean | null
@@ -3961,12 +4027,12 @@ export type Database = {
       }
       create_audit_log: {
         Args: {
-          p_table_name: string
-          p_record_id: string
           p_action: string
-          p_old_values?: Json
-          p_new_values?: Json
           p_changed_fields?: string[]
+          p_new_values?: Json
+          p_old_values?: Json
+          p_record_id: string
+          p_table_name: string
         }
         Returns: undefined
       }
