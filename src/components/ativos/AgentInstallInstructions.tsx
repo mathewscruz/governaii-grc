@@ -14,32 +14,32 @@ export function AgentInstallInstructions({ platform }: AgentInstallInstructionsP
     switch (platform) {
       case 'windows':
         return {
-          title: "Instalação Windows - NSIS Installer",
-          subtitle: "Instalador profissional com interface gráfica",
+          title: "Instalação Windows - Executável Transparente",
+          subtitle: "Instalação automática com ícone na barra de tarefas",
           steps: [
             {
               icon: <Download className="w-5 h-5" />,
-              title: "1. Download do Instalador",
-              description: "Baixe o arquivo GovernAII-Agent-Setup.nsi",
-              details: "Este arquivo contém o código NSIS que será compilado em um instalador .exe profissional."
+              title: "1. Download do Script",
+              description: "Baixe o arquivo PowerShell gerado (.ps1)",
+              details: "Este arquivo contém todo o código necessário para instalação transparente e interface system tray."
             },
             {
               icon: <Terminal className="w-5 h-5" />,
-              title: "2. Compilar o Instalador",
-              description: "Use o NSIS para compilar o arquivo .nsi",
-              details: "Execute: makensis.exe GovernAII-Agent-Setup.nsi"
+              title: "2. Executar Instalação",
+              description: "Duplo-clique no arquivo ou execute via PowerShell",
+              details: "Instalação é completamente transparente - sem telas ou configurações."
             },
             {
               icon: <Settings className="w-5 h-5" />,
-              title: "3. Executar como Administrador",
-              description: "Execute o instalador .exe gerado como administrador",
-              details: "Clique com botão direito no .exe e selecione 'Executar como administrador'"
+              title: "3. Agente Instalado",
+              description: "Ícone aparece automaticamente na barra de tarefas",
+              details: "O agente instala-se automaticamente e cria ícone no system tray do Windows."
             },
             {
               icon: <CheckCircle className="w-5 h-5" />,
-              title: "4. Seguir o Assistente",
-              description: "Complete a instalação através do assistente gráfico",
-              details: "Aceite a licença, escolha o diretório e finalize a instalação"
+              title: "4. Funcionamento Automático",
+              description: "Inicia com Windows e sincroniza automaticamente",
+              details: "Clique com botão direito no ícone para ver menu com status, logs e opções."
             }
           ]
         };
