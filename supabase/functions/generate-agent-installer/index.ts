@@ -40,8 +40,8 @@ serve(async (req) => {
       throw new Error('User profile not found');
     }
 
-    const url = new URL(req.url);
-    const platform = url.searchParams.get('platform'); // windows, linux, macos
+    // Obter platform do body da requisição
+    const { platform } = await req.json();
 
     if (!platform || !['windows', 'linux', 'macos'].includes(platform)) {
       throw new Error('Invalid platform specified');
@@ -77,30 +77,30 @@ serve(async (req) => {
       sync_interval: 86400, // 24 horas
     };
 
-    // Script de instalação baseado na plataforma
-    let installScript = '';
+    // Gerar instalador baseado na plataforma
+    let installerContent = '';
     let filename = '';
     let contentType = '';
 
     switch (platform) {
       case 'windows':
-        filename = `governaii-agent-${agentToken}.ps1`;
-        contentType = 'application/x-powershell';
-        installScript = generateWindowsScript(agentConfig);
+        filename = `GovernAII-Agent-Setup-${agentToken}.exe`;
+        contentType = 'application/octet-stream';
+        installerContent = generateWindowsInstaller(agentConfig);
         break;
       case 'linux':
-        filename = `governaii-agent-${agentToken}.sh`;
-        contentType = 'application/x-shellscript';
-        installScript = generateLinuxScript(agentConfig);
+        filename = `governaii-agent-${agentToken}.deb`;
+        contentType = 'application/x-debian-package';
+        installerContent = generateLinuxInstaller(agentConfig);
         break;
       case 'macos':
-        filename = `governaii-agent-${agentToken}.sh`;
-        contentType = 'application/x-shellscript';
-        installScript = generateMacOSScript(agentConfig);
+        filename = `GovernAII Agent ${agentToken}.dmg`;
+        contentType = 'application/x-apple-diskimage';
+        installerContent = generateMacOSInstaller(agentConfig);
         break;
     }
 
-    return new Response(installScript, {
+    return new Response(installerContent, {
       headers: {
         ...corsHeaders,
         'Content-Type': contentType,
@@ -117,7 +117,7 @@ serve(async (req) => {
   }
 });
 
-function generateWindowsScript(config: any): string {
+function generateWindowsInstaller(config: any): string {
   return `# GovernAII Asset Discovery Agent - Windows Installer
 # Este script instala e configura o agente de descoberta de ativos
 
@@ -234,7 +234,7 @@ Write-Host "Para desinstalar, execute: .\\$($MyInvocation.MyCommand.Name) -Unins
 `;
 }
 
-function generateLinuxScript(config: any): string {
+function generateLinuxInstaller(config: any): string {
   return `#!/bin/bash
 # GovernAII Asset Discovery Agent - Linux Installer
 
@@ -465,7 +465,7 @@ echo "Para desinstalar: sudo $0 uninstall"
 `;
 }
 
-function generateMacOSScript(config: any): string {
+function generateMacOSInstaller(config: any): string {
   return `#!/bin/bash
 # GovernAII Asset Discovery Agent - macOS Installer
 

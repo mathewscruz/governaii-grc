@@ -20,26 +20,26 @@ export function AgentInstallDialog({ open, onOpenChange }: AgentInstallDialogPro
     {
       id: 'windows',
       name: 'Windows',
-      description: 'Windows 10/11 (PowerShell)',
+      description: 'Windows 10/11',
       icon: Monitor,
-      fileExtension: '.ps1',
-      requirements: 'PowerShell 5.0 ou superior'
+      fileExtension: '.exe',
+      requirements: 'Windows 10 ou superior'
     },
     {
       id: 'linux',
       name: 'Linux',
       description: 'Ubuntu, Debian, CentOS, RHEL',
       icon: Laptop,
-      fileExtension: '.sh',
-      requirements: 'Python 3.6+ e systemd'
+      fileExtension: '.deb',
+      requirements: 'Sistema baseado em Debian/Ubuntu'
     },
     {
       id: 'macos',
       name: 'macOS',
       description: 'macOS 10.14 ou superior',
       icon: Smartphone,
-      fileExtension: '.sh',
-      requirements: 'Python 3.6+ pré-instalado'
+      fileExtension: '.dmg',
+      requirements: 'macOS 10.14+ (Mojave ou superior)'
     }
   ];
 
@@ -54,13 +54,27 @@ export function AgentInstallDialog({ open, onOpenChange }: AgentInstallDialogPro
       if (error) throw error;
 
       // Criar blob e fazer download
-      const blob = new Blob([data], { type: 'text/plain' });
+      const blob = new Blob([data], { type: 'application/octet-stream' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       
       const platformConfig = platforms.find(p => p.id === platform);
-      a.download = `governaii-agent-${platform}${platformConfig?.fileExtension}`;
+      let filename = '';
+      switch (platform) {
+        case 'windows':
+          filename = `GovernAII-Agent-Setup${platformConfig?.fileExtension}`;
+          break;
+        case 'linux':
+          filename = `governaii-agent${platformConfig?.fileExtension}`;
+          break;
+        case 'macos':
+          filename = `GovernAII Agent${platformConfig?.fileExtension}`;
+          break;
+        default:
+          filename = `governaii-agent-${platform}${platformConfig?.fileExtension}`;
+      }
+      a.download = filename;
       
       document.body.appendChild(a);
       a.click();
@@ -166,9 +180,9 @@ export function AgentInstallDialog({ open, onOpenChange }: AgentInstallDialogPro
               Instruções de Instalação
             </h4>
             <div className="text-sm text-amber-700 dark:text-amber-300 space-y-2">
-              <p><strong>Windows:</strong> Execute o arquivo .ps1 como Administrador no PowerShell</p>
-              <p><strong>Linux:</strong> Execute o arquivo .sh com sudo (sudo bash governaii-agent-linux.sh)</p>
-              <p><strong>macOS:</strong> Execute o arquivo .sh no Terminal (bash governaii-agent-macos.sh)</p>
+              <p><strong>Windows:</strong> Execute o arquivo .exe como Administrador (clique duplo → "Executar como administrador")</p>
+              <p><strong>Linux:</strong> Instale o pacote .deb (sudo dpkg -i governaii-agent.deb)</p>
+              <p><strong>macOS:</strong> Abra o arquivo .dmg e arraste o GovernAII Agent para a pasta Aplicativos</p>
             </div>
           </div>
 
