@@ -20,12 +20,12 @@ export function AgentInstallDialog({ open, onOpenChange }: AgentInstallDialogPro
   const platforms = [
     {
       name: "Windows",
-      description: "Instalador NSIS profissional com interface gráfica",
+      description: "Arquivo executável .bat para instalação transparente",
       icon: <Monitor className="w-8 h-8" />,
-      extension: ".nsi → .exe",
-      requirements: "NSIS Compiler, Administrador",
-      status: "Instalador Profissional",
-      features: ["Interface Next/Next/Install", "Serviço Windows", "Logs detalhados", "Desinstalação automática"]
+      extension: ".bat",
+      requirements: "Windows 10+, Permissões de Admin",
+      status: "Executável Direto",
+      features: ["Duplo-clique para instalar", "Ícone System Tray", "Auto-start com Windows", "Menu de contexto completo"]
     },
     {
       name: "Linux",
@@ -85,7 +85,7 @@ export function AgentInstallDialog({ open, onOpenChange }: AgentInstallDialogPro
   const getFilename = (platform: string) => {
     const timestamp = Date.now();
     switch (platform) {
-      case 'windows': return `GovernAII-Agent-Setup-${timestamp}.nsi`;
+      case 'windows': return `GovernAII-Agent-Setup-${timestamp}.bat`;
       case 'linux': return `governaii-agent_1.0.0_amd64-${timestamp}.deb`;
       case 'macos': return `GovernAII-Agent-1.0.0-${timestamp}.pkg`;
       default: return `governaii-agent-${timestamp}.bin`;
