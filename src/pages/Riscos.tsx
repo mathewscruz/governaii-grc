@@ -457,12 +457,12 @@ export function Riscos() {
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between gap-2 flex-nowrap">
-              <CardTitle className="flex items-center gap-2 whitespace-nowrap">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
                 Riscos Identificados
               </CardTitle>
-              <div className="flex gap-2 flex-nowrap">
+              <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)} className="whitespace-nowrap">
                   <Tag className="mr-2 h-4 w-4" />
                   Categorias
