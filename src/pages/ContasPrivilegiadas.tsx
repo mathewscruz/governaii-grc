@@ -266,37 +266,6 @@ export default function ContasPrivilegiadas() {
     }
   ];
 
-  const statsCards = [
-    {
-      title: "Total de Contas",
-      value: contas.length,
-      description: "Contas privilegiadas ativas",
-      icon: Users,
-      color: "text-blue-600"
-    },
-    {
-      title: "Sistemas Críticos",
-      value: sistemas.filter(s => s.criticidade === 'alta').length,
-      description: "Sistemas de alta criticidade",
-      icon: Shield,
-      color: "text-red-600"
-    },
-    {
-      title: "Contas Expiradas",
-      value: contas.filter(c => c.status === 'expirado').length,
-      description: "Necessitam renovação",
-      icon: AlertTriangle,
-      color: "text-orange-600"
-    },
-    {
-      title: "Pendentes Aprovação",
-      value: contas.filter(c => c.status === 'pendente_aprovacao').length,
-      description: "Aguardando aprovação",
-      icon: Clock,
-      color: "text-yellow-600"
-    }
-  ];
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -315,19 +284,6 @@ export default function ContasPrivilegiadas() {
           </div>
         }
       />
-
-      {/* StatCards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsCards.map((stat, index) => (
-          <StatCard
-            key={index}
-            title={stat.title}
-            value={stat.value}
-            description={stat.description}
-            icon={<stat.icon className="h-4 w-4" />}
-          />
-        ))}
-      </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="grid w-full grid-cols-4">
