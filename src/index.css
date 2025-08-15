@@ -60,8 +60,24 @@
     --shadow-card: 0 4px 12px -2px hsl(215 28% 17% / 0.08);
     --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.3);
 
-    /* Animations */
+    /* Animations & Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Spacing & Layout */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    
+    /* Status & Semantic Colors */
+    --info: 204 94% 94%;
+    --info-foreground: 200 100% 25%;
+    --neutral: 210 20% 95%;
+    --neutral-foreground: 215 15% 35%;
 
     /* Sidebar - Light theme */
     --sidebar-background: 215 35% 12%;
