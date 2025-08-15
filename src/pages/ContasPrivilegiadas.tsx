@@ -4,13 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import ContaDialog from '@/components/contas-privilegiadas/ContaDialog';
 import SistemaDialog from '@/components/contas-privilegiadas/SistemaDialog';
-import ContasDashboard from '@/components/contas-privilegiadas/ContasDashboard';
 import { DataTable } from '@/components/ui/data-table';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
@@ -45,7 +43,7 @@ interface SistemaPrivilegiado {
 }
 
 export default function ContasPrivilegiadas() {
-  const [selectedTab, setSelectedTab] = useState('dashboard');
+  const [selectedTab, setSelectedTab] = useState('contas');
   const [showContaDialog, setShowContaDialog] = useState(false);
   const [showSistemaDialog, setShowSistemaDialog] = useState(false);
   const [selectedConta, setSelectedConta] = useState<ContaPrivilegiada | null>(null);
@@ -88,6 +86,19 @@ export default function ContasPrivilegiadas() {
     },
   });
 
+  // Calcular métricas do dashboard
+  const contasAtivas = contas.filter(c => c.status === 'ativo').length;
+  const contasExpiradas = contas.filter(c => c.status === 'expirado').length;
+  const contasPendentes = contas.filter(c => c.status === 'pendente_aprovacao').length;
+  
+  // Contas que vencem nos próximos 30 dias
+  const hoje = new Date();
+  const em30Dias = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const contasVencendo = contas.filter(c => {
+    const dataExpiracao = new Date(c.data_expiracao);
+    return dataExpiracao <= em30Dias && dataExpiracao >= hoje && c.status === 'ativo';
+  }).length;
+
   const handleEditConta = (conta: ContaPrivilegiada) => {
     setSelectedConta(conta);
     setShowContaDialog(true);
@@ -108,6 +119,13 @@ export default function ContasPrivilegiadas() {
     setSelectedSistema(null);
     setShowSistemaDialog(false);
     refetchSistemas();
+  };
+
+  const handleRelatorios = () => {
+    toast({
+      title: "Relatórios",
+      description: "Funcionalidade de relatórios em desenvolvimento",
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -286,11 +304,7 @@ export default function ContasPrivilegiadas() {
       />
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="dashboard" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Dashboard</span>
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="contas" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Contas Ativas</span>
@@ -299,30 +313,72 @@ export default function ContasPrivilegiadas() {
             <Shield className="h-4 w-4" />
             <span className="hidden sm:inline">Sistemas</span>
           </TabsTrigger>
-          <TabsTrigger value="relatorios" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            <span className="hidden sm:inline">Relatórios</span>
-          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="dashboard" className="space-y-6">
-          <ContasDashboard contas={contas} sistemas={sistemas} />
-        </TabsContent>
-
         <TabsContent value="contas" className="space-y-6">
-          <DataTable
-            data={contas}
-            columns={contasColumns}
-            emptyState={{
-              icon: <Users className="h-12 w-12" />,
-              title: "Nenhuma conta privilegiada",
-              description: "Comece criando sua primeira conta privilegiada",
-              action: {
-                label: "Nova Conta",
-                onClick: () => setShowContaDialog(true)
-              }
-            }}
-          />
+          {/* StatCards do dashboard */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total de Contas"
+              value={contas.length}
+              description="Contas privilegiadas registradas"
+              icon={<Users className="h-4 w-4" />}
+            />
+
+            <StatCard
+              title="Contas Ativas"
+              value={contasAtivas}
+              description="Com acesso vigente"
+              icon={<CheckCircle className="h-4 w-4" />}
+              variant="success"
+            />
+
+            <StatCard
+              title="Vencendo em 30 dias"
+              value={contasVencendo}
+              description="Requerem atenção"
+              icon={<AlertTriangle className="h-4 w-4" />}
+              variant={contasVencendo > 0 ? "warning" : "default"}
+            />
+
+            <StatCard
+              title="Pendentes"
+              value={contasPendentes}
+              description="Aguardando aprovação"
+              icon={<Clock className="h-4 w-4" />}
+              variant="info"
+            />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Contas Privilegiadas
+                </CardTitle>
+                <Button onClick={handleRelatorios} variant="outline">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Relatórios
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                data={contas}
+                columns={contasColumns}
+                emptyState={{
+                  icon: <Users className="h-12 w-12" />,
+                  title: "Nenhuma conta privilegiada",
+                  description: "Comece criando sua primeira conta privilegiada",
+                  action: {
+                    label: "Nova Conta",
+                    onClick: () => setShowContaDialog(true)
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="sistemas" className="space-y-6">
@@ -339,22 +395,6 @@ export default function ContasPrivilegiadas() {
               }
             }}
           />
-        </TabsContent>
-
-        <TabsContent value="relatorios" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Relatórios</CardTitle>
-              <CardDescription>
-                Relatórios e exportações sobre contas privilegiadas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Relatórios em desenvolvimento</p>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
 
