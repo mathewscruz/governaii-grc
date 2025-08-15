@@ -288,9 +288,9 @@ export function Riscos() {
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
+              <div className="text-2xl font-bold">{stats?.total || 0}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.criticos} críticos, {stats.altos} altos
+                {stats?.criticos || 0} críticos, {stats?.altos || 0} altos
               </p>
             </CardContent>
           </Card>
@@ -301,9 +301,9 @@ export function Riscos() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.tratamentos_concluidos}</div>
+              <div className="text-2xl font-bold text-green-600">{stats?.tratamentos_concluidos || 0}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.tratamentos_andamento} em andamento
+                {stats?.tratamentos_andamento || 0} em andamento
               </p>
             </CardContent>
           </Card>
@@ -314,7 +314,7 @@ export function Riscos() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-600">{stats.aceitos}</div>
+              <div className="text-2xl font-bold text-amber-600">{stats?.aceitos || 0}</div>
               <p className="text-xs text-muted-foreground">
                 Aceitos formalmente
               </p>
@@ -327,7 +327,7 @@ export function Riscos() {
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.tratados}</div>
+              <div className="text-2xl font-bold">{stats?.tratados || 0}</div>
               <p className="text-xs text-muted-foreground">
                 Com avaliação residual
               </p>
