@@ -49,7 +49,7 @@ interface MatrizConfig {
 
 export function Riscos() {
   const { profile } = useAuth();
-  const { stats, refetch: refetchStats } = useRiscosStats();
+  const { data: stats, refetch: refetchStats } = useRiscosStats();
   const [riscos, setRiscos] = useState<Risco[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

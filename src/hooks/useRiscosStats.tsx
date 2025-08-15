@@ -62,6 +62,5 @@ export const useRiscosStats = () => {
       return newStats;
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
-    cacheTime: 10 * 60 * 1000, // 10 minutos
   });
 };

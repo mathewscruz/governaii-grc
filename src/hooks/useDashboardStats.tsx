@@ -67,6 +67,5 @@ export const useDashboardStats = () => {
       };
     },
     staleTime: 2 * 60 * 1000, // 2 minutos para dados críticos
-    cacheTime: 5 * 60 * 1000, // 5 minutos
   });
 };
