@@ -395,7 +395,8 @@ export function AssessmentsManagerEnhanced() {
   }
 
   return (
-    <Card className="rounded-lg border overflow-hidden">
+    <div>
+      <Card className="rounded-lg border overflow-hidden">
       <CardContent className="p-0">
         <div className="p-6 pb-4">
           <div className="flex items-center justify-between gap-4 mb-4">
@@ -600,7 +601,8 @@ export function AssessmentsManagerEnhanced() {
       </CardContent>
     </Card>
 
-    {filteredAssessments.length === 0 && !loading && (
+    <div>
+      {filteredAssessments.length === 0 && !loading && (
         <Card>
           <CardContent className="text-center py-8">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -661,6 +663,7 @@ export function AssessmentsManagerEnhanced() {
         onOpenChange={(open) => setResponsesDialog({ open, assessment: null })}
         assessment={responsesDialog.assessment}
       />
+    </div>
     </div>
   );
 }

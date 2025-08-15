@@ -256,7 +256,8 @@ export function TemplatesManager() {
   }
 
   return (
-    <Card className="rounded-lg border overflow-hidden">
+    <div>
+      <Card className="rounded-lg border overflow-hidden">
       <CardContent className="p-0">
         <div className="p-6 pb-4">
           <div className="flex items-center justify-between gap-4 mb-4">
@@ -457,6 +458,6 @@ export function TemplatesManager() {
         onConfirm={() => deleteDialog.template && handleDeleteTemplate(deleteDialog.template)}
       />
     </div>
-  );
+    </div>
   );
 }

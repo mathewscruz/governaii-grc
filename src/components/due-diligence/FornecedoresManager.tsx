@@ -345,7 +345,8 @@ export function FornecedoresManager() {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+        
+        <div className="p-6 pt-0">
 
       {isLoading ? (
         <div className="text-center py-8">
@@ -409,15 +410,11 @@ export function FornecedoresManager() {
                 </div>
               </CardContent>
             </Card>
-          ))}
-          </div>
-          )}
-        </div>
-      )}
-      </CardContent>
-    </Card>
-      
-    {fornecedores.filter(f => f.status === 'ativo').length === 0 && !isLoading && (
+           ))}
+         </div>
+       )}
+       
+       {fornecedores.filter(f => f.status === 'ativo').length === 0 && !isLoading && (
         <Card>
           <CardContent className="text-center py-12">
             <Building className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -430,7 +427,10 @@ export function FornecedoresManager() {
               Criar Primeiro Fornecedor
             </Button>
           </CardContent>
-      </Card>
-    )}
+        </Card>
+       )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
