@@ -284,34 +284,23 @@ export function Documentos() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      'ativo': 'default',
-      'inativo': 'secondary',
-      'arquivado': 'outline',
-      'vencido': 'destructive'
-    } as const;
-
     return (
-      <Badge variant={variants[status as keyof typeof variants] || 'default'}>
-        {status}
+      <Badge 
+        variant="secondary" 
+        className={`border ${getStatusColor(status)}`}
+      >
+        {capitalizeText(status)}
       </Badge>
     );
   };
 
   const getTipoBadge = (tipo: string) => {
-    const colors = {
-      'politica': 'bg-blue-100 text-blue-800',
-      'procedimento': 'bg-green-100 text-green-800',
-      'instrucao': 'bg-yellow-100 text-yellow-800',
-      'formulario': 'bg-purple-100 text-purple-800',
-      'certificado': 'bg-red-100 text-red-800',
-      'contrato': 'bg-indigo-100 text-indigo-800',
-      'relatorio': 'bg-gray-100 text-gray-800',
-    };
-
     return (
-      <Badge className={colors[tipo as keyof typeof colors] || 'bg-gray-100 text-gray-800'}>
-        {tipo}
+      <Badge 
+        variant="secondary" 
+        className={`border ${getTipoColor(tipo)}`}
+      >
+        {capitalizeText(tipo)}
       </Badge>
     );
   };
