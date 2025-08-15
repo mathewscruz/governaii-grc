@@ -17,13 +17,13 @@ export const useDocumentosStats = () => {
     queryFn: async (): Promise<DocumentosStats> => {
       const { data: documentos, error } = await supabase
         .from('documentos')
-        .select('status, data_vencimento, confidencial, data_aprovacao');
+        .select('status, data_vencimento, classificacao, data_aprovacao');
 
       if (error) throw error;
 
       const total = documentos?.length || 0;
       const ativos = documentos?.filter(d => d.status === 'ativo').length || 0;
-      const confidenciais = documentos?.filter(d => d.confidencial).length || 0;
+      const confidenciais = documentos?.filter(d => d.classificacao === 'confidencial').length || 0;
       const aprovados = documentos?.filter(d => d.data_aprovacao).length || 0;
       const pendentesAprovacao = documentos?.filter(d => d.status === 'pendente_aprovacao').length || 0;
       

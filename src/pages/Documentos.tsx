@@ -29,13 +29,14 @@ import { useDocumentosStats } from '@/hooks/useDocumentosStats';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { capitalizeText, getStatusColor, getTipoColor, getClassificacaoColor } from '@/lib/text-utils';
 
 interface Documento {
   id: string;
   nome: string;
   descricao?: string;
   tipo: string;
-  categoria?: string;
+  classificacao?: string;
   tags?: string[];
   arquivo_url?: string;
   arquivo_nome?: string;
@@ -44,7 +45,6 @@ interface Documento {
   versao: number;
   is_current_version: boolean;
   status: string;
-  confidencial: boolean;
   data_vencimento?: string;
   data_aprovacao?: string;
   aprovado_por?: string;
@@ -148,7 +148,7 @@ export function Documentos() {
 
     // Filtros básicos
     if (selectedCategoria !== 'all') {
-      filtered = filtered.filter(doc => doc.categoria === selectedCategoria);
+      filtered = filtered.filter(doc => doc.classificacao === selectedCategoria);
     }
 
     if (selectedStatus !== 'all') {
@@ -188,7 +188,7 @@ export function Documentos() {
       }
 
       if (filtrosAvancados.confidencial !== undefined) {
-        filtered = filtered.filter(doc => doc.confidencial === filtrosAvancados.confidencial);
+        filtered = filtered.filter(doc => doc.classificacao === 'confidencial');
       }
 
       if (filtrosAvancados.comArquivo !== undefined) {
@@ -354,10 +354,15 @@ export function Documentos() {
       render: (value: string) => getTipoBadge(value)
     },
     {
-      key: 'categoria',
-      label: 'Categoria',
+      key: 'classificacao',
+      label: 'Classificação',
       render: (value: string) => value ? (
-        <Badge variant="secondary">{value}</Badge>
+        <Badge 
+          variant="secondary" 
+          className={`border ${getClassificacaoColor(value)}`}
+        >
+          {capitalizeText(value)}
+        </Badge>
       ) : '-'
     },
     {
@@ -373,16 +378,9 @@ export function Documentos() {
         : '-'
     },
     {
-      key: 'confidencial',
-      label: 'Confidencial',
-      render: (value: boolean) => value ? (
-        <Badge variant="destructive" className="gap-1">
-          <Shield className="h-3 w-3" />
-          Sim
-        </Badge>
-      ) : (
-        <Badge variant="outline">Não</Badge>
-      )
+      key: 'versao',
+      label: 'Versão',
+      render: (value: number) => `v${value}`
     },
     {
       key: 'actions',
@@ -628,10 +626,10 @@ export function Documentos() {
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead>Categoria</TableHead>
+              <TableHead>Classificação</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Versão</TableHead>
-              <TableHead>Tamanho</TableHead>
+              {/* Coluna Tamanho removida conforme solicitado */}
               <TableHead>Data de Criação</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
@@ -647,18 +645,26 @@ export function Documentos() {
                         {documento.descricao}
                       </div>
                     )}
-                    {documento.confidencial && (
+                    {documento.classificacao === 'confidencial' && (
                       <Badge variant="destructive" className="text-xs">
+                        <Shield className="h-3 w-3 mr-1" />
                         Confidencial
                       </Badge>
                     )}
                   </div>
                 </TableCell>
                 <TableCell>{getTipoBadge(documento.tipo)}</TableCell>
-                <TableCell>{documento.categoria || '-'}</TableCell>
+                <TableCell>
+                  <Badge 
+                    variant="secondary" 
+                    className={`border ${getClassificacaoColor(documento.classificacao || 'interna')}`}
+                  >
+                    {capitalizeText(documento.classificacao || 'interna')}
+                  </Badge>
+                </TableCell>
                 <TableCell>{getStatusBadge(documento.status)}</TableCell>
                 <TableCell>v{documento.versao}</TableCell>
-                <TableCell>{formatFileSize(documento.arquivo_tamanho)}</TableCell>
+                {/* Coluna Tamanho removida */}
                 <TableCell>
                   {format(new Date(documento.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                 </TableCell>
@@ -742,7 +748,7 @@ export function Documentos() {
           fetchDocumentos();
           setDocumentoDialog({ open: false });
         }}
-        categorias={categorias}
+        // categorias removido - não é mais necessário
       />
 
       <CategoriasDialog

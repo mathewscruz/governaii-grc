@@ -2062,8 +2062,7 @@ export type Database = {
           arquivo_tamanho: number | null
           arquivo_tipo: string | null
           arquivo_url: string | null
-          categoria: string | null
-          confidencial: boolean | null
+          classificacao: string | null
           created_at: string
           created_by: string | null
           data_aprovacao: string | null
@@ -2085,8 +2084,7 @@ export type Database = {
           arquivo_tamanho?: number | null
           arquivo_tipo?: string | null
           arquivo_url?: string | null
-          categoria?: string | null
-          confidencial?: boolean | null
+          classificacao?: string | null
           created_at?: string
           created_by?: string | null
           data_aprovacao?: string | null
@@ -2108,8 +2106,7 @@ export type Database = {
           arquivo_tamanho?: number | null
           arquivo_tipo?: string | null
           arquivo_url?: string | null
-          categoria?: string | null
-          confidencial?: boolean | null
+          classificacao?: string | null
           created_at?: string
           created_by?: string | null
           data_aprovacao?: string | null

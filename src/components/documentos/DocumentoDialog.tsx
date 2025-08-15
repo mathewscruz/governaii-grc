@@ -21,7 +21,7 @@ interface Documento {
   nome: string;
   descricao?: string;
   tipo: string;
-  categoria?: string;
+  classificacao?: string;
   tags?: string[];
   arquivo_url?: string;
   arquivo_nome?: string;
@@ -30,7 +30,6 @@ interface Documento {
   versao: number;
   is_current_version: boolean;
   status: string;
-  confidencial: boolean;
   data_vencimento?: string;
   data_aprovacao?: string;
   aprovado_por?: string;
@@ -39,34 +38,27 @@ interface Documento {
   updated_at: string;
 }
 
-interface Categoria {
-  id: string;
-  nome: string;
-  descricao?: string;
-  cor: string;
-}
+// Remover interface Categoria - não será mais usado
 
 interface DocumentoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   documento?: Documento;
   onSuccess: () => void;
-  categorias: Categoria[];
   // DocGen integration: optional prefill
   initialFile?: File | null;
   initialData?: Partial<{
     nome: string;
     descricao: string;
     tipo: string;
-    categoria: string;
+    classificacao: string;
     tags: string[];
     status: string;
-    confidencial: boolean;
     data_vencimento?: Date | undefined;
   }>;
 }
 
-export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, categorias, initialFile, initialData }: DocumentoDialogProps) {
+export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, initialFile, initialData }: DocumentoDialogProps) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -74,10 +66,9 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, cate
     nome: '',
     descricao: '',
     tipo: 'documento',
-    categoria: '',
+    classificacao: 'interna',
     tags: [] as string[],
     status: 'ativo',
-    confidencial: false,
     data_vencimento: undefined as Date | undefined,
   });
   const [newTag, setNewTag] = useState('');
@@ -90,20 +81,18 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, cate
           nome: documento.nome,
           descricao: documento.descricao || '',
           tipo: documento.tipo,
-          categoria: documento.categoria || '',
+          classificacao: documento.classificacao || 'interna',
           tags: documento.tags || [],
           status: documento.status,
-          confidencial: documento.confidencial,
           data_vencimento: documento.data_vencimento ? new Date(documento.data_vencimento) : undefined,
         }
       : {
           nome: '',
           descricao: '',
           tipo: 'documento',
-          categoria: '',
+          classificacao: 'interna',
           tags: [] as string[],
           status: 'ativo',
-          confidencial: false,
           data_vencimento: undefined as Date | undefined,
         };
 
@@ -211,7 +200,7 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, cate
         nome: formData.nome.trim(),
         descricao: formData.descricao.trim() || null,
         tipo: formData.tipo,
-        categoria: formData.categoria || null,
+        classificacao: formData.classificacao,
         tags: formData.tags.length > 0 ? formData.tags : null,
         arquivo_url,
         arquivo_nome,
@@ -219,7 +208,6 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, cate
         arquivo_tamanho,
         versao,
         status: formData.status,
-        confidencial: formData.confidencial,
         data_vencimento: formData.data_vencimento ? format(formData.data_vencimento, 'yyyy-MM-dd') : null,
         empresa_id: profileData.empresa_id,
         created_by: userData.user.id,
@@ -332,18 +320,16 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, cate
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="categoria">Categoria</Label>
-              <Select value={formData.categoria} onValueChange={(value) => setFormData(prev => ({ ...prev, categoria: value }))}>
+              <Label htmlFor="classificacao">Classificação *</Label>
+              <Select value={formData.classificacao} onValueChange={(value) => setFormData(prev => ({ ...prev, classificacao: value }))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione a categoria" />
+                  <SelectValue placeholder="Selecione a classificação" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sem-categoria">Sem categoria</SelectItem>
-                  {categorias.map((categoria) => (
-                    <SelectItem key={categoria.id} value={categoria.nome}>
-                      {categoria.nome}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="publica">Pública</SelectItem>
+                  <SelectItem value="interna">Interna</SelectItem>
+                  <SelectItem value="restrita">Restrita</SelectItem>
+                  <SelectItem value="confidencial">Confidencial</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -419,14 +405,7 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, cate
             </Popover>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="confidencial"
-              checked={formData.confidencial}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, confidencial: checked }))}
-            />
-            <Label htmlFor="confidencial">Documento Confidencial</Label>
-          </div>
+          {/* Switch de confidencial removido - agora é gerenciado pela classificação */}
 
           <div className="space-y-2">
             <Label>Arquivo</Label>

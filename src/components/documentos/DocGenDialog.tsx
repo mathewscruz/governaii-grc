@@ -778,7 +778,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
             setShowCreateDialog(false);
             onOpenChange(false);
           }}
-          categorias={docCategorias}
+          // categorias removido - não é mais necessário
           initialFile={initialGeneratedFile}
           initialData={{
             nome: generatedDocument?.titulo || '',
@@ -786,7 +786,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
             descricao: generatedDocument?.metadados?.descricao || '',
             tags: generatedDocument?.metadados?.tags || [],
             status: 'ativo',
-            confidencial: (generatedDocument?.metadados?.classificacao || '').toLowerCase() === 'confidencial',
+            classificacao: generatedDocument?.metadados?.classificacao || 'interna',
           }}
         />
       </DialogContent>
