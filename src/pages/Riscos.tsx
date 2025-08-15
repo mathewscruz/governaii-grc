@@ -458,18 +458,18 @@ export function Riscos() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 min-w-0">
                 <AlertTriangle className="h-5 w-5" />
                 Riscos Identificados
               </CardTitle>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)} className="whitespace-nowrap">
+                <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)} className="whitespace-nowrap flex-shrink-0">
                   <Tag className="mr-2 h-4 w-4" />
                   Categorias
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)} className="whitespace-nowrap">
+                <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)} className="whitespace-nowrap flex-shrink-0">
                   <Settings className="mr-2 h-4 w-4" />
-                  Configurar Matriz
+                  Matriz
                 </Button>
               </div>
             </div>
