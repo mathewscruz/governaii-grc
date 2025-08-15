@@ -329,7 +329,7 @@ export default function Incidentes() {
   ];
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="space-y-6">
       <PageHeader
         title="Incidentes"
         description="Gerencie incidentes de segurança e acompanhe tratamentos"
@@ -337,7 +337,7 @@ export default function Incidentes() {
       />
 
       {/* StatCards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statsCards.map((stat, index) => (
           <StatCard
             key={index}
@@ -351,23 +351,33 @@ export default function Incidentes() {
       </div>
 
       {/* Lista de Incidentes */}
-      <DataTable
-        data={filteredIncidentes}
-        columns={incidentesColumns}
-        loading={loading}
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        searchPlaceholder="Buscar incidentes..."
-        emptyState={{
-          icon: <AlertTriangle className="h-8 w-8" />,
-          title: 'Nenhum incidente encontrado',
-          description: 'Registre o primeiro incidente para começar o monitoramento.',
-          action: {
-            label: 'Novo Incidente',
-            onClick: () => {} // O IncidenteDialog já está no header
-          }
-        }}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" />
+            Lista de Incidentes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            data={filteredIncidentes}
+            columns={incidentesColumns}
+            loading={loading}
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Buscar incidentes..."
+            emptyState={{
+              icon: <AlertTriangle className="h-8 w-8" />,
+              title: 'Nenhum incidente encontrado',
+              description: 'Registre o primeiro incidente para começar o monitoramento.',
+              action: {
+                label: 'Novo Incidente',
+                onClick: () => {} // O IncidenteDialog já está no header
+              }
+            }}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }
