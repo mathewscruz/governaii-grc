@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, Shield, AlertTriangle, CheckCircle, Clock, Edit } from 'lucide-react';
+import { Plus, Users, Shield, AlertTriangle, CheckCircle, Clock, Edit, BarChart3, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,6 +12,7 @@ import ContaDialog from '@/components/contas-privilegiadas/ContaDialog';
 import SistemaDialog from '@/components/contas-privilegiadas/SistemaDialog';
 import ContasDashboard from '@/components/contas-privilegiadas/ContasDashboard';
 import { DataTable } from '@/components/ui/data-table';
+import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
 
 interface ContaPrivilegiada {
@@ -265,6 +266,37 @@ export default function ContasPrivilegiadas() {
     }
   ];
 
+  const statsCards = [
+    {
+      title: "Total de Contas",
+      value: contas.length,
+      description: "Contas privilegiadas ativas",
+      icon: Users,
+      color: "text-blue-600"
+    },
+    {
+      title: "Sistemas Críticos",
+      value: sistemas.filter(s => s.criticidade === 'alta').length,
+      description: "Sistemas de alta criticidade",
+      icon: Shield,
+      color: "text-red-600"
+    },
+    {
+      title: "Contas Expiradas",
+      value: contas.filter(c => c.status === 'expirado').length,
+      description: "Necessitam renovação",
+      icon: AlertTriangle,
+      color: "text-orange-600"
+    },
+    {
+      title: "Pendentes Aprovação",
+      value: contas.filter(c => c.status === 'pendente_aprovacao').length,
+      description: "Aguardando aprovação",
+      icon: Clock,
+      color: "text-yellow-600"
+    }
+  ];
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -284,12 +316,37 @@ export default function ContasPrivilegiadas() {
         }
       />
 
+      {/* StatCards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statsCards.map((stat, index) => (
+          <StatCard
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            description={stat.description}
+            icon={<stat.icon className="h-4 w-4" />}
+          />
+        ))}
+      </div>
+
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="contas">Contas Ativas</TabsTrigger>
-          <TabsTrigger value="sistemas">Sistemas</TabsTrigger>
-          <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+          <TabsTrigger value="dashboard" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Dashboard</span>
+          </TabsTrigger>
+          <TabsTrigger value="contas" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Contas Ativas</span>
+          </TabsTrigger>
+          <TabsTrigger value="sistemas" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            <span className="hidden sm:inline">Sistemas</span>
+          </TabsTrigger>
+          <TabsTrigger value="relatorios" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            <span className="hidden sm:inline">Relatórios</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">

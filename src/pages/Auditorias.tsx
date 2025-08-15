@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Plus, FileText, AlertTriangle, CheckCircle, User, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, FileText, AlertTriangle, CheckCircle, User, Edit, Trash2, Eye, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -144,25 +144,58 @@ const Auditorias = () => {
     setShowEvidenciasDialog(true);
   };
 
+  const statsCards = [
+    {
+      title: "Total de Auditorias",
+      value: auditorias?.length || 0,
+      description: "Auditorias cadastradas",
+      icon: FileText,
+    },
+    {
+      title: "Em Andamento",
+      value: auditorias?.filter(a => a.status === 'em_andamento').length || 0,
+      description: "Auditorias ativas",
+      icon: Clock,
+    },
+    {
+      title: "Concluídas",
+      value: auditorias?.filter(a => a.status === 'concluida').length || 0,
+      description: "Auditorias finalizadas",
+      icon: CheckCircle,
+    },
+    {
+      title: "Pendentes",
+      value: auditorias?.filter(a => a.status === 'planejamento').length || 0,
+      description: "Aguardando início",
+      icon: AlertTriangle,
+    }
+  ];
+
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Auditorias</h1>
-          <p className="text-muted-foreground">
-            Gerencie auditorias internas e externas
-          </p>
-        </div>
-        <Button 
-          onClick={() => {
-            setSelectedAuditoria(null);
-            setShowAuditoriaDialog(true);
-          }}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Nova Auditoria
-        </Button>
+      <PageHeader
+        title="Auditorias"
+        description="Gerencie e monitore auditorias internas e externas"
+        actions={
+          <Button onClick={() => setShowAuditoriaDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Auditoria
+          </Button>
+        }
+      />
+
+      {/* StatCards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statsCards.map((stat, index) => (
+          <StatCard
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            description={stat.description}
+            icon={<stat.icon className="h-4 w-4" />}
+            loading={isLoading}
+          />
+        ))}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">

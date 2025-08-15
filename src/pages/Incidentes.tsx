@@ -216,231 +216,158 @@ export default function Incidentes() {
     return Icon;
   };
 
+  const incidentesColumns = [
+    {
+      key: "titulo" as keyof Incidente,
+      label: "Título",
+      sortable: true,
+      render: (item: Incidente) => (
+        <div className="font-medium">{item.titulo}</div>
+      )
+    },
+    {
+      key: "tipo_incidente" as keyof Incidente,
+      label: "Tipo",
+      sortable: true,
+      render: (item: Incidente) => (
+        <Badge variant="outline">{item.tipo_incidente}</Badge>
+      )
+    },
+    {
+      key: "criticidade" as keyof Incidente,
+      label: "Criticidade",
+      sortable: true,
+      render: (item: Incidente) => {
+        const variant = item.criticidade === 'critica' ? 'destructive' :
+                       item.criticidade === 'alta' ? 'destructive' :
+                       item.criticidade === 'media' ? 'secondary' : 'outline';
+        return <Badge variant={variant}>{item.criticidade}</Badge>;
+      }
+    },
+    {
+      key: "status" as keyof Incidente,
+      label: "Status",
+      sortable: true,
+      render: (item: Incidente) => {
+        const StatusIcon = getStatusIcon(item.status);
+        const variant = item.status === 'resolvido' || item.status === 'fechado' ? 'default' :
+                       item.status === 'aberto' ? 'destructive' : 'secondary';
+        return (
+          <div className="flex items-center gap-2">
+            <StatusIcon className="h-4 w-4" />
+            <Badge variant={variant}>{item.status}</Badge>
+          </div>
+        );
+      }
+    },
+    {
+      key: "data_deteccao" as keyof Incidente,
+      label: "Data Detecção",
+      sortable: true,
+      render: (item: Incidente) => (
+        format(new Date(item.data_deteccao), 'dd/MM/yyyy', { locale: ptBR })
+      )
+    },
+    {
+      key: "actions" as keyof Incidente,
+      label: "Ações",
+      render: (item: Incidente) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => {}}>
+              <Edit className="mr-2 h-4 w-4" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {}}>
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Comunicação
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {}}>
+              <FileText className="mr-2 h-4 w-4" />
+              Evidências
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {}}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    }
+  ];
+
+  const statsCards = [
+    {
+      title: "Total de Incidentes",
+      value: statsIncidentes?.total || 0,
+      description: `${statsIncidentes?.abertos || 0} abertos`,
+      icon: <AlertTriangle className="h-4 w-4" />,
+    },
+    {
+      title: "Críticos/Altos",
+      value: (statsIncidentes?.criticos || 0) + (statsIncidentes?.altos || 0),
+      description: "Necessitam atenção imediata",
+      icon: <Shield className="h-4 w-4" />,
+    },
+    {
+      title: "Em Investigação",
+      value: statsIncidentes?.investigacao || 0,
+      description: "Sendo investigados",
+      icon: <Clock className="h-4 w-4" />,
+    },
+    {
+      title: "Este Mês",
+      value: statsIncidentes?.mes || 0,
+      description: "Novos incidentes",
+      icon: <Calendar className="h-4 w-4" />,
+    }
+  ];
+
   return (
     <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Incidentes</h1>
-          <p className="text-muted-foreground">
-            Gerencie incidentes de segurança e acompanhe tratamentos
-          </p>
-        </div>
-        <IncidenteDialog onSuccess={loadIncidentes} />
+      <PageHeader
+        title="Incidentes"
+        description="Gerencie incidentes de segurança e acompanhe tratamentos"
+        actions={<IncidenteDialog onSuccess={loadIncidentes} />}
+      />
+
+      {/* StatCards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statsCards.map((stat, index) => (
+          <StatCard
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            description={stat.description}
+            icon={stat.icon}
+            loading={loading}
+          />
+        ))}
       </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Incidentes</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statsIncidentes?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {statsIncidentes?.abertos || 0} abertos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Críticos/Altos</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{(statsIncidentes?.criticos || 0) + (statsIncidentes?.altos || 0)}</div>
-            <p className="text-xs text-muted-foreground">
-              {statsIncidentes?.criticos || 0} críticos, {statsIncidentes?.altos || 0} altos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Investigação</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{statsIncidentes?.investigacao || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {statsIncidentes?.resolvidos || 0} resolvidos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Este Mês</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statsIncidentes?.mes || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Novos incidentes
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar incidentes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
 
       {/* Lista de Incidentes */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Incidentes Registrados</CardTitle>
-          <CardDescription>
-            Lista de todos os incidentes de segurança e privacidade
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">Carregando incidentes...</div>
-          ) : filteredIncidentes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Nenhum incidente encontrado
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Título</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Criticidade</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data Detecção</TableHead>
-                  <TableHead>Responsável</TableHead>
-                  <TableHead>Ações</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredIncidentes.map((incidente) => {
-                  const StatusIcon = getStatusIcon(incidente.status);
-                  return (
-                    <TableRow key={incidente.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{incidente.titulo}</div>
-                          {incidente.categoria && (
-                            <div className="text-sm text-muted-foreground">
-                              {incidente.categoria}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getTipoIcon(incidente.tipo_incidente)}
-                          <span className="capitalize">{incidente.tipo_incidente}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {getCriticidadeBadge(incidente.criticidade)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <StatusIcon className="h-4 w-4" />
-                          {getStatusBadge(incidente.status)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(incidente.data_deteccao), 'dd/MM/yyyy', { locale: ptBR })}
-                      </TableCell>
-                      <TableCell>
-                        {incidente.responsavel_tratamento || '-'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">Ver detalhes</Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <IncidenteDialog
-                              incidente={incidente}
-                              onSuccess={loadIncidentes}
-                              trigger={
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                  Editar
-                                </DropdownMenuItem>
-                              }
-                            />
-                            <TratamentoDialog
-                              incidenteId={incidente.id}
-                              onSuccess={loadIncidentes}
-                              trigger={
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                  Nova Ação
-                                </DropdownMenuItem>
-                              }
-                            />
-                            <ComunicacaoDialog
-                              incidenteId={incidente.id}
-                              onSuccess={loadIncidentes}
-                              trigger={
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                  Nova Comunicação
-                                </DropdownMenuItem>
-                              }
-                            />
-                            <EvidenciaDialog
-                              incidenteId={incidente.id}
-                              onSuccess={loadIncidentes}
-                              trigger={
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                  Nova Evidência
-                                </DropdownMenuItem>
-                              }
-                            />
-                            {incidente.status !== 'resolvido' && (
-                              <DropdownMenuItem
-                                onClick={() => updateIncidenteStatus(incidente.id, 'investigacao')}
-                              >
-                                Marcar como Em Investigação
-                              </DropdownMenuItem>
-                            )}
-                            {incidente.status !== 'resolvido' && (
-                              <DropdownMenuItem
-                                onClick={() => updateIncidenteStatus(incidente.id, 'resolvido')}
-                              >
-                                Marcar como Resolvido
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <DataTable
+        data={filteredIncidentes}
+        columns={incidentesColumns}
+        loading={loading}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Buscar incidentes..."
+        emptyState={{
+          icon: <AlertTriangle className="h-8 w-8" />,
+          title: 'Nenhum incidente encontrado',
+          description: 'Registre o primeiro incidente para começar o monitoramento.',
+          action: {
+            label: 'Novo Incidente',
+            onClick: () => {} // O IncidenteDialog já está no header
+          }
+        }}
+      />
     </div>
   );
 }
