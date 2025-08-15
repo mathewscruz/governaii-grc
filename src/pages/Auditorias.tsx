@@ -234,42 +234,58 @@ const Auditorias = () => {
         </Select>
       </div>
 
-      {isLoading ? (
-        <Card>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex space-x-4 animate-pulse">
-                  <div className="h-4 bg-muted rounded w-1/4"></div>
-                  <div className="h-4 bg-muted rounded w-1/6"></div>
-                  <div className="h-4 bg-muted rounded w-1/6"></div>
-                  <div className="h-4 bg-muted rounded w-1/6"></div>
-                  <div className="h-4 bg-muted rounded w-1/6"></div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ) : auditorias && auditorias.length > 0 ? (
-        <Card>
-          <CardContent className="p-0">
-            <div className="relative overflow-auto">
-              <Table>
-                <TableHeader>
+      <Card>
+        <CardContent className="p-0">
+          <div className="relative overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Prioridade</TableHead>
+                  <TableHead>Data Início</TableHead>
+                  <TableHead>Auditor</TableHead>
+                  <TableHead>Trabalhos</TableHead>
+                  <TableHead>Achados</TableHead>
+                  <TableHead>Recomendações</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    </TableRow>
+                  ))
+                ) : !auditorias || auditorias.length === 0 ? (
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Prioridade</TableHead>
-                    <TableHead>Data Início</TableHead>
-                    <TableHead>Auditor</TableHead>
-                    <TableHead>Trabalhos</TableHead>
-                    <TableHead>Achados</TableHead>
-                    <TableHead>Recomendações</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableCell colSpan={10} className="p-0">
+                      <EmptyState
+                        icon={<FileText className="h-8 w-8" />}
+                        title="Nenhuma auditoria encontrada"
+                        description="Ainda não há auditorias cadastradas. Comece criando a primeira auditoria."
+                        action={{
+                          label: "Nova Auditoria",
+                          onClick: () => {
+                            setSelectedAuditoria(null);
+                            setShowAuditoriaDialog(true);
+                          }
+                        }}
+                      />
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
+                ) : (
                   <TooltipProvider>
                     {auditorias.map((auditoria) => {
                       const { trabalhoCount, achadoCount, recomendacaoCount } = useAuditoriaData(auditoria.id);
@@ -412,29 +428,12 @@ const Auditorias = () => {
                       );
                     })}
                   </TooltipProvider>
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <p className="text-muted-foreground mb-4">Nenhuma auditoria encontrada</p>
-            <Button 
-              onClick={() => {
-                setSelectedAuditoria(null);
-                setShowAuditoriaDialog(true);
-              }}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Criar primeira auditoria
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
       <AuditoriaDialog
         open={showAuditoriaDialog}
         onOpenChange={setShowAuditoriaDialog}
