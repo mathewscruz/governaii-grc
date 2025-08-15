@@ -43,7 +43,7 @@ export default function DueDiligence() {
         <StatCard
           title="Concluídas"
           value={stats?.completedAssessments || 0}
-          description={`${stats?.pendingAssessments || 0} pendentes`}
+          description={`${(stats?.totalAssessments || 0) - (stats?.completedAssessments || 0)} pendentes`}
           icon={<CheckCircle className="h-4 w-4" />}
           loading={isLoading}
           variant="success"
