@@ -1,9 +1,7 @@
 
-import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { HardDrive, Shield, AlertCircle, Bell, Target } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { HardDrive, Shield, AlertCircle, Bell } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { MatrizVisualizacao } from '@/components/riscos/MatrizVisualizacao';
 import { RecentActivities } from '@/components/dashboard/RecentActivities';
@@ -11,73 +9,18 @@ import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
 import { useAtivosStats } from '@/hooks/useAtivosStats';
 import { useControlesStats } from '@/hooks/useControlesStats';
 import { useIncidentesStats } from '@/hooks/useIncidentesStats';
-
-interface DashboardStats {
-  criticalAlerts: number;
-}
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 export default function Dashboard() {
   const { profile } = useAuth();
-  const [stats, setStats] = useState<DashboardStats>({
-    criticalAlerts: 0,
-  });
-  const [loading, setLoading] = useState(true);
   
-  // Usar hooks para dados reais
+  // Usar hooks otimizados para dados reais
   const ativosStats = useAtivosStats();
   const controlesStats = useControlesStats();
   const incidentesStats = useIncidentesStats();
+  const dashboardStats = useDashboardStats();
 
-  useEffect(() => {
-    if (profile) {
-      fetchDashboardStats();
-    }
-  }, [profile]);
-
-  const fetchDashboardStats = async () => {
-    try {
-      // Buscar riscos críticos
-      const { data: riscos } = await supabase
-        .from('riscos')
-        .select('nivel_risco_inicial');
-
-      // Buscar denúncias pendentes
-      const { data: denuncias } = await supabase
-        .from('denuncias')
-        .select('status')
-        .in('status', ['nova', 'em_investigacao']);
-
-      // Buscar controles vencidos (próximos 30 dias)
-      const dataLimite = new Date();
-      dataLimite.setDate(dataLimite.getDate() + 30);
-      const { data: controles } = await supabase
-        .from('controles')
-        .select('proxima_avaliacao')
-        .lte('proxima_avaliacao', dataLimite.toISOString())
-        .gte('proxima_avaliacao', new Date().toISOString());
-
-      const riscosAltos = riscos?.filter(r => 
-        r.nivel_risco_inicial === 'Alto' || 
-        r.nivel_risco_inicial === 'Crítico' || 
-        r.nivel_risco_inicial === 'Muito Alto'
-      ).length || 0;
-
-      // Alertas críticos consolidados
-      const criticalAlerts = 
-        (denuncias?.length || 0) + 
-        (controles?.length || 0) + 
-        riscosAltos +
-        (incidentesStats.data?.criticos || 0);
-
-      setStats({ criticalAlerts });
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas do dashboard:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading || ativosStats.isLoading || controlesStats.isLoading || incidentesStats.isLoading) {
+  if (ativosStats.isLoading || controlesStats.isLoading || incidentesStats.isLoading || dashboardStats.isLoading) {
     return (
       <div className="container mx-auto py-6 px-4 max-w-7xl">
         <div className="flex items-center justify-center min-h-96">
@@ -132,10 +75,10 @@ export default function Dashboard() {
             <Bell className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.criticalAlerts}</div>
+            <div className="text-2xl font-bold">{dashboardStats.data?.criticalAlerts || 0}</div>
             <div className="flex items-center mt-2">
-              <Badge variant={stats.criticalAlerts > 5 ? "destructive" : stats.criticalAlerts > 0 ? "outline" : "default"}>
-                {stats.criticalAlerts > 5 ? 'Atenção urgente' : stats.criticalAlerts > 0 ? 'Monitorar' : 'Tudo ok'}
+              <Badge variant={(dashboardStats.data?.criticalAlerts || 0) > 5 ? "destructive" : (dashboardStats.data?.criticalAlerts || 0) > 0 ? "outline" : "default"}>
+                {(dashboardStats.data?.criticalAlerts || 0) > 5 ? 'Atenção urgente' : (dashboardStats.data?.criticalAlerts || 0) > 0 ? 'Monitorar' : 'Tudo ok'}
               </Badge>
             </div>
           </CardContent>

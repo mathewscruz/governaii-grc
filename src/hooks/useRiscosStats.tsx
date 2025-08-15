@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/components/AuthProvider';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface RiscosStats {
   total: number;
@@ -16,29 +15,9 @@ export interface RiscosStats {
 }
 
 export const useRiscosStats = () => {
-  const { profile } = useAuth();
-  const [stats, setStats] = useState<RiscosStats>({
-    total: 0,
-    criticos: 0,
-    altos: 0,
-    medios: 0,
-    baixos: 0,
-    tratamentos_pendentes: 0,
-    tratamentos_andamento: 0,
-    tratamentos_concluidos: 0,
-    aceitos: 0,
-    tratados: 0
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchStats = async () => {
-    if (!profile?.empresa_id) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
+  return useQuery({
+    queryKey: ['riscos-stats'],
+    queryFn: async (): Promise<RiscosStats> => {
       // Buscar riscos
       const { data: riscos, error: riscosError } = await supabase
         .from('riscos')
@@ -80,27 +59,9 @@ export const useRiscosStats = () => {
         }
       }
 
-      setStats(newStats);
-    } catch (error: any) {
-      console.error('Erro ao buscar estatísticas de riscos:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStats();
-  }, [profile?.empresa_id]);
-
-  const refetch = () => {
-    fetchStats();
-  };
-
-  return {
-    stats,
-    loading,
-    error,
-    refetch
-  };
+      return newStats;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    cacheTime: 10 * 60 * 1000, // 10 minutos
+  });
 };
