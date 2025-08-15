@@ -6,8 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataTable } from '@/components/ui/data-table';
+import { StatCard } from '@/components/ui/stat-card';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 import { DocumentoDialog } from '@/components/documentos/DocumentoDialog';
 import { CategoriasDialog } from '@/components/documentos/CategoriasDialog';
 import { VinculacoesDialog } from '@/components/documentos/VinculacoesDialog';
@@ -321,94 +325,198 @@ export function Documentos() {
     );
   }
 
+  const documentoColumns = [
+    {
+      key: 'nome',
+      label: 'Nome',
+      sortable: true,
+      render: (value: string, documento: Documento) => (
+        <div>
+          <div className="font-medium">{value}</div>
+          <div className="text-sm text-muted-foreground">
+            v{documento.versao} • {documento.arquivo_nome || 'Sem arquivo'}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'tipo',
+      label: 'Tipo',
+      render: (value: string) => getTipoBadge(value)
+    },
+    {
+      key: 'categoria',
+      label: 'Categoria',
+      render: (value: string) => value ? (
+        <Badge variant="secondary">{value}</Badge>
+      ) : '-'
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (value: string) => getStatusBadge(value)
+    },
+    {
+      key: 'data_vencimento',
+      label: 'Vencimento',
+      render: (value: string) => value 
+        ? format(new Date(value), 'dd/MM/yyyy', { locale: ptBR })
+        : '-'
+    },
+    {
+      key: 'confidencial',
+      label: 'Confidencial',
+      render: (value: boolean) => value ? (
+        <Badge variant="destructive" className="gap-1">
+          <Shield className="h-3 w-3" />
+          Sim
+        </Badge>
+      ) : (
+        <Badge variant="outline">Não</Badge>
+      )
+    },
+    {
+      key: 'actions',
+      label: 'Ações',
+      render: (value: any, documento: Documento) => (
+        <div className="flex items-center gap-2">
+          {documento.arquivo_url && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setPreviewDialog({ open: true, documento })}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDocumentoDialog({ open: true, documento })}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDeleteDocumento(documento.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const documentoFilters = [
+    {
+      key: 'categoria',
+      label: 'Categoria',
+      type: 'select' as const,
+      options: categorias.map(cat => ({ value: cat.nome, label: cat.nome })),
+      value: selectedCategoria,
+      onChange: setSelectedCategoria
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select' as const,
+      options: [
+        { value: 'ativo', label: 'Ativo' },
+        { value: 'inativo', label: 'Inativo' },
+        { value: 'arquivado', label: 'Arquivado' },
+        { value: 'vencido', label: 'Vencido' }
+      ],
+      value: selectedStatus,
+      onChange: setSelectedStatus
+    },
+    {
+      key: 'tipo',
+      label: 'Tipo',
+      type: 'select' as const,
+      options: [
+        { value: 'politica', label: 'Política' },
+        { value: 'procedimento', label: 'Procedimento' },
+        { value: 'instrucao', label: 'Instrução' },
+        { value: 'formulario', label: 'Formulário' },
+        { value: 'certificado', label: 'Certificado' },
+        { value: 'contrato', label: 'Contrato' },
+        { value: 'relatorio', label: 'Relatório' }
+      ],
+      value: selectedTipo,
+      onChange: setSelectedTipo
+    }
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Documentos</h1>
-          <p className="text-muted-foreground">
-            Gerencie documentos, políticas e procedimentos da empresa
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setUploadMultiplos(true)}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Múltiplo
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setCategoriasDialog(true)}
-          >
-            <FolderOpen className="h-4 w-4 mr-2" />
-            Categorias
-          </Button>
-          <Button onClick={() => setShowDocGenDialog(true)} className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-            <Brain className="h-4 w-4" />
-            DocGen
-          </Button>
-          <Button onClick={() => setDocumentoDialog({ open: true })}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Documento
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Documentos"
+        description="Gerencie documentos, políticas e procedimentos da empresa de forma centralizada"
+        actions={
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setUploadMultiplos(true)}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Múltiplo
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setCategoriasDialog(true)}
+            >
+              <FolderOpen className="h-4 w-4 mr-2" />
+              Categorias
+            </Button>
+            <Button onClick={() => setShowDocGenDialog(true)} className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+              <Brain className="h-4 w-4" />
+              DocGen
+            </Button>
+            <Button onClick={() => setDocumentoDialog({ open: true })}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Documento
+            </Button>
+          </div>
+        }
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Documentos</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statsDocumentos?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {statsDocumentos?.ativos || 0} ativos
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total de Documentos"
+          value={statsDocumentos?.total || 0}
+          description={`${statsDocumentos?.ativos || 0} ativos`}
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          loading={!statsDocumentos}
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Aprovados</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{statsDocumentos?.aprovados || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {statsDocumentos?.pendentesAprovacao || 0} pendentes
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Aprovados"
+          value={statsDocumentos?.aprovados || 0}
+          description={`${statsDocumentos?.pendentesAprovacao || 0} pendentes`}
+          icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
+          variant="success"
+          loading={!statsDocumentos}
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vencendo em 30 dias</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{statsDocumentos?.vencendo30Dias || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {statsDocumentos?.vencidos || 0} já vencidos
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Vencendo em 30 dias"
+          value={statsDocumentos?.vencendo30Dias || 0}
+          description={`${statsDocumentos?.vencidos || 0} já vencidos`}
+          icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+          variant={statsDocumentos?.vencendo30Dias ? "warning" : "default"}
+          loading={!statsDocumentos}
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Confidenciais</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statsDocumentos?.confidenciais || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Acesso restrito
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Confidenciais"
+          value={statsDocumentos?.confidenciais || 0}
+          description="Acesso restrito"
+          icon={<Shield className="h-4 w-4 text-muted-foreground" />}
+          variant="info"
+          loading={!statsDocumentos}
+        />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

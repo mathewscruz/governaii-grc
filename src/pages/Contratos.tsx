@@ -5,6 +5,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataTable } from '@/components/ui/data-table';
+import { StatCard } from '@/components/ui/stat-card';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Plus, Search, FileText, Calendar, DollarSign, Users, AlertCircle, CheckCircle, Clock, XCircle, Edit, FileEdit, BarChart3, Filter, Link2, TrendingUp, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -275,78 +279,206 @@ export default function Contratos() {
     return <div className="flex items-center justify-center h-96">Carregando...</div>;
   }
 
-  return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
+  const contratoColumns = [
+    {
+      key: 'nome',
+      label: 'Nome',
+      sortable: true,
+      render: (value: string, contrato: Contrato) => (
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Contratos</h1>
-          <p className="text-muted-foreground">
-            Gerencie contratos, fornecedores e acompanhe vencimentos
-          </p>
+          <div className="font-medium">{value}</div>
+          <div className="text-sm text-muted-foreground">{contrato.numero_contrato}</div>
         </div>
-      </div>
+      )
+    },
+    {
+      key: 'fornecedores',
+      label: 'Fornecedor',
+      render: (value: any) => value?.nome || '-'
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (value: string) => getStatusBadge(value)
+    },
+    {
+      key: 'tipo',
+      label: 'Tipo',
+      render: (value: string) => <Badge variant="outline" className="capitalize">{value}</Badge>
+    },
+    {
+      key: 'valor',
+      label: 'Valor',
+      render: (value: number) => value 
+        ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))
+        : 'N/A'
+    },
+    {
+      key: 'data_fim',
+      label: 'Vencimento',
+      render: (value: string) => value 
+        ? format(new Date(value), 'dd/MM/yyyy', { locale: ptBR })
+        : '-'
+    },
+    {
+      key: 'actions',
+      label: 'Ações',
+      render: (value: any, contrato: Contrato) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEdit(contrato, 'contrato')}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete(contrato.id, 'contrato')}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const fornecedorColumns = [
+    {
+      key: 'nome',
+      label: 'Nome',
+      sortable: true,
+      render: (value: string, fornecedor: Fornecedor) => (
+        <div>
+          <div className="font-medium">{value}</div>
+          <div className="text-sm text-muted-foreground">{fornecedor.cnpj}</div>
+        </div>
+      )
+    },
+    {
+      key: 'tipo',
+      label: 'Tipo',
+      render: (value: string) => <Badge variant="outline" className="capitalize">{value}</Badge>
+    },
+    {
+      key: 'categoria',
+      label: 'Categoria',
+      render: (value: string) => <Badge variant="secondary" className="capitalize">{value}</Badge>
+    },
+    {
+      key: 'avaliacao_risco',
+      label: 'Risco',
+      render: (value: string) => getRiskBadge(value)
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (value: string) => getStatusBadge(value)
+    },
+    {
+      key: 'actions',
+      label: 'Ações',
+      render: (value: any, fornecedor: Fornecedor) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEdit(fornecedor, 'fornecedor')}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete(fornecedor.id, 'fornecedor')}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const contratoFilters = [
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select' as const,
+      options: [
+        { value: 'ativo', label: 'Ativo' },
+        { value: 'rascunho', label: 'Rascunho' },
+        { value: 'negociacao', label: 'Negociação' },
+        { value: 'aprovacao', label: 'Aprovação' },
+        { value: 'suspenso', label: 'Suspenso' },
+        { value: 'encerrado', label: 'Encerrado' }
+      ],
+      value: statusFilter,
+      onChange: setStatusFilter
+    },
+    {
+      key: 'tipo',
+      label: 'Tipo',
+      type: 'select' as const,
+      options: [
+        { value: 'servicos', label: 'Serviços' },
+        { value: 'licenciamento', label: 'Licenciamento' },
+        { value: 'manutencao', label: 'Manutenção' },
+        { value: 'consultoria', label: 'Consultoria' },
+        { value: 'produto', label: 'Produto' }
+      ],
+      value: tipoFilter,
+      onChange: setTipoFilter
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Contratos"
+        description="Gerencie contratos, fornecedores e acompanhe vencimentos de forma centralizada"
+      />
 
       {/* Cards de KPI */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Contratos</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statsContratos?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {statsContratos?.ativos || 0} ativos
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total de Contratos"
+          value={statsContratos?.total || 0}
+          description={`${statsContratos?.ativos || 0} ativos`}
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          loading={!statsContratos}
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-                notation: 'compact'
-              }).format(statsContratos?.valorTotal || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Valor em contratos ativos
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Valor Total"
+          value={new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+            notation: 'compact'
+          }).format(statsContratos?.valorTotal || 0)}
+          description="Valor em contratos ativos"
+          icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
+          variant="success"
+          loading={!statsContratos}
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vencimentos</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statsContratos?.vencendo30Dias || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Próximos 30 dias
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Vencimentos"
+          value={statsContratos?.vencendo30Dias || 0}
+          description="Próximos 30 dias"
+          icon={<AlertCircle className="h-4 w-4 text-muted-foreground" />}
+          variant={statsContratos?.vencendo30Dias ? "warning" : "default"}
+          loading={!statsContratos}
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Renovação Automática</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {statsContratos?.total ? Math.round((statsContratos?.renovacaoAutomatica / statsContratos?.total) * 100) : 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {statsContratos?.renovacaoAutomatica || 0} de {statsContratos?.total || 0}
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Renovação Automática"
+          value={`${statsContratos?.total ? Math.round((statsContratos?.renovacaoAutomatica / statsContratos?.total) * 100) : 0}%`}
+          description={`${statsContratos?.renovacaoAutomatica || 0} de ${statsContratos?.total || 0}`}
+          icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
+          variant="info"
+          loading={!statsContratos}
+        />
       </div>
 
       {/* Tabs */}
@@ -359,225 +491,82 @@ export default function Contratos() {
           <TabsTrigger value="integracoes">Integrações</TabsTrigger>
         </TabsList>
 
-        {/* Contratos Tab */}
         <TabsContent value="contratos" className="space-y-4">
-          <div className="flex justify-between items-center gap-4">
-            <div className="flex gap-4 flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar contratos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 w-80"
-                />
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Contratos
+                </CardTitle>
+                <div className="flex gap-2">
+                  <RelatoriosContratos />
+                  <TemplatesContratos />
+                  <Button onClick={() => { setSelectedContrato(null); setDialogOpen(true); }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Contrato
+                  </Button>
+                </div>
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="ativo">Ativo</SelectItem>
-                  <SelectItem value="rascunho">Rascunho</SelectItem>
-                  <SelectItem value="negociacao">Negociação</SelectItem>
-                  <SelectItem value="aprovacao">Aprovação</SelectItem>
-                  <SelectItem value="suspenso">Suspenso</SelectItem>
-                  <SelectItem value="encerrado">Encerrado</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={tipoFilter} onValueChange={setTipoFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="servicos">Serviços</SelectItem>
-                  <SelectItem value="licenciamento">Licenciamento</SelectItem>
-                  <SelectItem value="manutencao">Manutenção</SelectItem>
-                  <SelectItem value="consultoria">Consultoria</SelectItem>
-                  <SelectItem value="produto">Produto</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-              <div className="flex gap-2">
-                <RelatoriosContratos />
-                <TemplatesContratos />
-                <Button onClick={() => { setSelectedContrato(null); setDialogOpen(true); }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Contrato
-                </Button>
-              </div>
-          </div>
-
-          <div className="grid gap-4">
-            {filteredContratos.map((contrato) => (
-              <Card key={contrato.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                      <CardTitle className="text-lg">{contrato.nome}</CardTitle>
-                      <CardDescription>
-                        {contrato.numero_contrato} • {contrato.fornecedores?.nome}
-                      </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      {getStatusBadge(contrato.status)}
-                      {contrato.fornecedores?.avaliacao_risco && getRiskBadge(contrato.fornecedores.avaliacao_risco)}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-muted-foreground">Tipo:</span>
-                      <p className="capitalize">{contrato.tipo}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-muted-foreground">Valor:</span>
-                      <p>
-                        {contrato.valor 
-                          ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(contrato.valor))
-                          : 'N/A'
-                        }
-                      </p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-muted-foreground">Vigência:</span>
-                      <p>
-                        {contrato.data_inicio && contrato.data_fim
-                          ? `${format(new Date(contrato.data_inicio), 'dd/MM/yyyy', { locale: ptBR })} - ${format(new Date(contrato.data_fim), 'dd/MM/yyyy', { locale: ptBR })}`
-                          : 'N/A'
-                        }
-                      </p>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => { setSelectedContrato(contrato); setMarcosDialogOpen(true); }}
-                      >
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Marcos
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => { setSelectedContrato(contrato); setDocumentosDialogOpen(true); }}
-                      >
-                        <FileText className="h-4 w-4 mr-1" />
-                        Docs
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => { setSelectedContrato(contrato); setAditivosDialogOpen(true); }}
-                      >
-                        <FileEdit className="h-4 w-4 mr-1" />
-                        Aditivos
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEdit(contrato, 'contrato')}
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Editar
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {filteredContratos.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-8">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Nenhum contrato encontrado</p>
-              </CardContent>
-            </Card>
-          )}
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                data={filteredContratos}
+                columns={contratoColumns}
+                loading={loading}
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                searchPlaceholder="Buscar contratos..."
+                filters={contratoFilters}
+                emptyState={{
+                  icon: <FileText className="h-8 w-8" />,
+                  title: 'Nenhum contrato encontrado',
+                  description: 'Comece criando contratos para gerenciar suas parcerias.',
+                  action: {
+                    label: 'Novo Contrato',
+                    onClick: () => { setSelectedContrato(null); setDialogOpen(true); }
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Fornecedores Tab */}
         <TabsContent value="fornecedores" className="space-y-4">
-          <div className="flex justify-between items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar fornecedores..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-80"
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Fornecedores
+                </CardTitle>
+                <Button onClick={() => { setSelectedFornecedor(null); setFornecedorDialogOpen(true); }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Fornecedor
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                data={filteredFornecedores}
+                columns={fornecedorColumns}
+                loading={loading}
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                searchPlaceholder="Buscar fornecedores..."
+                emptyState={{
+                  icon: <Users className="h-8 w-8" />,
+                  title: 'Nenhum fornecedor encontrado',
+                  description: 'Cadastre fornecedores para associar aos contratos.',
+                  action: {
+                    label: 'Novo Fornecedor',
+                    onClick: () => { setSelectedFornecedor(null); setFornecedorDialogOpen(true); }
+                  }
+                }}
               />
-            </div>
-            <Button onClick={() => { setSelectedFornecedor(null); setFornecedorDialogOpen(true); }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Fornecedor
-            </Button>
-          </div>
-
-          <div className="grid gap-4">
-            {filteredFornecedores.map((fornecedor) => (
-              <Card key={fornecedor.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                      <CardTitle className="text-lg">{fornecedor.nome}</CardTitle>
-                      <CardDescription>{fornecedor.cnpj}</CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      {getStatusBadge(fornecedor.status)}
-                      {getRiskBadge(fornecedor.avaliacao_risco)}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-muted-foreground">Email:</span>
-                      <p>{fornecedor.email || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-muted-foreground">Categoria:</span>
-                      <p className="capitalize">{fornecedor.categoria || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-muted-foreground">Risco:</span>
-                      <p className="capitalize">{fornecedor.avaliacao_risco}</p>
-                    </div>
-                     <div className="flex gap-2">
-                       <Button
-                         variant="ghost"
-                         size="sm"
-                         onClick={() => handleEdit(fornecedor, 'fornecedor')}
-                       >
-                         <Edit className="h-4 w-4" />
-                       </Button>
-                       <Button
-                         variant="ghost"
-                         size="sm"
-                         onClick={() => handleDelete(fornecedor.id, 'fornecedor')}
-                       >
-                         <Trash2 className="h-4 w-4" />
-                       </Button>
-                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {filteredFornecedores.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-8">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Nenhum fornecedor encontrado</p>
-              </CardContent>
-            </Card>
-          )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
