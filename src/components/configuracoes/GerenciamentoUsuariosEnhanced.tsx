@@ -504,187 +504,192 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row gap-4 justify-between">
-        <div className="flex flex-col sm:flex-row gap-4 flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Buscar usuários..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full sm:w-64"
-            />
+      <div className="flex flex-col space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 flex-1">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Buscar usuários..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <div className="flex gap-3">
+              {isSuperAdmin && (
+                <Select value={filterEmpresa} onValueChange={setFilterEmpresa}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filtrar por empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as empresas</SelectItem>
+                    {empresas.map((empresa) => (
+                      <SelectItem key={empresa.id} value={empresa.id}>
+                        {empresa.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              
+              <Select value={filterRole} onValueChange={setFilterRole}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filtrar por perfil" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os perfis</SelectItem>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                  <SelectItem value="user">Usuário</SelectItem>
+                  <SelectItem value="readonly">Somente Leitura</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
-          {isSuperAdmin && (
-            <Select value={filterEmpresa} onValueChange={setFilterEmpresa}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Filtrar por empresa" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as empresas</SelectItem>
-                {empresas.map((empresa) => (
-                  <SelectItem key={empresa.id} value={empresa.id}>
-                    {empresa.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          
-          <Select value={filterRole} onValueChange={setFilterRole}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Filtrar por perfil" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os perfis</SelectItem>
-              <SelectItem value="super_admin">Super Admin</SelectItem>
-              <SelectItem value="admin">Administrador</SelectItem>
-              <SelectItem value="user">Usuário</SelectItem>
-              <SelectItem value="readonly">Somente Leitura</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleRestoreAllPermissions}
-            disabled={restoringPermissions}
-            className="whitespace-nowrap"
-          >
-            {restoringPermissions ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                Restaurando...
-              </>
-            ) : (
-              <>
-                <Shield className="h-4 w-4 mr-2" />
-                Restaurar Permissões
-              </>
-            )}
-          </Button>
-          <Button variant="outline" onClick={() => handleManagePermissions()} className="whitespace-nowrap">
-            <Shield className="h-4 w-4 mr-2" />
-            Gerenciar Permissões
-          </Button>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="whitespace-nowrap">
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Usuário
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingUsuario ? 'Editar Usuário' : 'Novo Usuário'}
-                </DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="nome"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="email" disabled={!!editingUsuario} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Perfil</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione o perfil" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {isSuperAdmin && (
-                              <SelectItem value="super_admin">Super Admin</SelectItem>
-                            )}
-                            <SelectItem value="admin">Administrador</SelectItem>
-                            <SelectItem value="user">Usuário</SelectItem>
-                            <SelectItem value="readonly">Somente Leitura</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {isSuperAdmin && (
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={handleRestoreAllPermissions}
+              disabled={restoringPermissions}
+            >
+              {restoringPermissions ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                  Restaurando...
+                </>
+              ) : (
+                <>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Restaurar Permissões
+                </>
+              )}
+            </Button>
+            
+            <Button variant="outline" onClick={() => handleManagePermissions()}>
+              <Shield className="h-4 w-4 mr-2" />
+              Gerenciar Permissões
+            </Button>
+            
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Usuário
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingUsuario ? 'Editar Usuário' : 'Novo Usuário'}
+                  </DialogTitle>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
                     <FormField
                       control={form.control}
-                      name="empresa_id"
+                      name="nome"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Empresa</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(value === 'none' ? '' : value)} value={field.value || 'none'}>
+                          <FormLabel>Nome</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="email" disabled={!!editingUsuario} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Perfil</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecione a empresa" />
+                                <SelectValue placeholder="Selecione o perfil" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="none">Nenhuma empresa</SelectItem>
-                              {empresas.map((empresa) => (
-                                <SelectItem key={empresa.id} value={empresa.id}>
-                                  {empresa.nome}
-                                </SelectItem>
-                              ))}
+                              {isSuperAdmin && (
+                                <SelectItem value="super_admin">Super Admin</SelectItem>
+                              )}
+                              <SelectItem value="admin">Administrador</SelectItem>
+                              <SelectItem value="user">Usuário</SelectItem>
+                              <SelectItem value="readonly">Somente Leitura</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  )}
-                  
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={creating}>
-                      {creating ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                          {editingUsuario ? 'Atualizando...' : 'Criando...'}
-                        </>
-                      ) : (
-                        editingUsuario ? 'Atualizar' : 'Criar'
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+                    
+                    {isSuperAdmin && (
+                      <FormField
+                        control={form.control}
+                        name="empresa_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Empresa</FormLabel>
+                            <Select onValueChange={(value) => field.onChange(value === 'none' ? '' : value)} value={field.value || 'none'}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione a empresa" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="none">Nenhuma empresa</SelectItem>
+                                {empresas.map((empresa) => (
+                                  <SelectItem key={empresa.id} value={empresa.id}>
+                                    {empresa.nome}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={creating}>
+                        {creating ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                            {editingUsuario ? 'Atualizando...' : 'Criando...'}
+                          </>
+                        ) : (
+                          editingUsuario ? 'Atualizar' : 'Criar'
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
 
