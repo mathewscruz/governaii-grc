@@ -68,13 +68,6 @@ export function DenunciasDashboard() {
   const [gravidadeFilter, setGravidadeFilter] = useState('all');
   const { toast } = useToast();
 
-  // Estados para métricas
-  const [metricas, setMetricas] = useState({
-    total: 0,
-    novas: 0,
-    em_andamento: 0,
-    resolvidas: 0
-  });
 
   useEffect(() => {
     carregarDenuncias();
@@ -97,7 +90,6 @@ export function DenunciasDashboard() {
       if (error) throw error;
 
       setDenuncias(data || []);
-      calcularMetricas(data || []);
     } catch (error) {
       console.error('Erro ao carregar denúncias:', error);
       toast({
@@ -110,14 +102,6 @@ export function DenunciasDashboard() {
     }
   };
 
-  const calcularMetricas = (data: Denuncia[]) => {
-    const total = data.length;
-    const novas = data.filter(d => d.status === 'nova').length;
-    const em_andamento = data.filter(d => ['em_analise', 'em_investigacao'].includes(d.status)).length;
-    const resolvidas = data.filter(d => ['resolvida', 'arquivada'].includes(d.status)).length;
-
-    setMetricas({ total, novas, em_andamento, resolvidas });
-  };
 
   const aplicarFiltros = () => {
     let filtered = denuncias;
@@ -164,61 +148,6 @@ export function DenunciasDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metricas.total}</div>
-            <p className="text-xs text-muted-foreground">
-              Denúncias registradas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Novas</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{metricas.novas}</div>
-            <p className="text-xs text-muted-foreground">
-              Aguardando análise
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
-            <Clock className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{metricas.em_andamento}</div>
-            <p className="text-xs text-muted-foreground">
-              Sendo investigadas
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolvidas</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{metricas.resolvidas}</div>
-            <p className="text-xs text-muted-foreground">
-              Concluídas
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Filtros */}
       <Card>
         <CardHeader>
