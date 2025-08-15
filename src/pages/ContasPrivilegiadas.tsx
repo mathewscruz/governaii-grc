@@ -303,6 +303,40 @@ export default function ContasPrivilegiadas() {
         }
       />
 
+      {/* StatCards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total de Contas"
+          value={contas.length}
+          description="Contas privilegiadas registradas"
+          icon={<Users className="h-4 w-4" />}
+        />
+
+        <StatCard
+          title="Contas Ativas"
+          value={contasAtivas}
+          description="Com acesso vigente"
+          icon={<CheckCircle className="h-4 w-4" />}
+          variant="success"
+        />
+
+        <StatCard
+          title="Vencendo em 30 dias"
+          value={contasVencendo}
+          description="Requerem atenção"
+          icon={<AlertTriangle className="h-4 w-4" />}
+          variant={contasVencendo > 0 ? "warning" : "default"}
+        />
+
+        <StatCard
+          title="Pendentes"
+          value={contasPendentes}
+          description="Aguardando aprovação"
+          icon={<Clock className="h-4 w-4" />}
+          variant="info"
+        />
+      </div>
+
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="contas" className="flex items-center gap-2">
@@ -316,40 +350,6 @@ export default function ContasPrivilegiadas() {
         </TabsList>
 
         <TabsContent value="contas" className="space-y-6">
-          {/* StatCards do dashboard */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Total de Contas"
-              value={contas.length}
-              description="Contas privilegiadas registradas"
-              icon={<Users className="h-4 w-4" />}
-            />
-
-            <StatCard
-              title="Contas Ativas"
-              value={contasAtivas}
-              description="Com acesso vigente"
-              icon={<CheckCircle className="h-4 w-4" />}
-              variant="success"
-            />
-
-            <StatCard
-              title="Vencendo em 30 dias"
-              value={contasVencendo}
-              description="Requerem atenção"
-              icon={<AlertTriangle className="h-4 w-4" />}
-              variant={contasVencendo > 0 ? "warning" : "default"}
-            />
-
-            <StatCard
-              title="Pendentes"
-              value={contasPendentes}
-              description="Aguardando aprovação"
-              icon={<Clock className="h-4 w-4" />}
-              variant="info"
-            />
-          </div>
-
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
