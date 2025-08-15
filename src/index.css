@@ -61,8 +61,18 @@
     --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.3);
 
     /* Animations */
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Sidebar - Light theme */
+    --sidebar-background: 215 35% 12%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 215 30% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 215 30% 18%;
+    --sidebar-ring: 217 91% 60%;
+  }
 
 /* Toast animations */
 @keyframes slideInFromRight {
@@ -110,16 +120,6 @@
   }
 }
 
-    /* Sidebar - Darker corporate theme */
-    --sidebar-background: 215 35% 12%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 215 30% 18%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 215 30% 18%;
-    --sidebar-ring: 217 91% 60%;
-  }
 
   .dark {
     --background: 222.2 84% 4.9%;
