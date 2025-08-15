@@ -16,6 +16,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface Controle {
   id: string;
@@ -51,6 +52,10 @@ export default function Controles() {
   const [vinculacaoDialogOpen, setVinculacaoDialogOpen] = useState(false);
   const [selectedControleForVinculacao, setSelectedControleForVinculacao] = useState<Controle | null>(null);
   const [relatoriosDialogOpen, setRelatoriosDialogOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; controleId: string }>({
+    open: false,
+    controleId: ''
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -118,10 +123,13 @@ export default function Controles() {
     setControleDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Tem certeza que deseja excluir este controle?")) {
-      deleteControleMutation.mutate(id);
-    }
+  const handleDelete = (id: string) => {
+    setDeleteConfirm({ open: true, controleId: id });
+  };
+
+  const confirmDelete = () => {
+    deleteControleMutation.mutate(deleteConfirm.controleId);
+    setDeleteConfirm({ open: false, controleId: '' });
   };
 
   const getStatusBadge = (status: string) => {
@@ -443,6 +451,16 @@ export default function Controles() {
       <RelatoriosDialog
         open={relatoriosDialogOpen}
         onOpenChange={setRelatoriosDialogOpen}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+        title="Excluir Controle"
+        description="Tem certeza que deseja excluir este controle? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        variant="destructive"
+        onConfirm={confirmDelete}
       />
     </div>
   );

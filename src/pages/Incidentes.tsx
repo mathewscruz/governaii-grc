@@ -40,6 +40,7 @@ import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { IncidenteDialog } from '@/components/incidentes/IncidenteDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { TratamentoDialog } from '@/components/incidentes/TratamentoDialog';
 import { ComunicacaoDialog } from '@/components/incidentes/ComunicacaoDialog';
 import { EvidenciaDialog } from '@/components/incidentes/EvidenciaDialog';
@@ -75,6 +76,10 @@ export default function Incidentes() {
     investigacao: 0,
     resolvidos: 0,
     criticos: 0,
+  });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; incidenteId: string }>({
+    open: false,
+    incidenteId: ''
   });
   const { toast } = useToast();
   
@@ -129,6 +134,36 @@ export default function Incidentes() {
     );
     setFilteredIncidentes(filtered);
   }, [searchTerm, incidentes]);
+
+  const handleDelete = (id: string) => {
+    setDeleteConfirm({ open: true, incidenteId: id });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from('incidentes')
+        .delete()
+        .eq('id', deleteConfirm.incidenteId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Incidente excluído com sucesso!",
+      });
+
+      loadIncidentes();
+      setDeleteConfirm({ open: false, incidenteId: '' });
+    } catch (error: any) {
+      console.error('Erro ao excluir incidente:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao excluir incidente",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -291,7 +326,7 @@ export default function Incidentes() {
               <FileText className="mr-2 h-4 w-4" />
               Evidências
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {}}>
+            <DropdownMenuItem onClick={() => handleDelete(item.id)}>
               <Trash2 className="mr-2 h-4 w-4" />
               Excluir
             </DropdownMenuItem>
@@ -378,6 +413,16 @@ export default function Incidentes() {
           />
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+        title="Excluir Incidente"
+        description="Tem certeza que deseja excluir este incidente? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        variant="destructive"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

@@ -22,6 +22,7 @@ import TemplatesContratos from '@/components/contratos/TemplatesContratos';
 import { useContratosStats } from '@/hooks/useContratosStats';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface Contrato {
   id: string;
@@ -97,6 +98,11 @@ export default function Contratos() {
   const [documentosDialogOpen, setDocumentosDialogOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState('contratos');
   const [aditivosDialogOpen, setAditivosDialogOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; type: 'contrato' | 'fornecedor' }>({
+    open: false,
+    id: '',
+    type: 'contrato'
+  });
   const { toast } = useToast();
   
   // Buscar estatísticas dos contratos
@@ -206,26 +212,31 @@ export default function Contratos() {
     }
   };
 
-  const handleDelete = async (id: string, type: 'contrato' | 'fornecedor') => {
+  const handleDelete = (id: string, type: 'contrato' | 'fornecedor') => {
+    setDeleteConfirm({ open: true, id, type });
+  };
+
+  const confirmDelete = async () => {
     try {
       const { error } = await supabase
-        .from(type === 'contrato' ? 'contratos' : 'fornecedores')
+        .from(deleteConfirm.type === 'contrato' ? 'contratos' : 'fornecedores')
         .delete()
-        .eq('id', id);
+        .eq('id', deleteConfirm.id);
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: `${type === 'contrato' ? 'Contrato' : 'Fornecedor'} excluído com sucesso`,
+        description: `${deleteConfirm.type === 'contrato' ? 'Contrato' : 'Fornecedor'} excluído com sucesso`,
       });
 
       fetchData();
+      setDeleteConfirm({ open: false, id: '', type: 'contrato' });
     } catch (error) {
       console.error('Erro ao excluir:', error);
       toast({
         title: "Erro",
-        description: `Erro ao excluir ${type === 'contrato' ? 'contrato' : 'fornecedor'}`,
+        description: `Erro ao excluir ${deleteConfirm.type === 'contrato' ? 'contrato' : 'fornecedor'}`,
         variant: "destructive",
       });
     }
@@ -605,6 +616,16 @@ export default function Contratos() {
         contrato={selectedContrato}
         open={aditivosDialogOpen}
         onOpenChange={setAditivosDialogOpen}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+        title={`Excluir ${deleteConfirm.type === 'contrato' ? 'Contrato' : 'Fornecedor'}`}
+        description={`Tem certeza que deseja excluir este ${deleteConfirm.type === 'contrato' ? 'contrato' : 'fornecedor'}? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        variant="destructive"
+        onConfirm={confirmDelete}
       />
     </div>
   );

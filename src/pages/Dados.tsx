@@ -15,6 +15,7 @@ import { SolicitacaoTitularDialog } from "@/components/dados/SolicitacaoTitularD
 import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function Dados() {
   const [activeTab, setActiveTab] = useState("catalogo");
@@ -36,6 +37,11 @@ export default function Dados() {
   const [showRopaDialog, setShowRopaDialog] = useState(false);
   const [showFluxoDialog, setShowFluxoDialog] = useState(false);
   const [showSolicitacaoDialog, setShowSolicitacaoDialog] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; type: string }>({
+    open: false,
+    id: '',
+    type: ''
+  });
   
   const { toast } = useToast();
 
@@ -95,6 +101,54 @@ export default function Dados() {
       rejeitada: "destructive"
     };
     return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
+  };
+
+  const handleDelete = (id: string, type: string) => {
+    setDeleteConfirm({ open: true, id, type });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      let error;
+
+      // Use type-safe table operations
+      switch (deleteConfirm.type) {
+        case 'dados':
+          ({ error } = await supabase.from('dados_pessoais').delete().eq('id', deleteConfirm.id));
+          break;
+        case 'mapeamento':
+          ({ error } = await supabase.from('dados_mapeamento').delete().eq('id', deleteConfirm.id));
+          break;
+        case 'ropa':
+          ({ error } = await supabase.from('ropa_registros').delete().eq('id', deleteConfirm.id));
+          break;
+        case 'fluxo':
+          ({ error } = await supabase.from('dados_fluxos').delete().eq('id', deleteConfirm.id));
+          break;
+        case 'solicitacao':
+          ({ error } = await supabase.from('dados_solicitacoes_titular').delete().eq('id', deleteConfirm.id));
+          break;
+        default:
+          throw new Error('Tipo inválido');
+      }
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Item excluído com sucesso!",
+      });
+
+      loadData();
+      setDeleteConfirm({ open: false, id: '', type: '' });
+    } catch (error: any) {
+      console.error('Erro ao excluir:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao excluir item",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -424,6 +478,16 @@ export default function Dados() {
         isOpen={showSolicitacaoDialog}
         onClose={() => setShowSolicitacaoDialog(false)}
         onSave={loadData}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+        title="Excluir Item"
+        description="Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        variant="destructive"
+        onConfirm={confirmDelete}
       />
     </div>
   );

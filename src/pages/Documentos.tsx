@@ -26,6 +26,7 @@ import { DocGenDialog } from '@/components/documentos/DocGenDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -80,6 +81,10 @@ export function Documentos() {
   const [filtrosAvancados, setFiltrosAvancados] = useState<any>(null);
   const [showDocGenDialog, setShowDocGenDialog] = useState(false);
   const [relatoriosDialog, setRelatoriosDialog] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; documentoId: string }>({
+    open: false,
+    documentoId: ''
+  });
   const { toast } = useToast();
   
   // Buscar estatísticas dos documentos
@@ -221,12 +226,16 @@ export function Documentos() {
     setDocumentosFiltrados(filtered);
   };
 
-  const handleDeleteDocumento = async (id: string) => {
+  const handleDeleteDocumento = (id: string) => {
+    setDeleteConfirm({ open: true, documentoId: id });
+  };
+
+  const confirmDeleteDocumento = async () => {
     try {
       const { error } = await supabase
         .from('documentos')
         .delete()
-        .eq('id', id);
+        .eq('id', deleteConfirm.documentoId);
 
       if (error) throw error;
 
@@ -236,6 +245,7 @@ export function Documentos() {
       });
 
       fetchDocumentos();
+      setDeleteConfirm({ open: false, documentoId: '' });
     } catch (error) {
       console.error('Erro ao excluir documento:', error);
       toast({
@@ -811,6 +821,16 @@ export function Documentos() {
         onOpenChange={setRelatoriosDialog}
         documentos={documentos}
         categorias={categorias}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+        title="Excluir Documento"
+        description="Tem certeza que deseja excluir este documento? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        variant="destructive"
+        onConfirm={confirmDeleteDocumento}
       />
     </div>
   );
