@@ -12,6 +12,9 @@ import { MapeamentoDialog } from "@/components/dados/MapeamentoDialog";
 import { RopaDialog } from "@/components/dados/RopaDialog";
 import { FluxoDadosDialog } from "@/components/dados/FluxoDadosDialog";
 import { SolicitacaoTitularDialog } from "@/components/dados/SolicitacaoTitularDialog";
+import { StatCard } from "@/components/ui/stat-card";
+import { PageHeader } from "@/components/ui/page-header";
+import { DataTable } from "@/components/ui/data-table";
 
 export default function Dados() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -96,68 +99,39 @@ export default function Dados() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Proteção de Dados</h1>
-          <p className="text-muted-foreground">
-            Mapeamento de dados e ROPA (LGPD)
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Proteção de Dados"
+        description="Mapeamento de dados e ROPA (LGPD)"
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Dados</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalDados}</div>
-            <p className="text-xs text-muted-foreground">
-              Tipos catalogados
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Dados Sensíveis</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.dadosSensiveis}</div>
-            <p className="text-xs text-muted-foreground">
-              Requerem proteção especial
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">ROPA Ativos</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.ropaAtivos}</div>
-            <p className="text-xs text-muted-foreground">
-              Registros de processamento
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Solicitações Pendentes</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{stats.solicitacoesPendentes}</div>
-            <p className="text-xs text-muted-foreground">
-              De titulares
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total de Dados"
+          value={stats.totalDados}
+          description="Tipos catalogados"
+          icon={<Database className="h-4 w-4" />}
+        />
+        <StatCard
+          title="Dados Sensíveis"
+          value={stats.dadosSensiveis}
+          description="Requerem proteção especial"
+          icon={<AlertTriangle className="h-4 w-4" />}
+          variant="warning"
+        />
+        <StatCard
+          title="ROPA Ativos"
+          value={stats.ropaAtivos}
+          description="Registros de processamento"
+          icon={<FileText className="h-4 w-4" />}
+          variant="success"
+        />
+        <StatCard
+          title="Solicitações Pendentes"
+          value={stats.solicitacoesPendentes}
+          description="De titulares"
+          icon={<Users className="h-4 w-4" />}
+        />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp } from "lucide-react";
+import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +12,10 @@ import TestesList from "@/components/controles/TestesList";
 import ControlesVinculacaoDialog from "@/components/controles/ControlesVinculacaoDialog";
 import { RelatoriosDialog } from "@/components/controles/RelatoriosDialog";
 import { useControlesStats } from "@/hooks/useControlesStats";
+import { DataTable } from "@/components/ui/data-table";
+import { StatCard } from "@/components/ui/stat-card";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface Controle {
   id: string;
@@ -167,91 +170,168 @@ export default function Controles() {
     );
   }
 
+  const controlesColumns = [
+    {
+      key: 'nome' as keyof Controle,
+      label: 'Nome',
+      sortable: true,
+      render: (controle: Controle) => (
+        <div className="flex items-center gap-2">
+          {getTipoIcon(controle.tipo)}
+          <div>
+            <div className="font-medium">{controle.nome}</div>
+            <div className="text-sm text-muted-foreground">{controle.descricao || "Sem descrição"}</div>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'categoria' as keyof Controle,
+      label: 'Categoria',
+      render: (controle: Controle) => controle.categoria ? (
+        <Badge 
+          variant="outline" 
+          style={{ borderColor: controle.categoria.cor, color: controle.categoria.cor }}
+        >
+          {controle.categoria.nome}
+        </Badge>
+      ) : <span className="text-muted-foreground">-</span>
+    },
+    {
+      key: 'tipo' as keyof Controle,
+      label: 'Tipo',
+      render: (controle: Controle) => (
+        <Badge variant="secondary">{controle.tipo}</Badge>
+      )
+    },
+    {
+      key: 'status' as keyof Controle,
+      label: 'Status',
+      render: (controle: Controle) => getStatusBadge(controle.status)
+    },
+    {
+      key: 'criticidade' as keyof Controle,
+      label: 'Criticidade',
+      render: (controle: Controle) => getCriticidadeBadge(controle.criticidade)
+    },
+    {
+      key: 'responsavel' as keyof Controle,
+      label: 'Responsável',
+      render: (controle: Controle) => controle.responsavel || <span className="text-muted-foreground">-</span>
+    },
+    {
+      key: 'proxima_avaliacao' as keyof Controle,
+      label: 'Próxima Avaliação',
+      render: (controle: Controle) => controle.proxima_avaliacao ? 
+        new Date(controle.proxima_avaliacao).toLocaleDateString() : 
+        <span className="text-muted-foreground">-</span>
+    },
+    {
+      key: 'actions' as keyof Controle,
+      label: 'Ações',
+      render: (controle: Controle) => (
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEdit(controle)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedControleForTests(controle);
+              const tabsTrigger = document.querySelector('[value="testes"]') as HTMLElement;
+              if (tabsTrigger) tabsTrigger.click();
+            }}
+          >
+            Testes
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedControleForVinculacao(controle);
+              setVinculacaoDialogOpen(true);
+            }}
+          >
+            <Link className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete(controle.id)}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Controles</h1>
-          <p className="text-muted-foreground">
-            Gerencie e monitore seus controles de segurança
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setCategoriasDialogOpen(true)}
-          >
-            Categorias
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setRelatoriosDialogOpen(true)}
-          >
-            <BarChart3 className="mr-2 h-4 w-4" />
-            Relatórios
-          </Button>
-          <Button onClick={() => setControleDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Controle
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Controles"
+        description="Gerencie e monitore seus controles de segurança"
+        actions={
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setCategoriasDialogOpen(true)}
+            >
+              Categorias
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setRelatoriosDialogOpen(true)}
+            >
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Relatórios
+            </Button>
+            <Button onClick={() => setControleDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Controle
+            </Button>
+          </div>
+        }
+      />
 
       {/* Cards de KPI */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Controles</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats?.ativos || 0} ativos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Críticos & Altos</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{(stats?.criticos || 0) + (stats?.altos || 0)}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats?.criticos || 0} críticos, {stats?.altos || 0} altos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avaliações Pendentes</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.vencendoAvaliacao || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Próximos 30 dias
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Efetividade</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.total ? Math.round((stats?.preventivos / stats?.total) * 100) : 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Controles preventivos
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total de Controles"
+          value={stats?.total || 0}
+          description={`${stats?.ativos || 0} ativos`}
+          icon={<Shield className="h-4 w-4" />}
+          loading={isLoading}
+        />
+        <StatCard
+          title="Críticos & Altos"
+          value={(stats?.criticos || 0) + (stats?.altos || 0)}
+          description={`${stats?.criticos || 0} críticos, ${stats?.altos || 0} altos`}
+          icon={<AlertTriangle className="h-4 w-4" />}
+          variant="warning"
+          loading={isLoading}
+        />
+        <StatCard
+          title="Avaliações Pendentes"
+          value={stats?.vencendoAvaliacao || 0}
+          description="Próximos 30 dias"
+          icon={<Clock className="h-4 w-4" />}
+          loading={isLoading}
+        />
+        <StatCard
+          title="Efetividade"
+          value={`${stats?.total ? Math.round((stats?.preventivos / stats?.total) * 100) : 0}%`}
+          description="Controles preventivos"
+          icon={<TrendingUp className="h-4 w-4" />}
+          variant="success"
+          loading={isLoading}
+        />
       </div>
 
       <Tabs defaultValue="controles" className="w-full">
@@ -266,112 +346,20 @@ export default function Controles() {
         </TabsList>
 
         <TabsContent value="controles" className="space-y-6">
-          {/* Lista de Controles */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {controles.map((controle) => (
-              <Card key={controle.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      {getTipoIcon(controle.tipo)}
-                      <CardTitle className="text-lg">{controle.nome}</CardTitle>
-                    </div>
-                    <div className="flex gap-1">
-                      {getStatusBadge(controle.status)}
-                      {getCriticidadeBadge(controle.criticidade)}
-                    </div>
-                  </div>
-                  {controle.categoria && (
-                    <Badge 
-                      variant="outline" 
-                      style={{ borderColor: controle.categoria.cor, color: controle.categoria.cor }}
-                    >
-                      {controle.categoria.nome}
-                    </Badge>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="mb-4">
-                    {controle.descricao || "Sem descrição"}
-                  </CardDescription>
-                  
-                  <div className="space-y-2 text-sm">
-                    {controle.processo && (
-                      <div><strong>Processo:</strong> {controle.processo}</div>
-                    )}
-                    {controle.area && (
-                      <div><strong>Área:</strong> {controle.area}</div>
-                    )}
-                    {controle.responsavel && (
-                      <div><strong>Responsável:</strong> {controle.responsavel}</div>
-                    )}
-                    {controle.frequencia && (
-                      <div><strong>Frequência:</strong> {controle.frequencia}</div>
-                    )}
-                    {controle.proxima_avaliacao && (
-                      <div><strong>Próxima Avaliação:</strong> {new Date(controle.proxima_avaliacao).toLocaleDateString()}</div>
-                    )}
-                  </div>
-                  
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(controle)}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedControleForTests(controle);
-                        // Mudar para a aba de testes
-                        const tabsTrigger = document.querySelector('[value="testes"]') as HTMLElement;
-                        if (tabsTrigger) tabsTrigger.click();
-                      }}
-                    >
-                      Testes
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedControleForVinculacao(controle);
-                        setVinculacaoDialogOpen(true);
-                      }}
-                    >
-                      <Link className="w-4 h-4 mr-1" />
-                      Vincular
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(controle.id)}
-                    >
-                      Excluir
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {controles.length === 0 && (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Shield className="w-12 h-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Nenhum controle cadastrado</h3>
-                <p className="text-muted-foreground mb-4">
-                  Comece criando seu primeiro controle interno
-                </p>
-                <Button onClick={() => setControleDialogOpen(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Criar Primeiro Controle
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <DataTable
+            data={controles}
+            columns={controlesColumns}
+            loading={isLoading}
+            emptyState={{
+              icon: <Shield className="h-12 w-12" />,
+              title: "Nenhum controle cadastrado",
+              description: "Comece criando seu primeiro controle interno",
+              action: {
+                label: "Criar Primeiro Controle",
+                onClick: () => setControleDialogOpen(true)
+              }
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="testes">
@@ -391,15 +379,11 @@ export default function Controles() {
               />
             </div>
           ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Shield className="w-12 h-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Selecione um controle</h3>
-                <p className="text-muted-foreground">
-                  Clique em "Testes" em um controle para visualizar seu histórico de testes
-                </p>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={<Shield className="h-12 w-12" />}
+              title="Selecione um controle"
+              description="Clique em 'Testes' em um controle para visualizar seu histórico de testes"
+            />
           )}
         </TabsContent>
 
@@ -414,29 +398,22 @@ export default function Controles() {
                   ← Voltar aos Controles
                 </Button>
               </div>
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Link className="w-12 h-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Gerencie as Vinculações</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Vincule este controle a riscos e ativos para mapear sua cobertura
-                  </p>
-                  <Button onClick={() => setVinculacaoDialogOpen(true)}>
-                    Abrir Editor de Vinculações
-                  </Button>
-                </CardContent>
-              </Card>
+              <EmptyState
+                icon={<Link className="h-12 w-12" />}
+                title="Gerencie as Vinculações"
+                description="Vincule este controle a riscos e ativos para mapear sua cobertura"
+                action={{
+                  label: "Abrir Editor de Vinculações",
+                  onClick: () => setVinculacaoDialogOpen(true)
+                }}
+              />
             </div>
           ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Link className="w-12 h-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Selecione um controle</h3>
-                <p className="text-muted-foreground">
-                  Clique em "Vincular" em um controle para gerenciar suas vinculações
-                </p>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={<Link className="h-12 w-12" />}
+              title="Selecione um controle"
+              description="Clique em 'Vincular' em um controle para gerenciar suas vinculações"
+            />
           )}
         </TabsContent>
       </Tabs>

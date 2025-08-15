@@ -6,18 +6,17 @@ import { ReportsView } from '@/components/due-diligence/ReportsView';
 import { ModuleIntegrations } from '@/components/due-diligence/ModuleIntegrations';
 import { FornecedoresManager } from '@/components/due-diligence/FornecedoresManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PageHeader } from '@/components/ui/page-header';
 
 export default function DueDiligence() {
   const [activeTab, setActiveTab] = useState('dashboard');
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Due Diligence</h1>
-        <p className="text-muted-foreground">
-          Gerencie avaliações digitais de fornecedores com questionários personalizados e scoring automático
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Due Diligence"
+        description="Gerencie avaliações digitais de fornecedores com questionários personalizados e scoring automático"
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-6">

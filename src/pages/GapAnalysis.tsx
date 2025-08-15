@@ -1,20 +1,16 @@
 import { useState } from 'react';
 import { Plus, BarChart3, FileText, Users, TrendingUp, ChevronLeft } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { useGapAnalysisStats } from '@/hooks/useGapAnalysisStats';
-import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
-import { supabase } from '@/integrations/supabase/client';
 import { FrameworkDialog } from '@/components/gap-analysis/FrameworkDialog';
 import { AssessmentDialog } from '@/components/gap-analysis/AssessmentDialog';
 import { RequirementsManager } from '@/components/gap-analysis/RequirementsManager';
 import { AssessmentEvaluationView } from '@/components/gap-analysis/AssessmentEvaluationView';
 import { AssessmentsList } from '@/components/gap-analysis/AssessmentsList';
-import { ActiveGapsTabsView } from '@/components/gap-analysis/ActiveGapsTabsView';
 import { FrameworkTabsView } from '@/components/gap-analysis/FrameworkTabsView';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { StatCard } from '@/components/ui/stat-card';
+import { PageHeader } from '@/components/ui/page-header';
 
 interface Framework {
   id: string;
@@ -175,39 +171,51 @@ export default function GapAnalysis() {
 
   return (
     <ErrorBoundary>
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Gap Analysis</h1>
-            <p className="text-muted-foreground">
-              Gerencie frameworks de conformidade e avalie maturidade organizacional
-            </p>
-          </div>
-          <Button onClick={() => setIsFrameworkDialogOpen(true)} size="lg">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Framework
-          </Button>
-        </div>
+      <div className="space-y-6">
+        <PageHeader
+          title="Gap Analysis"
+          description="Gerencie frameworks de conformidade e avalie maturidade organizacional"
+          actions={
+            <Button onClick={() => setIsFrameworkDialogOpen(true)} size="lg">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Framework
+            </Button>
+          }
+        />
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsCards.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
-            </CardHeader>
-            <CardContent>
-              {statsLoading ? (
-                <Skeleton className="h-8 w-20" />
-              ) : (
-                <div className="text-2xl font-bold">{stat.value}</div>
-              )}
-              <p className="text-xs text-muted-foreground">{stat.description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Total de Frameworks"
+            value={stats?.totalFrameworks || 0}
+            description="Frameworks cadastrados"
+            icon={<FileText className="h-4 w-4" />}
+            loading={statsLoading}
+          />
+          <StatCard
+            title="Avaliações em Andamento"
+            value={stats?.assessmentsInProgress || 0}
+            description="Avaliações ativas"
+            icon={<BarChart3 className="h-4 w-4" />}
+            variant="warning"
+            loading={statsLoading}
+          />
+          <StatCard
+            title="Conformidade Média"
+            value={`${stats?.averageCompliance || 0}%`}
+            description="Índice de conformidade"
+            icon={<TrendingUp className="h-4 w-4" />}
+            variant="success"
+            loading={statsLoading}
+          />
+          <StatCard
+            title="Itens Pendentes"
+            value={stats?.pendingItems || 0}
+            description="Atribuições pendentes"
+            icon={<Users className="h-4 w-4" />}
+            loading={statsLoading}
+          />
+        </div>
 
       {/* Framework Tabs View */}
       <FrameworkTabsView onCreateFramework={() => setIsFrameworkDialogOpen(true)} />
