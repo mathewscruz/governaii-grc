@@ -16,7 +16,7 @@ interface NotificacaoDocumento {
   data_vencimento: string;
   status: string;
   tipo: string;
-  categoria?: string;
+  classificacao?: string;
   diasParaVencimento: number;
 }
 
@@ -28,7 +28,7 @@ export function NotificacoesDocumentos() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('documentos')
-        .select('id, nome, data_vencimento, status, tipo, categoria')
+        .select('id, nome, data_vencimento, status, tipo, classificacao')
         .not('data_vencimento', 'is', null)
         .eq('status', 'ativo')
         .order('data_vencimento', { ascending: true });

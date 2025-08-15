@@ -18,6 +18,7 @@ interface Documento {
   nome: string;
   data_aprovacao?: string;
   aprovado_por?: string;
+  created_by?: string;
 }
 
 interface Aprovacao {
@@ -132,6 +133,17 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
       toast({
         title: "Aprovador obrigatório",
         description: "Por favor, selecione um aprovador.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Verificar se o usuário atual é o criador do documento
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData.user && documento.created_by === userData.user.id) {
+      toast({
+        title: "Ação não permitida",
+        description: "Você não pode aprovar um documento que você mesmo criou.",
         variant: "destructive",
       });
       return;

@@ -4,12 +4,11 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Notification {
   id: string;
-  titulo: string;
-  mensagem: string;
-  tipo: string;
-  lida: boolean;
-  data_leitura?: string;
-  metadata: any;
+  title: string;
+  message: string;
+  type: string;
+  read: boolean;
+  link_to?: string;
   created_at: string;
   updated_at: string;
 }
@@ -21,17 +20,15 @@ export const useNotifications = () => {
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: async (): Promise<Notification[]> => {
-      // Por enquanto retornamos array vazio até que a tabela seja criada
-      // Isso evita erros de build enquanto não temos a estrutura completa
       try {
         const { data, error } = await supabase
           .from('notifications')
-          .select('id, titulo, mensagem, tipo, lida, data_leitura, metadata, created_at, updated_at')
+          .select('id, title, message, type, read, link_to, created_at, updated_at')
           .order('created_at', { ascending: false })
           .limit(50);
 
         if (error) {
-          console.warn('Notifications table not ready yet:', error.message);
+          console.warn('Notifications table query failed:', error.message);
           return [];
         }
         return data || [];
@@ -47,8 +44,8 @@ export const useNotifications = () => {
       const { error } = await supabase
         .from('notifications')
         .update({ 
-          lida: true, 
-          data_leitura: new Date().toISOString() 
+          read: true,
+          updated_at: new Date().toISOString() 
         })
         .eq('id', notificationId);
 
@@ -71,10 +68,10 @@ export const useNotifications = () => {
       const { error } = await supabase
         .from('notifications')
         .update({ 
-          lida: true, 
-          data_leitura: new Date().toISOString() 
+          read: true,
+          updated_at: new Date().toISOString() 
         })
-        .eq('lida', false);
+        .eq('read', false);
 
       if (error) throw error;
     },
@@ -94,7 +91,7 @@ export const useNotifications = () => {
     },
   });
 
-  const unreadCount = notifications.filter(n => !n.lida).length;
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return {
     notifications,
