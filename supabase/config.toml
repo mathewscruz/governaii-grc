@@ -78,6 +78,9 @@ verify_jwt = false
 [functions.send-denuncia-notification]
 verify_jwt = false
 
+[functions.send-contact-email]
+verify_jwt = false
+
 [functions.calculate-assessment-score]
 verify_jwt = false
 
