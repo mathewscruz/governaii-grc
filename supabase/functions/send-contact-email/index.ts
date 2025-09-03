@@ -57,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email
     const emailResponse = await resend.emails.send({
-      from: "GovernAII <noreply@governaii.com>",
+      from: "GovernAII <noreply@governaii.com.br>",
       to: ["henrique.mathews@gmail.com"],
       subject: `Novo contato pelo site - ${contactData.name}`,
       html: `
