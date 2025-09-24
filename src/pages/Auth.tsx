@@ -24,7 +24,7 @@ const Auth = () => {
 
   // Redirect if already authenticated - using Navigate instead of window.location
   if (!loading && user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
 
