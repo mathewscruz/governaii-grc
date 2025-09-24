@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   Shield,
   FileText,
@@ -27,7 +27,6 @@ import {
 } from "lucide-react";
 
 export default function LandingPage() {
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -53,10 +52,7 @@ export default function LandingPage() {
 
       if (error) throw error;
 
-      toast({
-        title: "Mensagem enviada!",
-        description: "Entraremos em contato em breve.",
-      });
+      toast.success("Mensagem enviada! Entraremos em contato em breve.");
 
       setFormData({
         name: "",
@@ -66,11 +62,7 @@ export default function LandingPage() {
         message: "",
       });
     } catch (error) {
-      toast({
-        title: "Erro ao enviar",
-        description: "Tente novamente em alguns instantes.",
-        variant: "destructive",
-      });
+      toast.error("Erro ao enviar. Tente novamente em alguns instantes.");
     } finally {
       setIsSubmitting(false);
     }
