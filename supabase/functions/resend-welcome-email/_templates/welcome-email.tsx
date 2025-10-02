@@ -176,7 +176,7 @@ const buttonContainer = {
 }
 
 const button = {
-  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', // Azul corporativo GovernAII
+  backgroundColor: '#2563eb',
   border: 'none',
   borderRadius: '12px',
   color: '#ffffff',
@@ -186,7 +186,6 @@ const button = {
   padding: '16px 32px',
   textAlign: 'center' as const,
   textDecoration: 'none',
-  transition: 'all 0.3s ease',
   boxShadow: '0 4px 14px 0 rgba(37, 99, 235, 0.35)',
   letterSpacing: '0.025em',
   fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',

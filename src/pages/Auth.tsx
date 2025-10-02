@@ -56,10 +56,10 @@ const Auth = () => {
 
       if (error) throw error;
       toast.success('Login realizado com sucesso!');
+      // AuthProvider will handle the redirect via Navigate component
     } catch (error: any) {
       console.error('Error signing in:', error);
       toast.error(error.message || 'Erro ao fazer login');
-    } finally {
       setIsLoading(false);
     }
   };
