@@ -29,20 +29,33 @@ export const useReportsData = () => {
   return useQuery({
     queryKey: ['due-diligence-reports'],
     queryFn: async (): Promise<ReportsData> => {
+      // Buscar empresa do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.empresa_id) throw new Error('Empresa não encontrada');
+
       const { data: assessments, error } = await supabase
         .from('due_diligence_assessments')
         .select(`
           *,
           templates:template_id(nome, categoria)
         `)
+        .eq('empresa_id', profile.empresa_id)
         .eq('status', 'concluido');
 
       if (error) throw error;
 
-      // Métricas gerais
+      // Métricas gerais - converter score para escala 0-100%
       const totalAssessments = assessments?.length || 0;
       const averageScore = totalAssessments > 0 
-        ? assessments.reduce((sum, a) => sum + (a.score_final || 0), 0) / totalAssessments
+        ? (assessments.reduce((sum, a) => sum + (a.score_final || 0), 0) / totalAssessments) * 10
         : 0;
 
       // Fornecedores únicos
@@ -50,10 +63,11 @@ export const useReportsData = () => {
         assessments?.map(a => a.fornecedor_nome) || []
       ).size;
 
-      // Taxa de resposta (assessments concluídos vs total enviados)
+      // Taxa de resposta (assessments concluídos vs total enviados) da empresa
       const { data: allAssessments } = await supabase
         .from('due_diligence_assessments')
-        .select('status');
+        .select('status')
+        .eq('empresa_id', profile.empresa_id);
       
       const totalSent = allAssessments?.length || 1;
       const responseRate = (totalAssessments / totalSent) * 100;
@@ -84,16 +98,16 @@ export const useReportsData = () => {
 
       const categoryPerformance = Object.entries(categoryGroups).map(([category, scores]) => ({
         category,
-        score: scores.reduce((sum, s) => sum + s, 0) / scores.length
+        score: (scores.reduce((sum, s) => sum + s, 0) / scores.length) * 10
       }));
 
-      // Top fornecedores
+      // Top fornecedores - converter score para 0-100%
       const supplierScores = assessments?.reduce((acc, a) => {
         const name = a.fornecedor_nome;
         if (!acc[name] || (a.score_final || 0) > acc[name].score) {
           acc[name] = {
             nome: name,
-            score: a.score_final || 0,
+            score: (a.score_final || 0) * 10,
             categoria: a.templates?.categoria || 'N/A'
           };
         }
@@ -104,7 +118,7 @@ export const useReportsData = () => {
         .sort((a: any, b: any) => b.score - a.score)
         .slice(0, 5);
 
-      // Fornecedores com baixo desempenho
+      // Fornecedores com baixo desempenho - thresholds já em escala 0-100%
       const lowPerformingSuppliers = Object.values(supplierScores)
         .filter((s: any) => s.score < 70)
         .map((s: any) => ({

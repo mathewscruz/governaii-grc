@@ -28,10 +28,22 @@ export const useDueDiligenceStats = () => {
           throw templatesError;
         }
 
-        // Buscar assessments com todos os dados necessários
+        // Buscar assessments da empresa do usuário
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('empresa_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!profile?.empresa_id) throw new Error('Empresa não encontrada');
+
         const { data: assessments, error } = await supabase
           .from('due_diligence_assessments')
-          .select('status, created_at, data_expiracao, fornecedor_email, score_final');
+          .select('status, created_at, data_expiracao, fornecedor_email, score_final')
+          .eq('empresa_id', profile.empresa_id);
 
         if (error) {
           console.error('Erro ao buscar assessments:', error);
@@ -82,7 +94,7 @@ export const useDueDiligenceStats = () => {
           return new Date(a.created_at) >= inicioMes;
         }).length || 0;
 
-        // Calcular score médio - ser mais flexível com os scores
+        // Calcular score médio - converter para escala 0-100%
         const completedWithScores = assessments?.filter(a => 
           ['concluido', 'finalizado'].includes(a.status) && 
           a.score_final != null && 
@@ -92,7 +104,7 @@ export const useDueDiligenceStats = () => {
         console.log('Assessments concluídos com score:', completedWithScores);
         
         const averageScore = completedWithScores.length > 0 
-          ? completedWithScores.reduce((sum, a) => sum + (a.score_final || 0), 0) / completedWithScores.length
+          ? (completedWithScores.reduce((sum, a) => sum + (a.score_final || 0), 0) / completedWithScores.length) * 10
           : 0;
 
         const result = {
