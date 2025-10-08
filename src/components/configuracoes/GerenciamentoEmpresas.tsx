@@ -123,6 +123,30 @@ const GerenciamentoEmpresas = () => {
     if (!empresaToDelete) return;
     
     try {
+      // Se a empresa tem logo, deletar do storage primeiro
+      if (empresaToDelete.logo_url) {
+        try {
+          // Extrair o nome do arquivo da URL do logo
+          const urlParts = empresaToDelete.logo_url.split('/');
+          const fileName = urlParts[urlParts.length - 1];
+          
+          if (fileName) {
+            const { error: storageError } = await supabase.storage
+              .from('empresa-logos')
+              .remove([fileName]);
+
+            if (storageError) {
+              console.warn('Erro ao deletar logo do storage:', storageError);
+              // Continuar com a exclusão da empresa mesmo se falhar ao deletar o logo
+            }
+          }
+        } catch (storageError) {
+          console.warn('Erro ao processar exclusão do logo:', storageError);
+          // Continuar com a exclusão da empresa
+        }
+      }
+
+      // Deletar a empresa do banco de dados
       const { error } = await supabase
         .from('empresas')
         .delete()
