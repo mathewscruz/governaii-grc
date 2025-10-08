@@ -21,7 +21,6 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [forgotPasswordDialogOpen, setForgotPasswordDialogOpen] = useState(false);
-  const [emailError, setEmailError] = useState('');
 
   // Redirect if already authenticated - using Navigate instead of window.location
   if (!loading && user) {
@@ -41,56 +40,17 @@ const Auth = () => {
     );
   }
 
-  const validateEmail = (emailValue: string) => {
-    const trimmedEmail = emailValue.trim().toLowerCase();
-    
-    if (!trimmedEmail) {
-      setEmailError('');
-      return false;
-    }
-    
-    if (!trimmedEmail.includes('@')) {
-      setEmailError('E-mail inválido');
-      return false;
-    }
-    
-    if (!trimmedEmail.endsWith('@empresa.com.br')) {
-      setEmailError('Apenas e-mails @empresa.com.br são permitidos');
-      return false;
-    }
-    
-    setEmailError('');
-    return true;
-  };
-
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newEmail = e.target.value;
-    setEmail(newEmail);
-    
-    if (newEmail) {
-      validateEmail(newEmail);
-    } else {
-      setEmailError('');
-    }
-  };
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!email || !password) {
       toast.error('Por favor, preencha todos os campos');
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      toast.error('Por favor, insira um e-mail @empresa.com.br válido');
       return;
     }
 
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
+        email,
         password,
       });
 
@@ -142,19 +102,12 @@ const Auth = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="seu.email@empresa.com.br"
+                  placeholder="email@empresa.com.br"
                   value={email}
-                  onChange={handleEmailChange}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
-                  className={`h-12 px-4 ${
-                    emailError 
-                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
-                      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                  }`}
+                  className="h-12 px-4 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 />
-                {emailError && (
-                  <p className="text-sm text-red-600 mt-1">{emailError}</p>
-                )}
               </div>
               
               <div className="space-y-2">
