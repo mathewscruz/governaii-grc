@@ -34,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
       .select(`
         *,
         categoria:denuncias_categorias(nome),
-        empresa:empresas(nome)
+        empresa:empresas(nome, logo_url)
       `)
       .eq('id', denuncia_id)
       .single();
@@ -108,32 +108,110 @@ const handler = async (req: Request): Promise<Response> => {
       critica: 'Crítica'
     };
 
+    const logoUrl = denuncia.empresa?.logo_url || 'https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/public-assets/governaii-logo.png';
+    const companyName = denuncia.empresa?.nome || 'GovernAII';
+
     const emailHtml = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
           <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
-            .content { background-color: #ffffff; padding: 20px; border: 1px solid #e9ecef; border-radius: 8px; }
-            .field { margin-bottom: 15px; }
-            .label { font-weight: bold; color: #495057; }
-            .value { margin-top: 5px; }
-            .alert { background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 4px; margin: 20px 0; }
-            .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-            .badge-alta { background-color: #ffeaa7; color: #856404; }
-            .badge-critica { background-color: #f8d7da; color: #721c24; }
-            .badge-media { background-color: #fff3cd; color: #856404; }
-            .badge-baixa { background-color: #d1ecf1; color: #0c5460; }
+            body {
+              font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+              line-height: 1.6;
+              color: #3c4149;
+              background-color: #f6f9fc;
+              margin: 0;
+              padding: 0;
+            }
+            .container {
+              max-width: 600px;
+              margin: 0 auto;
+              background-color: #ffffff;
+            }
+            .logo-section {
+              padding: 32px 32px 24px;
+              text-align: center;
+              border-bottom: 1px solid #e6ebf1;
+            }
+            .logo {
+              max-height: 60px;
+              max-width: 200px;
+            }
+            .header {
+              padding: 32px 32px 16px;
+            }
+            .header h1 {
+              color: #1a1a1a;
+              font-size: 24px;
+              font-weight: 600;
+              margin: 0;
+            }
+            .content {
+              padding: 0 32px;
+              background-color: #ffffff;
+              border: 1px solid #e6ebf1;
+              border-radius: 8px;
+              margin: 0 32px;
+            }
+            .field {
+              margin-bottom: 15px;
+              padding: 12px 0;
+              border-bottom: 1px solid #f6f9fc;
+            }
+            .field:last-child {
+              border-bottom: none;
+            }
+            .label {
+              font-weight: 600;
+              color: #1a1a1a;
+              margin-bottom: 4px;
+            }
+            .value {
+              margin-top: 4px;
+              color: #3c4149;
+            }
+            .alert {
+              background-color: #fff8e6;
+              border: 1px solid #ffd666;
+              border-left: 4px solid #faad14;
+              padding: 16px;
+              border-radius: 6px;
+              margin: 24px 32px;
+            }
+            .badge {
+              display: inline-block;
+              padding: 4px 12px;
+              border-radius: 4px;
+              font-size: 12px;
+              font-weight: 600;
+            }
+            .badge-alta { background-color: #fff8e6; color: #d46b08; border: 1px solid #ffd666; }
+            .badge-critica { background-color: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; }
+            .badge-media { background-color: #fff8e6; color: #d46b08; border: 1px solid #ffd666; }
+            .badge-baixa { background-color: #e6f7ff; color: #0050b3; border: 1px solid #91d5ff; }
+            .footer {
+              border-top: 1px solid #e6ebf1;
+              margin: 32px 32px 0;
+              padding: 24px 0;
+              text-align: center;
+            }
+            .footer p {
+              color: #8898aa;
+              font-size: 12px;
+              margin: 8px 0;
+            }
           </style>
         </head>
         <body>
           <div class="container">
+            <div class="logo-section">
+              <img src="${logoUrl}" alt="${companyName}" class="logo" />
+            </div>
+            
             <div class="header">
               <h1>Nova Denúncia Recebida</h1>
-              <p>Canal de Denúncia - ${denuncia.empresa?.nome || 'Sistema'}</p>
             </div>
             
             <div class="content">
@@ -173,7 +251,7 @@ const handler = async (req: Request): Promise<Response> => {
               
               <div class="field">
                 <div class="label">Descrição:</div>
-                <div class="value" style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; white-space: pre-wrap;">${denuncia.descricao}</div>
+                <div class="value" style="background-color: #f6f9fc; padding: 12px; border-radius: 4px; white-space: pre-wrap; margin-top: 8px;">${denuncia.descricao}</div>
               </div>
             </div>
             
@@ -182,10 +260,10 @@ const handler = async (req: Request): Promise<Response> => {
               Acesse o sistema para revisar e iniciar o processo de tratamento adequado.
             </div>
             
-            <p style="font-size: 12px; color: #6c757d; text-align: center; margin-top: 30px;">
-              Este é um e-mail automático do sistema de Canal de Denúncia. 
-              Trate esta informação com confidencialidade.
-            </p>
+            <div class="footer">
+              <p>Este é um e-mail automático de <strong>${companyName}</strong>.</p>
+              <p>Trate esta informação com confidencialidade.</p>
+            </div>
           </div>
         </body>
       </html>
@@ -195,7 +273,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailPromises = Array.from(emailList).map(async (email) => {
       try {
         const { error: emailError } = await resend.emails.send({
-          from: 'Canal de Denúncia <noreply@governaii.com>',
+          from: `${companyName} <noreply@governaii.com.br>`,
           to: [email],
           subject: `Nova Denúncia - Protocolo ${denuncia.protocolo}`,
           html: emailHtml,

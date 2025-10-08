@@ -14,6 +14,8 @@ interface WelcomeEmailRequest {
   userName: string
   userEmail: string
   temporaryPassword: string
+  companyName?: string
+  companyLogoUrl?: string
 }
 
 Deno.serve(async (req) => {
@@ -32,7 +34,7 @@ Deno.serve(async (req) => {
   try {
     console.log('Recebendo requisição para envio de e-mail de boas-vindas')
     
-    const { userName, userEmail, temporaryPassword }: WelcomeEmailRequest = await req.json()
+    const { userName, userEmail, temporaryPassword, companyName, companyLogoUrl }: WelcomeEmailRequest = await req.json()
     
     console.log(`Enviando e-mail de boas-vindas para: ${userEmail}`)
     
@@ -44,13 +46,15 @@ Deno.serve(async (req) => {
         userEmail,
         temporaryPassword,
         loginUrl,
+        companyName,
+        companyLogoUrl
       })
     )
 
     const { data, error } = await resend.emails.send({
-      from: 'GovernAI <noreply@governaii.com.br>',
+      from: `${companyName || 'GovernAII'} <noreply@governaii.com.br>`,
       to: [userEmail],
-      subject: 'Bem-vindo ao GovernAI - Seus dados de acesso',
+      subject: `Bem-vindo ao ${companyName || 'GovernAII'} - Seus dados de acesso`,
       html,
     })
 

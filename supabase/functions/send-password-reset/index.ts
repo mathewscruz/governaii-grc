@@ -17,6 +17,7 @@ const corsHeaders = {
 
 interface PasswordResetRequest {
   userId: string
+  companyLogoUrl?: string
 }
 
 Deno.serve(async (req) => {
@@ -35,12 +36,12 @@ Deno.serve(async (req) => {
   try {
     console.log('Recebendo requisição para reset de senha')
     
-    const { userId }: PasswordResetRequest = await req.json()
+    const { userId, companyLogoUrl }: PasswordResetRequest = await req.json()
     
-    // Buscar dados do usuário
+    // Buscar dados do usuário e empresa
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('nome, email')
+      .select('nome, email, empresa:empresas(nome, logo_url)')
       .eq('user_id', userId)
       .single()
     
@@ -93,13 +94,15 @@ Deno.serve(async (req) => {
         userEmail: profile.email,
         temporaryPassword: tempPassword,
         loginUrl,
+        companyName: profile.empresa?.nome,
+        companyLogoUrl: companyLogoUrl || profile.empresa?.logo_url
       })
     )
 
     const { data, error } = await resend.emails.send({
-      from: 'GovernAI <noreply@governaii.com.br>',
+      from: `${profile.empresa?.nome || 'GovernAII'} <noreply@governaii.com.br>`,
       to: [profile.email],
-      subject: 'GovernAI - Nova senha temporária',
+      subject: `${profile.empresa?.nome || 'GovernAII'} - Nova senha temporária`,
       html,
     })
 

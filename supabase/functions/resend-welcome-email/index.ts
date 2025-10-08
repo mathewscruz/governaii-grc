@@ -90,10 +90,10 @@ Deno.serve(async (req) => {
       throw new Error('Usuário não encontrado')
     }
 
-    // Buscar perfil do usuário alvo
+    // Buscar perfil do usuário alvo e empresa
     const { data: userProfile, error: userProfileError } = await supabaseAdmin
       .from('profiles')
-      .select('nome, email, empresa_id')
+      .select('nome, email, empresa_id, empresa:empresas(nome, logo_url)')
       .eq('user_id', userId)
       .single()
 
@@ -151,13 +151,15 @@ Deno.serve(async (req) => {
         userEmail: userProfile.email,
         temporaryPassword: tempPassword,
         loginUrl,
+        companyName: userProfile.empresa?.nome,
+        companyLogoUrl: userProfile.empresa?.logo_url
       })
     )
 
     const { data, error } = await resend.emails.send({
-      from: 'GovernAII <noreply@governaii.com.br>',
+      from: `${userProfile.empresa?.nome || 'GovernAII'} <noreply@governaii.com.br>`,
       to: [userProfile.email],
-      subject: 'GovernAII - Seus novos dados de acesso',
+      subject: `${userProfile.empresa?.nome || 'GovernAII'} - Seus novos dados de acesso`,
       html,
     })
 

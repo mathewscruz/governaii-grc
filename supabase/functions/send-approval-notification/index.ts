@@ -54,65 +54,138 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Aprovador não encontrado");
     }
 
-    // Buscar dados da empresa para personalizar o email
-    const { data: empresaData, error: empresaError } = await supabase
-      .from('profiles')
-      .select('empresa_id, empresas(nome)')
-      .eq('user_id', aprovador_id)
+    // Buscar dados do documento e empresa
+    const { data: document, error: docError } = await supabase
+      .from('documentos')
+      .select('nome, empresa:empresas(nome, logo_url)')
+      .eq('id', documento_id)
       .single();
 
-    const empresaNome = (empresaData as any)?.empresas?.nome || "GovernAI";
+    if (docError || !document) {
+      console.error("Erro ao buscar documento:", docError);
+      throw new Error("Documento não encontrado");
+    }
+
+    const companyName = document.empresa?.nome || "GovernAII";
+    const logoUrl = document.empresa?.logo_url || 'https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/public-assets/governaii-logo.png';
 
     const emailResponse = await resend.emails.send({
-      from: `${empresaNome} <onboarding@resend.dev>`,
+      from: `${companyName} <noreply@governaii.com.br>`,
       to: [aprovador.email],
       subject: `Solicitação de Aprovação de Documento - ${documento_nome}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white; border-radius: 8px 8px 0 0;">
-            <h1 style="margin: 0; font-size: 24px;">Solicitação de Aprovação</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">Documento aguarda sua aprovação</p>
-          </div>
-          
-          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px;">
-            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-              Olá <strong>${aprovador.nome}</strong>,
-            </p>
-            
-            <p style="color: #555; line-height: 1.6; margin-bottom: 20px;">
-              <strong>${solicitante_nome}</strong> solicitou sua aprovação para o documento:
-            </p>
-            
-            <div style="background: white; padding: 20px; border-radius: 6px; border-left: 4px solid #667eea; margin: 20px 0;">
-              <h3 style="margin: 0 0 10px 0; color: #333; font-size: 18px;">
-                📄 ${documento_nome}
-              </h3>
-              <p style="margin: 0; color: #666; font-size: 14px;">
-                Documento ID: ${documento_id}
-              </p>
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body {
+                font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+                line-height: 1.6;
+                color: #3c4149;
+                background-color: #f6f9fc;
+                margin: 0;
+                padding: 0;
+              }
+              .container {
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #ffffff;
+              }
+              .logo-section {
+                padding: 32px 32px 24px;
+                text-align: center;
+                border-bottom: 1px solid #e6ebf1;
+              }
+              .logo {
+                max-height: 60px;
+                max-width: 200px;
+              }
+              .header {
+                padding: 32px 32px 16px;
+              }
+              .header h1 {
+                color: #1a1a1a;
+                font-size: 24px;
+                font-weight: 600;
+                margin: 0;
+              }
+              .content {
+                padding: 0 32px;
+              }
+              .content p {
+                margin: 0 0 16px;
+              }
+              .info-box {
+                background-color: #f6f9fc;
+                border: 1px solid #e6ebf1;
+                border-radius: 6px;
+                padding: 16px;
+                margin: 16px 0;
+              }
+              .button {
+                display: inline-block;
+                padding: 12px 24px;
+                background-color: #2563eb;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: 600;
+                margin: 24px 0;
+              }
+              .button-section {
+                text-align: center;
+                margin: 24px 0;
+              }
+              .footer {
+                border-top: 1px solid #e6ebf1;
+                margin: 32px 32px 0;
+                padding: 24px 0;
+                text-align: center;
+              }
+              .footer p {
+                color: #8898aa;
+                font-size: 12px;
+                margin: 8px 0;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="logo-section">
+                <img src="${logoUrl}" alt="${companyName}" class="logo" />
+              </div>
+              
+              <div class="header">
+                <h1>Solicitação de Aprovação</h1>
+              </div>
+              
+              <div class="content">
+                <p>Olá <strong>${aprovador.nome}</strong>,</p>
+                
+                <p><strong>${solicitante_nome}</strong> solicitou sua aprovação para o seguinte documento:</p>
+                
+                <div class="info-box">
+                  <p style="margin: 0 0 8px;"><strong>Documento:</strong> ${document.nome}</p>
+                  <p style="margin: 0;"><strong>Empresa:</strong> ${companyName}</p>
+                </div>
+                
+                <div class="button-section">
+                  <a href="https://governaii.com.br/documentos" class="button">
+                    Acessar Sistema
+                  </a>
+                </div>
+                
+                <p>Por favor, acesse o sistema para revisar e aprovar o documento.</p>
+              </div>
+              
+              <div class="footer">
+                <p>Este é um e-mail automático de <strong>${companyName}</strong>.</p>
+                <p>Em caso de dúvidas, entre em contato conosco.</p>
+              </div>
             </div>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${supabaseUrl.replace('https://', 'https://').replace('.supabase.co', '.lovableproject.com')}/documentos" 
-                 style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-                Acessar Sistema de Documentos
-              </a>
-            </div>
-            
-            <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; margin: 20px 0;">
-              <p style="margin: 0; color: #1976d2; font-size: 14px;">
-                💡 <strong>Dica:</strong> Acesse o sistema, vá até o módulo de Documentos e clique em "Aprovação" para revisar e aprovar este documento.
-              </p>
-            </div>
-            
-            <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
-            
-            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-              Esta é uma notificação automática do sistema ${empresaNome}.<br>
-              Se você não deveria receber este email, entre em contato com o administrador.
-            </p>
-          </div>
-        </div>
+          </body>
+        </html>
       `,
     });
 
