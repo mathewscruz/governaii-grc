@@ -2,17 +2,18 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface PasswordChangeRequiredProps {
+  open: boolean;
   onPasswordChanged: () => void;
 }
 
-const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ onPasswordChanged }) => {
+const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, onPasswordChanged }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -74,19 +75,24 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ onPassw
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+    <Dialog open={open} onOpenChange={() => {}}>
+      <DialogContent 
+        className="sm:max-w-md [&>button]:hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
             <AlertTriangle className="h-6 w-6 text-amber-600" />
           </div>
-          <CardTitle className="text-xl">Alteração de Senha Obrigatória</CardTitle>
-          <CardDescription>
+          <DialogTitle className="text-xl">Alteração de Senha Obrigatória</DialogTitle>
+          <DialogDescription>
             Por segurança, você deve alterar sua senha temporária antes de continuar.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Alert className="mb-4">
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4 pt-4">
+          <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               Esta é a primeira vez que você acessa o sistema. Por favor, defina uma nova senha segura.
@@ -177,9 +183,9 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ onPassw
               {loading ? 'Alterando senha...' : 'Alterar Senha'}
             </Button>
           </form>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

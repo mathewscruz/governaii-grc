@@ -35,21 +35,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Se o usuário tem senha temporária, mostrar tela de alteração obrigatória
-  if (hasTemporaryPassword) {
-    return (
-      <PasswordChangeRequired 
-        onPasswordChanged={() => {
-          checkTemporaryPassword();
-        }}
-      />
-    );
-  }
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
+        
+        {/* Dialog modal obrigatório de troca de senha */}
+        <PasswordChangeRequired 
+          open={hasTemporaryPassword}
+          onPasswordChanged={() => {
+            checkTemporaryPassword();
+          }}
+        />
         
         <div className="flex-1 flex flex-col">
           <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card">
