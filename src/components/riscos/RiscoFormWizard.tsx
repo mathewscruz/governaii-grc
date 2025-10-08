@@ -909,7 +909,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         </Collapsible>
 
         {/* Botão Salvar */}
-        <div className="flex justify-end pt-4 border-t sticky bottom-0 bg-background">
+        <div className="flex justify-end pt-6 mt-2 border-t">
           <Button type="submit" disabled={loading} size="lg">
             {loading ? 'Salvando...' : risco ? 'Atualizar Risco' : 'Salvar Risco'}
             <Save className="ml-2 h-4 w-4" />

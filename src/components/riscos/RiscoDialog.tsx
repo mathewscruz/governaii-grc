@@ -1,7 +1,6 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { RiscoFormWizard } from './RiscoFormWizard';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface RiscoDialogProps {
   open: boolean;
@@ -18,8 +17,8 @@ export function RiscoDialog({ open, onOpenChange, risco, onSuccess }: RiscoDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4">
           <DialogTitle>
             {risco ? 'Editar Risco' : 'Novo Risco'}
           </DialogTitle>
@@ -31,9 +30,9 @@ export function RiscoDialog({ open, onOpenChange, risco, onSuccess }: RiscoDialo
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
           <RiscoFormWizard risco={risco} onSuccess={handleSuccess} />
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
