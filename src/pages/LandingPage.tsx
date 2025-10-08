@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import governanceBadge from "@/assets/governance-security-badge.png";
+import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 import {
   Shield,
   FileText,
@@ -36,6 +38,25 @@ export default function LandingPage() {
     phone: "",
     message: "",
   });
+
+  const [emblaRef] = useEmblaCarousel(
+    { loop: true, align: "start" },
+    [Autoplay({ delay: 3000, stopOnInteraction: false })]
+  );
+
+  const frameworks = [
+    "ISO 27001",
+    "ISO 27701",
+    "ITIL",
+    "COBIT",
+    "HIPAA",
+    "LGPD",
+    "GDPR",
+    "SOC 2",
+    "ISO 31000",
+    "ISO 9001",
+    "ISO 14001"
+  ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -134,7 +155,7 @@ export default function LandingPage() {
             <img 
               src={governanceBadge} 
               alt="Governança e Segurança" 
-              className="h-20 w-auto opacity-90"
+              className="h-16 w-auto opacity-60"
             />
           </div>
           
@@ -169,43 +190,21 @@ export default function LandingPage() {
             </Button>
           </div>
           
-          {/* Frameworks */}
+          {/* Frameworks Carousel */}
           <div className="mt-16 pt-12 border-t border-border/50">
-            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6">
+            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-8">
               Frameworks do GovernAII
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-3 opacity-70">
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 27001</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 27701</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ITIL</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">COBIT</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">HIPAA</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">LGPD</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">GDPR</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">SOC 2</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 31000</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 9001</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 14001</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">NIST</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">PCI DSS</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">CIS Controls</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">CMMI</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 22301</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 20000</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">COSO</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">FISMA</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">FedRAMP</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 27017</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 27018</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">SAMA</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">NCA ECC</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">SWIFT CSP</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 45001</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">TISAX</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ENS</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">CSA STAR</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">HITRUST</Badge>
-              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">CCPA</Badge>
+            <div className="overflow-hidden" ref={emblaRef}>
+              <div className="flex gap-4">
+                {frameworks.map((framework, index) => (
+                  <div key={index} className="flex-[0_0_auto]">
+                    <Badge variant="outline" className="text-sm px-6 py-3 font-semibold whitespace-nowrap">
+                      {framework}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
