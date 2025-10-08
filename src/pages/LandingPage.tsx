@@ -146,16 +146,16 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-16 px-4 text-center bg-gradient-to-br from-background via-primary/5 to-muted/40 overflow-hidden">
+      <section className="relative py-12 px-4 text-center bg-gradient-to-br from-background via-primary/5 to-muted/40 overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(var(--primary-rgb),0.05),transparent_50%),radial-gradient(circle_at_70%_80%,rgba(var(--primary-rgb),0.03),transparent_50%)]" />
         
         <div className="container mx-auto max-w-5xl relative z-10">
-          <div className="mb-6 flex justify-center">
+          <div className="mb-8 flex justify-center">
             <img 
               src={governanceBadge} 
               alt="Governança e Segurança" 
-              className="h-24 w-auto opacity-60"
+              className="h-32 w-auto opacity-60"
             />
           </div>
           
