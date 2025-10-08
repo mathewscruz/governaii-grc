@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import governanceBadge from "@/assets/governance-security-badge.png";
 import {
   Shield,
   FileText,
@@ -110,7 +111,7 @@ export default function LandingPage() {
             <img 
               src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/sign/logotipo/Governiaa%20(500%20x%20200%20px)%20(20).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NTdhMjYzYS1jZjc1LTQ3OGYtYjNkMy01NWM2ODViMTQ0MTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvdGlwby9Hb3Zlcm5pYWEgKDUwMCB4IDIwMCBweCkgKDIwKS5wbmciLCJpYXQiOjE3NTY4MjA3MzIsImV4cCI6MTc4ODM1NjczMn0.lPzbjAHL4z4wjBU8WTAL-IvS3D6W-MjCU47clsRo1t0" 
               alt="GovernAII" 
-              className="h-8 w-auto"
+              className="h-12 w-auto"
             />
           </div>
           
@@ -129,9 +130,13 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(var(--primary-rgb),0.05),transparent_50%),radial-gradient(circle_at_70%_80%,rgba(var(--primary-rgb),0.03),transparent_50%)]" />
         
         <div className="container mx-auto max-w-5xl relative z-10">
-          <Badge variant="secondary" className="mb-8 text-sm font-semibold px-4 py-2">
-            Plataforma de Governança Corporativa
-          </Badge>
+          <div className="mb-8 flex justify-center">
+            <img 
+              src={governanceBadge} 
+              alt="Governança e Segurança" 
+              className="h-20 w-auto opacity-90"
+            />
+          </div>
           
           <h1 className="text-5xl md:text-7xl font-extrabold text-foreground mb-8 leading-[1.1] tracking-tight">
             Transforme a 
@@ -164,16 +169,43 @@ export default function LandingPage() {
             </Button>
           </div>
           
-          {/* Trust Indicators */}
+          {/* Frameworks */}
           <div className="mt-16 pt-12 border-t border-border/50">
             <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6">
-              Confiado por empresas líderes
+              Frameworks do GovernAII
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-12 opacity-60">
-              <Badge variant="outline" className="text-base px-6 py-3 font-semibold">ISO 27001</Badge>
-              <Badge variant="outline" className="text-base px-6 py-3 font-semibold">LGPD Compliant</Badge>
-              <Badge variant="outline" className="text-base px-6 py-3 font-semibold">SOC 2 Type II</Badge>
-              <Badge variant="outline" className="text-base px-6 py-3 font-semibold">GDPR Ready</Badge>
+            <div className="flex flex-wrap items-center justify-center gap-3 opacity-70">
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 27001</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 27701</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ITIL</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">COBIT</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">HIPAA</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">LGPD</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">GDPR</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">SOC 2</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 31000</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 9001</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 14001</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">NIST</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">PCI DSS</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">CIS Controls</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">CMMI</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 22301</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 20000</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">COSO</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">FISMA</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">FedRAMP</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 27017</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 27018</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">SAMA</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">NCA ECC</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">SWIFT CSP</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ISO 45001</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">TISAX</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">ENS</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">CSA STAR</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">HITRUST</Badge>
+              <Badge variant="outline" className="text-sm px-4 py-2 font-semibold">CCPA</Badge>
             </div>
           </div>
         </div>
