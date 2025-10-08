@@ -59,7 +59,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Saudação personalizada */}
-      <div className="mb-8 p-6 bg-gradient-subtle rounded-xl border">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">
           Olá, {profile?.nome || 'Usuário'}! 👋
         </h1>
