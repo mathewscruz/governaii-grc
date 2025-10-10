@@ -44,17 +44,51 @@ export function RecentActivities() {
   const getStatusBadge = (module: string, status?: string) => {
     if (!status) return null;
     
-    const statusMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
-      'alto': { variant: 'destructive', label: 'Alto' },
+    const statusMap: Record<string, { 
+      variant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info" | "neutral", 
+      label: string 
+    }> = {
+      // Níveis de Risco
       'critico': { variant: 'destructive', label: 'Crítico' },
-      'ativo': { variant: 'default', label: 'Ativo' },
-      'pendente': { variant: 'outline', label: 'Pendente' },
-      'concluido': { variant: 'default', label: 'Concluído' },
-      'aprovado': { variant: 'default', label: 'Aprovado' },
-      'nova': { variant: 'secondary', label: 'Nova' }
+      'alto': { variant: 'destructive', label: 'Alto' },
+      'medio': { variant: 'warning', label: 'Médio' },
+      'médio': { variant: 'warning', label: 'Médio' },
+      'baixo': { variant: 'success', label: 'Baixo' },
+      
+      // Status de Controles/Ativos/Documentos
+      'ativo': { variant: 'success', label: 'Ativo' },
+      'inativo': { variant: 'neutral', label: 'Inativo' },
+      'vencido': { variant: 'destructive', label: 'Vencido' },
+      'em_avaliacao': { variant: 'warning', label: 'Em Avaliação' },
+      
+      // Status de Aprovação
+      'pendente': { variant: 'warning', label: 'Pendente' },
+      'pendente_aprovacao': { variant: 'warning', label: 'Pendente Aprovação' },
+      'aprovado': { variant: 'success', label: 'Aprovado' },
+      'rejeitado': { variant: 'destructive', label: 'Rejeitado' },
+      
+      // Status de Auditorias
+      'planejada': { variant: 'warning', label: 'Planejada' },
+      'em_andamento': { variant: 'info', label: 'Em Andamento' },
+      'em_analise': { variant: 'info', label: 'Em Análise' },
+      'em_investigacao': { variant: 'info', label: 'Em Investigação' },
+      'concluida': { variant: 'success', label: 'Concluída' },
+      'concluído': { variant: 'success', label: 'Concluído' },
+      'concluido': { variant: 'success', label: 'Concluído' },
+      'cancelada': { variant: 'neutral', label: 'Cancelada' },
+      
+      // Status de Denúncias
+      'nova': { variant: 'info', label: 'Nova' },
+      'resolvida': { variant: 'success', label: 'Resolvida' },
+      'arquivada': { variant: 'neutral', label: 'Arquivada' }
     };
 
-    const statusInfo = statusMap[status.toLowerCase()] || { variant: 'outline' as const, label: status };
+    const normalizedStatus = status.toLowerCase().trim();
+    const statusInfo = statusMap[normalizedStatus] || { 
+      variant: 'outline' as const, 
+      label: status.charAt(0).toUpperCase() + status.slice(1) // Capitalizar qualquer status desconhecido
+    };
+    
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
   };
 
