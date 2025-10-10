@@ -10,6 +10,8 @@ import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,6 +33,7 @@ interface Ativo {
   descricao: string | null;
   proprietario: string | null;
   proprietario_nome?: string | null;
+  proprietario_avatar?: string | null;
   localizacao: string | null;
   valor_negocio: string | null;
   criticidade: string;
@@ -186,12 +189,17 @@ const Ativos = () => {
             .select('user_id, nome')
             .in('user_id', proprietarioIds);
           
-          const profileMap = new Map(profiles?.map(p => [p.user_id, p.nome]) || []);
+          const profileMap = new Map(
+            profiles?.map(p => [p.user_id, { nome: p.nome }]) || []
+          );
           
-          const mappedData = data.map(ativo => ({
-            ...ativo,
-            proprietario_nome: ativo.proprietario ? profileMap.get(ativo.proprietario) : null
-          }));
+          const mappedData = data.map(ativo => {
+            const profileData = ativo.proprietario ? profileMap.get(ativo.proprietario) : null;
+            return {
+              ...ativo,
+              proprietario_nome: profileData?.nome || null
+            };
+          });
           
           setAtivos(mappedData);
         } else {
@@ -461,7 +469,31 @@ const Ativos = () => {
     {
       key: 'proprietario',
       label: 'Proprietário',
-      render: (value: string, ativo: Ativo) => ativo.proprietario_nome || '-'
+      render: (value: string, ativo: Ativo) => {
+        if (!ativo.proprietario_nome) return '-';
+        
+        const initials = ativo.proprietario_nome
+          .split(' ')
+          .map(n => n[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 2);
+        
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Avatar className="h-8 w-8 cursor-pointer">
+                  <AvatarFallback className="bg-primary/10 text-primary">{initials}</AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{ativo.proprietario_nome}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
     },
     {
       key: 'localizacao',
