@@ -574,7 +574,7 @@ const Ativos = () => {
       />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh]">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
               <DialogHeader>
                 <DialogTitle>
                   {editingAtivo ? 'Editar Ativo' : 'Novo Ativo'}
@@ -583,8 +583,8 @@ const Ativos = () => {
                   {editingAtivo ? 'Atualize as informações do ativo' : 'Cadastre um novo ativo na plataforma'}
                 </DialogDescription>
               </DialogHeader>
-              <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <ScrollArea className="max-h-[calc(90vh-140px)]">
+              <form onSubmit={handleSubmit} className="space-y-4 pr-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="nome">Nome *</Label>
