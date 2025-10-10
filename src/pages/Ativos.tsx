@@ -953,7 +953,27 @@ const Ativos = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {ativo.proprietario || '-'}
+                      {ativo.proprietario_nome ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Avatar className="h-8 w-8 cursor-pointer">
+                                <AvatarFallback className="bg-primary/10 text-primary">
+                                  {ativo.proprietario_nome
+                                    .split(' ')
+                                    .map(n => n[0])
+                                    .join('')
+                                    .toUpperCase()
+                                    .slice(0, 2)}
+                                </AvatarFallback>
+                              </Avatar>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{ativo.proprietario_nome}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : '-'}
                     </TableCell>
                     <TableCell>
                       {ativo.localizacao || '-'}
