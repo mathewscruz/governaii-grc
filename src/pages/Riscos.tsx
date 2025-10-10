@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, Edit, FileText, Trash2, Filter } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Plus, Search, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, Edit, FileText, Trash2, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,12 +60,14 @@ export function Riscos() {
   const { profile } = useAuth();
   const { toast } = useToast();
   const { data: stats, refetch: refetchStats } = useRiscosStats();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [riscos, setRiscos] = useState<Risco[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [nivelFilter, setNivelFilter] = useState<string>('');
   const [aceitoFilter, setAceitoFilter] = useState<string>('');
+  const [idsFilter, setIdsFilter] = useState<string[]>([]);
   const [riscoDialogOpen, setRiscoDialogOpen] = useState(false);
   const [matrizDialogOpen, setMatrizDialogOpen] = useState(false);
   const [editingRisco, setEditingRisco] = useState<Risco | null>(null);
@@ -145,6 +148,13 @@ export function Riscos() {
     }
   }, [profile]);
 
+  useEffect(() => {
+    const ids = searchParams.get('ids');
+    if (ids) {
+      setIdsFilter(ids.split(','));
+    }
+  }, [searchParams]);
+
   const filteredRiscos = riscos.filter(risco => {
     const matchesSearch = risco.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          risco.responsavel?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -153,9 +163,15 @@ export function Riscos() {
     const matchesAceito = !aceitoFilter || aceitoFilter === 'all' || 
                          (aceitoFilter === 'aceito' && risco.aceito) ||
                          (aceitoFilter === 'nao_aceito' && !risco.aceito);
+    const matchesIds = idsFilter.length === 0 || idsFilter.includes(risco.id);
 
-    return matchesSearch && matchesStatus && matchesNivel && matchesAceito;
+    return matchesSearch && matchesStatus && matchesNivel && matchesAceito && matchesIds;
   });
+
+  const clearIdsFilter = () => {
+    setIdsFilter([]);
+    setSearchParams({});
+  };
 
   const handleEdit = (risco: Risco) => {
     setEditingRisco(risco);
@@ -490,14 +506,29 @@ export function Riscos() {
             {/* Custom header with search and action buttons */}
             <div className="p-6 pb-4">
               <div className="flex items-center justify-between gap-4 mb-4">
-                <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Buscar riscos..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+                <div className="flex items-center gap-2 flex-1 max-w-lg">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      placeholder="Buscar riscos..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  {idsFilter.length > 0 && (
+                    <Badge variant="secondary" className="flex items-center gap-1 whitespace-nowrap">
+                      Filtro da Matriz ({idsFilter.length})
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 hover:bg-transparent"
+                        onClick={clearIdsFilter}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  )}
                 </div>
                 
                 <div className="flex gap-2">

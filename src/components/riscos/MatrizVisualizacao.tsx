@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +27,7 @@ interface Risco {
 
 export function MatrizVisualizacao() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [matriz, setMatriz] = useState<Matriz | null>(null);
   const [riscos, setRiscos] = useState<Risco[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +111,14 @@ export function MatrizVisualizacao() {
     return nivelConfig?.cor || '#6b7280';
   };
 
+  const handleCellClick = (riscosNaCelula: Risco[]) => {
+    if (riscosNaCelula.length > 0) {
+      // Navegar para a página de riscos com filtro dos IDs
+      const riscosIds = riscosNaCelula.map(r => r.id).join(',');
+      navigate(`/riscos?ids=${riscosIds}`);
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -147,16 +157,16 @@ export function MatrizVisualizacao() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Matriz de Risco - {matriz.nome}</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Matriz de Risco - {matriz.nome}</CardTitle>
       </CardHeader>
-      <CardContent className="p-3">
-        <div className="w-full">
+      <CardContent className="p-3 pt-0">
+        <div className="w-full max-w-md mx-auto">
           {/* Cabeçalho da matriz */}
-          <div className="grid gap-0.5 mb-2" style={{ gridTemplateColumns: `minmax(60px, 1fr) repeat(${escalaImpacto.length}, minmax(0, 1fr))` }}>
-            <div className="p-1.5 font-medium text-xs text-center">Prob.</div>
+          <div className="grid gap-0.5 mb-1" style={{ gridTemplateColumns: `40px repeat(${escalaImpacto.length}, minmax(0, 1fr))` }}>
+            <div className="p-1 font-medium text-[10px] text-center">Prob.</div>
             {escalaImpacto.map((impacto) => (
-              <div key={impacto.valor} className="p-1.5 text-center font-medium text-xs bg-muted rounded text-nowrap">
+              <div key={impacto.valor} className="p-1 text-center font-medium text-[10px] bg-muted rounded">
                 {impacto.valor}
               </div>
             ))}
@@ -164,8 +174,8 @@ export function MatrizVisualizacao() {
 
           {/* Linhas da matriz */}
           {escalaProbabilidadeReversed.map((probabilidade) => (
-            <div key={probabilidade.valor} className="grid gap-0.5 mb-0.5" style={{ gridTemplateColumns: `minmax(60px, 1fr) repeat(${escalaImpacto.length}, minmax(0, 1fr))` }}>
-              <div className="p-1.5 font-medium text-xs bg-muted rounded flex items-center justify-center">
+            <div key={probabilidade.valor} className="grid gap-0.5 mb-0.5" style={{ gridTemplateColumns: `40px repeat(${escalaImpacto.length}, minmax(0, 1fr))` }}>
+              <div className="p-1 font-medium text-[10px] bg-muted rounded flex items-center justify-center">
                 {probabilidade.valor}
               </div>
               {escalaImpacto.map((impacto) => {
@@ -176,21 +186,24 @@ export function MatrizVisualizacao() {
                 return (
                   <div 
                     key={`${probabilidade.valor}-${impacto.valor}`}
-                    className="p-1 border border-border rounded min-h-12 flex flex-col items-center justify-center relative aspect-square"
+                    onClick={() => handleCellClick(riscosNaCelula)}
+                    className={`p-0.5 border border-border rounded min-h-[40px] flex flex-col items-center justify-center relative aspect-square ${
+                      riscosNaCelula.length > 0 ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
+                    }`}
                     style={{ backgroundColor: cor + '20' }}
                   >
                     {nivelRisco && (
                       <Badge 
-                        className="text-xs mb-0.5 px-1 py-0 h-auto leading-tight" 
-                        style={{ backgroundColor: cor, color: 'white', borderColor: cor, fontSize: '0.625rem' }}
+                        className="text-[9px] mb-0.5 px-0.5 py-0 h-auto leading-tight" 
+                        style={{ backgroundColor: cor, color: 'white', borderColor: cor }}
                       >
                         {nivelRisco.nivel.charAt(0)}
                       </Badge>
                     )}
                     {riscosNaCelula.length > 0 && (
                       <div 
-                        className="w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                        style={{ backgroundColor: cor, fontSize: '0.625rem' }}
+                        className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                        style={{ backgroundColor: cor }}
                       >
                         {riscosNaCelula.length}
                       </div>
@@ -202,8 +215,8 @@ export function MatrizVisualizacao() {
           ))}
 
           {/* Legenda do eixo Y */}
-          <div className="text-center mt-2">
-            <span className="text-xs font-medium">Impacto →</span>
+          <div className="text-center mt-1.5">
+            <span className="text-[10px] font-medium text-muted-foreground">Impacto →</span>
           </div>
         </div>
       </CardContent>
