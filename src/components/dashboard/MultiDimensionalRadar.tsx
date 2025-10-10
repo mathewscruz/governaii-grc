@@ -15,7 +15,30 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
 
-const CustomTooltip = ({ active, payload, navigate }: any) => {
+const CustomDot = ({ cx, cy, payload, navigate }: any) => {
+  const handleClick = (e: any) => {
+    e.stopPropagation();
+    if (payload.link) {
+      navigate(payload.link);
+    }
+  };
+
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={6}
+      fill="hsl(var(--primary))"
+      stroke="#fff"
+      strokeWidth={2}
+      onClick={handleClick}
+      style={{ cursor: 'pointer' }}
+      className="hover:r-8 transition-all"
+    />
+  );
+};
+
+const CustomTooltip = ({ active, payload }: any) => {
   if (!active || !payload || !payload[0]) return null;
 
   const data: RadarDataPoint = payload[0].payload;
@@ -30,17 +53,8 @@ const CustomTooltip = ({ active, payload, navigate }: any) => {
   const config = statusConfig[data.details.status];
   const StatusIcon = config.icon;
 
-  const handleClick = () => {
-    if (data.link) {
-      navigate(data.link);
-    }
-  };
-
   return (
-    <div 
-      className="bg-background border border-border rounded-lg shadow-lg p-4 min-w-[250px] cursor-pointer hover:shadow-xl transition-shadow" 
-      onClick={handleClick}
-    >
+    <div className="bg-background border border-border rounded-lg shadow-lg p-4 min-w-[250px]">
       <div className="flex items-center gap-2 mb-3">
         <StatusIcon className={`w-5 h-5 ${config.color}`} />
         <h3 className="font-semibold text-foreground">{data.subject}</h3>
@@ -63,10 +77,6 @@ const CustomTooltip = ({ active, payload, navigate }: any) => {
               {metric}
             </div>
           ))}
-        </div>
-
-        <div className="pt-2 text-xs text-primary font-medium">
-          👉 Clique para ver detalhes
         </div>
       </div>
     </div>
@@ -112,10 +122,28 @@ export const MultiDimensionalRadar = () => {
             />
             <PolarAngleAxis 
               dataKey="subject" 
-              tick={{ 
-                fill: 'hsl(var(--foreground))',
-                fontSize: 12,
-                fontWeight: 500
+              tick={({ x, y, payload, index }: any) => {
+                const handleClick = () => {
+                  if (data[index]?.link) {
+                    navigate(data[index].link);
+                  }
+                };
+
+                return (
+                  <text
+                    x={x}
+                    y={y}
+                    textAnchor="middle"
+                    fill="hsl(var(--foreground))"
+                    fontSize={12}
+                    fontWeight={500}
+                    onClick={handleClick}
+                    style={{ cursor: 'pointer' }}
+                    className="hover:fill-primary transition-colors"
+                  >
+                    {payload.value}
+                  </text>
+                );
               }}
             />
             <PolarRadiusAxis 
@@ -135,8 +163,9 @@ export const MultiDimensionalRadar = () => {
               strokeWidth={2}
               animationDuration={800}
               animationBegin={0}
+              dot={<CustomDot navigate={navigate} />}
             />
-            <Tooltip content={(props) => <CustomTooltip {...props} navigate={navigate} />} />
+            <Tooltip content={(props) => <CustomTooltip {...props} />} />
             <Legend
               iconType="circle"
               wrapperStyle={{
