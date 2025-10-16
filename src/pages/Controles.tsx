@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,16 @@ import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import ConfirmDialog from '@/components/ConfirmDialog';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { capitalizeText, getControleStatusColor, getCriticidadeColor, getControleTipoColor } from '@/lib/text-utils';
 
 interface Controle {
   id: string;
@@ -63,8 +73,15 @@ export default function Controles() {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
   const [criticidadeFilter, setCriticidadeFilter] = useState<string>("todos");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, tipoFilter, criticidadeFilter]);
   
   // Buscar estatísticas dos controles
   const { data: stats } = useControlesStats();
@@ -140,25 +157,30 @@ export default function Controles() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      ativo: "default",
-      inativo: "secondary",
-      em_revisao: "outline",
-      descontinuado: "destructive"
-    } as const;
+    const colorClasses = getControleStatusColor(status);
+    const displayText = status.replace(/_/g, ' ');
     
-    return <Badge variant={variants[status as keyof typeof variants] || "default"}>{status}</Badge>;
+    return (
+      <Badge 
+        variant="outline" 
+        className={colorClasses}
+      >
+        {capitalizeText(displayText)}
+      </Badge>
+    );
   };
 
   const getCriticidadeBadge = (criticidade: string) => {
-    const variants = {
-      baixo: "secondary",
-      medio: "default", 
-      alto: "destructive",
-      critico: "destructive"
-    } as const;
+    const colorClasses = getCriticidadeColor(criticidade);
     
-    return <Badge variant={variants[criticidade as keyof typeof variants] || "default"}>{criticidade}</Badge>;
+    return (
+      <Badge 
+        variant="outline" 
+        className={colorClasses}
+      >
+        {capitalizeText(criticidade)}
+      </Badge>
+    );
   };
 
   const getTipoIcon = (tipo: string) => {
@@ -193,10 +215,7 @@ export default function Controles() {
       render: (controle: Controle) => (
         <div className="flex items-center gap-2">
           {getTipoIcon(controle.tipo)}
-          <div>
-            <div className="font-medium">{controle.nome}</div>
-            <div className="text-sm text-muted-foreground">{controle.descricao || "Sem descrição"}</div>
-          </div>
+          <span className="font-medium">{controle.nome}</span>
         </div>
       )
     },
@@ -216,7 +235,12 @@ export default function Controles() {
       key: 'tipo' as keyof Controle,
       label: 'Tipo',
       render: (controle: Controle) => (
-        <Badge variant="secondary">{controle.tipo}</Badge>
+        <Badge 
+          variant="outline" 
+          className={getControleTipoColor(controle.tipo)}
+        >
+          {capitalizeText(controle.tipo)}
+        </Badge>
       )
     },
     {
@@ -463,16 +487,30 @@ export default function Controles() {
                         />
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    controles.map((controle) => (
+                  ) : (() => {
+                    // Aplicar filtros
+                    const filteredControles = controles.filter(controle => {
+                      const matchStatus = statusFilter === "todos" || controle.status === statusFilter;
+                      const matchTipo = tipoFilter === "todos" || controle.tipo === tipoFilter;
+                      const matchCriticidade = criticidadeFilter === "todos" || controle.criticidade === criticidadeFilter;
+                      
+                      return matchStatus && matchTipo && matchCriticidade;
+                    });
+
+                    // Calcular paginação
+                    const indexOfLastItem = currentPage * itemsPerPage;
+                    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+                    const currentControles = filteredControles.slice(indexOfFirstItem, indexOfLastItem);
+                    const totalPages = Math.ceil(filteredControles.length / itemsPerPage);
+
+                    return (
+                      <>
+                        {currentControles.map((controle) => (
                       <TableRow key={controle.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             {getTipoIcon(controle.tipo)}
-                            <div>
-                              <div className="font-medium">{controle.nome}</div>
-                              <div className="text-sm text-muted-foreground">{controle.descricao || "Sem descrição"}</div>
-                            </div>
+                            <span className="font-medium">{controle.nome}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -486,7 +524,12 @@ export default function Controles() {
                           ) : <span className="text-muted-foreground">-</span>}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{controle.tipo}</Badge>
+                          <Badge 
+                            variant="outline" 
+                            className={getControleTipoColor(controle.tipo)}
+                          >
+                            {capitalizeText(controle.tipo)}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           {getStatusBadge(controle.status)}
@@ -544,8 +587,72 @@ export default function Controles() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
+                    ))}
+                    
+                    {/* Paginação */}
+                    {totalPages > 1 && (
+                      <TableRow>
+                        <TableCell colSpan={8}>
+                          <div className="flex items-center justify-between px-2 py-4">
+                            <div className="text-sm text-muted-foreground">
+                              Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, filteredControles.length)} de {filteredControles.length} controles
+                            </div>
+                            <Pagination>
+                              <PaginationContent>
+                                <PaginationItem>
+                                  <PaginationPrevious 
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                  />
+                                </PaginationItem>
+                                
+                                {[...Array(totalPages)].map((_, index) => {
+                                  const pageNumber = index + 1;
+                                  
+                                  if (
+                                    pageNumber === 1 ||
+                                    pageNumber === totalPages ||
+                                    (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                                  ) {
+                                    return (
+                                      <PaginationItem key={pageNumber}>
+                                        <PaginationLink
+                                          onClick={() => setCurrentPage(pageNumber)}
+                                          isActive={currentPage === pageNumber}
+                                          className="cursor-pointer"
+                                        >
+                                          {pageNumber}
+                                        </PaginationLink>
+                                      </PaginationItem>
+                                    );
+                                  } else if (
+                                    pageNumber === currentPage - 2 ||
+                                    pageNumber === currentPage + 2
+                                  ) {
+                                    return (
+                                      <PaginationItem key={pageNumber}>
+                                        <PaginationEllipsis />
+                                      </PaginationItem>
+                                    );
+                                  }
+                                  return null;
+                                })}
+                                
+                                <PaginationItem>
+                                  <PaginationNext 
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                  />
+                                </PaginationItem>
+                              </PaginationContent>
+                            </Pagination>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                );
+              })()}
                 </TableBody>
               </Table>
             </CardContent>
