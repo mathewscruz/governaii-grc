@@ -159,15 +159,17 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
         )}
 
         {/* Gráfico Circular com Score Centralizado */}
-        <div className="relative inline-block mx-auto">
-          <CircularProgress percentage={scorePercentage} color={scoreColor} />
-          
-          {/* Score dentro do círculo */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-2xl font-bold text-foreground leading-none">
-              {displayScore}
+        <div className="flex justify-center">
+          <div className="relative inline-block">
+            <CircularProgress percentage={scorePercentage} color={scoreColor} />
+            
+            {/* Score dentro do círculo */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="text-2xl font-bold text-foreground leading-none">
+                {displayScore}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">de 1000</div>
             </div>
-            <div className="text-xs text-muted-foreground mt-0.5">de 1000</div>
           </div>
         </div>
       </CardContent>
