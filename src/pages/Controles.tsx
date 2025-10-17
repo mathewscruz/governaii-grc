@@ -28,7 +28,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { capitalizeText, getControleStatusColor, getCriticidadeColor, getControleTipoColor } from '@/lib/text-utils';
+import { capitalizeText } from '@/lib/text-utils';
 
 interface Controle {
   id: string;
@@ -156,31 +156,102 @@ export default function Controles() {
     setDeleteConfirm({ open: false, controleId: '' });
   };
 
+  const getStatusBadgeVariant = (status: string): "default" | "destructive" | "secondary" | "outline" => {
+    switch (status) {
+      case 'ativo':
+        return 'default';
+      case 'inativo':
+        return 'secondary';
+      case 'em_revisao':
+        return 'outline';
+      case 'descontinuado':
+        return 'destructive';
+      default:
+        return 'secondary';
+    }
+  };
+
+  const getStatusCustomClass = (status: string) => {
+    switch (status) {
+      case 'ativo':
+        return 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200';
+      case 'em_revisao':
+        return 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200';
+      default:
+        return '';
+    }
+  };
+
   const getStatusBadge = (status: string) => {
-    const colorClasses = getControleStatusColor(status);
     const displayText = status.replace(/_/g, ' ');
     
     return (
       <Badge 
-        variant="outline" 
-        className={colorClasses}
+        variant={getStatusBadgeVariant(status)} 
+        className={getStatusCustomClass(status)}
       >
         {capitalizeText(displayText)}
       </Badge>
     );
   };
 
+  const getCriticidadeBadgeVariant = (criticidade: string): "default" | "destructive" | "secondary" | "outline" => {
+    switch (criticidade) {
+      case 'critico':
+        return 'destructive';
+      case 'alto':
+        return 'default';
+      case 'medio':
+        return 'secondary';
+      case 'baixo':
+        return 'outline';
+      default:
+        return 'secondary';
+    }
+  };
+
+  const getCriticidadeCustomClass = (criticidade: string) => {
+    switch (criticidade) {
+      case 'critico':
+        return 'bg-red-600 text-white border-red-700 hover:bg-red-700';
+      case 'alto':
+        return 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200';
+      default:
+        return '';
+    }
+  };
+
   const getCriticidadeBadge = (criticidade: string) => {
-    const colorClasses = getCriticidadeColor(criticidade);
-    
     return (
       <Badge 
-        variant="outline" 
-        className={colorClasses}
+        variant={getCriticidadeBadgeVariant(criticidade)} 
+        className={getCriticidadeCustomClass(criticidade)}
       >
         {capitalizeText(criticidade)}
       </Badge>
     );
+  };
+
+  const getTipoBadgeVariant = (tipo: string): "default" | "destructive" | "secondary" | "outline" => {
+    switch (tipo) {
+      case 'preventivo':
+        return 'default';
+      case 'detectivo':
+        return 'secondary';
+      case 'corretivo':
+        return 'outline';
+      default:
+        return 'secondary';
+    }
+  };
+
+  const getTipoCustomClass = (tipo: string) => {
+    switch (tipo) {
+      case 'corretivo':
+        return 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200';
+      default:
+        return '';
+    }
   };
 
   const getTipoIcon = (tipo: string) => {
@@ -236,8 +307,8 @@ export default function Controles() {
       label: 'Tipo',
       render: (controle: Controle) => (
         <Badge 
-          variant="outline" 
-          className={getControleTipoColor(controle.tipo)}
+          variant={getTipoBadgeVariant(controle.tipo)} 
+          className={getTipoCustomClass(controle.tipo)}
         >
           {capitalizeText(controle.tipo)}
         </Badge>
@@ -512,8 +583,8 @@ export default function Controles() {
                     </TableCell>
                     <TableCell>
                       <Badge 
-                        variant="outline" 
-                        className={getControleTipoColor(controle.tipo)}
+                        variant={getTipoBadgeVariant(controle.tipo)} 
+                        className={getTipoCustomClass(controle.tipo)}
                       >
                         {capitalizeText(controle.tipo)}
                       </Badge>
