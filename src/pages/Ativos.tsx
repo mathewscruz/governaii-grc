@@ -186,11 +186,11 @@ const Ativos = () => {
         if (proprietarioIds.length > 0) {
           const { data: profiles } = await supabase
             .from('profiles')
-            .select('user_id, nome')
+            .select('user_id, nome, foto_url')
             .in('user_id', proprietarioIds);
           
           const profileMap = new Map(
-            profiles?.map(p => [p.user_id, { nome: p.nome }]) || []
+            profiles?.map(p => [p.user_id, { nome: p.nome, foto_url: p.foto_url }]) || []
           );
           
           const mappedData = data.map(ativo => {
@@ -199,7 +199,8 @@ const Ativos = () => {
               : null;
             return {
               ...ativo,
-              proprietario_nome: profileData?.nome || null
+              proprietario_nome: profileData?.nome || null,
+              proprietario_avatar: profileData?.foto_url || null
             };
           });
           
@@ -476,19 +477,22 @@ const Ativos = () => {
       render: (value: string, ativo: Ativo) => {
         if (!ativo.proprietario_nome) return '-';
         
-        const initials = ativo.proprietario_nome
-          .split(' ')
-          .map(n => n[0])
-          .join('')
-          .toUpperCase()
-          .slice(0, 2);
-        
         return (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarFallback className="bg-primary/10 text-primary">{initials}</AvatarFallback>
+                  {ativo.proprietario_avatar && (
+                    <AvatarImage src={ativo.proprietario_avatar} alt={ativo.proprietario_nome} />
+                  )}
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {ativo.proprietario_nome
+                      .split(' ')
+                      .map(n => n[0])
+                      .join('')
+                      .toUpperCase()
+                      .slice(0, 2)}
+                  </AvatarFallback>
                 </Avatar>
               </TooltipTrigger>
               <TooltipContent>
