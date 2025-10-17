@@ -18,35 +18,39 @@ interface CircularProgressProps {
 }
 
 const CircularProgress: React.FC<CircularProgressProps> = ({ percentage, color }) => {
-  const radius = 55;
-  const circumference = Math.PI * radius; // Semicírculo
+  const radius = 45;
+  const circumference = 2 * Math.PI * radius; // Círculo completo
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
     <svg 
-      width="140" 
-      height="80" 
-      viewBox="0 0 140 80" 
+      width="120" 
+      height="120" 
+      viewBox="0 0 120 120" 
       className="mx-auto"
     >
-      {/* Background Track */}
-      <path
-        d="M 15 70 A 55 55 0 0 1 125 70"
+      {/* Background Circle */}
+      <circle
+        cx="60"
+        cy="60"
+        r={radius}
         fill="none"
         stroke="hsl(var(--muted))"
-        strokeWidth="12"
-        strokeLinecap="round"
+        strokeWidth="10"
       />
       
-      {/* Progress Arc */}
-      <path
-        d="M 15 70 A 55 55 0 0 1 125 70"
+      {/* Progress Circle */}
+      <circle
+        cx="60"
+        cy="60"
+        r={radius}
         fill="none"
         stroke={color}
-        strokeWidth="12"
+        strokeWidth="10"
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={strokeDashoffset}
+        transform="rotate(-90 60 60)"
         style={{
           transition: "stroke-dashoffset 1s ease-out",
         }}
@@ -103,13 +107,11 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
   if (loading || !stats) {
     return (
       <Card className="bg-card border border-border shadow-card">
-        <CardContent className="pt-4 pb-4">
-          <div className="space-y-4">
-            <Skeleton className="h-20 w-32 mx-auto rounded-full" />
-            <Skeleton className="h-3 w-12 mx-auto" />
-            <Skeleton className="h-12 w-24 mx-auto" />
+        <CardContent className="pt-6 pb-4">
+          <div className="space-y-3">
             <Skeleton className="h-3 w-16 mx-auto" />
-            <Skeleton className="h-8 w-32 mx-auto rounded-full" />
+            <Skeleton className="h-[120px] w-[120px] mx-auto rounded-full" />
+            <Skeleton className="h-6 w-28 mx-auto rounded-full" />
           </div>
         </CardContent>
       </Card>
@@ -130,49 +132,51 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
 
   return (
     <Card className="bg-card border border-border shadow-card">
-      <CardContent className="pt-4 pb-4">
-        {/* Gráfico Circular */}
-        <CircularProgress percentage={scorePercentage} color={scoreColor} />
-
+      <CardContent className="pt-6 pb-4">
         {/* Variação */}
         {hasVariation && (
           <div
             className={cn(
-              "flex items-center justify-center gap-1 mt-2 text-sm font-medium",
+              "flex items-center justify-center gap-1 mb-3 text-xs font-medium",
               isPositiveTrend
                 ? "text-green-600 dark:text-green-400"
                 : "text-red-600 dark:text-red-400"
             )}
           >
             {isPositiveTrend ? (
-              <ArrowUp className="h-4 w-4" />
+              <ArrowUp className="h-3 w-3" />
             ) : (
-              <ArrowDown className="h-4 w-4" />
+              <ArrowDown className="h-3 w-3" />
             )}
             <span>{Math.abs(stats.variacao7dias)}%</span>
           </div>
         )}
 
-        {/* Score Principal */}
-        <div className="text-center mt-2">
-          <div className="text-4xl font-bold text-foreground leading-none">
-            {displayScore}
+        {/* Gráfico Circular com Score Centralizado */}
+        <div className="relative inline-block mx-auto">
+          <CircularProgress percentage={scorePercentage} color={scoreColor} />
+          
+          {/* Score dentro do círculo */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="text-3xl font-bold text-foreground leading-none">
+              {displayScore}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">de 1000</div>
           </div>
-          <div className="text-sm text-muted-foreground mt-2">de 1000</div>
         </div>
 
         {/* Badge de Classificação */}
-        <div className="flex justify-center mt-4">
+        <div className="flex justify-center mt-3">
           <Badge
             variant="outline"
             className={cn(
-              "px-4 py-2 rounded-full flex items-center gap-2 border-0",
+              "px-3 py-1 rounded-full flex items-center gap-1.5 border-0 text-xs",
               classification.bgColor,
               classification.textColor
             )}
           >
             <span className="font-medium">{classification.text}</span>
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-3 w-3" />
           </Badge>
         </div>
       </CardContent>
