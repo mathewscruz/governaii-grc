@@ -1,9 +1,8 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { RiscosStats } from "@/hooks/useRiscosStats";
-import { ArrowDown, ArrowUp, ArrowRight } from "lucide-react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RiskScoreCardProps {
@@ -18,39 +17,39 @@ interface CircularProgressProps {
 }
 
 const CircularProgress: React.FC<CircularProgressProps> = ({ percentage, color }) => {
-  const radius = 45;
+  const radius = 35;
   const circumference = 2 * Math.PI * radius; // Círculo completo
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
     <svg 
-      width="120" 
-      height="120" 
-      viewBox="0 0 120 120" 
+      width="90" 
+      height="90" 
+      viewBox="0 0 90 90" 
       className="mx-auto"
     >
       {/* Background Circle */}
       <circle
-        cx="60"
-        cy="60"
+        cx="45"
+        cy="45"
         r={radius}
         fill="none"
         stroke="hsl(var(--muted))"
-        strokeWidth="10"
+        strokeWidth="8"
       />
       
       {/* Progress Circle */}
       <circle
-        cx="60"
-        cy="60"
+        cx="45"
+        cy="45"
         r={radius}
         fill="none"
         stroke={color}
-        strokeWidth="10"
+        strokeWidth="8"
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={strokeDashoffset}
-        transform="rotate(-90 60 60)"
+        transform="rotate(-90 45 45)"
         style={{
           transition: "stroke-dashoffset 1s ease-out",
         }}
@@ -107,11 +106,13 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
   if (loading || !stats) {
     return (
       <Card className="bg-card border border-border shadow-card">
-        <CardContent className="pt-6 pb-4">
-          <div className="space-y-3">
-            <Skeleton className="h-3 w-16 mx-auto" />
-            <Skeleton className="h-[120px] w-[120px] mx-auto rounded-full" />
-            <Skeleton className="h-6 w-28 mx-auto rounded-full" />
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+        </CardHeader>
+        <CardContent className="pt-2 pb-3">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-12 mx-auto" />
+            <Skeleton className="h-[90px] w-[90px] mx-auto rounded-full" />
           </div>
         </CardContent>
       </Card>
@@ -132,12 +133,17 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
 
   return (
     <Card className="bg-card border border-border shadow-card">
-      <CardContent className="pt-6 pb-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium leading-none">
+          Score de Risco
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-2 pb-3">
         {/* Variação */}
         {hasVariation && (
           <div
             className={cn(
-              "flex items-center justify-center gap-1 mb-3 text-xs font-medium",
+              "flex items-center justify-center gap-1 mb-2 text-xs font-medium",
               isPositiveTrend
                 ? "text-green-600 dark:text-green-400"
                 : "text-red-600 dark:text-red-400"
@@ -158,26 +164,11 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
           
           {/* Score dentro do círculo */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-3xl font-bold text-foreground leading-none">
+            <div className="text-2xl font-bold text-foreground leading-none">
               {displayScore}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">de 1000</div>
+            <div className="text-xs text-muted-foreground mt-0.5">de 1000</div>
           </div>
-        </div>
-
-        {/* Badge de Classificação */}
-        <div className="flex justify-center mt-3">
-          <Badge
-            variant="outline"
-            className={cn(
-              "px-3 py-1 rounded-full flex items-center gap-1.5 border-0 text-xs",
-              classification.bgColor,
-              classification.textColor
-            )}
-          >
-            <span className="font-medium">{classification.text}</span>
-            <ArrowRight className="h-3 w-3" />
-          </Badge>
         </div>
       </CardContent>
     </Card>
