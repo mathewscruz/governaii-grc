@@ -110,13 +110,22 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
     setIsSubmitting(true);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Usuário não autenticado');
+        setIsSubmitting(false);
+        return;
+      }
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('empresa_id')
+        .eq('user_id', user.id)
         .single();
 
       if (!profile?.empresa_id) {
         toast.error('Erro ao obter dados da empresa');
+        setIsSubmitting(false);
         return;
       }
 

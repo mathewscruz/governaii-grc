@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { capitalizeText } from '@/lib/text-utils';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
@@ -373,11 +374,14 @@ export function Riscos() {
       key: 'status',
       label: 'Status',
       className: undefined,
-      render: (value: string) => (
-        <Badge variant={getStatusBadgeVariant(value)}>
-          {value}
-        </Badge>
-      )
+      render: (value: string) => {
+        const displayText = value.replace(/_/g, ' ');
+        return (
+          <Badge variant={getStatusBadgeVariant(value)}>
+            {capitalizeText(displayText)}
+          </Badge>
+        );
+      }
     },
     {
       key: 'responsavel',

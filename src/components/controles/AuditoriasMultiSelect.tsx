@@ -44,7 +44,7 @@ export function AuditoriasMultiSelect({
         .from('auditorias')
         .select('id, nome, tipo, status')
         .eq('empresa_id', profile?.empresa_id)
-        .in('status', ['planejada', 'em_andamento'])
+        .in('status', ['planejada', 'em_andamento', 'concluida'])
         .order('nome');
 
       if (error) throw error;
