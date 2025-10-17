@@ -143,6 +143,11 @@ export function AppSidebar() {
   const hasActiveSubItem = (subItems: any[]) => {
     return subItems.some(subItem => currentPath === subItem.url);
   };
+
+  // Função para fechar grupos ao navegar para item sem submenu
+  const handleNavClick = () => {
+    setOpenGroups([]);
+  };
   
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
@@ -289,7 +294,11 @@ export function AppSidebar() {
                                    <subItem.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out ${
                                      isActive(subItem.url) ? 'text-blue-600 dark:text-blue-400 scale-110' : ''
                                    }`} />
-                                   <span className="text-sm transition-all duration-300 ease-out truncate">{subItem.title}</span>
+                                   <span className={`text-sm transition-all duration-300 ease-out truncate ${
+                                     isActive(subItem.url) ? 'text-blue-600 dark:text-blue-400 font-semibold' : ''
+                                   }`}>
+                                     {subItem.title}
+                                   </span>
                                  </NavLink>
                               </SidebarMenuButton>
                             ))}
@@ -299,12 +308,18 @@ export function AppSidebar() {
                     </Collapsible>
                   ) : (
                     <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-9">
-                      <NavLink to={item.url} className={({ isActive }) => getNavCls({ isActive })}>
+                      <NavLink 
+                        to={item.url} 
+                        onClick={handleNavClick}
+                        className={({ isActive }) => getNavCls({ isActive })}
+                      >
                         <item.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out ${
                           isActive(item.url) ? 'text-blue-600 dark:text-blue-400 scale-110' : ''
                         }`} />
                         {!isCollapsed && (
-                          <span className="text-sm font-medium transition-all duration-300 ease-out truncate">
+                          <span className={`text-sm font-medium transition-all duration-300 ease-out truncate ${
+                            isActive(item.url) ? 'text-blue-600 dark:text-blue-400 font-semibold' : ''
+                          }`}>
                             {item.title}
                           </span>
                         )}
@@ -323,12 +338,18 @@ export function AppSidebar() {
               {canAccess('configuracoes') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-9">
-                    <NavLink to="/configuracoes" className={({ isActive }) => getNavCls({ isActive })}>
+                    <NavLink 
+                      to="/configuracoes" 
+                      onClick={handleNavClick}
+                      className={({ isActive }) => getNavCls({ isActive })}
+                    >
                       <Settings className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out ${
                         isActive('/configuracoes') ? 'text-blue-600 dark:text-blue-400 scale-110' : ''
                       }`} />
                       {!isCollapsed && (
-                        <span className="text-sm font-medium transition-all duration-300 ease-out truncate">
+                        <span className={`text-sm font-medium transition-all duration-300 ease-out truncate ${
+                          isActive('/configuracoes') ? 'text-blue-600 dark:text-blue-400 font-semibold' : ''
+                        }`}>
                           Configurações
                         </span>
                       )}
