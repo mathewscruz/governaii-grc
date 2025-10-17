@@ -177,18 +177,11 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
     // Enviar e-mail de notificação para solicitações
     if (tipoFormulario === 'solicitacao') {
       try {
-        const { data: solicitanteData } = await supabase
-          .from('profiles')
-          .select('nome')
-          .eq('user_id', userData.user?.id)
-          .single();
-
         const { error: emailError } = await supabase.functions.invoke('send-approval-notification', {
           body: {
             documento_id: documento.id,
             aprovador_id: formData.aprovador_id,
-            solicitante_nome: solicitanteData?.nome || 'Usuário',
-            documento_nome: documento.nome
+            solicitante_id: userData.user?.id
           }
         });
 

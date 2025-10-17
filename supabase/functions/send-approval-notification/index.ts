@@ -11,8 +11,7 @@ const corsHeaders = {
 interface NotificationRequest {
   documento_id: string;
   aprovador_id: string;
-  solicitante_nome: string;
-  documento_nome: string;
+  solicitante_id: string;
 }
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -31,16 +30,28 @@ const handler = async (req: Request): Promise<Response> => {
     const { 
       documento_id, 
       aprovador_id, 
-      solicitante_nome, 
-      documento_nome 
+      solicitante_id
     }: NotificationRequest = await req.json();
 
     console.log("Enviando notificação de aprovação:", {
       documento_id,
       aprovador_id,
-      solicitante_nome,
-      documento_nome
+      solicitante_id
     });
+
+    // Buscar dados do solicitante
+    const { data: solicitante, error: solicitanteError } = await supabase
+      .from('profiles')
+      .select('nome')
+      .eq('user_id', solicitante_id)
+      .single();
+
+    if (solicitanteError || !solicitante) {
+      console.error("Erro ao buscar solicitante:", solicitanteError);
+      throw new Error("Solicitante não encontrado");
+    }
+
+    const solicitanteNome = solicitante.nome;
 
     // Buscar dados do aprovador
     const { data: aprovador, error: aprovadorError } = await supabase
@@ -83,7 +94,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: `${companyName} <noreply@governaii.com.br>`,
       to: [aprovador.email],
-      subject: `Solicitação de Aprovação de Documento - ${documento_nome}`,
+      subject: `Solicitação de Aprovação de Documento - ${document.nome}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -174,7 +185,7 @@ const handler = async (req: Request): Promise<Response> => {
               <div class="content">
                 <p>Olá <strong>${aprovador.nome}</strong>,</p>
                 
-                <p><strong>${solicitante_nome}</strong> solicitou sua aprovação para o seguinte documento:</p>
+                <p><strong>${solicitanteNome}</strong> solicitou sua aprovação para o seguinte documento:</p>
                 
                 <div class="info-box">
                   <p style="margin: 0 0 8px;"><strong>Documento:</strong> ${document.nome}</p>
