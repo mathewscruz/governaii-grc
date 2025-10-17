@@ -112,6 +112,10 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
     }
   };
 
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
   const handleProfileSubmit = async (data: PerfilForm) => {
     try {
       // Atualizar perfil
@@ -169,14 +173,14 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
   };
 
   return (
-    <div className="w-80 space-y-4">
+    <div className="space-y-6">
       {/* Foto de Perfil */}
-      <div className="flex flex-col items-center gap-3 pb-4 border-b">
+      <div className="flex flex-col items-center gap-4">
         <div className="relative">
-          <Avatar className="h-20 w-20">
-            <AvatarImage src={fotoUrl || (profile as any)?.foto_url} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-              {getInitials(profile?.nome || user?.email?.split('@')[0] || 'U')}
+          <Avatar className="h-24 w-24 cursor-pointer" onClick={handlePhotoClick}>
+            <AvatarImage src={fotoUrl || (profile as any)?.foto_url} alt={user?.email || ''} />
+            <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+              {getInitials(form.watch('nome') || (profile as any)?.nome || user?.email || '')}
             </AvatarFallback>
           </Avatar>
           {uploading && (
@@ -212,7 +216,7 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
 
       {/* Formulário */}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleProfileSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(handleProfileSubmit)} className="space-y-5">
           <FormField
             control={form.control}
             name="nome"
@@ -227,10 +231,13 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
             )}
           />
 
-          <Separator />
+          {/* Separador */}
+          <div className="pt-4">
+            <Separator className="my-5" />
+            <h3 className="text-sm font-semibold mb-5">Alterar Senha</h3>
+          </div>
 
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">Alterar Senha</h4>
+          <div className="space-y-4">
             
             <FormField
               control={form.control}
@@ -332,9 +339,12 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
             />
           </div>
 
-          <Button type="submit" className="w-full">
-            Salvar Alterações
-          </Button>
+          {/* Botão Salvar */}
+          <div className="pt-2">
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </div>
         </form>
       </Form>
     </div>

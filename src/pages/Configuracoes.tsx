@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Building2, Settings, Shield, Bell } from 'lucide-react';
+import { Users, Building2, Settings, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
 import GerenciamentoUsuariosEnhanced from '@/components/configuracoes/GerenciamentoUsuariosEnhanced';
@@ -62,7 +62,7 @@ const Configuracoes = () => {
       </div>
 
       <Tabs defaultValue="usuarios" className="space-y-6">
-        <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-5' : isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-4' : isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
           {isSuperAdmin && (
             <TabsTrigger value="empresas" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
@@ -79,10 +79,6 @@ const Configuracoes = () => {
               <span className="hidden sm:inline">Permissões</span>
             </TabsTrigger>
           )}
-          <TabsTrigger value="lembretes" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Lembretes</span>
-          </TabsTrigger>
           <TabsTrigger value="geral" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Geral</span>
@@ -125,22 +121,22 @@ const Configuracoes = () => {
           </TabsContent>
         )}
 
-        <TabsContent value="lembretes">
-          <ReminderSettings />
-        </TabsContent>
-
         <TabsContent value="geral">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Configurações Gerais
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ConfiguracoesGerais userRole={userRole} />
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Configurações Gerais
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ConfiguracoesGerais userRole={userRole} />
+              </CardContent>
+            </Card>
+
+            <ReminderSettings />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

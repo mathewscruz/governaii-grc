@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfilePopover } from './UserProfilePopover';
@@ -94,28 +94,30 @@ const UserProfile: React.FC = () => {
   };
 
   return (
-    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-      <PopoverTrigger asChild>
-        <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={userProfile?.foto_url} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+    <Dialog open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <DialogTrigger asChild>
+        <button className="flex items-center gap-3 hover:bg-accent/50 p-2 rounded-lg transition-colors cursor-pointer">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={userProfile?.foto_url} alt={displayName} />
+            <AvatarFallback className="bg-primary text-primary-foreground">
               {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
-          
-          <div className="hidden sm:block">
-            <p className="text-sm font-medium text-foreground">{displayName}</p>
+          <div className="flex flex-col items-start">
+            <span className="text-sm font-medium text-foreground">{displayName}</span>
             <Badge variant={getRoleColor(displayRole)} className="text-xs">
               {getRoleLabel(displayRole)}
             </Badge>
           </div>
-        </div>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-auto p-0">
+        </button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Editar Perfil</DialogTitle>
+        </DialogHeader>
         <UserProfilePopover onClose={() => setPopoverOpen(false)} />
-      </PopoverContent>
-    </Popover>
+      </DialogContent>
+    </Dialog>
   );
 };
 

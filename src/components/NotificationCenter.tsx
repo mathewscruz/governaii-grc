@@ -268,8 +268,18 @@ const NotificationCenter: React.FC = () => {
 
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      // Só marcar como lida se não for uma notificação automática
-      if (!notificationId.startsWith('doc-')) {
+      // Só marcar como lida se for uma notificação do banco (UUID válido, não é ID automático)
+      const isAutomaticId = notificationId.includes('-') && (
+        notificationId.startsWith('doc-') ||
+        notificationId.startsWith('contrato-') ||
+        notificationId.startsWith('controle-') ||
+        notificationId.startsWith('incidente-') ||
+        notificationId.startsWith('ativo-') ||
+        notificationId.startsWith('manutencao-') ||
+        notificationId.startsWith('aprovacao-')
+      );
+      
+      if (!isAutomaticId) {
         const { error } = await supabase
           .from('notifications')
           .update({ read: true })
@@ -292,8 +302,9 @@ const NotificationCenter: React.FC = () => {
 
   const unreadCount = allNotifications.filter(n => !n.read).length;
 
-  const handleNotificationClick = (notification: any) => {
-    if (!notification.read && !notification.isAutomatic) {
+  const handleNotificationClick = (notification: Notification) => {
+    // Marcar como lida se ainda não foi lida
+    if (!notification.read) {
       markAsReadMutation.mutate(notification.id);
     }
 
