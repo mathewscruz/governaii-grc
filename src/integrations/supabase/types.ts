@@ -3357,6 +3357,7 @@ export type Database = {
           id: string
           link_to: string | null
           message: string | null
+          metadata: Json | null
           read: boolean | null
           title: string
           type: string | null
@@ -3368,6 +3369,7 @@ export type Database = {
           id?: string
           link_to?: string | null
           message?: string | null
+          metadata?: Json | null
           read?: boolean | null
           title: string
           type?: string | null
@@ -3379,6 +3381,7 @@ export type Database = {
           id?: string
           link_to?: string | null
           message?: string | null
+          metadata?: Json | null
           read?: boolean | null
           title?: string
           type?: string | null
