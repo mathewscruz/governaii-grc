@@ -16,36 +16,58 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 import { useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
-import { capitalizeText, getAuditoriaStatusColor, getAuditoriaTipoColor, getAuditoriaPrioridadeColor } from "@/lib/text-utils";
+import { capitalizeText } from "@/lib/text-utils";
 import AuditoriaDialog from "@/components/auditorias/AuditoriaDialog";
 import TrabalhosDialog from "@/components/auditorias/TrabalhosDialog";
 import AchadosDialog from "@/components/auditorias/AchadosDialog";
 import RecomendacoesDialog from "@/components/auditorias/RecomendacoesDialog";
 import EvidenciasDialog from "@/components/auditorias/EvidenciasDialog";
 
-const getStatusBadge = (status: string) => {
-  const displayText = status.replace(/_/g, ' ');
-  return (
-    <Badge variant="outline" className={getAuditoriaStatusColor(status)}>
-      {capitalizeText(displayText)}
-    </Badge>
-  );
+const getStatusBadgeVariant = (status: string): "default" | "destructive" | "secondary" | "outline" => {
+  switch (status) {
+    case 'planejamento':
+      return 'secondary';
+    case 'em_andamento':
+      return 'default';
+    case 'concluida':
+      return 'outline';
+    case 'cancelada':
+      return 'destructive';
+    default:
+      return 'secondary';
+  }
 };
 
-const getPrioridadeBadge = (prioridade: string) => {
-  return (
-    <Badge variant="outline" className={getAuditoriaPrioridadeColor(prioridade)}>
-      {capitalizeText(prioridade)}
-    </Badge>
-  );
+const getPrioridadeBadgeVariant = (prioridade: string): "default" | "destructive" | "secondary" | "outline" => {
+  switch (prioridade) {
+    case 'critica':
+      return 'destructive';
+    case 'alta':
+      return 'destructive';
+    case 'media':
+      return 'default';
+    case 'baixa':
+      return 'secondary';
+    default:
+      return 'secondary';
+  }
 };
 
-const getTipoBadge = (tipo: string) => {
-  return (
-    <Badge variant="outline" className={getAuditoriaTipoColor(tipo)}>
-      {capitalizeText(tipo)}
-    </Badge>
-  );
+const getTipoBadgeVariant = (tipo: string): "default" | "destructive" | "secondary" | "outline" => {
+  switch (tipo) {
+    case 'interna':
+      return 'default';
+    case 'externa':
+      return 'outline';
+    case 'compliance':
+      return 'secondary';
+    case 'operacional':
+      return 'default';
+    case 'ti':
+      return 'secondary';
+    default:
+      return 'secondary';
+  }
 };
 
 const Auditorias = () => {
@@ -353,13 +375,19 @@ const Auditorias = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {getTipoBadge(auditoria.tipo)}
+                            <Badge variant={getTipoBadgeVariant(auditoria.tipo)}>
+                              {capitalizeText(auditoria.tipo)}
+                            </Badge>
                           </TableCell>
                           <TableCell>
-                            {getStatusBadge(auditoria.status)}
+                            <Badge variant={getStatusBadgeVariant(auditoria.status)}>
+                              {capitalizeText(auditoria.status.replace(/_/g, ' '))}
+                            </Badge>
                           </TableCell>
                           <TableCell>
-                            {getPrioridadeBadge(auditoria.prioridade)}
+                            <Badge variant={getPrioridadeBadgeVariant(auditoria.prioridade)}>
+                              {capitalizeText(auditoria.prioridade)}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             {auditoria.data_inicio 
