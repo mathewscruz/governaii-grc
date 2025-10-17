@@ -189,6 +189,8 @@ const Ativos = () => {
             .select('user_id, nome, foto_url')
             .in('user_id', proprietarioIds);
           
+          console.log('Profiles fetched:', profiles);
+          
           const profileMap = new Map(
             profiles?.map(p => [p.user_id, { nome: p.nome, foto_url: p.foto_url }]) || []
           );
@@ -197,12 +199,17 @@ const Ativos = () => {
             const profileData = (ativo.proprietario && ativo.proprietario.trim() !== '') 
               ? profileMap.get(ativo.proprietario) 
               : null;
+            
+            console.log('Ativo:', ativo.nome, 'Profile data:', profileData);
+            
             return {
               ...ativo,
               proprietario_nome: profileData?.nome || null,
               proprietario_avatar: profileData?.foto_url || null
             };
           });
+          
+          console.log('Mapped data:', mappedData);
           
           setAtivos(mappedData);
         } else {
