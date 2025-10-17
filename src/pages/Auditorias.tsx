@@ -246,9 +246,11 @@ const Auditorias = () => {
       if (auditoria) {
         setSelectedAuditoria(auditoria);
         setShowAuditoriaDialog(true);
+        // Limpar o state para evitar reaberturas
+        window.history.replaceState({}, document.title);
       }
     }
-  }, [location.state?.itemId, auditorias?.length]);
+  }, [location.state, auditorias]);
 
   const statsCards = [
     {

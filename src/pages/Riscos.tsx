@@ -193,9 +193,11 @@ export function Riscos() {
       if (risco) {
         setEditingRisco(risco);
         setRiscoDialogOpen(true);
+        // Limpar o state para evitar reaberturas
+        window.history.replaceState({}, document.title);
       }
     }
-  }, [location.state?.itemId, riscos.length]);
+  }, [location.state, riscos]);
 
   useEffect(() => {
     const ids = searchParams.get('ids');

@@ -113,9 +113,11 @@ export default function Controles() {
       if (controle) {
         setEditingControle(controle);
         setControleDialogOpen(true);
+        // Limpar o state para evitar reaberturas
+        window.history.replaceState({}, document.title);
       }
     }
-  }, [location.state?.itemId, controles.length]);
+  }, [location.state, controles]);
 
   // Buscar categorias
   const { data: categorias = [] } = useQuery({
