@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, XCircle, Clock, History, Activity, Shield, Brain, BarChart3, TrendingUp } from 'lucide-react';
+import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, XCircle, Clock, History, Activity, Shield, Brain, BarChart3, TrendingUp, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,8 @@ import { UploadMultiplosDialog } from '@/components/documentos/UploadMultiplosDi
 import { DocumentoPreview } from '@/components/documentos/DocumentoPreview';
 import { TrilhaAuditoriaDocumentos } from '@/components/documentos/TrilhaAuditoriaDocumentos';
 import { DocGenDialog } from '@/components/documentos/DocGenDialog';
+import { RenovarDocumentoDialog } from '@/components/documentos/RenovarDocumentoDialog';
+import { HistoricoVersoesDialog } from '@/components/documentos/HistoricoVersoesDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
@@ -33,6 +35,7 @@ import { capitalizeText, getStatusColor, getTipoColor, getClassificacaoColor } f
 
 interface Documento {
   id: string;
+  empresa_id: string;
   nome: string;
   descricao?: string;
   tipo: string;
@@ -83,6 +86,8 @@ export function Documentos() {
   const [showDocGenDialog, setShowDocGenDialog] = useState(false);
   const [relatoriosDialog, setRelatoriosDialog] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [renovarDialog, setRenovarDialog] = useState<{ open: boolean; documento?: Documento }>({ open: false });
+  const [historicoDialog, setHistoricoDialog] = useState<{ open: boolean; documento?: Documento }>({ open: false });
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; documentoId: string }>({
     open: false,
     documentoId: ''
@@ -230,6 +235,17 @@ export function Documentos() {
 
   const handleDeleteDocumento = (id: string) => {
     setDeleteConfirm({ open: true, documentoId: id });
+  };
+
+  const podeRenovar = (documento: Documento): boolean => {
+    if (!documento.data_vencimento) return false;
+    
+    const hoje = new Date();
+    const vencimento = new Date(documento.data_vencimento);
+    const diasParaVencer = Math.ceil((vencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Permitir renovação se vencido ou vencendo em até 30 dias
+    return diasParaVencer <= 30;
   };
 
   const confirmDeleteDocumento = async () => {
@@ -747,11 +763,25 @@ export function Documentos() {
                               Aprovação
                             </DropdownMenuItem>
                           )}
+                          {podeRenovar(documento) && (
+                            <DropdownMenuItem
+                              onClick={() => setRenovarDialog({ open: true, documento })}
+                            >
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              Renovar Documento
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => setHistoricoDialog({ open: true, documento })}
+                          >
+                            <History className="mr-2 h-4 w-4" />
+                            Histórico de Versões
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setAuditoriaDialog({ open: true, documento })}
                           >
-                            <History className="mr-2 h-4 w-4" />
-                            Auditoria
+                            <Activity className="mr-2 h-4 w-4" />
+                            Trilha de Auditoria
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDeleteDocumento(documento.id)}
@@ -869,6 +899,19 @@ export function Documentos() {
         confirmText="Excluir"
         variant="destructive"
         onConfirm={confirmDeleteDocumento}
+      />
+
+      <RenovarDocumentoDialog
+        open={renovarDialog.open}
+        onOpenChange={(open) => setRenovarDialog({ open, documento: undefined })}
+        documento={renovarDialog.documento || null}
+        onSuccess={fetchDocumentos}
+      />
+
+      <HistoricoVersoesDialog
+        open={historicoDialog.open}
+        onOpenChange={(open) => setHistoricoDialog({ open, documento: undefined })}
+        documento={historicoDialog.documento || null}
       />
     </div>
   );

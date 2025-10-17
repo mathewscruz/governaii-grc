@@ -2314,6 +2314,65 @@ export type Database = {
         }
         Relationships: []
       }
+      documentos_historico: {
+        Row: {
+          aprovado_por: string | null
+          arquivo_nome: string | null
+          arquivo_tamanho: number | null
+          arquivo_tipo: string | null
+          arquivo_url: string | null
+          created_at: string | null
+          created_by: string | null
+          data_aprovacao: string | null
+          data_vencimento: string | null
+          documento_id: string
+          id: string
+          observacoes: string | null
+          status: string
+          versao: number
+        }
+        Insert: {
+          aprovado_por?: string | null
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data_aprovacao?: string | null
+          data_vencimento?: string | null
+          documento_id: string
+          id?: string
+          observacoes?: string | null
+          status: string
+          versao: number
+        }
+        Update: {
+          aprovado_por?: string | null
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data_aprovacao?: string | null
+          data_vencimento?: string | null
+          documento_id?: string
+          id?: string
+          observacoes?: string | null
+          status?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_historico_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentos_vinculacoes: {
         Row: {
           created_at: string

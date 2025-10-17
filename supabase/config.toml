@@ -92,3 +92,6 @@ verify_jwt = true
 
 [functions.send-test-email]
 verify_jwt = true
+
+[functions.renovar-documento]
+verify_jwt = true
