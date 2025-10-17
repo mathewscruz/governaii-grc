@@ -26,15 +26,24 @@ import EvidenciasDialog from "@/components/auditorias/EvidenciasDialog";
 const getStatusBadgeVariant = (status: string): "default" | "destructive" | "secondary" | "outline" => {
   switch (status) {
     case 'planejamento':
-      return 'secondary';
+      return 'outline';
     case 'em_andamento':
       return 'default';
     case 'concluida':
-      return 'outline';
+      return 'secondary';
     case 'cancelada':
       return 'destructive';
     default:
       return 'secondary';
+  }
+};
+
+const getStatusCustomClass = (status: string) => {
+  switch (status) {
+    case 'concluida':
+      return 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200';
+    default:
+      return '';
   }
 };
 
@@ -43,13 +52,24 @@ const getPrioridadeBadgeVariant = (prioridade: string): "default" | "destructive
     case 'critica':
       return 'destructive';
     case 'alta':
-      return 'destructive';
-    case 'media':
       return 'default';
-    case 'baixa':
+    case 'media':
       return 'secondary';
+    case 'baixa':
+      return 'outline';
     default:
       return 'secondary';
+  }
+};
+
+const getPrioridadeCustomClass = (prioridade: string) => {
+  switch (prioridade) {
+    case 'critica':
+      return 'bg-red-600 text-white border-red-700 hover:bg-red-700';
+    case 'alta':
+      return 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200';
+    default:
+      return '';
   }
 };
 
@@ -58,15 +78,26 @@ const getTipoBadgeVariant = (tipo: string): "default" | "destructive" | "seconda
     case 'interna':
       return 'default';
     case 'externa':
-      return 'outline';
+      return 'destructive';
     case 'compliance':
-      return 'secondary';
+      return 'outline';
     case 'operacional':
-      return 'default';
-    case 'ti':
       return 'secondary';
+    case 'ti':
+      return 'default';
     default:
       return 'secondary';
+  }
+};
+
+const getTipoCustomClass = (tipo: string) => {
+  switch (tipo) {
+    case 'ti':
+      return 'bg-purple-100 text-purple-800 border-purple-300 hover:bg-purple-200';
+    case 'compliance':
+      return 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200';
+    default:
+      return '';
   }
 };
 
@@ -375,17 +406,26 @@ const Auditorias = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={getTipoBadgeVariant(auditoria.tipo)}>
+                            <Badge 
+                              variant={getTipoBadgeVariant(auditoria.tipo)}
+                              className={getTipoCustomClass(auditoria.tipo)}
+                            >
                               {capitalizeText(auditoria.tipo)}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={getStatusBadgeVariant(auditoria.status)}>
+                            <Badge 
+                              variant={getStatusBadgeVariant(auditoria.status)}
+                              className={getStatusCustomClass(auditoria.status)}
+                            >
                               {capitalizeText(auditoria.status.replace(/_/g, ' '))}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={getPrioridadeBadgeVariant(auditoria.prioridade)}>
+                            <Badge 
+                              variant={getPrioridadeBadgeVariant(auditoria.prioridade)}
+                              className={getPrioridadeCustomClass(auditoria.prioridade)}
+                            >
                               {capitalizeText(auditoria.prioridade)}
                             </Badge>
                           </TableCell>
