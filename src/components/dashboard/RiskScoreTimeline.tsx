@@ -38,13 +38,38 @@ export function RiskScoreTimeline() {
       const now = new Date();
       
       if (timeRange === 'week') {
-        // Últimas 12 semanas
-        for (let i = 11; i >= 0; i--) {
+        // Últimos 7 dias
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(now);
+          date.setDate(date.getDate() - i);
+
+          const { data: riscosData } = await supabase
+            .from('riscos')
+            .select('nivel_risco_inicial, created_at')
+            .lte('created_at', date.toISOString());
+
+          const riscos = riscosData || [];
+          const criticos = riscos.filter(r => r.nivel_risco_inicial === 'Crítico').length;
+          const altos = riscos.filter(r => r.nivel_risco_inicial === 'Alto' || r.nivel_risco_inicial === 'Muito Alto').length;
+          const medios = riscos.filter(r => r.nivel_risco_inicial === 'Médio' || r.nivel_risco_inicial === 'Moderado').length;
+          const baixos = riscos.filter(r => r.nivel_risco_inicial === 'Baixo' || r.nivel_risco_inicial === 'Muito Baixo').length;
+
+          periods.push({
+            month: date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+            criticos,
+            altos,
+            medios,
+            baixos
+          });
+        }
+      } else if (timeRange === 'month') {
+        // Últimas 4 semanas
+        for (let i = 3; i >= 0; i--) {
           const endDate = new Date(now);
           endDate.setDate(endDate.getDate() - (i * 7));
           const startDate = new Date(endDate);
           startDate.setDate(startDate.getDate() - 6);
-
+          
           const { data: riscosData } = await supabase
             .from('riscos')
             .select('nivel_risco_inicial, created_at')
@@ -57,14 +82,14 @@ export function RiskScoreTimeline() {
           const baixos = riscos.filter(r => r.nivel_risco_inicial === 'Baixo' || r.nivel_risco_inicial === 'Muito Baixo').length;
 
           periods.push({
-            month: `Sem ${12 - i}`,
+            month: `${startDate.getDate()}/${startDate.getMonth() + 1}`,
             criticos,
             altos,
             medios,
             baixos
           });
         }
-      } else if (timeRange === 'month') {
+      } else {
         // Últimos 12 meses
         for (let i = 11; i >= 0; i--) {
           const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -83,31 +108,6 @@ export function RiskScoreTimeline() {
 
           periods.push({
             month: date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
-            criticos,
-            altos,
-            medios,
-            baixos
-          });
-        }
-      } else {
-        // Últimos 5 anos
-        for (let i = 4; i >= 0; i--) {
-          const year = now.getFullYear() - i;
-          const endDate = new Date(year, 11, 31);
-          
-          const { data: riscosData } = await supabase
-            .from('riscos')
-            .select('nivel_risco_inicial, created_at')
-            .lte('created_at', endDate.toISOString());
-
-          const riscos = riscosData || [];
-          const criticos = riscos.filter(r => r.nivel_risco_inicial === 'Crítico').length;
-          const altos = riscos.filter(r => r.nivel_risco_inicial === 'Alto' || r.nivel_risco_inicial === 'Muito Alto').length;
-          const medios = riscos.filter(r => r.nivel_risco_inicial === 'Médio' || r.nivel_risco_inicial === 'Moderado').length;
-          const baixos = riscos.filter(r => r.nivel_risco_inicial === 'Baixo' || r.nivel_risco_inicial === 'Muito Baixo').length;
-
-          periods.push({
-            month: year.toString(),
             criticos,
             altos,
             medios,

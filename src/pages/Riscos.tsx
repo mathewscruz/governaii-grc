@@ -191,10 +191,11 @@ export function Riscos() {
     if (itemId && riscos.length > 0) {
       const risco = riscos.find(r => r.id === itemId);
       if (risco) {
-        handleEdit(risco);
+        setEditingRisco(risco);
+        setRiscoDialogOpen(true);
       }
     }
-  }, [location.state, riscos]);
+  }, [location.state?.itemId, riscos.length]);
 
   useEffect(() => {
     const ids = searchParams.get('ids');

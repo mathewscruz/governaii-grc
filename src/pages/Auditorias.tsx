@@ -241,13 +241,14 @@ const Auditorias = () => {
   // Detectar se veio com itemId do dashboard
   useEffect(() => {
     const itemId = location.state?.itemId;
-    if (itemId && auditorias) {
+    if (itemId && auditorias && auditorias.length > 0) {
       const auditoria = auditorias.find(a => a.id === itemId);
       if (auditoria) {
-        handleEdit(auditoria);
+        setSelectedAuditoria(auditoria);
+        setShowAuditoriaDialog(true);
       }
     }
-  }, [location.state, auditorias]);
+  }, [location.state?.itemId, auditorias?.length]);
 
   const statsCards = [
     {

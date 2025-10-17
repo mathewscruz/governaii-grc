@@ -111,10 +111,11 @@ export default function Controles() {
     if (itemId && controles.length > 0) {
       const controle = controles.find(c => c.id === itemId);
       if (controle) {
-        handleEdit(controle);
+        setEditingControle(controle);
+        setControleDialogOpen(true);
       }
     }
-  }, [location.state, controles]);
+  }, [location.state?.itemId, controles.length]);
 
   // Buscar categorias
   const { data: categorias = [] } = useQuery({
