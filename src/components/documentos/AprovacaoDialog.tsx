@@ -347,7 +347,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5" />
@@ -411,42 +411,39 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
                   </CardContent>
                 </Card>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Aprovador</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Comentários</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {aprovacoes.map((aprovacao) => (
-                      <TableRow key={aprovacao.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            <span className="font-medium">{aprovacao.aprovador_nome}</span>
+                <div className="space-y-3">
+                  {aprovacoes.map((aprovacao) => (
+                    <Card key={aprovacao.id}>
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <User className="h-4 w-4 shrink-0" />
+                              <span className="font-medium truncate">{aprovacao.aprovador_nome}</span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Badge variant="outline" className="shrink-0">
+                                {(aprovacao as any).tipo_acao === 'solicitacao' ? 'Solicitação' : 'Aprovação'}
+                              </Badge>
+                              {getStatusBadge(aprovacao.status)}
+                            </div>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {(aprovacao as any).tipo_acao === 'solicitacao' ? 'Solicitação' : 'Aprovação'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(aprovacao.status)}</TableCell>
-                        <TableCell>{aprovacao.comentarios || '-'}</TableCell>
-                        <TableCell>
-                          {aprovacao.data_aprovacao 
-                            ? format(new Date(aprovacao.data_aprovacao), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-                            : format(new Date(aprovacao.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-                          }
-                        </TableCell>
-                        <TableCell>
+                          
+                          {aprovacao.comentarios && (
+                            <div className="text-sm text-muted-foreground">
+                              <span className="font-medium">Comentários:</span> {aprovacao.comentarios}
+                            </div>
+                          )}
+                          
+                          <div className="text-sm text-muted-foreground">
+                            {aprovacao.data_aprovacao 
+                              ? format(new Date(aprovacao.data_aprovacao), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+                              : format(new Date(aprovacao.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+                            }
+                          </div>
+                          
                           {aprovacao.status === 'pendente' && (aprovacao as any).tipo_acao === 'solicitacao' && (
-                            <div className="flex gap-1">
+                            <div className="flex flex-wrap gap-2 pt-2">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -475,11 +472,11 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
                               </Button>
                             </div>
                           )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
             </div>
           ) : (
@@ -494,26 +491,26 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
               <div className="space-y-2">
                 <Label htmlFor="aprovador_id">Aprovador *</Label>
                 <Select value={formData.aprovador_id} onValueChange={(value) => setFormData(prev => ({ ...prev, aprovador_id: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione o aprovador">
                       {formData.aprovador_id && (
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          <span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <User className="h-4 w-4 shrink-0" />
+                          <span className="truncate">
                             {profiles.find(p => p.user_id === formData.aprovador_id)?.nome || 'Aprovador'}
                           </span>
                         </div>
                       )}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-w-[calc(100vw-2rem)]">
                     {profiles.map((profile) => (
                       <SelectItem key={profile.user_id} value={profile.user_id}>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          <div>
-                            <div>{profile.nome}</div>
-                            <div className="text-sm text-muted-foreground">{profile.email}</div>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <User className="h-4 w-4 shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate">{profile.nome}</div>
+                            <div className="text-sm text-muted-foreground truncate">{profile.email}</div>
                           </div>
                         </div>
                       </SelectItem>
