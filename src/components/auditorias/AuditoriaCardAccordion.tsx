@@ -172,70 +172,80 @@ export function AuditoriaCardAccordion({
           </div>
         </div>
 
-        {/* Accordion discreto para detalhes */}
-        {(auditoria.descricao || counts.trabalhos > 0 || counts.achados > 0 || counts.recomendacoes > 0) && (
-          <Accordion type="single" collapsible value={isExpanded ? "details" : ""} onValueChange={(value) => setIsExpanded(!!value)} className="mt-2">
-            <AccordionItem value="details" className="border-none">
-              <AccordionTrigger className="py-1 px-0 hover:no-underline text-muted-foreground">
-                <span className="text-[11px]">
-                  {isExpanded ? "Ocultar" : "Ver"} detalhes
-                </span>
-              </AccordionTrigger>
-              <AccordionContent className="pt-2 pb-0">
-                <div className="space-y-1.5 text-xs">
-                  {auditoria.descricao && (
-                    <p className="text-muted-foreground text-[11px] leading-relaxed">
-                      {auditoria.descricao}
-                    </p>
-                  )}
-                  
-                  {/* Seções compactas */}
-                  <div className="grid grid-cols-2 gap-1.5 mt-2">
-                    <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer" onClick={onOpenTrabalhos}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <ClipboardList className="h-3 w-3 text-blue-600" />
-                          <span className="text-[11px] font-medium">Trabalhos</span>
-                        </div>
+        {/* Accordion discreto para detalhes - SEMPRE visível */}
+        <Accordion type="single" collapsible value={isExpanded ? "details" : ""} onValueChange={(value) => setIsExpanded(!!value)} className="mt-2">
+          <AccordionItem value="details" className="border-none">
+            <AccordionTrigger className="py-1 px-0 hover:no-underline text-muted-foreground">
+              <span className="text-[11px]">
+                {isExpanded ? "Ocultar" : "Ver"} detalhes
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="pt-2 pb-0">
+              <div className="space-y-1.5 text-xs">
+                {auditoria.descricao && (
+                  <p className="text-muted-foreground text-[11px] leading-relaxed">
+                    {auditoria.descricao}
+                  </p>
+                )}
+                
+                {/* Seções compactas - sempre clicáveis */}
+                <div className="grid grid-cols-2 gap-1.5 mt-2">
+                  <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer" onClick={onOpenTrabalhos}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <ClipboardList className="h-3 w-3 text-blue-600" />
+                        <span className="text-[11px] font-medium">Trabalhos</span>
+                      </div>
+                      {counts.trabalhos > 0 ? (
                         <Badge variant="outline" className="text-[10px] py-0 h-4 px-1.5">{counts.trabalhos}</Badge>
-                      </div>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">Nenhum</span>
+                      )}
                     </div>
+                  </div>
 
-                    <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer border-l-2 border-l-orange-500" onClick={onOpenAchados}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3 text-orange-600" />
-                          <span className="text-[11px] font-medium">Achados</span>
-                        </div>
+                  <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer border-l-2 border-l-orange-500" onClick={onOpenAchados}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3 text-orange-600" />
+                        <span className="text-[11px] font-medium">Achados</span>
+                      </div>
+                      {counts.achados > 0 ? (
                         <Badge variant="outline" className="text-[10px] py-0 h-4 px-1.5">{counts.achados}</Badge>
-                      </div>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">Nenhum</span>
+                      )}
                     </div>
+                  </div>
 
-                    <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer border-l-2 border-l-green-500" onClick={onOpenRecomendacoes}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <FileCheck className="h-3 w-3 text-green-600" />
-                          <span className="text-[11px] font-medium">Recomendações</span>
-                        </div>
+                  <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer border-l-2 border-l-green-500" onClick={onOpenRecomendacoes}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <FileCheck className="h-3 w-3 text-green-600" />
+                        <span className="text-[11px] font-medium">Recomendações</span>
+                      </div>
+                      {counts.recomendacoes > 0 ? (
                         <Badge variant="outline" className="text-[10px] py-0 h-4 px-1.5">{counts.recomendacoes}</Badge>
-                      </div>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">Nenhum</span>
+                      )}
                     </div>
+                  </div>
 
-                    <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer" onClick={onOpenEvidencias}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <ImageIcon className="h-3 w-3 text-purple-600" />
-                          <span className="text-[11px] font-medium">Evidências</span>
-                        </div>
-                        <Plus className="h-3 w-3" />
+                  <div className="border rounded p-1.5 hover:bg-muted/50 transition-colors cursor-pointer" onClick={onOpenEvidencias}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <ImageIcon className="h-3 w-3 text-purple-600" />
+                        <span className="text-[11px] font-medium">Evidências</span>
                       </div>
+                      <Plus className="h-3 w-3 text-muted-foreground" />
                     </div>
                   </div>
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </CardContent>
     </Card>
   );
