@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,7 +40,9 @@ interface Controle {
   tipo: string;
   processo?: string;
   area?: string;
-  responsavel?: string;
+  responsavel_id?: string;
+  responsavel_nome?: string;
+  responsavel_foto?: string;
   frequencia?: string;
   status: string;
   criticidade: string;
@@ -101,6 +105,38 @@ export default function Controles() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
+      
+      // Buscar nomes e fotos dos responsáveis
+      if (data && data.length > 0) {
+        const responsavelIds = data
+          .map(c => c.responsavel_id)
+          .filter(r => r && r.trim() !== '');
+        
+        if (responsavelIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, nome, foto_url')
+            .in('user_id', responsavelIds);
+          
+          const profileMap = new Map(
+            profiles?.map(p => [p.user_id, { nome: p.nome, foto_url: p.foto_url }]) || []
+          );
+          
+          const mappedData = data.map(controle => {
+            const profileData = (controle.responsavel_id && controle.responsavel_id.trim() !== '') 
+              ? profileMap.get(controle.responsavel_id) 
+              : null;
+            return {
+              ...controle,
+              responsavel_nome: profileData?.nome || null,
+              responsavel_foto: profileData?.foto_url || null
+            };
+          });
+          
+          return mappedData as Controle[];
+        }
+      }
+      
       return data as Controle[];
     }
   });
@@ -343,7 +379,35 @@ export default function Controles() {
     {
       key: 'responsavel' as keyof Controle,
       label: 'Responsável',
-      render: (controle: Controle) => controle.responsavel || <span className="text-muted-foreground">-</span>
+      render: (controle: Controle) => {
+        if (controle.responsavel_nome) {
+          return (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Avatar className="h-8 w-8 cursor-pointer">
+                    {controle.responsavel_foto && (
+                      <AvatarImage src={controle.responsavel_foto} alt={controle.responsavel_nome} />
+                    )}
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {controle.responsavel_nome
+                        .split(' ')
+                        .map(n => n[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{controle.responsavel_nome}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        }
+        return <span className="text-muted-foreground">-</span>;
+      }
     },
     {
       key: 'proxima_avaliacao' as keyof Controle,
@@ -612,7 +676,32 @@ export default function Controles() {
                       {getCriticidadeBadge(controle.criticidade)}
                     </TableCell>
                     <TableCell>
-                      {controle.responsavel || <span className="text-muted-foreground">-</span>}
+                      {controle.responsavel_nome ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Avatar className="h-8 w-8 cursor-pointer">
+                                {controle.responsavel_foto && (
+                                  <AvatarImage src={controle.responsavel_foto} alt={controle.responsavel_nome} />
+                                )}
+                                <AvatarFallback className="bg-primary/10 text-primary">
+                                  {controle.responsavel_nome
+                                    .split(' ')
+                                    .map(n => n[0])
+                                    .join('')
+                                    .toUpperCase()
+                                    .slice(0, 2)}
+                                </AvatarFallback>
+                              </Avatar>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{controle.responsavel_nome}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {controle.proxima_avaliacao ? 
