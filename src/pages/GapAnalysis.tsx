@@ -43,8 +43,14 @@ export default function GapAnalysis() {
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'requirements' | 'evaluation' | 'assessments'>('dashboard');
 
-  const { data: stats, loading: statsLoading } = useGapAnalysisStats();
+  const { data: stats, loading: statsLoading, refetch: refetchStats } = useGapAnalysisStats();
 
+  const getComplianceVariant = (compliance: number): "success" | "info" | "warning" | "destructive" => {
+    if (compliance >= 80) return "success";    // 80-100% = Verde
+    if (compliance >= 60) return "info";       // 60-79% = Azul
+    if (compliance >= 40) return "warning";    // 40-59% = Amarelo
+    return "destructive";                       // 0-39% = Vermelho
+  };
 
   const statsCards = [
     {
@@ -87,6 +93,7 @@ export default function GapAnalysis() {
 
   const handleAssessmentSuccess = () => {
     setIsAssessmentDialogOpen(false);
+    refetchStats(); // Atualizar stats após criar/editar avaliação
     toast({
       title: "Sucesso",
       description: "Avaliação criada/atualizada com sucesso!",
@@ -161,7 +168,7 @@ export default function GapAnalysis() {
           frameworkId={selectedAssessment.framework_id || selectedAssessment.id}
           frameworkName={selectedAssessment.framework_name || selectedAssessment.name}
           assessmentName={selectedAssessment.name}
-          onSave={() => console.log('Assessment saved')}
+          onSave={() => refetchStats()}
         />
       </div>
     );
@@ -215,7 +222,7 @@ export default function GapAnalysis() {
             value={`${stats?.averageCompliance || 0}%`}
             description="Índice de conformidade"
             icon={<TrendingUp className="h-4 w-4" />}
-            variant="success"
+            variant={getComplianceVariant(stats?.averageCompliance || 0)}
             loading={statsLoading}
           />
           <StatCard
