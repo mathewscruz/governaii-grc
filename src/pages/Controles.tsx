@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2, Filter, TestTube } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { useControlesStats } from "@/hooks/useControlesStats";
 import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DataTable } from "@/components/ui/data-table";
 import ConfirmDialog from '@/components/ConfirmDialog';
 import {
   Pagination,
@@ -79,6 +80,9 @@ export default function Controles() {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
   const [criticidadeFilter, setCriticidadeFilter] = useState<string>("todos");
+  const [searchValue, setSearchValue] = useState<string>("");
+  const [sortField, setSortField] = useState<string>("nome");
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const { toast } = useToast();
@@ -87,7 +91,17 @@ export default function Controles() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, tipoFilter, criticidadeFilter]);
+  }, [statusFilter, tipoFilter, criticidadeFilter, searchValue]);
+
+  // Handle sorting
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
   
   // Buscar estatísticas dos controles
   const { data: stats } = useControlesStats();
@@ -207,6 +221,50 @@ export default function Controles() {
     deleteControleMutation.mutate(deleteConfirm.controleId);
     setDeleteConfirm({ open: false, controleId: '' });
   };
+
+  // Filter and sort data
+  const sortedControles = useMemo(() => {
+    const filtered = controles.filter(controle => {
+      const matchStatus = statusFilter === "todos" || controle.status === statusFilter;
+      const matchTipo = tipoFilter === "todos" || controle.tipo === tipoFilter;
+      const matchCriticidade = criticidadeFilter === "todos" || controle.criticidade === criticidadeFilter;
+      const matchSearch = !searchValue || 
+        controle.nome.toLowerCase().includes(searchValue.toLowerCase()) ||
+        controle.descricao?.toLowerCase().includes(searchValue.toLowerCase());
+      
+      return matchStatus && matchTipo && matchCriticidade && matchSearch;
+    });
+
+    return filtered.sort((a, b) => {
+      let aVal: any = a[sortField as keyof Controle];
+      let bVal: any = b[sortField as keyof Controle];
+      
+      // Tratamento especial para datas
+      if (sortField === 'proxima_avaliacao' || sortField === 'data_implementacao') {
+        aVal = aVal ? new Date(aVal as string).getTime() : 0;
+        bVal = bVal ? new Date(bVal as string).getTime() : 0;
+      }
+      
+      // Tratamento para categoria (objeto aninhado)
+      if (sortField === 'categoria') {
+        aVal = a.categoria?.nome || '';
+        bVal = b.categoria?.nome || '';
+      }
+      
+      // Tratamento para responsável
+      if (sortField === 'responsavel') {
+        aVal = a.responsavel_nome || '';
+        bVal = b.responsavel_nome || '';
+      }
+      
+      // Comparação
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      
+      const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [controles, sortField, sortDirection, statusFilter, tipoFilter, criticidadeFilter, searchValue]);
 
   const getStatusBadgeVariant = (status: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (status) {
@@ -335,7 +393,7 @@ export default function Controles() {
       key: 'nome' as keyof Controle,
       label: 'Nome',
       sortable: true,
-      render: (controle: Controle) => (
+      render: (value: any, controle: Controle) => (
         <div className="flex items-center gap-2">
           {getTipoIcon(controle.tipo)}
           <span className="font-medium">{controle.nome}</span>
@@ -345,7 +403,8 @@ export default function Controles() {
     {
       key: 'categoria' as keyof Controle,
       label: 'Categoria',
-      render: (controle: Controle) => controle.categoria ? (
+      sortable: true,
+      render: (value: any, controle: Controle) => controle.categoria ? (
         <Badge 
           variant="outline" 
           style={{ borderColor: controle.categoria.cor, color: controle.categoria.cor }}
@@ -357,7 +416,8 @@ export default function Controles() {
     {
       key: 'tipo' as keyof Controle,
       label: 'Tipo',
-      render: (controle: Controle) => (
+      sortable: true,
+      render: (value: any, controle: Controle) => (
         <Badge 
           variant={getTipoBadgeVariant(controle.tipo)} 
           className={getTipoCustomClass(controle.tipo)}
@@ -369,17 +429,20 @@ export default function Controles() {
     {
       key: 'status' as keyof Controle,
       label: 'Status',
-      render: (controle: Controle) => getStatusBadge(controle.status)
+      sortable: true,
+      render: (value: any, controle: Controle) => getStatusBadge(controle.status)
     },
     {
       key: 'criticidade' as keyof Controle,
       label: 'Criticidade',
-      render: (controle: Controle) => getCriticidadeBadge(controle.criticidade)
+      sortable: true,
+      render: (value: any, controle: Controle) => getCriticidadeBadge(controle.criticidade)
     },
     {
       key: 'responsavel' as keyof Controle,
       label: 'Responsável',
-      render: (controle: Controle) => {
+      sortable: true,
+      render: (value: any, controle: Controle) => {
         if (controle.responsavel_nome) {
           return (
             <TooltipProvider>
@@ -412,14 +475,16 @@ export default function Controles() {
     {
       key: 'proxima_avaliacao' as keyof Controle,
       label: 'Próxima Avaliação',
-      render: (controle: Controle) => controle.proxima_avaliacao ? 
+      sortable: true,
+      render: (value: any, controle: Controle) => controle.proxima_avaliacao ? 
         new Date(controle.proxima_avaliacao).toLocaleDateString() : 
         <span className="text-muted-foreground">-</span>
     },
     {
       key: 'actions' as keyof Controle,
       label: 'Ações',
-      render: (controle: Controle) => (
+      sortable: false,
+      render: (value: any, controle: Controle) => (
         <div className="flex gap-1">
           <Button
             variant="ghost"
@@ -505,321 +570,156 @@ export default function Controles() {
         />
       </div>
 
-      <Card className="rounded-lg border overflow-hidden">
-        <CardContent className="p-0">
-          <div className="p-6 pb-4">
-            <div className="flex items-center justify-between gap-4 mb-4">
-              <Input
-                placeholder="Buscar controles..."
-                className="max-w-sm"
-              />
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setCategoriasDialogOpen(true)}
-                >
-                  Categorias
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filtros
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setRelatoriosDialogOpen(true)}
-                >
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  Relatórios
-                </Button>
-                <Button 
-                  size="sm"
-                  onClick={() => setControleDialogOpen(true)}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Novo Controle
-                </Button>
-              </div>
-            </div>
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex-1"></div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setCategoriasDialogOpen(true)}
+          >
+            Categorias
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setRelatoriosDialogOpen(true)}
+          >
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Relatórios
+          </Button>
+          <Button 
+            size="sm"
+            onClick={() => setControleDialogOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Controle
+          </Button>
+        </div>
+      </div>
+
+      {/* DataTable with sorting */}
+      <DataTable
+        data={sortedControles.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)}
+        columns={controlesColumns}
+        loading={isLoading}
+        searchable={true}
+        searchPlaceholder="Buscar controles..."
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={handleSort}
+        filters={[
+          {
+            key: 'status',
+            label: 'Status',
+            options: [
+              { value: 'todos', label: 'Todos os Status' },
+              { value: 'ativo', label: 'Ativo' },
+              { value: 'inativo', label: 'Inativo' },
+              { value: 'em_revisao', label: 'Em Revisão' },
+              { value: 'descontinuado', label: 'Descontinuado' },
+            ],
+            value: statusFilter,
+            onChange: setStatusFilter,
+          },
+          {
+            key: 'tipo',
+            label: 'Tipo',
+            options: [
+              { value: 'todos', label: 'Todos os Tipos' },
+              { value: 'preventivo', label: 'Preventivo' },
+              { value: 'detectivo', label: 'Detectivo' },
+              { value: 'corretivo', label: 'Corretivo' },
+            ],
+            value: tipoFilter,
+            onChange: setTipoFilter,
+          },
+          {
+            key: 'criticidade',
+            label: 'Criticidade',
+            options: [
+              { value: 'todos', label: 'Todas as Criticidades' },
+              { value: 'baixo', label: 'Baixo' },
+              { value: 'medio', label: 'Médio' },
+              { value: 'alto', label: 'Alto' },
+              { value: 'critico', label: 'Crítico' },
+            ],
+            value: criticidadeFilter,
+            onChange: setCriticidadeFilter,
+          },
+        ]}
+        emptyState={{
+          icon: <Shield className="h-12 w-12" />,
+          title: "Nenhum controle cadastrado",
+          description: "Comece criando seu primeiro controle interno",
+          action: {
+            label: "Criar Primeiro Controle",
+            onClick: () => setControleDialogOpen(true)
+          }
+        }}
+      />
+
+      {/* Pagination */}
+      {sortedControles.length > itemsPerPage && (
+        <div className="flex items-center justify-between px-2 py-4">
+          <div className="text-sm text-muted-foreground">
+            Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, sortedControles.length)} de {sortedControles.length} controles
           </div>
-          {showFilters && (
-            <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Status</SelectItem>
-                  <SelectItem value="ativo">Ativo</SelectItem>
-                  <SelectItem value="inativo">Inativo</SelectItem>
-                  <SelectItem value="em_revisao">Em Revisão</SelectItem>
-                  <SelectItem value="descontinuado">Descontinuado</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={tipoFilter} onValueChange={setTipoFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Tipos</SelectItem>
-                  <SelectItem value="preventivo">Preventivo</SelectItem>
-                  <SelectItem value="detectivo">Detectivo</SelectItem>
-                  <SelectItem value="corretivo">Corretivo</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={criticidadeFilter} onValueChange={setCriticidadeFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Criticidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todas as Criticidades</SelectItem>
-                  <SelectItem value="baixo">Baixo</SelectItem>
-                  <SelectItem value="medio">Médio</SelectItem>
-                  <SelectItem value="alto">Alto</SelectItem>
-                  <SelectItem value="critico">Crítico</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Criticidade</TableHead>
-                <TableHead>Responsável</TableHead>
-                <TableHead>Próxima Avaliação</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                [...Array(5)].map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                  </TableRow>
-                ))
-              ) : controles.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="p-0">
-                    <EmptyState
-                      icon={<Shield className="h-12 w-12" />}
-                      title="Nenhum controle cadastrado"
-                      description="Comece criando seu primeiro controle interno"
-                      action={{
-                        label: "Criar Primeiro Controle",
-                        onClick: () => setControleDialogOpen(true)
-                      }}
-                    />
-                  </TableCell>
-                </TableRow>
-              ) : (() => {
-                const filteredControles = controles.filter(controle => {
-                  const matchStatus = statusFilter === "todos" || controle.status === statusFilter;
-                  const matchTipo = tipoFilter === "todos" || controle.tipo === tipoFilter;
-                  const matchCriticidade = criticidadeFilter === "todos" || controle.criticidade === criticidadeFilter;
-                  
-                  return matchStatus && matchTipo && matchCriticidade;
-                });
-
-                const indexOfLastItem = currentPage * itemsPerPage;
-                const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-                const currentControles = filteredControles.slice(indexOfFirstItem, indexOfLastItem);
-                const totalPages = Math.ceil(filteredControles.length / itemsPerPage);
-
-                return (
-                  <>
-                    {currentControles.map((controle) => (
-                  <TableRow key={controle.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getTipoIcon(controle.tipo)}
-                        <span className="font-medium">{controle.nome}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {controle.categoria ? (
-                        <Badge 
-                          variant="outline" 
-                          style={{ borderColor: controle.categoria.cor, color: controle.categoria.cor }}
-                        >
-                          {controle.categoria.nome}
-                        </Badge>
-                      ) : <span className="text-muted-foreground">-</span>}
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={getTipoBadgeVariant(controle.tipo)} 
-                        className={getTipoCustomClass(controle.tipo)}
-                      >
-                        {capitalizeText(controle.tipo)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(controle.status)}
-                    </TableCell>
-                    <TableCell>
-                      {getCriticidadeBadge(controle.criticidade)}
-                    </TableCell>
-                    <TableCell>
-                      {controle.responsavel_nome ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Avatar className="h-8 w-8 cursor-pointer">
-                                {controle.responsavel_foto && (
-                                  <AvatarImage src={controle.responsavel_foto} alt={controle.responsavel_nome} />
-                                )}
-                                <AvatarFallback className="bg-primary/10 text-primary">
-                                  {controle.responsavel_nome
-                                    .split(' ')
-                                    .map(n => n[0])
-                                    .join('')
-                                    .toUpperCase()
-                                    .slice(0, 2)}
-                                </AvatarFallback>
-                              </Avatar>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{controle.responsavel_nome}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {controle.proxima_avaliacao ? 
-                        new Date(controle.proxima_avaliacao).toLocaleDateString() : 
-                        <span className="text-muted-foreground">-</span>
-                      }
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(controle)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedControleForTests(controle);
-                            setTestesDialogOpen(true);
-                          }}
-                          title="Gerenciar Testes"
-                        >
-                          <TestTube className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedControleForVinculacao(controle);
-                            setVinculacaoDialogOpen(true);
-                          }}
-                          title="Gerenciar Vinculações"
-                        >
-                          <Link className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(controle.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+              
+              {[...Array(Math.ceil(sortedControles.length / itemsPerPage))].map((_, index) => {
+                const pageNumber = index + 1;
+                const totalPages = Math.ceil(sortedControles.length / itemsPerPage);
                 
-                {totalPages > 1 && (
-                  <TableRow>
-                    <TableCell colSpan={8}>
-                      <div className="flex items-center justify-between px-2 py-4">
-                        <div className="text-sm text-muted-foreground">
-                          Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, filteredControles.length)} de {filteredControles.length} controles
-                        </div>
-                        <Pagination>
-                          <PaginationContent>
-                            <PaginationItem>
-                              <PaginationPrevious 
-                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                              />
-                            </PaginationItem>
-                            
-                            {[...Array(totalPages)].map((_, index) => {
-                              const pageNumber = index + 1;
-                              
-                              if (
-                                pageNumber === 1 ||
-                                pageNumber === totalPages ||
-                                (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                              ) {
-                                return (
-                                  <PaginationItem key={pageNumber}>
-                                    <PaginationLink
-                                      onClick={() => setCurrentPage(pageNumber)}
-                                      isActive={currentPage === pageNumber}
-                                      className="cursor-pointer"
-                                    >
-                                      {pageNumber}
-                                    </PaginationLink>
-                                  </PaginationItem>
-                                );
-                              } else if (
-                                pageNumber === currentPage - 2 ||
-                                pageNumber === currentPage + 2
-                              ) {
-                                return (
-                                  <PaginationItem key={pageNumber}>
-                                    <PaginationEllipsis />
-                                  </PaginationItem>
-                                );
-                              }
-                              return null;
-                            })}
-                            
-                            <PaginationItem>
-                              <PaginationNext 
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                              />
-                            </PaginationItem>
-                          </PaginationContent>
-                        </Pagination>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </>
-            );
-          })()}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                if (
+                  pageNumber === 1 ||
+                  pageNumber === totalPages ||
+                  (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                ) {
+                  return (
+                    <PaginationItem key={pageNumber}>
+                      <PaginationLink
+                        onClick={() => setCurrentPage(pageNumber)}
+                        isActive={currentPage === pageNumber}
+                        className="cursor-pointer"
+                      >
+                        {pageNumber}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                } else if (
+                  pageNumber === currentPage - 2 ||
+                  pageNumber === currentPage + 2
+                ) {
+                  return (
+                    <PaginationItem key={pageNumber}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  );
+                }
+                return null;
+              })}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(sortedControles.length / itemsPerPage)))}
+                  className={currentPage === Math.ceil(sortedControles.length / itemsPerPage) ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
       <ControleDialog
         open={controleDialogOpen}
