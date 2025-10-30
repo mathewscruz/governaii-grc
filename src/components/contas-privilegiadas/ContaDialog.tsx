@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { useQueryClient } from '@tanstack/react-query';
 
 const contaSchema = z.object({
   usuario_beneficiario: z.string().min(1, 'Nome do usuário é obrigatório'),
@@ -49,6 +50,7 @@ export default function ContaDialog({ open, onClose, conta, sistemas }: ContaDia
   const { toast } = useToast();
   const { user } = useAuth();
   const { empresaId, loading: loadingEmpresa } = useEmpresaId();
+  const queryClient = useQueryClient();
   
   const form = useForm<ContaFormData>({
     resolver: zodResolver(contaSchema),
@@ -120,6 +122,9 @@ export default function ContaDialog({ open, onClose, conta, sistemas }: ContaDia
         });
       }
 
+      // Invalidar cache para forçar atualização
+      await queryClient.invalidateQueries({ queryKey: ['contas-privilegiadas'] });
+      
       onClose();
     } catch (error: any) {
       toast({
