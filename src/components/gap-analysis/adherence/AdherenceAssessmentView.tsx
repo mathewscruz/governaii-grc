@@ -38,9 +38,9 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'concluido':
-        return <Badge className="bg-green-500">Concluído</Badge>;
+        return <Badge className="bg-green-500 text-white">Concluído</Badge>;
       case 'processando':
-        return <Badge className="bg-blue-500"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Processando</Badge>;
+        return <Badge className="bg-blue-500 text-white"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Processando</Badge>;
       case 'erro':
         return <Badge variant="destructive">Erro</Badge>;
       default:
@@ -53,11 +53,11 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
     
     switch (resultado) {
       case 'conforme':
-        return <Badge className="bg-green-500">Conforme</Badge>;
+        return <Badge className="bg-green-500 text-white">Conforme</Badge>;
       case 'nao_conforme':
         return <Badge variant="destructive">Não Conforme</Badge>;
       case 'parcial':
-        return <Badge className="bg-yellow-500">Parcial</Badge>;
+        return <Badge className="bg-yellow-500 text-white">Parcial</Badge>;
       default:
         return null;
     }

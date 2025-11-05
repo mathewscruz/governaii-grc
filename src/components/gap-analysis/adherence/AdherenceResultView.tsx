@@ -9,6 +9,8 @@ import { ptBR } from 'date-fns/locale';
 import type { AdherenceAssessment, PontoForte, PontoMelhoria } from './types';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
+import { exportAssessmentToPDF } from './ExportPDF';
+import { useToast } from '@/hooks/use-toast';
 
 interface AdherenceResultViewProps {
   assessment: AdherenceAssessment;
@@ -16,6 +18,8 @@ interface AdherenceResultViewProps {
 }
 
 export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewProps) {
+  const { toast } = useToast();
+  
   // Buscar detalhes por requisito
   const { data: details } = useOptimizedQuery(
     async () => {
@@ -96,6 +100,23 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
 
   const total = distribuicao.conforme + distribuicao.parcial + distribuicao.nao_conforme + distribuicao.nao_aplicavel;
 
+  const handleExportPDF = () => {
+    try {
+      exportAssessmentToPDF(assessment, details);
+      toast({
+        title: "PDF exportado",
+        description: "O relatório foi exportado com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast({
+        title: "Erro ao exportar",
+        description: "Ocorreu um erro ao exportar o PDF.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -105,7 +126,7 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
           Voltar
         </Button>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportPDF}>
             <Download className="mr-2 h-4 w-4" />
             Exportar PDF
           </Button>
