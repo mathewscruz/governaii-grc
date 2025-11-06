@@ -37,7 +37,8 @@ export function FrameworkDialog({ open, onOpenChange, onSuccess, framework }: Fr
       const data = {
         ...formData,
         empresa_id: profile.empresa_id,
-        created_by: user.id
+        created_by: user.id,
+        tipo: 'personalizado'
       };
 
       if (framework) {

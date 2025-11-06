@@ -18,6 +18,7 @@ export interface Framework {
   nome: string;
   versao: string;
   tipo_framework: string;
+  tipo?: 'padrao' | 'personalizado';
   descricao?: string;
   assessment_count?: number;
 }

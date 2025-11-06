@@ -33,6 +33,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
       const { data, error } = await supabase
         .from('gap_analysis_frameworks')
         .select('*')
+        .eq('tipo', 'personalizado')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

@@ -3480,6 +3480,7 @@ export type Database = {
           empresa_id: string
           id: string
           nome: string
+          tipo: string
           tipo_framework: string | null
           updated_at: string
           versao: string | null
@@ -3491,6 +3492,7 @@ export type Database = {
           empresa_id: string
           id?: string
           nome: string
+          tipo?: string
           tipo_framework?: string | null
           updated_at?: string
           versao?: string | null
@@ -3502,6 +3504,7 @@ export type Database = {
           empresa_id?: string
           id?: string
           nome?: string
+          tipo?: string
           tipo_framework?: string | null
           updated_at?: string
           versao?: string | null
