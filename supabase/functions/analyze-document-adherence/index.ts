@@ -120,49 +120,59 @@ Para APENAS os requisitos relevantes identificados, analise:
 - O que a norma exige nesse requisito
 - O que o documento apresenta
 - Se está conforme, não conforme ou parcialmente conforme
-- Evidências encontradas
-- Gaps específicos
+- Evidências encontradas (resumidas)
+- Gaps específicos (resumidos)
 - Score de conformidade (0-10)
 
-IMPORTANTE:
-- Retorne APENAS os requisitos que você identificou como relevantes
-- NÃO retorne requisitos não aplicáveis ou irrelevantes
-- Seja específico nas evidências e gaps
-- Foque na qualidade da análise, não na quantidade
+⚠️ IMPORTANTE - GESTÃO DE RESPOSTA:
+- Se identificar MAIS DE 15 requisitos aplicáveis: SEJA CONCISO
+  - Evidências: máximo 100 caracteres por requisito
+  - Gaps: máximo 80 caracteres por requisito
+  - Observações: máximo 120 caracteres por requisito
+- Se identificar ATÉ 15 requisitos: pode ser mais detalhado
+  - Evidências: até 200 caracteres
+  - Gaps: até 150 caracteres
+  - Observações: até 250 caracteres
+- Retorne APENAS os requisitos relevantes identificados
+- NÃO retorne requisitos não aplicáveis na lista principal
+- Foque em QUALIDADE e PRECISÃO, não em volume de texto
+- Priorize informações ACIONÁVEIS
 
 FORMATO DE RESPOSTA (JSON):
 {
   "documento_tipo_identificado": "tipo do documento (ex: política, procedimento)",
-  "documento_escopo_identificado": "escopo/tema principal",
+  "documento_escopo_identificado": "escopo/tema principal (máx 50 caracteres)",
   "total_requisitos_relevantes": número,
   "resultado_geral": "conforme"|"nao_conforme"|"parcial",
   "percentual_conformidade": 0-100,
   "pontos_fortes": [
-    {"titulo": "resumo do ponto forte", "descricao": "detalhamento"}
+    {"titulo": "resumo (máx 50 chars)", "descricao": "detalhamento (máx 150 chars)"}
   ],
   "pontos_melhoria": [
-    {"titulo": "resumo da melhoria", "descricao": "detalhamento", "prioridade": "alta|media|baixa"}
+    {"titulo": "resumo (máx 50 chars)", "descricao": "detalhamento (máx 150 chars)", "prioridade": "alta|media|baixa"}
   ],
   "requisitos_analisados": [
     {
       "requirement_id": "uuid do requisito (ID entre colchetes acima)",
       "requisito_codigo": "código do requisito",
       "status_aderencia": "conforme"|"nao_conforme"|"parcial"|"nao_aplicavel",
-      "evidencias_encontradas": "citações específicas do documento que atendem o requisito",
-      "gaps_especificos": "o que falta ou está inadequado",
+      "evidencias_encontradas": "citações específicas RESUMIDAS (respeite limites acima)",
+      "gaps_especificos": "o que falta RESUMIDO (respeite limites acima)",
       "score_conformidade": 0-10,
-      "observacoes_ia": "análise detalhada comparando norma vs documento",
-      "justificativa_relevancia": "por que este requisito é relevante para este documento"
+      "observacoes_ia": "análise RESUMIDA comparando norma vs documento (respeite limites acima)",
+      "justificativa_relevancia": "por que é relevante (máx 80 chars)"
     }
   ],
   "requisitos_nao_aplicaveis": [
-    "lista de IDs dos requisitos que você identificou como NÃO aplicáveis a este documento"
+    "lista de IDs (apenas IDs, sem descrições)"
   ],
   "recomendacoes": [
-    "ações específicas e práticas para melhorar a conformidade"
+    "ações específicas RESUMIDAS - máximo 100 caracteres cada (máximo 5 recomendações)"
   ],
-  "analise_detalhada": "resumo executivo em markdown explicando: tipo do documento, requisitos relevantes identificados, pontos fortes encontrados, principais gaps, e próximos passos recomendados (máximo 400 palavras)"
-}`;
+  "analise_detalhada": "resumo executivo em markdown: tipo do documento, requisitos relevantes, pontos fortes, principais gaps, próximos passos (máximo 300 palavras - OBRIGATÓRIO respeitar limite)"
+}
+
+⚠️ CRÍTICO: Se você perceber que está gerando muito texto, PARE e RESUMA. É melhor ter análise concisa e completa do que truncada.`;
 
     // 6. Chamar Lovable AI Gateway com Gemini 2.5 Flash
     console.log('Calling Lovable AI Gateway...');
@@ -184,7 +194,7 @@ FORMATO DE RESPOSTA (JSON):
             content: prompt
           }
         ],
-        max_completion_tokens: 16000, // Tokens suficientes para análise completa sem truncamento
+        max_completion_tokens: 20000, // Aumentado para 20000 como margem de segurança
         response_format: { type: 'json_object' }
       }),
     });
@@ -216,8 +226,12 @@ FORMATO DE RESPOSTA (JSON):
     
     // Verificar se resposta foi truncada ANTES de verificar conteúdo
     if (aiResponse.choices?.[0]?.finish_reason === 'length') {
-      console.error('Response truncated - finish_reason: length. Aumentando tokens pode resolver.');
-      throw new Error('Análise muito extensa - resposta truncada. Documento pode ser muito complexo ou ter muitos requisitos aplicáveis.');
+      console.error('Response truncated - muitos requisitos aplicáveis.');
+      console.error('Content até truncamento:', aiResponse.choices[0].message?.content?.substring(0, 500));
+      throw new Error(
+        'O documento analisado possui requisitos demais para uma única análise. ' +
+        'Sugestão: analise o documento em seções menores ou revise o framework para reduzir requisitos.'
+      );
     }
     
     if (!aiResponse.choices?.[0]?.message?.content) {
