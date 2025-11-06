@@ -4,13 +4,15 @@ import { Card } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Eye, Loader2, FileCheck, AlertTriangle, TrendingUp, Target } from 'lucide-react';
+import { Plus, Eye, Loader2, FileCheck, AlertTriangle, TrendingUp, Target, Trash2 } from 'lucide-react';
 import { useAdherenceStats } from '@/hooks/useAdherenceStats';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AdherenceAssessmentDialog } from './AdherenceAssessmentDialog';
+import { toast } from 'sonner';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import type { AdherenceAssessment } from './types';
 
 interface AdherenceAssessmentViewProps {
@@ -19,6 +21,8 @@ interface AdherenceAssessmentViewProps {
 
 export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentViewProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [assessmentToDelete, setAssessmentToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { data: stats } = useAdherenceStats();
 
   const { data: assessments, loading: isLoading, refetch } = useOptimizedQuery(
@@ -63,6 +67,51 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
     }
   };
 
+  const handleDelete = async () => {
+    if (!assessmentToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const assessment = (assessments as any[])?.find(a => a.id === assessmentToDelete);
+      
+      // 1. Excluir detalhes relacionados
+      const { error: detailsError } = await supabase
+        .from('gap_analysis_adherence_details')
+        .delete()
+        .eq('assessment_id', assessmentToDelete);
+      
+      if (detailsError) throw detailsError;
+
+      // 2. Excluir arquivo do storage
+      if (assessment?.storage_file_name) {
+        const { error: storageError } = await supabase.storage
+          .from('adherence-documents')
+          .remove([assessment.storage_file_name]);
+        
+        if (storageError) {
+          console.error('Erro ao excluir arquivo do storage:', storageError);
+        }
+      }
+
+      // 3. Excluir registro principal
+      const { error: assessmentError } = await supabase
+        .from('gap_analysis_adherence_assessments')
+        .delete()
+        .eq('id', assessmentToDelete);
+      
+      if (assessmentError) throw assessmentError;
+
+      toast.success('Avaliação excluída com sucesso');
+      refetch();
+    } catch (error: any) {
+      console.error('Erro ao excluir avaliação:', error);
+      toast.error('Erro ao excluir avaliação: ' + error.message);
+    } finally {
+      setIsDeleting(false);
+      setAssessmentToDelete(null);
+    }
+  };
+
   const statsCards = [
     {
       title: 'Total de Avaliações',
@@ -92,14 +141,8 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Avaliação de Aderência</h2>
-          <p className="text-muted-foreground">
-            Compare documentos internos com frameworks regulatórios usando IA
-          </p>
-        </div>
+      {/* Botão Nova Avaliação */}
+      <div className="flex justify-end">
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Nova Avaliação
@@ -163,7 +206,7 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
                     </p>
                   </div>
 
-                  <div className="ml-4">
+                  <div className="ml-4 flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -172,6 +215,14 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
                     >
                       <Eye className="mr-2 h-4 w-4" />
                       Ver Detalhes
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAssessmentToDelete(assessment.id)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -190,11 +241,23 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
         )}
       </Card>
 
-      {/* Dialog */}
+      {/* Dialogs */}
       <AdherenceAssessmentDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         onSuccess={refetch}
+      />
+      
+      <ConfirmDialog
+        open={!!assessmentToDelete}
+        onOpenChange={(open) => !open && setAssessmentToDelete(null)}
+        title="Excluir avaliação?"
+        description="Esta ação não pode ser desfeita. A avaliação e todos os seus dados serão permanentemente removidos."
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={handleDelete}
+        loading={isDeleting}
       />
     </div>
   );
