@@ -99,55 +99,35 @@ serve(async (req) => {
 
     const documentName = storageFileName.split('/').pop()?.replace('.txt', '') || 'Documento';
 
-    const prompt = `Você é um auditor especializado. Analise o documento contra ${framework.nome} ${framework.versao}.
+    const prompt = `Analise o documento contra ${framework.nome}.
 
-DOCUMENTO:
-${documentText.substring(0, 12000)}${documentText.length > 12000 ? '\n[...]' : ''}
+DOCUMENTO (primeiros 10000 chars):
+${documentText.substring(0, 10000)}
 
-REQUISITOS (${requirements.length} total):
-${requirementsList}
+REQUISITOS (${requirements.length}):
+${requirements.slice(0, 50).map((r, i) => `${i+1}. [${r.id}] ${r.codigo} - ${r.titulo}`).join('\n')}
 
-TAREFA:
-1. Identifique requisitos RELEVANTES ao documento
-2. Analise conformidade de cada um
+TAREFA: Retorne JSON com requisitos relevantes.
 
-⚠️ LIMITES OBRIGATÓRIOS DE CARACTERES:
-- evidencias_encontradas: MAX 60 chars
-- gaps_especificos: MAX 50 chars  
-- observacoes_ia: MAX 80 chars
-- justificativa_relevancia: MAX 50 chars
-- titulo (pontos fortes/melhoria): MAX 40 chars
-- descricao (pontos fortes/melhoria): MAX 100 chars
-- recomendacoes: MAX 70 chars cada
-- analise_detalhada: MAX 200 palavras
+LIMITES RÍGIDOS:
+- evidencias_encontradas: 40 chars
+- gaps_especificos: 35 chars
+- observacoes_ia: 60 chars
+- justificativa_relevancia: 40 chars
+- titulo: 30 chars
+- descricao: 80 chars
 
-FORMATO JSON (respeite os limites):
+EXEMPLO requisito:
 {
-  "documento_tipo_identificado": "tipo",
-  "documento_escopo_identificado": "escopo",
-  "total_requisitos_relevantes": número,
-  "resultado_geral": "conforme"|"nao_conforme"|"parcial",
-  "percentual_conformidade": 0-100,
-  "pontos_fortes": [{"titulo": "max40", "descricao": "max100"}],
-  "pontos_melhoria": [{"titulo": "max40", "descricao": "max100", "prioridade": "alta|media|baixa"}],
-  "requisitos_analisados": [
-    {
-      "requirement_id": "uuid",
-      "requisito_codigo": "cod",
-      "status_aderencia": "conforme"|"nao_conforme"|"parcial"|"nao_aplicavel",
-      "evidencias_encontradas": "max60chars",
-      "gaps_especificos": "max50chars",
-      "score_conformidade": 0-10,
-      "observacoes_ia": "max80chars",
-      "justificativa_relevancia": "max50chars"
-    }
-  ],
-  "requisitos_nao_aplicaveis": ["ids"],
-  "recomendacoes": ["max70chars cada"],
-  "analise_detalhada": "max200palavras"
-}
-
-⚠️ CRÍTICO: Respeite os limites de caracteres. Resposta > 15000 chars será rejeitada.`;
+  "requirement_id": "uuid",
+  "requisito_codigo": "5.1",
+  "status_aderencia": "parcial",
+  "evidencias_encontradas": "Define responsabilidades cap 3.2",
+  "gaps_especificos": "Falta revisão anual",
+  "score_conformidade": 7,
+  "observacoes_ia": "Política define roles mas não define frequência revisão",
+  "justificativa_relevancia": "Req central para governança"
+}`;
 
     // 6. Chamar Lovable AI Gateway com Gemini 2.5 Flash
     console.log('Calling Lovable AI Gateway...');
@@ -158,18 +138,12 @@ FORMATO JSON (respeite os limites):
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite', // Modelo leve - melhor para seguir instruções concisas
+        model: 'google/gemini-2.5-flash-lite',
         messages: [
-          {
-            role: 'system',
-            content: 'Você é um auditor de conformidade especializado. Analise documentos contra frameworks regulatórios e retorne sempre JSON válido e estruturado. Seja objetivo e preciso.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
+          { role: 'system', content: 'Você é auditor. Retorne JSON válido com campos CURTOS.' },
+          { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 20000, // Aumentado para 20000 como margem de segurança
+        max_completion_tokens: 10000, // Reduzido para forçar respostas menores
         response_format: { type: 'json_object' }
       }),
     });
@@ -218,42 +192,67 @@ FORMATO JSON (respeite os limites):
     try {
       const content = aiResponse.choices[0].message.content;
       
-      // Validar tamanho antes de processar
-      if (content.length > 25000) {
-        console.error('Response too large:', content.length, 'chars');
-        throw new Error(`Resposta muito longa (${content.length} chars). A IA não seguiu os limites de caracteres.`);
+      console.log('AI response length:', content.length);
+      
+      // Validar tamanho
+      if (content.length > 30000) {
+        throw new Error(`Resposta muito longa (${content.length} chars). Reduzindo análise...`);
       }
       
-      // Tentar parse direto
-      try {
-        analysisResult = JSON.parse(content);
-      } catch (parseErr) {
-        // Tentar reparar JSON comum: remover texto após último }
-        console.warn('Tentando reparar JSON malformado...');
-        const lastBrace = content.lastIndexOf('}');
-        if (lastBrace > 0) {
-          const fixedContent = content.substring(0, lastBrace + 1);
-          analysisResult = JSON.parse(fixedContent);
-          console.log('JSON reparado com sucesso!');
-        } else {
-          throw parseErr;
+      // Parse JSON
+      analysisResult = JSON.parse(content);
+      
+      // TRUNCAR CAMPOS - forçar limites mesmo se IA não seguir
+      if (analysisResult.requisitos_analisados) {
+        analysisResult.requisitos_analisados = analysisResult.requisitos_analisados.map((req: any) => ({
+          ...req,
+          evidencias_encontradas: (req.evidencias_encontradas || '').substring(0, 100),
+          gaps_especificos: (req.gaps_especificos || '').substring(0, 80),
+          observacoes_ia: (req.observacoes_ia || '').substring(0, 150),
+          justificativa_relevancia: (req.justificativa_relevancia || '').substring(0, 80)
+        }));
+      }
+      
+      if (analysisResult.pontos_fortes) {
+        analysisResult.pontos_fortes = analysisResult.pontos_fortes.map((p: any) => ({
+          titulo: (p.titulo || '').substring(0, 60),
+          descricao: (p.descricao || '').substring(0, 150)
+        }));
+      }
+      
+      if (analysisResult.pontos_melhoria) {
+        analysisResult.pontos_melhoria = analysisResult.pontos_melhoria.map((p: any) => ({
+          titulo: (p.titulo || '').substring(0, 60),
+          descricao: (p.descricao || '').substring(0, 150),
+          prioridade: p.prioridade
+        }));
+      }
+      
+      if (analysisResult.recomendacoes) {
+        analysisResult.recomendacoes = analysisResult.recomendacoes.map((r: string) => 
+          r.substring(0, 150)
+        );
+      }
+      
+      if (analysisResult.analise_detalhada) {
+        // Limitar a 500 palavras
+        const words = analysisResult.analise_detalhada.split(/\s+/);
+        if (words.length > 500) {
+          analysisResult.analise_detalhada = words.slice(0, 500).join(' ') + '...';
         }
       }
       
-      console.log('Analysis result parsed successfully:', {
+      console.log('Analysis parsed and truncated:', {
         resultado_geral: analysisResult.resultado_geral,
         percentual: analysisResult.percentual_conformidade,
-        requisitos_analisados: analysisResult.requisitos_analisados?.length || 0,
-        documento_tipo: analysisResult.documento_tipo_identificado,
-        documento_escopo: analysisResult.documento_escopo_identificado
+        requisitos: analysisResult.requisitos_analisados?.length || 0
       });
     } catch (e) {
       const content = aiResponse.choices[0].message.content;
-      console.error('Failed to parse AI response. Content length:', content?.length);
-      console.error('Content preview (first 500 chars):', content?.substring(0, 500));
-      console.error('Content end (last 200 chars):', content?.substring(content.length - 200));
-      console.error('Parse error:', e);
-      throw new Error('Resposta da IA inválida. Tente novamente ou use um documento menor.');
+      console.error('Parse failed. Length:', content?.length);
+      console.error('Preview:', content?.substring(0, 500));
+      console.error('Error:', e);
+      throw new Error('Resposta da IA inválida. Tente um documento menor ou com menos requisitos.');
     }
 
     // 7. Salvar resultado completo na tabela de assessments
