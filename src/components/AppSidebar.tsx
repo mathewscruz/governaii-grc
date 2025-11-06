@@ -62,9 +62,11 @@ const menuItems = [
   },
   {
     title: 'Gap Analysis',
-    url: '/gap-analysis',
     icon: BarChart3,
-    moduleName: 'gap-analysis',
+    subItems: [
+      { title: 'Frameworks', url: '/gap-analysis/frameworks', icon: FileText, moduleName: 'gap-analysis' },
+      { title: 'Avaliação de Aderência', url: '/gap-analysis/avaliacao-aderencia', icon: Search, moduleName: 'gap-analysis' },
+    ],
   },
   {
     title: 'Controles Internos',

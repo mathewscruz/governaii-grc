@@ -10,6 +10,8 @@ import Dashboard from '@/pages/Dashboard';
 import Ativos from '@/pages/Ativos';
 import { Riscos } from '@/pages/Riscos';
 import GapAnalysis from '@/pages/GapAnalysis';
+import GapAnalysisFrameworks from '@/pages/GapAnalysisFrameworks';
+import GapAnalysisAderencia from '@/pages/GapAnalysisAderencia';
 import Controles from '@/pages/Controles';
 import Contratos from '@/pages/Contratos';
 import Auditorias from '@/pages/Auditorias';
@@ -72,6 +74,20 @@ function App() {
               <Layout>
                 <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
                   <GapAnalysis />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/gap-analysis/frameworks" element={
+              <Layout>
+                <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
+                  <GapAnalysisFrameworks />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/gap-analysis/avaliacao-aderencia" element={
+              <Layout>
+                <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
+                  <GapAnalysisAderencia />
                 </ProtectedRoute>
               </Layout>
             } />

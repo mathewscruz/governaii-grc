@@ -11,6 +11,8 @@ const routeMap: Record<string, string> = {
   '/ativos': 'Gestão de Ativos',
   '/riscos': 'Gestão de Riscos',
   '/gap-analysis': 'Gap Analysis',
+  '/gap-analysis/frameworks': 'Frameworks',
+  '/gap-analysis/avaliacao-aderencia': 'Avaliação de Aderência',
   '/controles': 'Controles Internos',
   '/auditorias': 'Auditorias',
   '/contratos': 'Contratos',
