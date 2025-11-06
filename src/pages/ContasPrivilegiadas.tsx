@@ -13,6 +13,7 @@ import ContaDialog from '@/components/contas-privilegiadas/ContaDialog';
 import SistemaDialog from '@/components/contas-privilegiadas/SistemaDialog';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface ContaPrivilegiada {
   id: string;
@@ -243,11 +244,25 @@ export default function ContasPrivilegiadas() {
           <TableBody>
             {filteredContas.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
-                  <div className="flex flex-col items-center gap-2">
-                    <Users className="h-8 w-8 text-muted-foreground" />
-                    <span className="text-muted-foreground">Nenhuma conta encontrada</span>
-                  </div>
+                <TableCell colSpan={7} className="p-0">
+                  <EmptyState
+                    icon={<Users className="h-8 w-8" />}
+                    title={searchTerm ? "Nenhuma conta encontrada" : "Nenhuma conta cadastrada"}
+                    description={
+                      searchTerm 
+                        ? "Tente ajustar os termos de busca ou limpe os filtros para ver todas as contas."
+                        : "Comece cadastrando um sistema privilegiado e depois adicione contas de acesso para monitorar e controlar acessos privilegiados aos sistemas críticos da sua empresa."
+                    }
+                    action={
+                      !searchTerm 
+                        ? {
+                            label: "Cadastrar Primeiro Sistema",
+                            onClick: () => setShowSistemaDialog(true),
+                            variant: "default"
+                          }
+                        : undefined
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ) : (
@@ -356,11 +371,25 @@ export default function ContasPrivilegiadas() {
           <TableBody>
             {filteredSistemas.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
-                  <div className="flex flex-col items-center gap-2">
-                    <Shield className="h-8 w-8 text-muted-foreground" />
-                    <span className="text-muted-foreground">Nenhum sistema encontrado</span>
-                  </div>
+                <TableCell colSpan={6} className="p-0">
+                  <EmptyState
+                    icon={<Shield className="h-8 w-8" />}
+                    title={searchTerm ? "Nenhum sistema encontrado" : "Nenhum sistema cadastrado"}
+                    description={
+                      searchTerm 
+                        ? "Tente ajustar os termos de busca para encontrar os sistemas."
+                        : "Cadastre os sistemas que possuem contas privilegiadas para começar a gerenciar os acessos críticos da sua organização de forma centralizada."
+                    }
+                    action={
+                      !searchTerm 
+                        ? {
+                            label: "Cadastrar Primeiro Sistema",
+                            onClick: () => setShowSistemaDialog(true),
+                            variant: "default"
+                          }
+                        : undefined
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ) : (
