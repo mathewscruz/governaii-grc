@@ -81,42 +81,40 @@ serve(async (req) => {
       throw new Error('Documento não contém texto suficiente para análise');
     }
 
-    // 5. Montar prompt para IA
+    // 5. Montar prompt para IA - otimizado para reduzir tamanho
     const requirementsList = requirements?.map(r => 
-      `- ${r.codigo || ''} | ${r.titulo} (Categoria: ${r.categoria || 'N/A'}, Peso: ${r.peso})`
+      `${r.codigo || 'N/A'}: ${r.titulo}`
     ).join('\n');
 
-    const prompt = `Você é um auditor especializado em conformidade regulatória. Analise o seguinte documento corporativo em relação aos requisitos do framework ${framework.nome} - ${framework.versao}.
+    const prompt = `Analise o documento contra o framework ${framework.nome} ${framework.versao}.
 
-DOCUMENTO ANALISADO:
-${documentText.substring(0, 15000)} ${documentText.length > 15000 ? '...(truncado)' : ''}
+DOCUMENTO (primeiros 12000 caracteres):
+${documentText.substring(0, 12000)}${documentText.length > 12000 ? '...' : ''}
 
-REQUISITOS DO FRAMEWORK:
+REQUISITOS (${requirements.length} total):
 ${requirementsList}
 
-Realize uma análise detalhada e retorne um JSON válido com:
+Retorne JSON com:
 {
-  "resultado_geral": "conforme" | "nao_conforme" | "parcial",
-  "percentual_conformidade": número de 0 a 100,
-  "pontos_fortes": [{"titulo": "", "descricao": ""}],
-  "pontos_melhoria": [{"titulo": "", "descricao": "", "prioridade": "alta|media|baixa"}],
+  "resultado_geral": "conforme"|"nao_conforme"|"parcial",
+  "percentual_conformidade": 0-100,
+  "pontos_fortes": [{"titulo":"","descricao":""}],
+  "pontos_melhoria": [{"titulo":"","descricao":"","prioridade":"alta|media|baixa"}],
   "requisitos_detalhados": [
     {
-      "requirement_id": "uuid",
+      "requirement_id": "uuid do requisito",
       "status_aderencia": "conforme|nao_conforme|parcial|nao_aplicavel",
-      "evidencias_encontradas": "",
-      "gaps_especificos": "",
+      "evidencias_encontradas": "texto curto",
+      "gaps_especificos": "texto curto",
       "score_conformidade": 0-10,
-      "observacoes_ia": ""
+      "observacoes_ia": "texto curto"
     }
   ],
-  "recomendacoes": ["ação 1", "ação 2"],
-  "analise_detalhada": "texto markdown com análise completa"
-}
+  "recomendacoes": ["ação1","ação2"],
+  "analise_detalhada": "resumo markdown (máx 500 palavras)"
+}`;
 
-Seja específico, cite trechos do documento quando possível, e forneça orientações práticas.`;
-
-    // 6. Chamar OpenAI API
+    // 6. Chamar OpenAI API com tokens suficientes
     console.log('Calling OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -129,14 +127,14 @@ Seja específico, cite trechos do documento quando possível, e forneça orienta
         messages: [
           {
             role: 'system',
-            content: 'Você é um auditor especializado em conformidade regulatória. Analise documentos comparando-os com frameworks regulatórios. Sempre responda com JSON válido e estruturado.'
+            content: 'Você é um auditor de conformidade. Retorne sempre JSON válido e estruturado, seja conciso.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_completion_tokens: 4000,
+        max_completion_tokens: 8000, // Aumentado para dar espaço ao reasoning + resposta
         response_format: { type: 'json_object' }
       }),
     });
