@@ -8,6 +8,8 @@ import Layout from '@/components/Layout';
 import Auth from '@/pages/Auth';
 import Dashboard from '@/pages/Dashboard';
 import Ativos from '@/pages/Ativos';
+import AtivosLicencas from '@/pages/AtivosLicencas';
+import AtivosChaves from '@/pages/AtivosChaves';
 import { Riscos } from '@/pages/Riscos';
 import GapAnalysis from '@/pages/GapAnalysis';
 import GapAnalysisFrameworks from '@/pages/GapAnalysisFrameworks';
@@ -60,6 +62,20 @@ function App() {
               <Layout>
                 <ProtectedRoute moduleName="ativos" fallbackToRoleCheck={false}>
                   <Ativos />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/ativos/licencas" element={
+              <Layout>
+                <ProtectedRoute moduleName="ativos" fallbackToRoleCheck={false}>
+                  <AtivosLicencas />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/ativos/chaves" element={
+              <Layout>
+                <ProtectedRoute moduleName="ativos" fallbackToRoleCheck={false}>
+                  <AtivosChaves />
                 </ProtectedRoute>
               </Layout>
             } />

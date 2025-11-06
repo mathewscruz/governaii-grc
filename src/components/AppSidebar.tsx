@@ -19,7 +19,10 @@ import {
   Search,
   LogOut,
   LayoutDashboard,
-  BarChart3
+  BarChart3,
+  Server,
+  FileKey,
+  KeyRound
 } from 'lucide-react';
 import logoMini from '@/assets/governaii-logo-mini.png';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -50,9 +53,12 @@ const menuItems = [
   },
   {
     title: 'Gestão de Ativos',
-    url: '/ativos',
     icon: Database,
-    moduleName: 'ativos',
+    subItems: [
+      { title: 'Ativos', url: '/ativos', icon: Server, moduleName: 'ativos' },
+      { title: 'Licenças', url: '/ativos/licencas', icon: FileKey, moduleName: 'ativos' },
+      { title: 'Chaves Criptográficas', url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
+    ],
   },
   {
     title: 'Gestão de Riscos',

@@ -243,6 +243,76 @@ const NotificationCenter: React.FC = () => {
         });
       });
 
+      // Buscar licenças vencendo/vencidas
+      const { data: licencas } = await supabase
+        .from('ativos_licencas')
+        .select('id, nome, data_vencimento, tipo_licenca')
+        .eq('status', 'ativa')
+        .not('data_vencimento', 'is', null);
+
+      (licencas || []).forEach(licenca => {
+        const diasParaVencimento = differenceInDays(new Date(licenca.data_vencimento), hoje);
+        
+        if (diasParaVencimento < 0) {
+          notificacoes.push({
+            id: `licenca-vencida-${licenca.id}`,
+            title: 'Licença Vencida',
+            message: `A licença "${licenca.nome}" venceu há ${Math.abs(diasParaVencimento)} dias`,
+            type: 'error',
+            read: false,
+            link_to: '/ativos/licencas',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        } else if (diasParaVencimento <= 30) {
+          notificacoes.push({
+            id: `licenca-vencendo-${licenca.id}`,
+            title: 'Licença Vencendo',
+            message: `A licença "${licenca.nome}" vence em ${diasParaVencimento} dias`,
+            type: 'warning',
+            read: false,
+            link_to: '/ativos/licencas',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        }
+      });
+
+      // Buscar chaves expiradas/próximas da rotação
+      const { data: chaves } = await supabase
+        .from('ativos_chaves_criptograficas')
+        .select('id, nome, data_proxima_rotacao, tipo_chave, ambiente')
+        .eq('status', 'ativa')
+        .not('data_proxima_rotacao', 'is', null);
+
+      (chaves || []).forEach(chave => {
+        const diasParaRotacao = differenceInDays(new Date(chave.data_proxima_rotacao), hoje);
+        
+        if (diasParaRotacao < 0) {
+          notificacoes.push({
+            id: `chave-expirada-${chave.id}`,
+            title: 'Chave Expirada',
+            message: `A chave "${chave.nome}" (${chave.ambiente}) expirou há ${Math.abs(diasParaRotacao)} dias`,
+            type: 'error',
+            read: false,
+            link_to: '/ativos/chaves',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        } else if (diasParaRotacao <= 30) {
+          notificacoes.push({
+            id: `chave-rotacao-${chave.id}`,
+            title: 'Rotação de Chave Necessária',
+            message: `A chave "${chave.nome}" precisa ser rotacionada em ${diasParaRotacao} dias`,
+            type: 'warning',
+            read: false,
+            link_to: '/ativos/chaves',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        }
+      });
+
       // Processar manutenções pendentes
       (manutencoesPendentes || []).forEach(manutencao => {
         const diasParaManutencao = differenceInDays(new Date(manutencao.data_manutencao!), hoje);

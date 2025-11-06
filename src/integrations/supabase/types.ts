@@ -144,6 +144,168 @@ export type Database = {
           },
         ]
       }
+      ativos_chaves_criptograficas: {
+        Row: {
+          algoritmo: string | null
+          ambiente: string
+          arquivo_publico_url: string | null
+          created_at: string | null
+          created_by: string | null
+          criticidade: string | null
+          data_criacao: string
+          data_proxima_rotacao: string
+          data_ultima_rotacao: string | null
+          empresa_id: string
+          id: string
+          localizacao: string
+          nome: string
+          observacoes: string | null
+          periodicidade_rotacao: string | null
+          responsavel: string | null
+          rotacao_automatica: boolean | null
+          sistema_aplicacao: string | null
+          status: string | null
+          tags: string[] | null
+          tipo_chave: string
+          updated_at: string | null
+        }
+        Insert: {
+          algoritmo?: string | null
+          ambiente: string
+          arquivo_publico_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          criticidade?: string | null
+          data_criacao: string
+          data_proxima_rotacao: string
+          data_ultima_rotacao?: string | null
+          empresa_id: string
+          id?: string
+          localizacao: string
+          nome: string
+          observacoes?: string | null
+          periodicidade_rotacao?: string | null
+          responsavel?: string | null
+          rotacao_automatica?: boolean | null
+          sistema_aplicacao?: string | null
+          status?: string | null
+          tags?: string[] | null
+          tipo_chave: string
+          updated_at?: string | null
+        }
+        Update: {
+          algoritmo?: string | null
+          ambiente?: string
+          arquivo_publico_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          criticidade?: string | null
+          data_criacao?: string
+          data_proxima_rotacao?: string
+          data_ultima_rotacao?: string | null
+          empresa_id?: string
+          id?: string
+          localizacao?: string
+          nome?: string
+          observacoes?: string | null
+          periodicidade_rotacao?: string | null
+          responsavel?: string | null
+          rotacao_automatica?: boolean | null
+          sistema_aplicacao?: string | null
+          status?: string | null
+          tags?: string[] | null
+          tipo_chave?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ativos_licencas: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_url: string | null
+          created_at: string | null
+          created_by: string | null
+          criticidade: string | null
+          data_aquisicao: string | null
+          data_inicio: string
+          data_renovacao: string | null
+          data_vencimento: string
+          departamento: string | null
+          empresa_id: string
+          fornecedor: string | null
+          id: string
+          nome: string
+          numero_licenca: string | null
+          observacoes: string | null
+          periodicidade: string | null
+          quantidade_licencas: number | null
+          renovacao_automatica: boolean | null
+          responsavel: string | null
+          status: string | null
+          tags: string[] | null
+          tipo_licenca: string
+          updated_at: string | null
+          valor_aquisicao: number | null
+          valor_renovacao: number | null
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          criticidade?: string | null
+          data_aquisicao?: string | null
+          data_inicio: string
+          data_renovacao?: string | null
+          data_vencimento: string
+          departamento?: string | null
+          empresa_id: string
+          fornecedor?: string | null
+          id?: string
+          nome: string
+          numero_licenca?: string | null
+          observacoes?: string | null
+          periodicidade?: string | null
+          quantidade_licencas?: number | null
+          renovacao_automatica?: boolean | null
+          responsavel?: string | null
+          status?: string | null
+          tags?: string[] | null
+          tipo_licenca: string
+          updated_at?: string | null
+          valor_aquisicao?: number | null
+          valor_renovacao?: number | null
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          criticidade?: string | null
+          data_aquisicao?: string | null
+          data_inicio?: string
+          data_renovacao?: string | null
+          data_vencimento?: string
+          departamento?: string | null
+          empresa_id?: string
+          fornecedor?: string | null
+          id?: string
+          nome?: string
+          numero_licenca?: string | null
+          observacoes?: string | null
+          periodicidade?: string | null
+          quantidade_licencas?: number | null
+          renovacao_automatica?: boolean | null
+          responsavel?: string | null
+          status?: string | null
+          tags?: string[] | null
+          tipo_licenca?: string
+          updated_at?: string | null
+          valor_aquisicao?: number | null
+          valor_renovacao?: number | null
+        }
+        Relationships: []
+      }
       ativos_localizacoes: {
         Row: {
           ativo: boolean | null
@@ -234,6 +396,42 @@ export type Database = {
           status?: string
           tipo_manutencao?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      ativos_notificacoes_enviadas: {
+        Row: {
+          canal: string
+          destinatario_email: string | null
+          empresa_id: string
+          enviado_em: string | null
+          id: string
+          modulo: string
+          registro_id: string
+          status: string | null
+          tipo_notificacao: string
+        }
+        Insert: {
+          canal: string
+          destinatario_email?: string | null
+          empresa_id: string
+          enviado_em?: string | null
+          id?: string
+          modulo: string
+          registro_id: string
+          status?: string | null
+          tipo_notificacao: string
+        }
+        Update: {
+          canal?: string
+          destinatario_email?: string | null
+          empresa_id?: string
+          enviado_em?: string | null
+          id?: string
+          modulo?: string
+          registro_id?: string
+          status?: string | null
+          tipo_notificacao?: string
         }
         Relationships: []
       }
