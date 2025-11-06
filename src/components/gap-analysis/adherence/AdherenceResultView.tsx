@@ -40,6 +40,19 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
     return 'border-gray-200 bg-white';
   };
 
+  const getResultIconColor = (resultado?: string) => {
+    switch (resultado) {
+      case 'conforme':
+        return { bg: 'bg-green-100', icon: 'text-green-600' };
+      case 'nao_conforme':
+        return { bg: 'bg-red-100', icon: 'text-red-600' };
+      case 'parcial':
+        return { bg: 'bg-yellow-100', icon: 'text-yellow-600' };
+      default:
+        return { bg: 'bg-gray-100', icon: 'text-gray-600' };
+    }
+  };
+
   const getResultLabel = (resultado?: string) => {
     switch (resultado) {
       case 'conforme':
@@ -127,11 +140,11 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
       {/* Resultado Geral */}
       <Card className={`p-8 border ${getResultColor(assessment.resultado_geral)}`}>
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+          <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full ${getResultIconColor(assessment.resultado_geral).bg} mb-3`}>
             {assessment.resultado_geral === 'conforme' ? (
-              <CheckCircle2 className="h-6 w-6 text-gray-700" />
+              <CheckCircle2 className={`h-6 w-6 ${getResultIconColor(assessment.resultado_geral).icon}`} />
             ) : (
-              <AlertTriangle className="h-6 w-6 text-gray-700" />
+              <AlertTriangle className={`h-6 w-6 ${getResultIconColor(assessment.resultado_geral).icon}`} />
             )}
           </div>
           <h2 className="text-2xl font-bold mb-2 text-gray-900">{getResultLabel(assessment.resultado_geral)}</h2>
