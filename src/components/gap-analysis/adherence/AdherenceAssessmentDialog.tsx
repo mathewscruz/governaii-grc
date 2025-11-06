@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Loader2, FileText, Shield, Upload, X } from 'lucide-react';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
+import { AdherenceAnalysisProgress } from './AdherenceAnalysisProgress';
 
 interface AdherenceAssessmentDialogProps {
   open: boolean;
@@ -29,6 +30,23 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
     nome_analise: '',
     descricao: '',
     framework_id: ''
+  });
+
+  // Estado para controlar o progresso da análise
+  const [analysisState, setAnalysisState] = useState<{
+    isAnalyzing: boolean;
+    assessmentId: string | null;
+    currentStep: string;
+    progress: number;
+    isError: boolean;
+    errorMessage: string;
+  }>({
+    isAnalyzing: false,
+    assessmentId: null,
+    currentStep: '',
+    progress: 0,
+    isError: false,
+    errorMessage: ''
   });
 
   // Configurar worker do PDF.js
@@ -110,6 +128,92 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
     return result.value;
   };
 
+  // Polling para verificar status da análise
+  useEffect(() => {
+    if (!analysisState.isAnalyzing || !analysisState.assessmentId) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('gap_analysis_adherence_assessments')
+          .select('status, percentual_conformidade, metadados_analise')
+          .eq('id', analysisState.assessmentId)
+          .single();
+
+        if (error) throw error;
+
+        if (data.status === 'concluido') {
+          setAnalysisState(prev => ({
+            ...prev,
+            progress: 100,
+            currentStep: 'finalizing',
+            isAnalyzing: false
+          }));
+          
+          toast({
+            title: "Análise concluída!",
+            description: `Conformidade: ${data.percentual_conformidade?.toFixed(1)}%`,
+          });
+
+          // Aguardar 2 segundos e fechar dialog
+          setTimeout(() => {
+            onSuccess();
+            onOpenChange(false);
+            
+            // Resetar estados
+            setAnalysisState({
+              isAnalyzing: false,
+              assessmentId: null,
+              currentStep: '',
+              progress: 0,
+              isError: false,
+              errorMessage: ''
+            });
+            setFormData({ nome_analise: '', descricao: '', framework_id: '' });
+            setUploadedFile(null);
+          }, 2000);
+
+          clearInterval(pollInterval);
+        } else if (data.status === 'erro') {
+          const metadados = data.metadados_analise as any;
+          const errorMsg = metadados?.erro || 'Erro desconhecido durante a análise';
+          
+          setAnalysisState(prev => ({
+            ...prev,
+            isAnalyzing: false,
+            isError: true,
+            errorMessage: errorMsg
+          }));
+
+          toast({
+            title: "Erro na análise",
+            description: errorMsg,
+            variant: "destructive"
+          });
+
+          clearInterval(pollInterval);
+        } else if (data.status === 'processando') {
+          // Atualizar progresso estimado baseado no tempo (entre 35% e 90%)
+          setAnalysisState(prev => {
+            const timeSinceStart = Date.now() - (prev as any).startTime || 0;
+            const estimatedProgress = Math.min(35 + (timeSinceStart / 120000) * 55, 90); // 2 minutos para ir de 35% a 90%
+            
+            return {
+              ...prev,
+              progress: Math.round(estimatedProgress),
+              currentStep: estimatedProgress < 60 ? 'identifying' : 'analyzing'
+            };
+          });
+        }
+      } catch (error: any) {
+        console.error('Error polling assessment status:', error);
+        clearInterval(pollInterval);
+      }
+    }, 3000); // Verificar a cada 3 segundos
+
+    return () => clearInterval(pollInterval);
+  }, [analysisState.isAnalyzing, analysisState.assessmentId, onSuccess, onOpenChange, toast]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -124,6 +228,17 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
 
     setIsSubmitting(true);
 
+    // Ativar estado de análise
+    setAnalysisState({
+      isAnalyzing: true,
+      assessmentId: null,
+      currentStep: 'extracting',
+      progress: 0,
+      isError: false,
+      errorMessage: '',
+      startTime: Date.now()
+    } as any);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -136,17 +251,12 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
       const originalFileType = uploadedFile.type;
       
       try {
+        // Atualizar progresso: extração de texto (0-15%)
+        setAnalysisState(prev => ({ ...prev, progress: 5, currentStep: 'extracting' }));
+
         if (originalFileType === 'application/pdf') {
-          toast({
-            title: "Extraindo texto do PDF...",
-            description: "Isso pode levar alguns segundos.",
-          });
           textContent = await extractTextFromPDF(uploadedFile);
         } else if (originalFileType.includes('wordprocessingml') || originalFileType === 'application/msword') {
-          toast({
-            title: "Extraindo texto do documento...",
-            description: "Isso pode levar alguns segundos.",
-          });
           textContent = await extractTextFromDOCX(uploadedFile);
         } else if (originalFileType === 'text/plain') {
           textContent = await uploadedFile.text();
@@ -160,8 +270,19 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
         }
 
         console.log(`Texto extraído: ${textContent.length} caracteres`);
+        
+        // Atualizar progresso: texto extraído (15%)
+        setAnalysisState(prev => ({ ...prev, progress: 15, currentStep: 'uploading' }));
       } catch (extractError: any) {
         console.error('Error extracting text:', extractError);
+        
+        setAnalysisState(prev => ({
+          ...prev,
+          isAnalyzing: false,
+          isError: true,
+          errorMessage: extractError.message || "Erro ao extrair texto do documento"
+        }));
+
         toast({
           title: "Erro ao extrair texto",
           description: extractError.message || "Não foi possível extrair o texto do documento.",
@@ -191,6 +312,9 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
         .upload(txtFileName, txtFile);
 
       if (uploadError) throw uploadError;
+
+      // Atualizar progresso: documento enviado (25%)
+      setAnalysisState(prev => ({ ...prev, progress: 25, currentStep: 'preparing' }));
 
       // Obter URL pública do arquivo
       const { data: { publicUrl } } = supabase.storage
@@ -225,43 +349,42 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
 
       if (insertError) throw insertError;
 
-      // Chamar edge function para processar a análise
-      const { error: functionError } = await supabase.functions.invoke('analyze-document-adherence', {
+      // Atualizar progresso: análise preparada (35%)
+      setAnalysisState(prev => ({ 
+        ...prev, 
+        progress: 35, 
+        currentStep: 'identifying',
+        assessmentId: assessment.id
+      }));
+
+      // Chamar edge function para processar a análise (assíncrono)
+      supabase.functions.invoke('analyze-document-adherence', {
         body: {
           assessmentId: assessment.id,
           frameworkId: formData.framework_id,
           storageFileName: txtFileName,
           empresaId
         }
+      }).then(({ error: functionError }) => {
+        if (functionError) {
+          console.error('Edge function error:', functionError);
+          // O polling vai detectar o erro no banco
+        }
       });
 
-      if (functionError) {
-        // Se a função falhar, atualizar status para erro
-        await supabase
-          .from('gap_analysis_adherence_assessments')
-          .update({ status: 'erro', metadados_analise: { erro: functionError.message } })
-          .eq('id', assessment.id);
-        
-        throw functionError;
-      }
-
-      toast({
-        title: "Análise iniciada",
-        description: "A avaliação de aderência está sendo processada. Isso pode levar alguns minutos.",
-      });
-
-      setFormData({
-        nome_analise: '',
-        descricao: '',
-        framework_id: ''
-      });
-      setUploadedFile(null);
-
-      onSuccess();
-      onOpenChange(false);
+      // Não fechar o dialog - deixar o polling monitorar
+      // O dialog será fechado automaticamente quando o polling detectar conclusão
 
     } catch (error: any) {
       console.error('Error creating adherence assessment:', error);
+      
+      setAnalysisState(prev => ({
+        ...prev,
+        isAnalyzing: false,
+        isError: true,
+        errorMessage: error.message || "Erro ao iniciar análise"
+      }));
+
       toast({
         title: "Erro ao iniciar análise",
         description: error.message || "Ocorreu um erro ao iniciar a avaliação.",
@@ -273,16 +396,63 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      // Prevenir fechamento durante análise
+      if (analysisState.isAnalyzing && !analysisState.isError) {
+        toast({
+          title: "Análise em andamento",
+          description: "Aguarde a conclusão da análise. O processo continuará mesmo se você fechar o dialog.",
+        });
+        return;
+      }
+      onOpenChange(newOpen);
+    }}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Nova Avaliação de Aderência</DialogTitle>
+          <DialogTitle>
+            {analysisState.isAnalyzing ? 'Analisando Documento' : 'Nova Avaliação de Aderência'}
+          </DialogTitle>
           <DialogDescription>
-            Compare um documento interno com os requisitos de um framework regulatório usando IA
+            {analysisState.isAnalyzing 
+              ? 'Aguarde enquanto processamos a análise de aderência'
+              : 'Compare um documento interno com os requisitos de um framework regulatório usando IA'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Mostrar progresso ou formulário */}
+        {analysisState.isAnalyzing || analysisState.progress > 0 ? (
+          <div className="min-h-[400px]">
+            <AdherenceAnalysisProgress 
+              currentProgress={analysisState.progress}
+              currentStep={analysisState.currentStep}
+              isError={analysisState.isError}
+              errorMessage={analysisState.errorMessage}
+            />
+            
+            {/* Botão de fechar em caso de erro */}
+            {analysisState.isError && (
+              <div className="flex justify-end gap-2 pt-4 mt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setAnalysisState({
+                      isAnalyzing: false,
+                      assessmentId: null,
+                      currentStep: '',
+                      progress: 0,
+                      isError: false,
+                      errorMessage: ''
+                    });
+                    onOpenChange(false);
+                  }}
+                >
+                  Fechar
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="nome_analise">Nome da Avaliação *</Label>
             <Input
@@ -380,16 +550,17 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
             </p>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isSubmitting || isExtracting || loadingFrameworks || !uploadedFile}>
-              {(isSubmitting || isExtracting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isExtracting ? 'Extraindo texto...' : 'Iniciar Análise'}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting || isExtracting || loadingFrameworks || !uploadedFile}>
+                {(isSubmitting || isExtracting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isExtracting ? 'Extraindo texto...' : 'Iniciar Análise'}
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
