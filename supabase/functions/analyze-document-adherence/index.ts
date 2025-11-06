@@ -99,80 +99,55 @@ serve(async (req) => {
 
     const documentName = storageFileName.split('/').pop()?.replace('.txt', '') || 'Documento';
 
-    const prompt = `Você é um auditor de conformidade especializado. Analise o documento fornecido contra o framework ${framework.nome} ${framework.versao}.
-
-ETAPA 1: IDENTIFICAÇÃO
-Primeiro, identifique quais requisitos do framework são RELEVANTES e APLICÁVEIS ao documento fornecido.
-- Considere o tipo de documento (política, procedimento, formulário, etc)
-- Considere o escopo do documento (backup, acesso, incidentes, etc)
-- Ignore requisitos claramente não relacionados ao documento
+    const prompt = `Você é um auditor especializado. Analise o documento contra ${framework.nome} ${framework.versao}.
 
 DOCUMENTO:
-Nome: ${documentName}
-Conteúdo (primeiros 15000 caracteres):
-${documentText.substring(0, 15000)}${documentText.length > 15000 ? '\n\n[...documento continua...]' : ''}
+${documentText.substring(0, 12000)}${documentText.length > 12000 ? '\n[...]' : ''}
 
-REQUISITOS DO FRAMEWORK (${requirements.length} total):
+REQUISITOS (${requirements.length} total):
 ${requirementsList}
 
-ETAPA 2: ANÁLISE PROFUNDA
-Para APENAS os requisitos relevantes identificados, analise:
-- O que a norma exige nesse requisito
-- O que o documento apresenta
-- Se está conforme, não conforme ou parcialmente conforme
-- Evidências encontradas (resumidas)
-- Gaps específicos (resumidos)
-- Score de conformidade (0-10)
+TAREFA:
+1. Identifique requisitos RELEVANTES ao documento
+2. Analise conformidade de cada um
 
-⚠️ IMPORTANTE - GESTÃO DE RESPOSTA:
-- Se identificar MAIS DE 15 requisitos aplicáveis: SEJA CONCISO
-  - Evidências: máximo 100 caracteres por requisito
-  - Gaps: máximo 80 caracteres por requisito
-  - Observações: máximo 120 caracteres por requisito
-- Se identificar ATÉ 15 requisitos: pode ser mais detalhado
-  - Evidências: até 200 caracteres
-  - Gaps: até 150 caracteres
-  - Observações: até 250 caracteres
-- Retorne APENAS os requisitos relevantes identificados
-- NÃO retorne requisitos não aplicáveis na lista principal
-- Foque em QUALIDADE e PRECISÃO, não em volume de texto
-- Priorize informações ACIONÁVEIS
+⚠️ LIMITES OBRIGATÓRIOS DE CARACTERES:
+- evidencias_encontradas: MAX 60 chars
+- gaps_especificos: MAX 50 chars  
+- observacoes_ia: MAX 80 chars
+- justificativa_relevancia: MAX 50 chars
+- titulo (pontos fortes/melhoria): MAX 40 chars
+- descricao (pontos fortes/melhoria): MAX 100 chars
+- recomendacoes: MAX 70 chars cada
+- analise_detalhada: MAX 200 palavras
 
-FORMATO DE RESPOSTA (JSON):
+FORMATO JSON (respeite os limites):
 {
-  "documento_tipo_identificado": "tipo do documento (ex: política, procedimento)",
-  "documento_escopo_identificado": "escopo/tema principal (máx 50 caracteres)",
+  "documento_tipo_identificado": "tipo",
+  "documento_escopo_identificado": "escopo",
   "total_requisitos_relevantes": número,
   "resultado_geral": "conforme"|"nao_conforme"|"parcial",
   "percentual_conformidade": 0-100,
-  "pontos_fortes": [
-    {"titulo": "resumo (máx 50 chars)", "descricao": "detalhamento (máx 150 chars)"}
-  ],
-  "pontos_melhoria": [
-    {"titulo": "resumo (máx 50 chars)", "descricao": "detalhamento (máx 150 chars)", "prioridade": "alta|media|baixa"}
-  ],
+  "pontos_fortes": [{"titulo": "max40", "descricao": "max100"}],
+  "pontos_melhoria": [{"titulo": "max40", "descricao": "max100", "prioridade": "alta|media|baixa"}],
   "requisitos_analisados": [
     {
-      "requirement_id": "uuid do requisito (ID entre colchetes acima)",
-      "requisito_codigo": "código do requisito",
+      "requirement_id": "uuid",
+      "requisito_codigo": "cod",
       "status_aderencia": "conforme"|"nao_conforme"|"parcial"|"nao_aplicavel",
-      "evidencias_encontradas": "citações específicas RESUMIDAS (respeite limites acima)",
-      "gaps_especificos": "o que falta RESUMIDO (respeite limites acima)",
+      "evidencias_encontradas": "max60chars",
+      "gaps_especificos": "max50chars",
       "score_conformidade": 0-10,
-      "observacoes_ia": "análise RESUMIDA comparando norma vs documento (respeite limites acima)",
-      "justificativa_relevancia": "por que é relevante (máx 80 chars)"
+      "observacoes_ia": "max80chars",
+      "justificativa_relevancia": "max50chars"
     }
   ],
-  "requisitos_nao_aplicaveis": [
-    "lista de IDs (apenas IDs, sem descrições)"
-  ],
-  "recomendacoes": [
-    "ações específicas RESUMIDAS - máximo 100 caracteres cada (máximo 5 recomendações)"
-  ],
-  "analise_detalhada": "resumo executivo em markdown: tipo do documento, requisitos relevantes, pontos fortes, principais gaps, próximos passos (máximo 300 palavras - OBRIGATÓRIO respeitar limite)"
+  "requisitos_nao_aplicaveis": ["ids"],
+  "recomendacoes": ["max70chars cada"],
+  "analise_detalhada": "max200palavras"
 }
 
-⚠️ CRÍTICO: Se você perceber que está gerando muito texto, PARE e RESUMA. É melhor ter análise concisa e completa do que truncada.`;
+⚠️ CRÍTICO: Respeite os limites de caracteres. Resposta > 15000 chars será rejeitada.`;
 
     // 6. Chamar Lovable AI Gateway com Gemini 2.5 Flash
     console.log('Calling Lovable AI Gateway...');
@@ -183,7 +158,7 @@ FORMATO DE RESPOSTA (JSON):
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash', // Modelo padrão do Lovable AI - rápido e eficiente
+        model: 'google/gemini-2.5-flash-lite', // Modelo leve - melhor para seguir instruções concisas
         messages: [
           {
             role: 'system',
@@ -242,7 +217,29 @@ FORMATO DE RESPOSTA (JSON):
     let analysisResult;
     try {
       const content = aiResponse.choices[0].message.content;
-      analysisResult = JSON.parse(content);
+      
+      // Validar tamanho antes de processar
+      if (content.length > 25000) {
+        console.error('Response too large:', content.length, 'chars');
+        throw new Error(`Resposta muito longa (${content.length} chars). A IA não seguiu os limites de caracteres.`);
+      }
+      
+      // Tentar parse direto
+      try {
+        analysisResult = JSON.parse(content);
+      } catch (parseErr) {
+        // Tentar reparar JSON comum: remover texto após último }
+        console.warn('Tentando reparar JSON malformado...');
+        const lastBrace = content.lastIndexOf('}');
+        if (lastBrace > 0) {
+          const fixedContent = content.substring(0, lastBrace + 1);
+          analysisResult = JSON.parse(fixedContent);
+          console.log('JSON reparado com sucesso!');
+        } else {
+          throw parseErr;
+        }
+      }
+      
       console.log('Analysis result parsed successfully:', {
         resultado_geral: analysisResult.resultado_geral,
         percentual: analysisResult.percentual_conformidade,
@@ -256,7 +253,7 @@ FORMATO DE RESPOSTA (JSON):
       console.error('Content preview (first 500 chars):', content?.substring(0, 500));
       console.error('Content end (last 200 chars):', content?.substring(content.length - 200));
       console.error('Parse error:', e);
-      throw new Error('Erro ao processar resposta da IA - JSON inválido ou incompleto. Tente com um documento mais simples.');
+      throw new Error('Resposta da IA inválida. Tente novamente ou use um documento menor.');
     }
 
     // 7. Salvar resultado completo na tabela de assessments
@@ -272,7 +269,7 @@ FORMATO DE RESPOSTA (JSON):
         recomendacoes: analysisResult.recomendacoes || [],
         analise_detalhada: analysisResult.analise_detalhada,
         metadados_analise: {
-          modelo_usado: 'google/gemini-2.5-flash',
+          modelo_usado: 'google/gemini-2.5-flash-lite',
           tempo_processamento: Date.now(),
           total_requisitos: requirements?.length || 0,
           total_requisitos_relevantes: analysisResult.total_requisitos_relevantes || 0,
