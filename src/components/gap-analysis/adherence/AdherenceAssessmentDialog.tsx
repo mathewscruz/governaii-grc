@@ -103,7 +103,15 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
 
       // Upload do arquivo para o storage
       const fileExt = uploadedFile.name.split('.').pop();
-      const fileName = `${empresaId}/${Date.now()}_${uploadedFile.name}`;
+      
+      // Sanitizar nome do arquivo - remover espaços, acentos e caracteres especiais
+      const sanitizedFileName = uploadedFile.name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/[^a-zA-Z0-9.-]/g, '_') // Substitui caracteres especiais por underscore
+        .replace(/_{2,}/g, '_'); // Remove múltiplos underscores consecutivos
+      
+      const fileName = `${empresaId}/${Date.now()}_${sanitizedFileName}`;
       
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('adherence-documents')
