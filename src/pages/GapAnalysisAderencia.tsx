@@ -10,25 +10,10 @@ export default function GapAnalysisAderencia() {
   const [selectedAdherenceAssessment, setSelectedAdherenceAssessment] = useState<any>(null);
   const [currentView, setCurrentView] = useState<'list' | 'result'>('list');
 
-  const renderBackButton = () => (
-    <Button 
-      variant="ghost" 
-      onClick={() => {
-        setCurrentView('list');
-        setSelectedAdherenceAssessment(null);
-      }}
-      className="mb-4"
-    >
-      <ChevronLeft className="h-4 w-4 mr-2" />
-      Voltar para Lista
-    </Button>
-  );
-
   if (currentView === 'result' && selectedAdherenceAssessment) {
     return (
       <ErrorBoundary>
         <div className="container mx-auto p-6 space-y-6">
-          {renderBackButton()}
           <AdherenceResultView
             assessment={selectedAdherenceAssessment}
             onBack={() => setCurrentView('list')}

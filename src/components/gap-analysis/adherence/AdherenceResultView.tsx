@@ -37,16 +37,7 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
   );
 
   const getResultColor = (resultado?: string) => {
-    switch (resultado) {
-      case 'conforme':
-        return 'border-green-500 bg-green-50 text-green-700';
-      case 'nao_conforme':
-        return 'border-red-500 bg-red-50 text-red-700';
-      case 'parcial':
-        return 'border-yellow-500 bg-yellow-50 text-yellow-700';
-      default:
-        return 'border-gray-500 bg-gray-50 text-gray-700';
-    }
+    return 'border-gray-200 bg-white';
   };
 
   const getResultLabel = (resultado?: string) => {
@@ -65,13 +56,13 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'conforme':
-        return 'bg-green-500';
+        return 'bg-gray-600';
       case 'nao_conforme':
-        return 'bg-red-500';
-      case 'parcial':
-        return 'bg-yellow-500';
-      case 'nao_aplicavel':
         return 'bg-gray-400';
+      case 'parcial':
+        return 'bg-gray-500';
+      case 'nao_aplicavel':
+        return 'bg-gray-300';
       default:
         return 'bg-gray-300';
     }
@@ -134,18 +125,18 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
       </div>
 
       {/* Resultado Geral */}
-      <Card className={`p-8 border-2 ${getResultColor(assessment.resultado_geral)}`}>
+      <Card className={`p-8 border ${getResultColor(assessment.resultado_geral)}`}>
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/50 mb-4">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
             {assessment.resultado_geral === 'conforme' ? (
-              <CheckCircle2 className="h-8 w-8" />
+              <CheckCircle2 className="h-6 w-6 text-gray-700" />
             ) : (
-              <AlertTriangle className="h-8 w-8" />
+              <AlertTriangle className="h-6 w-6 text-gray-700" />
             )}
           </div>
-          <h2 className="text-3xl font-bold mb-2">{getResultLabel(assessment.resultado_geral)}</h2>
-          <p className="text-5xl font-bold mb-4">{assessment.percentual_conformidade}%</p>
-          <div className="flex items-center justify-center gap-4 text-sm">
+          <h2 className="text-2xl font-bold mb-2 text-gray-900">{getResultLabel(assessment.resultado_geral)}</h2>
+          <p className="text-4xl font-bold mb-4 text-gray-900">{assessment.percentual_conformidade}%</p>
+          <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
             <div>
               <span className="font-medium">Framework:</span> {assessment.framework_nome} {assessment.framework_versao}
             </div>
@@ -154,88 +145,23 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
               <span className="font-medium">Documento:</span> {assessment.documento_nome}
             </div>
           </div>
-          <p className="text-xs mt-2 opacity-75">
+          <p className="text-xs mt-2 text-gray-500">
             Análise realizada em {format(new Date(assessment.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
           </p>
         </div>
       </Card>
 
-      {/* Informações do Documento */}
-      {(assessment.metadados_analise as any)?.documento_tipo && (
-        <Card className="p-6 bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Tipo Identificado:</span>
-              <p className="font-semibold mt-1">{(assessment.metadados_analise as any).documento_tipo}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Escopo:</span>
-              <p className="font-semibold mt-1">{(assessment.metadados_analise as any).documento_escopo}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Requisitos Analisados:</span>
-              <p className="font-semibold mt-1">
-                {(assessment.metadados_analise as any).total_requisitos_relevantes || details?.length || 0} de {(assessment.metadados_analise as any).total_requisitos || 0}
-                <span className="text-xs text-muted-foreground ml-1">(apenas relevantes)</span>
-              </p>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Resumo Executivo */}
-      <Card className="p-6">
-        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          Resumo Executivo
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-green-600">{distribuicao.conforme}</div>
-            <div className="text-sm text-muted-foreground">Conforme</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-yellow-600">{distribuicao.parcial}</div>
-            <div className="text-sm text-muted-foreground">Parcial</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-red-600">{distribuicao.nao_conforme}</div>
-            <div className="text-sm text-muted-foreground">Não Conforme</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-gray-600">{distribuicao.nao_aplicavel}</div>
-            <div className="text-sm text-muted-foreground">Não Aplicável</div>
-          </div>
-        </div>
-        <div className="mt-4">
-          <div className="flex gap-1 h-4 rounded overflow-hidden">
-            {distribuicao.conforme > 0 && (
-              <div className="bg-green-500" style={{ width: `${(distribuicao.conforme / total) * 100}%` }} />
-            )}
-            {distribuicao.parcial > 0 && (
-              <div className="bg-yellow-500" style={{ width: `${(distribuicao.parcial / total) * 100}%` }} />
-            )}
-            {distribuicao.nao_conforme > 0 && (
-              <div className="bg-red-500" style={{ width: `${(distribuicao.nao_conforme / total) * 100}%` }} />
-            )}
-            {distribuicao.nao_aplicavel > 0 && (
-              <div className="bg-gray-400" style={{ width: `${(distribuicao.nao_aplicavel / total) * 100}%` }} />
-            )}
-          </div>
-        </div>
-      </Card>
-
       {/* Pontos Fortes */}
       {assessment.pontos_fortes && assessment.pontos_fortes.length > 0 && (
-        <Card className="p-6 border-green-200 bg-green-50/50">
-          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-green-700">
-            <CheckCircle2 className="h-5 w-5" />
+        <Card className="p-6 border-gray-200 bg-white">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-700">
+            <CheckCircle2 className="h-5 w-5 text-gray-500" />
             Pontos Fortes ({assessment.pontos_fortes.length})
           </h3>
           <div className="space-y-3">
             {assessment.pontos_fortes.map((ponto: PontoForte, index: number) => (
-              <Card key={index} className="p-4 bg-white">
-                <h4 className="font-semibold text-green-700 mb-2">{ponto.titulo}</h4>
+              <Card key={index} className="p-4 bg-gray-50 border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-2">{ponto.titulo}</h4>
                 <p className="text-sm text-muted-foreground">{ponto.descricao}</p>
               </Card>
             ))}
@@ -245,16 +171,16 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
 
       {/* Pontos de Melhoria */}
       {assessment.pontos_melhoria && assessment.pontos_melhoria.length > 0 && (
-        <Card className="p-6 border-yellow-200 bg-yellow-50/50">
-          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-yellow-700">
-            <AlertTriangle className="h-5 w-5" />
+        <Card className="p-6 border-gray-200 bg-white">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-700">
+            <AlertTriangle className="h-5 w-5 text-gray-500" />
             Pontos de Melhoria ({assessment.pontos_melhoria.length})
           </h3>
           <div className="space-y-3">
             {assessment.pontos_melhoria.map((ponto: PontoMelhoria, index: number) => (
-              <Card key={index} className="p-4 bg-white">
+              <Card key={index} className="p-4 bg-gray-50 border-gray-200">
                 <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-semibold text-yellow-700">{ponto.titulo}</h4>
+                  <h4 className="font-semibold text-gray-900">{ponto.titulo}</h4>
                   {getPrioridadeBadge(ponto.prioridade)}
                 </div>
                 <p className="text-sm text-muted-foreground">{ponto.descricao}</p>
@@ -266,12 +192,12 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
 
       {/* Recomendações */}
       {assessment.recomendacoes && assessment.recomendacoes.length > 0 && (
-        <Card className="p-6 border-blue-200 bg-blue-50/50">
-          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-blue-700">
-            <Lightbulb className="h-5 w-5" />
+        <Card className="p-6 border-gray-200 bg-white">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-700">
+            <Lightbulb className="h-5 w-5 text-gray-500" />
             Recomendações
           </h3>
-          <ol className="list-decimal list-inside space-y-2">
+          <ol className="list-decimal list-inside space-y-2 text-gray-700">
             {assessment.recomendacoes.map((rec: string, index: number) => (
               <li key={index} className="text-sm">{rec}</li>
             ))}
@@ -305,19 +231,19 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
                   <div className="space-y-3 pt-2">
                     {detail.evidencias_encontradas && (
                       <div>
-                        <h5 className="font-semibold text-sm text-green-700 mb-1">Evidências Encontradas:</h5>
+                        <h5 className="font-semibold text-sm text-gray-700 mb-1">Evidências Encontradas:</h5>
                         <p className="text-sm text-muted-foreground">{detail.evidencias_encontradas}</p>
                       </div>
                     )}
                     {detail.gaps_especificos && (
                       <div>
-                        <h5 className="font-semibold text-sm text-red-700 mb-1">Gaps Identificados:</h5>
+                        <h5 className="font-semibold text-sm text-gray-700 mb-1">Gaps Identificados:</h5>
                         <p className="text-sm text-muted-foreground">{detail.gaps_especificos}</p>
                       </div>
                     )}
                     {detail.observacoes_ia && (
                       <div>
-                        <h5 className="font-semibold text-sm text-blue-700 mb-1">Observações da IA:</h5>
+                        <h5 className="font-semibold text-sm text-gray-700 mb-1">Observações da IA:</h5>
                         <p className="text-sm text-muted-foreground">{detail.observacoes_ia}</p>
                       </div>
                     )}
