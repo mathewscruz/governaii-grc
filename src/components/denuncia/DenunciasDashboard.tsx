@@ -1,26 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  AlertTriangle, 
-  Shield, 
-  Clock, 
-  CheckCircle, 
-  Search, 
-  Filter,
-  Eye,
-  UserCheck,
-  Calendar
-} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, Shield, Clock, CheckCircle, Eye, UserCheck, Calendar } from 'lucide-react';
 import { DenunciaDialog } from './DenunciaDialog';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { DataTable } from '@/components/ui/data-table';
+import { formatDateOnly } from '@/lib/date-utils';
 
 interface Denuncia {
   id: string;
@@ -59,23 +45,19 @@ const gravidadeMap = {
 
 export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | null }) {
   const [denuncias, setDenuncias] = useState<Denuncia[]>([]);
-  const [filteredDenuncias, setFilteredDenuncias] = useState<Denuncia[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDenuncia, setSelectedDenuncia] = useState<Denuncia | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [gravidadeFilter, setGravidadeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('todos');
+  const [gravidadeFilter, setGravidadeFilter] = useState('todos');
+  const [sortField, setSortField] = useState('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const { toast } = useToast();
-
 
   useEffect(() => {
     carregarDenuncias();
   }, []);
-
-  useEffect(() => {
-    aplicarFiltros();
-  }, [denuncias, searchTerm, statusFilter, gravidadeFilter]);
 
   // Detectar se veio com itemIdToOpen
   useEffect(() => {
@@ -113,33 +95,6 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
     }
   };
 
-
-  const aplicarFiltros = () => {
-    let filtered = denuncias;
-
-    // Filtro por busca
-    if (searchTerm) {
-      filtered = filtered.filter(d => 
-        d.protocolo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.nome_denunciante?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filtro por status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(d => d.status === statusFilter);
-    }
-
-    // Filtro por gravidade
-    if (gravidadeFilter !== 'all') {
-      filtered = filtered.filter(d => d.gravidade === gravidadeFilter);
-    }
-
-    setFilteredDenuncias(filtered);
-  };
-
   const handleVisualizarDenuncia = (denuncia: Denuncia) => {
     setSelectedDenuncia(denuncia);
     setDialogOpen(true);
@@ -149,149 +104,197 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
     carregarDenuncias();
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Filtrar e ordenar denúncias
+  const filteredAndSortedDenuncias = useMemo(() => {
+    let filtered = denuncias.filter(denuncia => {
+      const matchesSearch = searchTerm === '' || 
+        denuncia.protocolo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        denuncia.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        denuncia.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        denuncia.nome_denunciante?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'todos' || denuncia.status === statusFilter;
+      const matchesGravidade = gravidadeFilter === 'todos' || denuncia.gravidade === gravidadeFilter;
+
+      return matchesSearch && matchesStatus && matchesGravidade;
+    });
+
+    // Ordenar
+    filtered.sort((a, b) => {
+      const aValue = a[sortField as keyof Denuncia];
+      const bValue = b[sortField as keyof Denuncia];
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [denuncias, searchTerm, statusFilter, gravidadeFilter, sortField, sortDirection]);
+
+  // Configuração das colunas
+  const columns = [
+    {
+      key: 'protocolo',
+      label: 'Protocolo',
+      sortable: true,
+      render: (_: any, denuncia: Denuncia) => (
+        <span className="font-mono text-sm">{denuncia.protocolo}</span>
+      )
+    },
+    {
+      key: 'titulo',
+      label: 'Título',
+      sortable: true,
+      render: (_: any, denuncia: Denuncia) => (
+        <div className="max-w-xs truncate">{denuncia.titulo}</div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_: any, denuncia: Denuncia) => (
+        <Badge 
+          variant="secondary"
+          className={statusMap[denuncia.status as keyof typeof statusMap]?.color + " text-white"}
+        >
+          {statusMap[denuncia.status as keyof typeof statusMap]?.label}
+        </Badge>
+      )
+    },
+    {
+      key: 'gravidade',
+      label: 'Gravidade',
+      sortable: true,
+      render: (_: any, denuncia: Denuncia) => (
+        <Badge 
+          variant="secondary"
+          className={gravidadeMap[denuncia.gravidade as keyof typeof gravidadeMap]?.color}
+        >
+          {gravidadeMap[denuncia.gravidade as keyof typeof gravidadeMap]?.label}
+        </Badge>
+      )
+    },
+    {
+      key: 'categoria',
+      label: 'Categoria',
+      sortable: true,
+      render: (_: any, denuncia: Denuncia) => (
+        denuncia.categoria ? (
+          <Badge variant="outline" style={{ borderColor: denuncia.categoria.cor }}>
+            {denuncia.categoria.nome}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )
+      )
+    },
+    {
+      key: 'denunciante',
+      label: 'Denunciante',
+      sortable: true,
+      render: (_: any, denuncia: Denuncia) => (
+        denuncia.anonima ? (
+          <Badge variant="secondary">Anônima</Badge>
+        ) : (
+          denuncia.nome_denunciante || 'Não informado'
+        )
+      )
+    },
+    {
+      key: 'created_at',
+      label: 'Data',
+      sortable: true,
+      render: (_: any, denuncia: Denuncia) => (
+        <div className="flex items-center gap-1">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          {formatDateOnly(denuncia.created_at)}
+        </div>
+      )
+    },
+    {
+      key: 'acoes',
+      label: 'Ações',
+      render: (_: any, denuncia: Denuncia) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleVisualizarDenuncia(denuncia)}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      )
+    }
+  ];
+
+  // Configuração dos filtros
+  const filters = [
+    {
+      key: 'status',
+      label: 'Status',
+      value: statusFilter,
+      onChange: setStatusFilter,
+      options: [
+        { value: 'todos', label: 'Todos os status' },
+        { value: 'nova', label: 'Nova' },
+        { value: 'em_analise', label: 'Em Análise' },
+        { value: 'em_investigacao', label: 'Em Investigação' },
+        { value: 'resolvida', label: 'Resolvida' },
+        { value: 'arquivada', label: 'Arquivada' },
+      ]
+    },
+    {
+      key: 'gravidade',
+      label: 'Gravidade',
+      value: gravidadeFilter,
+      onChange: setGravidadeFilter,
+      options: [
+        { value: 'todos', label: 'Todas' },
+        { value: 'baixa', label: 'Baixa' },
+        { value: 'media', label: 'Média' },
+        { value: 'alta', label: 'Alta' },
+        { value: 'critica', label: 'Crítica' },
+      ]
+    }
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Denúncias Recebidas</CardTitle>
-          <CardDescription>
-            Gerencie e acompanhe todas as denúncias recebidas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por protocolo, título ou conteúdo..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="nova">Nova</SelectItem>
-                <SelectItem value="em_analise">Em Análise</SelectItem>
-                <SelectItem value="em_investigacao">Em Investigação</SelectItem>
-                <SelectItem value="resolvida">Resolvida</SelectItem>
-                <SelectItem value="arquivada">Arquivada</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={gravidadeFilter} onValueChange={setGravidadeFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Gravidade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="baixa">Baixa</SelectItem>
-                <SelectItem value="media">Média</SelectItem>
-                <SelectItem value="alta">Alta</SelectItem>
-                <SelectItem value="critica">Crítica</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Tabela */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Protocolo</TableHead>
-                  <TableHead>Título</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Gravidade</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Denunciante</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredDenuncias.map((denuncia) => (
-                  <TableRow key={denuncia.id}>
-                    <TableCell className="font-mono text-sm">
-                      {denuncia.protocolo}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {denuncia.titulo}
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="secondary"
-                        className={statusMap[denuncia.status as keyof typeof statusMap]?.color + " text-white"}
-                      >
-                        {statusMap[denuncia.status as keyof typeof statusMap]?.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="secondary"
-                        className={gravidadeMap[denuncia.gravidade as keyof typeof gravidadeMap]?.color}
-                      >
-                        {gravidadeMap[denuncia.gravidade as keyof typeof gravidadeMap]?.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {denuncia.categoria ? (
-                        <Badge variant="outline" style={{ borderColor: denuncia.categoria.cor }}>
-                          {denuncia.categoria.nome}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {denuncia.anonima ? (
-                        <Badge variant="secondary">Anônima</Badge>
-                      ) : (
-                        denuncia.nome_denunciante || 'Não informado'
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        {format(new Date(denuncia.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleVisualizarDenuncia(denuncia)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            
-            {filteredDenuncias.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhuma denúncia encontrada
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <DataTable
+        data={filteredAndSortedDenuncias}
+        columns={columns}
+        loading={loading}
+        searchable
+        searchPlaceholder="Buscar por protocolo, título ou conteúdo..."
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        filters={filters}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={(field) => {
+          if (sortField === field) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+          } else {
+            setSortField(field);
+            setSortDirection('asc');
+          }
+        }}
+        emptyState={{
+          icon: <Shield className="h-8 w-8" />,
+          title: searchTerm ? "Nenhuma denúncia encontrada" : "Nenhuma denúncia registrada",
+          description: searchTerm 
+            ? "Tente ajustar os termos de busca ou limpe os filtros."
+            : "Denúncias recebidas aparecerão aqui.",
+        }}
+        onRefresh={carregarDenuncias}
+      />
 
       {/* Dialog de detalhes */}
       {selectedDenuncia && (

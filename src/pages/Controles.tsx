@@ -33,6 +33,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { capitalizeText } from '@/lib/text-utils';
+import { formatDateOnly } from '@/lib/date-utils';
 
 interface Controle {
   id: string;
@@ -474,7 +475,7 @@ export default function Controles() {
       label: 'Vencimento da Avaliação',
       sortable: true,
       render: (value: any, controle: Controle) => controle.proxima_avaliacao ? 
-        new Date(controle.proxima_avaliacao).toLocaleDateString() : 
+        formatDateOnly(controle.proxima_avaliacao) : 
         <span className="text-muted-foreground">-</span>
     },
     {

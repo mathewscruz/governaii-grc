@@ -12,6 +12,7 @@ import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { formatDateOnly } from '@/lib/date-utils';
 
 interface ContaPrivilegiada {
   id: string;
@@ -379,9 +380,7 @@ export default function ContasPrivilegiadas() {
       key: 'data_expiracao',
       label: 'Data Expiração',
       sortable: true,
-      render: (_: any, conta: ContaPrivilegiada) => (
-        new Date(conta.data_expiracao).toLocaleDateString('pt-BR')
-      )
+      render: (_: any, conta: ContaPrivilegiada) => formatDateOnly(conta.data_expiracao)
     },
     {
       key: 'status',

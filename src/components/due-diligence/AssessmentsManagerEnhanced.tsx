@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { StatCard } from '@/components/ui/stat-card';
-import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw, Award, TrendingUp, Filter, CheckCircle, Users } from 'lucide-react';
+import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw, Award, TrendingUp, Filter, CheckCircle, Users, ArrowUpDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDueDiligenceStats } from '@/hooks/useDueDiligenceStats';
@@ -16,6 +16,7 @@ import { ScoreVisualization } from './ScoreVisualization';
 import { AssessmentResponsesViewer } from './AssessmentResponsesViewer';
 import { ReportsSidebar } from './ReportsSidebar';
 import { IntegrationSuggestions } from './IntegrationSuggestions';
+import { formatDateOnly } from '@/lib/date-utils';
 
 interface Assessment {
   id: string;
@@ -157,10 +158,11 @@ interface AssessmentsManagerEnhancedProps {
 
 export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhancedProps = {}) {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
-  const [filteredAssessments, setFilteredAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sortField, setSortField] = useState<string>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [showFilters, setShowFilters] = useState(false);
   const [reminderDialog, setReminderDialog] = useState<{ open: boolean; assessment: Assessment | null }>({
     open: false,
@@ -200,11 +202,7 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
 
   useEffect(() => {
     fetchAssessments();
-  }, []); // Removido fetchAssessments das dependências
-
-  useEffect(() => {
-    filterAssessments();
-  }, [assessments, searchTerm, statusFilter, filter]); // Adicionado filter às dependências
+  }, []);
 
   // Aplicar filtro inicial quando filter prop mudar
   useEffect(() => {
@@ -288,7 +286,8 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
     }
   };
 
-  const filterAssessments = () => {
+  // Filtrar e ordenar assessments
+  const filteredAndSortedAssessments = useMemo(() => {
     let filtered = assessments;
 
     if (searchTerm) {
@@ -303,8 +302,33 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
       filtered = filtered.filter(assessment => assessment.status === statusFilter);
     }
 
-    setFilteredAssessments(filtered);
-  };
+    // Ordenar
+    filtered.sort((a, b) => {
+      let aValue: any = a[sortField as keyof Assessment];
+      let bValue: any = b[sortField as keyof Assessment];
+
+      // Tratar campos aninhados
+      if (sortField === 'template.nome') {
+        aValue = a.template.nome;
+        bValue = b.template.nome;
+      } else if (sortField === 'score_final') {
+        aValue = a.score_final || 0;
+        bValue = b.score_final || 0;
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [assessments, searchTerm, statusFilter, sortField, sortDirection]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -570,7 +594,7 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
 
         {/* Lista de assessments */}
         <div className="grid gap-4">
-          {filteredAssessments.map((assessment) => (
+          {filteredAndSortedAssessments.map((assessment) => (
           <Card key={assessment.id}>
             <CardHeader>
               <div className="flex justify-between items-start">
@@ -724,7 +748,7 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
     </Card>
 
     <div>
-      {filteredAssessments.length === 0 && !loading && (
+      {filteredAndSortedAssessments.length === 0 && !loading && (
         <Card>
           <CardContent className="text-center py-8">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

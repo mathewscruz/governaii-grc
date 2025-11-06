@@ -18,6 +18,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { formatDateOnly } from '@/lib/date-utils';
 
 export default function Dados() {
   const [activeTab, setActiveTab] = useState("catalogo");
@@ -412,7 +413,7 @@ export default function Dados() {
                         <TableCell>{JSON.parse(solicitacao.dados_titular).nome}</TableCell>
                         <TableCell>{solicitacao.canal_solicitacao}</TableCell>
                         <TableCell>{getStatusBadge(solicitacao.status)}</TableCell>
-                        <TableCell>{new Date(solicitacao.prazo_resposta).toLocaleDateString('pt-BR')}</TableCell>
+                        <TableCell>{formatDateOnly(solicitacao.prazo_resposta)}</TableCell>
                       </TableRow>
                     ))
                   )}
