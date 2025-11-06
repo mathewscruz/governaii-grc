@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface EvidenciasDialogProps {
   open: boolean;
@@ -20,6 +21,7 @@ interface EvidenciasDialogProps {
 
 const EvidenciasDialog = ({ open, onOpenChange, auditoria }: EvidenciasDialogProps) => {
   const [showForm, setShowForm] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; nome?: string }>({ open: false, id: '' });
   const [formData, setFormData] = useState({
     nome: '',
     descricao: '',
@@ -117,8 +119,12 @@ const EvidenciasDialog = ({ open, onOpenChange, auditoria }: EvidenciasDialogPro
     }
   };
 
-  const handleDelete = async (id: string, arquivo_url?: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta evidência?')) return;
+  const handleDelete = (id: string, nome?: string) => {
+    setDeleteConfirm({ open: true, id, nome });
+  };
+
+  const confirmDelete = async () => {
+    const { id } = deleteConfirm;
 
     try {
       const { error } = await supabase
@@ -128,9 +134,11 @@ const EvidenciasDialog = ({ open, onOpenChange, auditoria }: EvidenciasDialogPro
 
       if (error) throw error;
       toast.success('Evidência excluída com sucesso');
+      setDeleteConfirm({ open: false, id: '' });
       refetch();
     } catch (error) {
       toast.error('Erro ao excluir evidência');
+      setDeleteConfirm({ open: false, id: '' });
     }
   };
 
@@ -269,7 +277,7 @@ const EvidenciasDialog = ({ open, onOpenChange, auditoria }: EvidenciasDialogPro
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => handleDelete(evidencia.id, evidencia.arquivo_url)}
+                        onClick={() => handleDelete(evidencia.id, evidencia.nome)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -301,6 +309,17 @@ const EvidenciasDialog = ({ open, onOpenChange, auditoria }: EvidenciasDialogPro
             </div>
           )}
         </div>
+
+        <ConfirmDialog
+          open={deleteConfirm.open}
+          onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+          title="Excluir Evidência"
+          description={`Tem certeza que deseja excluir "${deleteConfirm.nome}"? Esta ação não pode ser desfeita.`}
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          variant="destructive"
+          onConfirm={confirmDelete}
+        />
       </DialogContent>
     </Dialog>
   );

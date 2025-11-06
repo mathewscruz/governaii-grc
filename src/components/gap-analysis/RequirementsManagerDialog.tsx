@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RequirementDialog } from "./RequirementDialog";
 import { toast } from "sonner";
 import { Requirement } from "./types";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface RequirementsManagerDialogProps {
   open: boolean;
@@ -41,6 +42,7 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
 }) => {
   const [selectedRequirement, setSelectedRequirement] = useState<Requirement | null>(null);
   const [isRequirementDialogOpen, setIsRequirementDialogOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; requirement: Requirement | null }>({ open: false, requirement: null });
 
   const { data: requirements = [], loading, refetch } = useOptimizedQuery(
     async () => {
@@ -71,10 +73,13 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
     setIsRequirementDialogOpen(true);
   };
 
-  const handleDelete = async (requirement: Requirement) => {
-    if (!confirm(`Tem certeza que deseja excluir o requisito "${requirement.titulo}"?`)) {
-      return;
-    }
+  const handleDelete = (requirement: Requirement) => {
+    setDeleteConfirm({ open: true, requirement });
+  };
+
+  const confirmDeleteRequirement = async () => {
+    const requirement = deleteConfirm.requirement;
+    if (!requirement) return;
 
     try {
       const { error } = await supabase
@@ -84,9 +89,11 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
 
       if (error) throw error;
 
+      setDeleteConfirm({ open: false, requirement: null });
       refetch();
     } catch (error: any) {
       toast.error("Erro ao excluir requisito: " + error.message);
+      setDeleteConfirm({ open: false, requirement: null });
     }
   };
 
@@ -320,6 +327,17 @@ export const RequirementsManagerDialog: React.FC<RequirementsManagerDialogProps>
         onSuccess={handleRequirementSuccess}
         frameworkId={frameworkId}
         requirement={selectedRequirement}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+        title="Excluir Requisito"
+        description={`Tem certeza que deseja excluir o requisito "${deleteConfirm.requirement?.titulo}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={confirmDeleteRequirement}
       />
     </>
   );

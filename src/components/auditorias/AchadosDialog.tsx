@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface AchadosDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ interface AchadosDialogProps {
 const AchadosDialog = ({ open, onOpenChange, auditoria }: AchadosDialogProps) => {
   const [showForm, setShowForm] = useState(false);
   const [editingAchado, setEditingAchado] = useState<any>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; titulo?: string }>({ open: false, id: '' });
   const [formData, setFormData] = useState({
     titulo: '',
     descricao: '',
@@ -96,8 +98,12 @@ const AchadosDialog = ({ open, onOpenChange, auditoria }: AchadosDialogProps) =>
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este achado?')) return;
+  const handleDelete = (id: string, titulo?: string) => {
+    setDeleteConfirm({ open: true, id, titulo });
+  };
+
+  const confirmDelete = async () => {
+    const { id } = deleteConfirm;
 
     try {
       const { error } = await supabase
@@ -107,9 +113,11 @@ const AchadosDialog = ({ open, onOpenChange, auditoria }: AchadosDialogProps) =>
 
       if (error) throw error;
       toast.success('Achado excluído com sucesso');
+      setDeleteConfirm({ open: false, id: '' });
       refetch();
     } catch (error) {
       toast.error('Erro ao excluir achado');
+      setDeleteConfirm({ open: false, id: '' });
     }
   };
 
@@ -232,7 +240,7 @@ const AchadosDialog = ({ open, onOpenChange, auditoria }: AchadosDialogProps) =>
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => handleDelete(achado.id)}
+                      onClick={() => handleDelete(achado.id, achado.titulo)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -252,6 +260,17 @@ const AchadosDialog = ({ open, onOpenChange, auditoria }: AchadosDialogProps) =>
             ))}
           </div>
         </div>
+
+        <ConfirmDialog
+          open={deleteConfirm.open}
+          onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+          title="Excluir Achado"
+          description={`Tem certeza que deseja excluir "${deleteConfirm.titulo}"? Esta ação não pode ser desfeita.`}
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          variant="destructive"
+          onConfirm={confirmDelete}
+        />
       </DialogContent>
     </Dialog>
   );

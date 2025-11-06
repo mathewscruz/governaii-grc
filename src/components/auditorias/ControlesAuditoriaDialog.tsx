@@ -10,6 +10,7 @@ import { Shield, Trash2, Plus, ExternalLink } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface ControlesAuditoriaDialogProps {
   open: boolean;
@@ -41,6 +42,7 @@ export default function ControlesAuditoriaDialog({
   const [selectedControleId, setSelectedControleId] = useState<string>("");
   const [tipoRelacao, setTipoRelacao] = useState<string>("avaliacao");
   const [observacoes, setObservacoes] = useState<string>("");
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; nome?: string }>({ open: false, id: '' });
 
   // Buscar controles vinculados
   const { data: controlesVinculados, isLoading } = useQuery({
@@ -137,17 +139,21 @@ export default function ControlesAuditoriaDialog({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['controles-auditoria', auditoria?.id] });
       toast.success('Controle desvinculado com sucesso');
+      setDeleteConfirm({ open: false, id: '' });
     },
     onError: (error) => {
       console.error('Erro ao desvincular controle:', error);
       toast.error('Erro ao desvincular controle');
+      setDeleteConfirm({ open: false, id: '' });
     }
   });
 
-  const handleRemove = (vinculacaoId: string) => {
-    if (confirm('Tem certeza que deseja desvincular este controle?')) {
-      removeVinculacao.mutate(vinculacaoId);
-    }
+  const handleRemove = (vinculacaoId: string, nome?: string) => {
+    setDeleteConfirm({ open: true, id: vinculacaoId, nome });
+  };
+
+  const confirmDelete = () => {
+    removeVinculacao.mutate(deleteConfirm.id);
   };
 
   const handleAdd = () => {
@@ -304,7 +310,7 @@ export default function ControlesAuditoriaDialog({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleRemove(vinculacao.id)}
+                          onClick={() => handleRemove(vinculacao.id, vinculacao.controles.nome)}
                           disabled={removeVinculacao.isPending}
                           title="Desvincular controle"
                         >
@@ -325,6 +331,18 @@ export default function ControlesAuditoriaDialog({
             </div>
           )}
         </div>
+
+        <ConfirmDialog
+          open={deleteConfirm.open}
+          onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+          title="Desvincular Controle"
+          description={`Tem certeza que deseja desvincular "${deleteConfirm.nome}"? Esta ação não pode ser desfeita.`}
+          confirmText="Desvincular"
+          cancelText="Cancelar"
+          variant="destructive"
+          onConfirm={confirmDelete}
+          loading={removeVinculacao.isPending}
+        />
       </DialogContent>
     </Dialog>
   );

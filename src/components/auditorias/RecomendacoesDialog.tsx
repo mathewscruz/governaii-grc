@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface RecomendacoesDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ interface RecomendacoesDialogProps {
 const RecomendacoesDialog = ({ open, onOpenChange, auditoria }: RecomendacoesDialogProps) => {
   const [showForm, setShowForm] = useState(false);
   const [editingRecomendacao, setEditingRecomendacao] = useState<any>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string }>({ open: false, id: '' });
   const [formData, setFormData] = useState({
     achado_id: '',
     descricao: '',
@@ -125,8 +127,12 @@ const RecomendacoesDialog = ({ open, onOpenChange, auditoria }: RecomendacoesDia
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta recomendação?')) return;
+  const handleDelete = (id: string) => {
+    setDeleteConfirm({ open: true, id });
+  };
+
+  const confirmDelete = async () => {
+    const { id } = deleteConfirm;
 
     try {
       const { error } = await supabase
@@ -136,9 +142,11 @@ const RecomendacoesDialog = ({ open, onOpenChange, auditoria }: RecomendacoesDia
 
       if (error) throw error;
       toast.success('Recomendação excluída com sucesso');
+      setDeleteConfirm({ open: false, id: '' });
       refetch();
     } catch (error) {
       toast.error('Erro ao excluir recomendação');
+      setDeleteConfirm({ open: false, id: '' });
     }
   };
 
@@ -332,6 +340,17 @@ const RecomendacoesDialog = ({ open, onOpenChange, auditoria }: RecomendacoesDia
             ))}
           </div>
         </div>
+
+        <ConfirmDialog
+          open={deleteConfirm.open}
+          onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+          title="Excluir Recomendação"
+          description="Tem certeza que deseja excluir esta recomendação? Esta ação não pode ser desfeita."
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          variant="destructive"
+          onConfirm={confirmDelete}
+        />
       </DialogContent>
     </Dialog>
   );

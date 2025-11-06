@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AuditorSelect from "./AuditorSelect";
 import { useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface TrabalhosDialogProps {
   open: boolean;
@@ -27,6 +28,7 @@ interface TrabalhosDialogProps {
 const TrabalhosDialog = ({ open, onOpenChange, auditoria }: TrabalhosDialogProps) => {
   const [showForm, setShowForm] = useState(false);
   const [editingTrabalho, setEditingTrabalho] = useState<any>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; nome?: string }>({ open: false, id: '' });
   const [formData, setFormData] = useState({
     nome: '',
     descricao: '',
@@ -122,8 +124,12 @@ const TrabalhosDialog = ({ open, onOpenChange, auditoria }: TrabalhosDialogProps
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este trabalho?')) return;
+  const handleDelete = (id: string, nome?: string) => {
+    setDeleteConfirm({ open: true, id, nome });
+  };
+
+  const confirmDelete = async () => {
+    const { id } = deleteConfirm;
 
     try {
       const { error } = await supabase
@@ -133,9 +139,11 @@ const TrabalhosDialog = ({ open, onOpenChange, auditoria }: TrabalhosDialogProps
 
       if (error) throw error;
       toast.success('Trabalho excluído com sucesso');
+      setDeleteConfirm({ open: false, id: '' });
       refetch();
     } catch (error) {
       toast.error('Erro ao excluir trabalho');
+      setDeleteConfirm({ open: false, id: '' });
     }
   };
 
@@ -353,7 +361,7 @@ const TrabalhosDialog = ({ open, onOpenChange, auditoria }: TrabalhosDialogProps
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleDelete(trabalho.id)}
+                          onClick={() => handleDelete(trabalho.id, trabalho.nome)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -400,6 +408,17 @@ const TrabalhosDialog = ({ open, onOpenChange, auditoria }: TrabalhosDialogProps
             </div>
           )}
         </div>
+
+        <ConfirmDialog
+          open={deleteConfirm.open}
+          onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+          title="Excluir Trabalho"
+          description={`Tem certeza que deseja excluir "${deleteConfirm.nome}"? Esta ação não pode ser desfeita.`}
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          variant="destructive"
+          onConfirm={confirmDelete}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -20,6 +20,7 @@ import RecomendacoesDialog from "@/components/auditorias/RecomendacoesDialog";
 import EvidenciasDialog from "@/components/auditorias/EvidenciasDialog";
 import ControlesAuditoriaDialog from "@/components/auditorias/ControlesAuditoriaDialog";
 import { AuditoriaCardAccordion } from "@/components/auditorias/AuditoriaCardAccordion";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const Auditorias = () => {
   const { toast } = useToast();
@@ -35,6 +36,7 @@ const Auditorias = () => {
   const [showEvidenciasDialog, setShowEvidenciasDialog] = useState(false);
   const [showControlesDialog, setShowControlesDialog] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; nome?: string }>({ open: false, id: '' });
 
   const { data: usuarios } = useUsuariosEmpresa();
 
@@ -120,9 +122,13 @@ const Auditorias = () => {
     setShowAuditoriaDialog(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta auditoria?')) return;
+  const handleDelete = (id: string, nome?: string) => {
+    setDeleteConfirm({ open: true, id, nome });
+  };
 
+  const confirmDelete = async () => {
+    const { id } = deleteConfirm;
+    
     const { error } = await supabase
       .from('auditorias')
       .delete()
@@ -134,6 +140,7 @@ const Auditorias = () => {
         description: "Erro ao excluir auditoria",
         variant: "destructive",
       });
+      setDeleteConfirm({ open: false, id: '' });
       return;
     }
 
@@ -141,6 +148,7 @@ const Auditorias = () => {
       title: "Sucesso",
       description: "Auditoria excluída com sucesso",
     });
+    setDeleteConfirm({ open: false, id: '' });
     refetch();
   };
 
@@ -320,7 +328,7 @@ const Auditorias = () => {
                     auditoria={auditoria}
                     counts={counts}
                     onEdit={() => handleEdit(auditoria)}
-                    onDelete={() => handleDelete(auditoria.id)}
+                    onDelete={() => handleDelete(auditoria.id, auditoria.nome)}
                     onOpenTrabalhos={() => handleOpenTrabalhos(auditoria)}
                     onOpenAchados={() => handleOpenAchados(auditoria)}
                     onOpenRecomendacoes={() => handleOpenRecomendacoes(auditoria)}
@@ -373,6 +381,17 @@ const Auditorias = () => {
         open={showControlesDialog}
         onOpenChange={setShowControlesDialog}
         auditoria={selectedAuditoria}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+        title="Excluir Auditoria"
+        description={`Tem certeza que deseja excluir "${deleteConfirm.nome}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={confirmDelete}
       />
     </div>
   );

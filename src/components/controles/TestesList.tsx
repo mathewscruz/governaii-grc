@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ControlesTestesDialog from "./ControlesTestesDialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface ControleTeste {
   id: string;
@@ -29,6 +30,7 @@ interface TestesListProps {
 export default function TestesList({ controleId, controleNome }: TestesListProps) {
   const [testeDialogOpen, setTesteDialogOpen] = useState(false);
   const [editingTeste, setEditingTeste] = useState<ControleTeste | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string }>({ open: false, id: '' });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -63,6 +65,7 @@ export default function TestesList({ controleId, controleNome }: TestesListProps
         title: "Teste excluído",
         description: "O teste foi excluído com sucesso.",
       });
+      setDeleteConfirm({ open: false, id: '' });
     },
     onError: () => {
       toast({
@@ -70,6 +73,7 @@ export default function TestesList({ controleId, controleNome }: TestesListProps
         description: "Não foi possível excluir o teste.",
         variant: "destructive",
       });
+      setDeleteConfirm({ open: false, id: '' });
     }
   });
 
@@ -78,10 +82,12 @@ export default function TestesList({ controleId, controleNome }: TestesListProps
     setTesteDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Tem certeza que deseja excluir este teste?")) {
-      deleteTesteMutation.mutate(id);
-    }
+  const handleDelete = (id: string) => {
+    setDeleteConfirm({ open: true, id });
+  };
+
+  const confirmDelete = () => {
+    deleteTesteMutation.mutate(deleteConfirm.id);
   };
 
   const getResultadoBadge = (resultado: string) => {
@@ -231,6 +237,18 @@ export default function TestesList({ controleId, controleNome }: TestesListProps
         }}
         controle={{ id: controleId, nome: controleNome }}
         teste={editingTeste}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+        title="Excluir Teste"
+        description="Tem certeza que deseja excluir este teste? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={confirmDelete}
+        loading={deleteTesteMutation.isPending}
       />
     </div>
   );

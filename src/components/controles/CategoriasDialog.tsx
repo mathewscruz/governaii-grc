@@ -10,6 +10,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface Categoria {
   id: string;
@@ -30,6 +31,7 @@ export default function CategoriasDialog({ open, onOpenChange }: CategoriasDialo
     cor: "#3B82F6"
   });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; nome?: string }>({ open: false, id: '' });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -118,6 +120,7 @@ export default function CategoriasDialog({ open, onOpenChange }: CategoriasDialo
         title: "Categoria excluída",
         description: "A categoria foi excluída com sucesso.",
       });
+      setDeleteConfirm({ open: false, id: '' });
     },
     onError: () => {
       toast({
@@ -125,6 +128,7 @@ export default function CategoriasDialog({ open, onOpenChange }: CategoriasDialo
         description: "Não foi possível excluir a categoria.",
         variant: "destructive",
       });
+      setDeleteConfirm({ open: false, id: '' });
     }
   });
 
@@ -155,10 +159,12 @@ export default function CategoriasDialog({ open, onOpenChange }: CategoriasDialo
     saveCategoriaMutation.mutate(formData);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Tem certeza que deseja excluir esta categoria?")) {
-      deleteCategoriaMutation.mutate(id);
-    }
+  const handleDelete = (id: string, nome?: string) => {
+    setDeleteConfirm({ open: true, id, nome });
+  };
+
+  const confirmDelete = () => {
+    deleteCategoriaMutation.mutate(deleteConfirm.id);
   };
 
   return (
@@ -257,7 +263,7 @@ export default function CategoriasDialog({ open, onOpenChange }: CategoriasDialo
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleDelete(categoria.id)}
+                            onClick={() => handleDelete(categoria.id, categoria.nome)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -277,6 +283,18 @@ export default function CategoriasDialog({ open, onOpenChange }: CategoriasDialo
             )}
           </div>
         </div>
+
+        <ConfirmDialog
+          open={deleteConfirm.open}
+          onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+          title="Excluir Categoria"
+          description={`Tem certeza que deseja excluir "${deleteConfirm.nome}"? Esta ação não pode ser desfeita.`}
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          variant="destructive"
+          onConfirm={confirmDelete}
+          loading={deleteCategoriaMutation.isPending}
+        />
       </DialogContent>
     </Dialog>
   );

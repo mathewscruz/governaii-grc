@@ -12,6 +12,7 @@ import { FrameworkDialog } from "./FrameworkDialog";
 import { FrameworkVisibilityDialog } from "./FrameworkVisibilityDialog";
 import { toast } from "sonner";
 import { Framework } from "./types";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface FrameworkTabsViewProps {
   onCreateFramework: () => void;
@@ -27,6 +28,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
   const [visibleFrameworks, setVisibleFrameworks] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; framework: Framework | null }>({ open: false, framework: null });
 
   const { data: frameworks = [], loading: isLoading, refetch, error } = useOptimizedQuery(
     async () => {
@@ -80,10 +82,13 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
     toast.success("Framework salvo com sucesso!");
   };
 
-  const handleDeleteFramework = async (framework: Framework) => {
-    if (!confirm(`Tem certeza que deseja excluir o framework "${framework.nome}"?`)) {
-      return;
-    }
+  const handleDeleteFramework = (framework: Framework) => {
+    setDeleteConfirm({ open: true, framework });
+  };
+
+  const confirmDeleteFramework = async () => {
+    const framework = deleteConfirm.framework;
+    if (!framework) return;
 
     try {
       const { error } = await supabase
@@ -94,6 +99,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
       if (error) throw error;
 
       toast.success("Framework excluído com sucesso!");
+      setDeleteConfirm({ open: false, framework: null });
       refetch();
       
       if (activeTab === framework.id) {
@@ -101,6 +107,7 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
       }
     } catch (error: any) {
       toast.error("Erro ao excluir framework: " + error.message);
+      setDeleteConfirm({ open: false, framework: null });
     }
   };
 
@@ -290,6 +297,17 @@ export const FrameworkTabsView: React.FC<FrameworkTabsViewProps> = ({
         frameworks={frameworks}
         visibleFrameworks={visibleFrameworks}
         onSave={saveVisibility}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
+        title="Excluir Framework"
+        description={`Tem certeza que deseja excluir o framework "${deleteConfirm.framework?.nome}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+        onConfirm={confirmDeleteFramework}
       />
     </div>
   );
