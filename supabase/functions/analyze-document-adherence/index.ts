@@ -11,8 +11,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Salvar body no início para poder usar em caso de erro
+  let requestBody: any = null;
+  
   try {
-    const { assessmentId, frameworkId, storageFileName, empresaId } = await req.json();
+    requestBody = await req.json();
+    const { assessmentId, frameworkId, storageFileName, empresaId } = requestBody;
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -144,10 +148,17 @@ Seja específico, cite trechos do documento quando possível, e forneça orienta
     }
 
     const aiResponse = await response.json();
-    console.log('OpenAI response received');
+    console.log('OpenAI response received:', JSON.stringify({
+      hasChoices: !!aiResponse.choices,
+      choicesLength: aiResponse.choices?.length,
+      hasMessage: !!aiResponse.choices?.[0]?.message,
+      hasContent: !!aiResponse.choices?.[0]?.message?.content,
+      contentLength: aiResponse.choices?.[0]?.message?.content?.length
+    }));
     
     if (!aiResponse.choices?.[0]?.message?.content) {
-      throw new Error('Resposta da IA inválida');
+      console.error('Invalid AI response structure:', JSON.stringify(aiResponse, null, 2));
+      throw new Error('Resposta da IA inválida - estrutura de resposta não contém conteúdo');
     }
 
     let analysisResult;
@@ -237,12 +248,9 @@ Seja específico, cite trechos do documento quando possível, e forneça orienta
     console.error('Error in analyze-document-adherence:', error);
     console.error('Error stack:', error.stack);
     
-    // Tentar atualizar o assessment com erro
+    // Tentar atualizar o assessment com erro usando o body salvo
     try {
-      const body = await req.clone().json();
-      const { assessmentId } = body;
-      
-      if (assessmentId) {
+      if (requestBody?.assessmentId) {
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
         const supabase = createClient(supabaseUrl, supabaseKey);
@@ -257,7 +265,7 @@ Seja específico, cite trechos do documento quando possível, e forneça orienta
               timestamp_erro: new Date().toISOString()
             }
           })
-          .eq('id', assessmentId);
+          .eq('id', requestBody.assessmentId);
           
         console.log('Assessment marked as erro');
       }
