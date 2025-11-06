@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, Shield, AlertTriangle, CheckCircle, Clock, Edit, BarChart3, TrendingUp, Search, Filter } from 'lucide-react';
+import { Plus, Users, Shield, AlertTriangle, CheckCircle, Clock, Edit, BarChart3, TrendingUp, Search, Filter, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -125,6 +125,73 @@ export default function ContasPrivilegiadas() {
     refetchSistemas();
   };
 
+  const handleDeleteConta = async (contaId: string, usuarioNome: string) => {
+    if (!confirm(`Tem certeza que deseja excluir a conta de "${usuarioNome}"? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('contas_privilegiadas' as any)
+      .delete()
+      .eq('id', contaId);
+
+    if (error) {
+      toast({
+        title: "Erro ao excluir conta",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Conta excluída",
+      description: `A conta de "${usuarioNome}" foi excluída com sucesso.`,
+    });
+    refetchContas();
+  };
+
+  const handleDeleteSistema = async (sistemaId: string, sistemaNome: string) => {
+    // Verificar se há contas vinculadas
+    const { data: contasVinculadas } = await supabase
+      .from('contas_privilegiadas' as any)
+      .select('id')
+      .eq('sistema_id', sistemaId);
+
+    if (contasVinculadas && contasVinculadas.length > 0) {
+      toast({
+        title: "Não é possível excluir",
+        description: `O sistema "${sistemaNome}" possui ${contasVinculadas.length} conta(s) vinculada(s). Exclua-as primeiro.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!confirm(`Tem certeza que deseja excluir o sistema "${sistemaNome}"? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('sistemas_privilegiados' as any)
+      .delete()
+      .eq('id', sistemaId);
+
+    if (error) {
+      toast({
+        title: "Erro ao excluir sistema",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Sistema excluído",
+      description: `O sistema "${sistemaNome}" foi excluído com sucesso.`,
+    });
+    refetchSistemas();
+  };
+
   const handleRelatorios = () => {
     toast({
       title: "Relatórios",
@@ -153,9 +220,13 @@ export default function ContasPrivilegiadas() {
 
   const getCriticidadeBadge = (criticidade: string) => {
     const colors = {
+      'critico': 'bg-red-100 text-red-800 border-red-200',
+      'alto': 'bg-orange-100 text-orange-800 border-orange-200',
       'alta': 'bg-red-100 text-red-800 border-red-200',
       'media': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'medio': 'bg-yellow-100 text-yellow-800 border-yellow-200',
       'baixa': 'bg-green-100 text-green-800 border-green-200',
+      'baixo': 'bg-green-100 text-green-800 border-green-200',
     };
 
     return (
@@ -163,6 +234,10 @@ export default function ContasPrivilegiadas() {
         {criticidade.charAt(0).toUpperCase() + criticidade.slice(1)}
       </Badge>
     );
+  };
+
+  const capitalizeText = (text: string) => {
+    return text.charAt(0).toUpperCase() + text.slice(1);
   };
 
   // Filtrar contas e sistemas baseado na busca
@@ -280,16 +355,16 @@ export default function ContasPrivilegiadas() {
                     <div>
                       <div className="font-medium">{conta.sistemas_privilegiados?.nome_sistema}</div>
                       <div className="text-sm text-muted-foreground">
-                        {conta.sistemas_privilegiados?.tipo_sistema}
+                        {capitalizeText(conta.sistemas_privilegiados?.tipo_sistema || '')}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{conta.tipo_acesso}</Badge>
+                    <Badge variant="secondary">{capitalizeText(conta.tipo_acesso)}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={conta.nivel_privilegio === 'alto' ? 'destructive' : 'secondary'}>
-                      {conta.nivel_privilegio}
+                    <Badge variant={conta.nivel_privilegio === 'critico' ? 'destructive' : 'secondary'}>
+                      {capitalizeText(conta.nivel_privilegio)}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -299,13 +374,23 @@ export default function ContasPrivilegiadas() {
                     {getStatusBadge(conta.status)}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditConta(conta)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditConta(conta)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteConta(conta.id, conta.usuario_beneficiario)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -399,7 +484,7 @@ export default function ContasPrivilegiadas() {
                     <div className="font-medium">{sistema.nome_sistema}</div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{sistema.tipo_sistema}</Badge>
+                    <Badge variant="outline">{capitalizeText(sistema.tipo_sistema)}</Badge>
                   </TableCell>
                   <TableCell>
                     {getCriticidadeBadge(sistema.criticidade)}
@@ -420,13 +505,23 @@ export default function ContasPrivilegiadas() {
                     ) : '-'}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditSistema(sistema)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditSistema(sistema)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteSistema(sistema.id, sistema.nome_sistema)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
