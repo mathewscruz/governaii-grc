@@ -1,7 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import pdfParse from 'https://esm.sh/pdf-parse@1.1.1';
-import mammoth from 'https://esm.sh/mammoth@1.8.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -70,35 +68,24 @@ serve(async (req) => {
 
     console.log('Document downloaded, size:', fileData.size);
 
-    // 3. Extrair texto do documento baseado no tipo
+    // 3. Extrair texto do documento (deve ser TXT pré-processado)
+    console.log('Reading document text...');
     let documentText = '';
     const fileExtension = storageFileName.toLowerCase().split('.').pop();
     
     console.log('File extension detected:', fileExtension);
 
     try {
-      if (fileExtension === 'pdf') {
-        console.log('Parsing PDF document...');
-        const arrayBuffer = await fileData.arrayBuffer();
-        const pdfData = await pdfParse(new Uint8Array(arrayBuffer));
-        documentText = pdfData.text;
-        console.log('PDF text extracted, length:', documentText.length);
-      } else if (fileExtension === 'docx' || fileExtension === 'doc') {
-        console.log('Parsing DOCX/DOC document...');
-        const arrayBuffer = await fileData.arrayBuffer();
-        const result = await mammoth.extractRawText({ arrayBuffer });
-        documentText = result.value;
-        console.log('DOCX/DOC text extracted, length:', documentText.length);
-      } else if (fileExtension === 'txt') {
-        console.log('Reading TXT document...');
+      if (fileExtension === 'txt') {
+        // Documento já foi pré-processado no frontend
         documentText = await fileData.text();
-        console.log('TXT text extracted, length:', documentText.length);
+        console.log('Text extracted, length:', documentText.length);
       } else {
-        throw new Error(`Tipo de arquivo não suportado: ${fileExtension}. Use PDF, DOCX ou TXT.`);
+        throw new Error(`Tipo de arquivo não suportado: ${fileExtension}. Apenas arquivos TXT são aceitos (pré-processados no frontend).`);
       }
     } catch (e: any) {
-      console.error('Error extracting text:', e.message);
-      throw new Error(`Não foi possível extrair texto do documento ${fileExtension.toUpperCase()}: ${e.message}`);
+      console.error('Error reading document:', e.message);
+      throw new Error(`Não foi possível ler o documento: ${e.message}`);
     }
 
     if (!documentText || documentText.trim().length < 100) {

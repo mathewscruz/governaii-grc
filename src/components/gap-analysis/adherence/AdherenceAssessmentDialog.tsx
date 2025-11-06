@@ -10,6 +10,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { Loader2, FileText, Shield, Upload, X } from 'lucide-react';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
+import * as pdfjsLib from 'pdfjs-dist';
+import mammoth from 'mammoth';
 
 interface AdherenceAssessmentDialogProps {
   open: boolean;
@@ -21,12 +23,16 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
   const { toast } = useToast();
   const { empresaId, loading: loadingEmpresa } = useEmpresaId();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     nome_analise: '',
     descricao: '',
     framework_id: ''
   });
+
+  // Configurar worker do PDF.js
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
   // Buscar frameworks disponíveis
   const { data: frameworks, loading: loadingFrameworks } = useOptimizedQuery(
@@ -81,6 +87,29 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
     setUploadedFile(null);
   };
 
+  // Extrair texto de PDF
+  const extractTextFromPDF = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map((item: any) => item.str).join(' ');
+      fullText += pageText + '\n\n';
+    }
+    
+    return fullText.trim();
+  };
+
+  // Extrair texto de DOCX
+  const extractTextFromDOCX = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -101,8 +130,52 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
       // Buscar informações do framework para cache
       const framework = frameworks?.find(f => f.id === formData.framework_id);
 
-      // Upload do arquivo para o storage
-      const fileExt = uploadedFile.name.split('.').pop();
+      // Extrair texto do documento baseado no tipo
+      setIsExtracting(true);
+      let textContent = '';
+      const originalFileType = uploadedFile.type;
+      
+      try {
+        if (originalFileType === 'application/pdf') {
+          toast({
+            title: "Extraindo texto do PDF...",
+            description: "Isso pode levar alguns segundos.",
+          });
+          textContent = await extractTextFromPDF(uploadedFile);
+        } else if (originalFileType.includes('wordprocessingml') || originalFileType === 'application/msword') {
+          toast({
+            title: "Extraindo texto do documento...",
+            description: "Isso pode levar alguns segundos.",
+          });
+          textContent = await extractTextFromDOCX(uploadedFile);
+        } else if (originalFileType === 'text/plain') {
+          textContent = await uploadedFile.text();
+        } else {
+          throw new Error('Tipo de arquivo não suportado');
+        }
+
+        // Validar se o texto extraído tem conteúdo
+        if (!textContent || textContent.trim().length < 100) {
+          throw new Error('O documento não contém texto suficiente para análise. Verifique se o arquivo não está protegido ou corrompido.');
+        }
+
+        console.log(`Texto extraído: ${textContent.length} caracteres`);
+      } catch (extractError: any) {
+        console.error('Error extracting text:', extractError);
+        toast({
+          title: "Erro ao extrair texto",
+          description: extractError.message || "Não foi possível extrair o texto do documento.",
+          variant: "destructive"
+        });
+        return;
+      } finally {
+        setIsExtracting(false);
+      }
+
+      // Criar arquivo TXT com o texto extraído
+      const originalFileName = uploadedFile.name.split('.').slice(0, -1).join('.');
+      const txtFile = new File([textContent], `${originalFileName}.txt`, { type: 'text/plain' });
+      const fileExt = 'txt';
       
       // Sanitizar nome do arquivo - remover espaços, acentos e caracteres especiais
       const sanitizedFileName = uploadedFile.name
@@ -111,18 +184,18 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
         .replace(/[^a-zA-Z0-9.-]/g, '_') // Substitui caracteres especiais por underscore
         .replace(/_{2,}/g, '_'); // Remove múltiplos underscores consecutivos
       
-      const fileName = `${empresaId}/${Date.now()}_${sanitizedFileName}`;
+      const txtFileName = `${empresaId}/${Date.now()}_${sanitizedFileName.replace(/\.[^/.]+$/, '.txt')}`;
       
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('adherence-documents')
-        .upload(fileName, uploadedFile);
+        .upload(txtFileName, txtFile);
 
       if (uploadError) throw uploadError;
 
       // Obter URL pública do arquivo
       const { data: { publicUrl } } = supabase.storage
         .from('adherence-documents')
-        .getPublicUrl(fileName);
+        .getPublicUrl(txtFileName);
 
       // Criar registro inicial com status "processando"
       const { data: assessment, error: insertError } = await supabase
@@ -139,9 +212,11 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
           documento_nome: uploadedFile.name,
           documento_tipo: fileExt,
           metadados_analise: {
-            arquivo_storage: fileName,
+            arquivo_storage: txtFileName,
             arquivo_url: publicUrl,
-            arquivo_tamanho: uploadedFile.size
+            arquivo_tamanho: txtFile.size,
+            arquivo_original: uploadedFile.name,
+            arquivo_original_tipo: originalFileType
           },
           created_by: user?.id
         }])
@@ -155,7 +230,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
         body: {
           assessmentId: assessment.id,
           frameworkId: formData.framework_id,
-          storageFileName: fileName,
+          storageFileName: txtFileName,
           empresaId
         }
       });
@@ -309,9 +384,9 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting || loadingFrameworks || !uploadedFile}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Iniciar Análise
+            <Button type="submit" disabled={isSubmitting || isExtracting || loadingFrameworks || !uploadedFile}>
+              {(isSubmitting || isExtracting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isExtracting ? 'Extraindo texto...' : 'Iniciar Análise'}
             </Button>
           </div>
         </form>
