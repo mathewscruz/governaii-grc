@@ -3754,7 +3754,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           descricao: string | null
-          empresa_id: string
+          empresa_id: string | null
           id: string
           is_template: boolean | null
           nome: string
@@ -3767,7 +3767,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           descricao?: string | null
-          empresa_id: string
+          empresa_id?: string | null
           id?: string
           is_template?: boolean | null
           nome: string
@@ -3780,7 +3780,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           descricao?: string | null
-          empresa_id?: string
+          empresa_id?: string | null
           id?: string
           is_template?: boolean | null
           nome?: string

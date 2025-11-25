@@ -24,20 +24,19 @@ export default function GapAnalysisFrameworks() {
 
   useEffect(() => {
     loadFrameworks();
-  }, [empresaId]);
+  }, []);
 
   const loadFrameworks = async () => {
-    if (!empresaId) return;
-
     try {
       setLoading(true);
 
-      // Buscar todos os frameworks (padrão e personalizados)
+      // Buscar apenas frameworks globais (compartilhados entre todas as empresas)
       const { data: fws, error: fwError } = await supabase
         .from('gap_analysis_frameworks')
         .select('*')
-        .eq('empresa_id', empresaId)
-        .order('created_at', { ascending: false });
+        .is('empresa_id', null)
+        .eq('is_template', true)
+        .order('nome', { ascending: true });
 
       if (fwError) throw fwError;
 
