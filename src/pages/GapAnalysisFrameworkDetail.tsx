@@ -9,6 +9,11 @@ import { GenericRequirementsTable } from '@/components/gap-analysis/GenericRequi
 import { NISTRadarChart } from '@/components/gap-analysis/nist/NISTRadarChart';
 import { CategoryBarChart } from '@/components/gap-analysis/CategoryBarChart';
 import { AreaBarChart } from '@/components/gap-analysis/AreaBarChart';
+import { FrameworkRadarChart } from '@/components/gap-analysis/charts/FrameworkRadarChart';
+import { ISOProgressFunnel } from '@/components/gap-analysis/charts/ISOProgressFunnel';
+import { PrivacyTreemap } from '@/components/gap-analysis/charts/PrivacyTreemap';
+import { GovernanceGauge } from '@/components/gap-analysis/charts/GovernanceGauge';
+import { ComplianceStackedBar } from '@/components/gap-analysis/charts/ComplianceStackedBar';
 import { supabase } from '@/integrations/supabase/client';
 import { getFrameworkConfig } from '@/lib/framework-configs';
 import { useFrameworkScore } from '@/hooks/useFrameworkScore';

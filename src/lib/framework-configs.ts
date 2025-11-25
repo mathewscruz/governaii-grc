@@ -41,6 +41,7 @@ export const FRAMEWORK_CONFIGS: Record<string, FrameworkConfig> = {
     id: 'nist-csf-2.0',
     name: 'NIST CSF 2.0',
     scoreType: 'scale_0_5',
+    chartType: 'radar',
     pillarField: 'categoria',
     scoreLabels: {
       excellent: { label: 'Excelente', min: 4.5, max: 5.0, color: 'text-green-600' },

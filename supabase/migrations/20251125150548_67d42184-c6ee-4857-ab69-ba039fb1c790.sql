@@ -1,0 +1,11 @@
+-- Completar CCPA (9 requisitos faltantes - direitos específicos e requisitos operacionais)
+INSERT INTO gap_analysis_requirements (framework_id, codigo, titulo, descricao, categoria, area_responsavel, peso, obrigatorio, ordem) VALUES
+('1b22b2b4-b8ba-4545-a9cc-9a56d9ed617a', '1798.105(a)', 'Direito de Exclusão - Solicitação', 'Consumidor tem direito de solicitar exclusão de informações pessoais que empresa coletou', 'Direitos do Consumidor', 'Privacidade', 3, true, 12),
+('1b22b2b4-b8ba-4545-a9cc-9a56d9ed617a', '1798.105(c)', 'Direito de Exclusão - Verificação', 'Empresa deve usar método razoável para verificar identidade do consumidor', 'Direitos do Consumidor', 'Privacidade', 3, true, 13),
+('1b22b2b4-b8ba-4545-a9cc-9a56d9ed617a', '1798.105(d)', 'Direito de Exclusão - Exceções', 'Empresa pode negar pedido de exclusão quando necessário para certos propósitos', 'Direitos do Consumidor', 'Jurídico', 2, true, 14),
+('1b22b2b4-b8ba-4545-a9cc-9a56d9ed617a', '1798.120(a)', 'Opt-Out de Venda - Link', 'Empresa que vende informações deve fornecer link "Não Venda Minhas Informações Pessoais"', 'Venda de Dados', 'Privacidade', 3, true, 15),
+('1b22b2b4-b8ba-4545-a9cc-9a56d9ed617a', '1798.120(b)', 'Opt-Out de Venda - Honrar Solicitação', 'Empresa deve honrar opt-out por pelo menos 12 meses antes de solicitar autorização novamente', 'Venda de Dados', 'Privacidade', 3, true, 16),
+('1b22b2b4-b8ba-4545-a9cc-9a56d9ed617a', '1798.135(a)', 'Métodos para Exercer Direitos', 'Empresa deve fornecer pelo menos 2 métodos para consumidores enviarem solicitações', 'Direitos do Consumidor', 'Privacidade', 3, true, 17),
+('1b22b2b4-b8ba-4545-a9cc-9a56d9ed617a', '1798.135(b)', 'Não Discriminação', 'Empresa não pode discriminar consumidor por exercer direitos da CCPA', 'Direitos do Consumidor', 'Privacidade', 3, true, 18),
+('1b22b2b4-b8ba-4545-a9cc-9a56d9ed617a', '1798.150', 'Direito de Ação Privada', 'Consumidor pode processar por violação de dados causada por falta de segurança razoável', 'Violação de Dados', 'Jurídico', 3, true, 19),
+('1b22b2b4-b8ba-4545-a9cc-9a56d9ed617a', '1798.185', 'Regulamentos da Procuradoria-Geral', 'Conformidade com regulamentos adotados pela Procuradoria-Geral da Califórnia', 'Compliance', 'Compliance', 2, true, 20);
