@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, FileText, Users, TrendingUp } from 'lucide-react';
-import { useGapAnalysisStats } from '@/hooks/useGapAnalysisStats';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { FrameworkCard } from '@/components/gap-analysis/FrameworkCard';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,8 +21,6 @@ export default function GapAnalysisFrameworks() {
   const [frameworks, setFrameworks] = useState<Framework[]>([]);
   const [requirementCounts, setRequirementCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
-
-  const { data: stats, loading: statsLoading } = useGapAnalysisStats();
 
   useEffect(() => {
     loadFrameworks();
@@ -73,13 +68,6 @@ export default function GapAnalysisFrameworks() {
     navigate(`/gap-analysis/framework/${framework.id}`);
   };
 
-  const getComplianceVariant = (compliance: number): "success" | "info" | "warning" | "destructive" => {
-    if (compliance >= 80) return "success";
-    if (compliance >= 60) return "info";
-    if (compliance >= 40) return "warning";
-    return "destructive";
-  };
-
   if (loading) {
     return (
       <ErrorBoundary>
@@ -105,40 +93,6 @@ export default function GapAnalysisFrameworks() {
           title="Frameworks de Conformidade"
           description="Selecione um framework para avaliar a conformidade organizacional"
         />
-
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="Total de Frameworks"
-            value={stats?.totalFrameworks || 0}
-            description="Frameworks cadastrados"
-            icon={<FileText className="h-4 w-4" />}
-            loading={statsLoading}
-          />
-          <StatCard
-            title="Avaliações em Andamento"
-            value={stats?.assessmentsInProgress || 0}
-            description="Avaliações ativas"
-            icon={<BarChart3 className="h-4 w-4" />}
-            variant="warning"
-            loading={statsLoading}
-          />
-          <StatCard
-            title="Conformidade Média"
-            value={`${stats?.averageCompliance || 0}%`}
-            description="Índice de conformidade"
-            icon={<TrendingUp className="h-4 w-4" />}
-            variant={getComplianceVariant(stats?.averageCompliance || 0)}
-            loading={statsLoading}
-          />
-          <StatCard
-            title="Itens Pendentes"
-            value={stats?.pendingItems || 0}
-            description="Atribuições pendentes"
-            icon={<Users className="h-4 w-4" />}
-            loading={statsLoading}
-          />
-        </div>
 
         {/* Framework Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
