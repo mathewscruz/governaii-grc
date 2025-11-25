@@ -1859,6 +1859,44 @@ export type Database = {
           },
         ]
       }
+      creditos_consumo: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          empresa_id: string
+          funcionalidade: string
+          id: string
+          quantidade: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          empresa_id: string
+          funcionalidade: string
+          id?: string
+          quantidade?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          funcionalidade?: string
+          id?: string
+          quantidade?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creditos_consumo_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dados_fluxos: {
         Row: {
           aprovacao_necessaria: boolean | null
@@ -3253,10 +3291,13 @@ export type Database = {
           cnpj: string | null
           contato: string | null
           created_at: string
+          creditos_consumidos: number | null
+          data_inicio_ciclo: string | null
           data_inicio_trial: string | null
           id: string
           logo_url: string | null
           nome: string
+          plano_id: string | null
           slug: string | null
           status_licenca: string | null
           updated_at: string
@@ -3266,10 +3307,13 @@ export type Database = {
           cnpj?: string | null
           contato?: string | null
           created_at?: string
+          creditos_consumidos?: number | null
+          data_inicio_ciclo?: string | null
           data_inicio_trial?: string | null
           id?: string
           logo_url?: string | null
           nome: string
+          plano_id?: string | null
           slug?: string | null
           status_licenca?: string | null
           updated_at?: string
@@ -3279,15 +3323,26 @@ export type Database = {
           cnpj?: string | null
           contato?: string | null
           created_at?: string
+          creditos_consumidos?: number | null
+          data_inicio_ciclo?: string | null
           data_inicio_trial?: string | null
           id?: string
           logo_url?: string | null
           nome?: string
+          plano_id?: string | null
           slug?: string | null
           status_licenca?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "empresas_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "planos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fornecedores: {
         Row: {
@@ -4177,6 +4232,42 @@ export type Database = {
         }
         Relationships: []
       }
+      planos: {
+        Row: {
+          ativo: boolean | null
+          codigo: string
+          cor_primaria: string | null
+          created_at: string | null
+          creditos_franquia: number
+          descricao: string | null
+          icone: string | null
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          codigo: string
+          cor_primaria?: string | null
+          created_at?: string | null
+          creditos_franquia: number
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean | null
+          codigo?: string
+          cor_primaria?: string | null
+          created_at?: string | null
+          creditos_franquia?: number
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean
@@ -5050,6 +5141,15 @@ export type Database = {
         Returns: boolean
       }
       check_trial_expiration: { Args: never; Returns: undefined }
+      consume_ai_credit: {
+        Args: {
+          p_descricao?: string
+          p_empresa_id: string
+          p_funcionalidade: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       conta_privilegiada_pertence_empresa: {
         Args: { conta_id: string }
         Returns: boolean
