@@ -3756,6 +3756,7 @@ export type Database = {
           descricao: string | null
           empresa_id: string
           id: string
+          is_template: boolean | null
           nome: string
           tipo: string
           tipo_framework: string | null
@@ -3768,6 +3769,7 @@ export type Database = {
           descricao?: string | null
           empresa_id: string
           id?: string
+          is_template?: boolean | null
           nome: string
           tipo?: string
           tipo_framework?: string | null
@@ -3780,6 +3782,7 @@ export type Database = {
           descricao?: string | null
           empresa_id?: string
           id?: string
+          is_template?: boolean | null
           nome?: string
           tipo?: string
           tipo_framework?: string | null

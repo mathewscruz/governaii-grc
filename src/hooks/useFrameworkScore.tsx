@@ -50,12 +50,20 @@ interface SectionScore {
   evaluatedRequirements: number;
 }
 
+interface CategoryScore {
+  category: string;
+  score: number;
+  total: number;
+  evaluated: number;
+}
+
 interface FrameworkScore {
   overallScore: number;
   pillarScores: PillarScore[];
   domainScores: DomainScore[];
   areaScores: AreaScore[];
   sectionScores: SectionScore[];
+  categoryScores: CategoryScore[];
   totalRequirements: number;
   evaluatedRequirements: number;
   loading: boolean;
@@ -87,6 +95,7 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig):
   const [domainScores, setDomainScores] = useState<DomainScore[]>([]);
   const [areaScores, setAreaScores] = useState<AreaScore[]>([]);
   const [sectionScores, setSectionScores] = useState<SectionScore[]>([]);
+  const [categoryScores, setCategoryScores] = useState<CategoryScore[]>([]);
   const [totalRequirements, setTotalRequirements] = useState(0);
   const [evaluatedRequirements, setEvaluatedRequirements] = useState(0);
 
@@ -178,6 +187,16 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig):
 
         setOverallScore(overall);
         setPillarScores(calculatedPillarScores);
+        
+        // Convert pillar scores to category scores format
+        const calculatedCategoryScores: CategoryScore[] = calculatedPillarScores.map(pillar => ({
+          category: pillar.name,
+          score: pillar.score,
+          total: pillar.totalRequirements,
+          evaluated: pillar.evaluatedRequirements
+        }));
+        setCategoryScores(calculatedCategoryScores);
+        
         setDomainScores([]);
         setAreaScores([]);
         setSectionScores([]);
@@ -200,6 +219,7 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig):
     domainScores,
     areaScores,
     sectionScores,
+    categoryScores,
     totalRequirements,
     evaluatedRequirements,
     loading,

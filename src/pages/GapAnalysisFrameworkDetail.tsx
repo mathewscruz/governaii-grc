@@ -7,6 +7,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GenericScoreDashboard } from '@/components/gap-analysis/GenericScoreDashboard';
 import { GenericRequirementsTable } from '@/components/gap-analysis/GenericRequirementsTable';
 import { NISTRadarChart } from '@/components/gap-analysis/nist/NISTRadarChart';
+import { CategoryBarChart } from '@/components/gap-analysis/CategoryBarChart';
 import { supabase } from '@/integrations/supabase/client';
 import { getFrameworkConfig } from '@/lib/framework-configs';
 import { useFrameworkScore } from '@/hooks/useFrameworkScore';
@@ -62,6 +63,7 @@ export default function GapAnalysisFrameworkDetail() {
     domainScores,
     areaScores,
     sectionScores,
+    categoryScores,
     totalRequirements,
     evaluatedRequirements,
     loading: scoreLoading,
@@ -118,15 +120,26 @@ export default function GapAnalysisFrameworkDetail() {
           domainScores={domainScores}
           areaScores={areaScores}
           sectionScores={sectionScores}
+          categoryScores={categoryScores}
           totalRequirements={totalRequirements}
           evaluatedRequirements={evaluatedRequirements}
           config={config}
           loading={scoreLoading}
         />
 
-        {/* Radar Chart (se aplicável) */}
-        {pillarScores.length > 3 && (
-          <NISTRadarChart pillarScores={pillarScores} />
+        {/* Radar and Bar Charts side by side */}
+        {(pillarScores.length > 3 || categoryScores.length > 0) && (
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+            {pillarScores.length > 3 && (
+              <NISTRadarChart pillarScores={pillarScores} />
+            )}
+            {categoryScores.length > 0 && (
+              <CategoryBarChart 
+                categoryScores={categoryScores}
+                config={config}
+              />
+            )}
+          </div>
         )}
 
         {/* Tabela de Requisitos */}

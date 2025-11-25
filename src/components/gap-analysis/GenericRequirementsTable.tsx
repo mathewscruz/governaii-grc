@@ -227,7 +227,16 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                                 onClick={() => handleRowClick(req)}
                               >
                                 <TableCell className="font-mono text-sm">{req.codigo}</TableCell>
-                                <TableCell>{req.titulo}</TableCell>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium text-sm">{req.titulo}</p>
+                                    {req.descricao && (
+                                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                        {req.descricao}
+                                      </p>
+                                    )}
+                                  </div>
+                                </TableCell>
                                 <TableCell className="text-sm text-muted-foreground">{req.area_responsavel || '-'}</TableCell>
                                 <TableCell>{getStatusBadge(req.conformity_status)}</TableCell>
                                 <TableCell>
@@ -310,7 +319,16 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                     onClick={() => handleRowClick(req)}
                   >
                     <TableCell className="font-mono text-sm">{req.codigo}</TableCell>
-                    <TableCell>{req.titulo}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-sm">{req.titulo}</p>
+                        {req.descricao && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {req.descricao}
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{req.area_responsavel || '-'}</TableCell>
                     <TableCell>{getStatusBadge(req.conformity_status)}</TableCell>
                     <TableCell>

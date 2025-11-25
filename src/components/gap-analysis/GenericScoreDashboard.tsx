@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { FrameworkConfig, getScoreLabel, getScoreColor } from "@/lib/framework-configs";
+import { CategoryBarChart } from "./CategoryBarChart";
 
 interface PillarScore {
   pillar: string;
@@ -36,12 +37,20 @@ interface SectionScore {
   evaluatedRequirements: number;
 }
 
+interface CategoryScore {
+  category: string;
+  score: number;
+  total: number;
+  evaluated: number;
+}
+
 interface GenericScoreDashboardProps {
   overallScore: number;
   pillarScores: PillarScore[];
   domainScores?: DomainScore[];
   areaScores?: AreaScore[];
   sectionScores?: SectionScore[];
+  categoryScores?: CategoryScore[];
   totalRequirements: number;
   evaluatedRequirements: number;
   config: FrameworkConfig;
@@ -54,6 +63,7 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
   domainScores = [],
   areaScores = [],
   sectionScores = [],
+  categoryScores = [],
   totalRequirements,
   evaluatedRequirements,
   config,
@@ -230,44 +240,6 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
         </div>
       )}
 
-      {/* Scores por Pilar/Categoria */}
-      <div>
-        <h3 className="text-sm font-medium mb-3">Aderência por Categoria</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pillarScores.map((pillar) => (
-            <Card key={pillar.pillar}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">
-                  {pillar.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold" style={{ color: pillar.color }}>
-                      {formatScore(pillar.score)}
-                    </span>
-                    <Badge variant="secondary" className="text-xs">
-                      {pillar.evaluatedRequirements}/{pillar.totalRequirements}
-                    </Badge>
-                  </div>
-                  <Progress 
-                    value={getProgressValue(pillar.score)} 
-                    className="h-2"
-                    style={{ 
-                      // @ts-ignore
-                      '--progress-background': pillar.color 
-                    }}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {getScoreLabel(pillar.score, config)}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };
