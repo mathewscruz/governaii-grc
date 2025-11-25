@@ -1,0 +1,48 @@
+-- 8. ISO/IEC 20000:2018 (40 requisitos de sistema de gestão de serviços de TI)
+INSERT INTO gap_analysis_requirements (framework_id, codigo, titulo, descricao, categoria, area_responsavel, peso, obrigatorio, ordem, created_at, updated_at)
+SELECT 
+  (SELECT id FROM gap_analysis_frameworks WHERE nome = 'ISO/IEC 20000' AND empresa_id IS NULL),
+  codigo, titulo, descricao, categoria, 'TI', peso, obrigatorio, ordem, now(), now()
+FROM (VALUES
+  ('4.1', 'Compreender Contexto Organização', 'Determinar questões internas e externas', 'Contexto', 3, true, 1),
+  ('4.2', 'Necessidades Partes Interessadas', 'Compreender necessidades stakeholders', 'Contexto', 3, true, 2),
+  ('4.3', 'Escopo SMS', 'Determinar escopo sistema gestão serviços', 'Contexto', 3, true, 3),
+  ('4.4', 'Sistema Gestão Serviços', 'Estabelecer e manter SMS', 'Contexto', 3, true, 4),
+  ('5.1', 'Liderança Compromisso', 'Alta direção demonstra liderança', 'Liderança', 3, true, 5),
+  ('5.2', 'Política', 'Estabelecer política gestão serviços', 'Liderança', 3, true, 6),
+  ('5.3', 'Papéis Responsabilidades', 'Atribuir responsabilidades', 'Liderança', 3, true, 7),
+  ('6.1', 'Ações Riscos Oportunidades', 'Planejar ações para riscos', 'Planejamento', 3, true, 8),
+  ('6.2', 'Objetivos SMS Planejamento', 'Estabelecer objetivos SMS', 'Planejamento', 3, true, 9),
+  ('7.1', 'Recursos', 'Determinar e prover recursos', 'Apoio', 2, true, 10),
+  ('7.2', 'Competência', 'Determinar competências necessárias', 'Apoio', 3, true, 11),
+  ('7.3', 'Conscientização', 'Assegurar conscientização', 'Apoio', 2, true, 12),
+  ('7.4', 'Comunicação', 'Determinar comunicações', 'Apoio', 2, true, 13),
+  ('7.5', 'Informação Documentada', 'Controlar informação documentada', 'Apoio', 2, true, 14),
+  ('8.1', 'Planejamento Controle Operacional', 'Planejar e controlar operações', 'Operação', 3, true, 15),
+  ('8.2', 'Gestão Portfólio Serviços', 'Gerenciar portfólio de serviços', 'Operação', 2, true, 16),
+  ('8.3', 'Gestão Relacionamento Negócio', 'Gerenciar relacionamentos', 'Operação', 2, true, 17),
+  ('8.4', 'Gestão Fornecedores', 'Gerenciar fornecedores externos', 'Operação', 2, true, 18),
+  ('8.5', 'Orçamento Contabilidade', 'Gerenciar aspectos financeiros', 'Operação', 2, true, 19),
+  ('8.6', 'Gestão Capacidade', 'Gerenciar capacidade recursos', 'Operação', 3, true, 20),
+  ('9.1', 'Monitoramento Medição', 'Monitorar e medir SMS', 'Avaliação', 3, true, 21),
+  ('9.2', 'Auditoria Interna', 'Conduzir auditorias internas', 'Avaliação', 3, true, 22),
+  ('9.3', 'Análise Crítica Direção', 'Alta direção analisa criticamente', 'Avaliação', 3, true, 23),
+  ('10.1', 'Não Conformidade Ação Corretiva', 'Tratar não conformidades', 'Melhoria', 3, true, 24),
+  ('10.2', 'Melhoria Contínua', 'Melhorar continuamente SMS', 'Melhoria', 2, true, 25),
+  ('A.1', 'Service Desk', 'Estabelecer central atendimento', 'Provisão Serviços', 3, true, 26),
+  ('A.2', 'Gestão Incidentes', 'Gerenciar incidentes serviços', 'Provisão Serviços', 3, true, 27),
+  ('A.3', 'Gestão Problemas', 'Gerenciar problemas raiz', 'Provisão Serviços', 2, true, 28),
+  ('A.4', 'Gestão Requisições', 'Atender requisições serviços', 'Provisão Serviços', 2, true, 29),
+  ('A.5', 'Gestão Níveis Serviço', 'Gerenciar SLAs', 'Provisão Serviços', 3, true, 30),
+  ('A.6', 'Gestão Disponibilidade', 'Assegurar disponibilidade', 'Provisão Serviços', 3, true, 31),
+  ('A.7', 'Gestão Continuidade', 'Assegurar continuidade negócio', 'Provisão Serviços', 3, true, 32),
+  ('A.8', 'Gestão Segurança Informação', 'Proteger informações', 'Provisão Serviços', 3, true, 33),
+  ('A.9', 'Gestão Configuração', 'Gerenciar itens configuração', 'Controle', 3, true, 34),
+  ('A.10', 'Gestão Mudanças', 'Controlar mudanças', 'Controle', 3, true, 35),
+  ('A.11', 'Gestão Liberações', 'Gerenciar liberações', 'Controle', 3, true, 36),
+  ('A.12', 'Gestão Ativos', 'Gerenciar ativos de TI', 'Controle', 2, true, 37),
+  ('A.13', 'Gestão Conhecimento', 'Gerenciar conhecimento', 'Controle', 2, true, 38),
+  ('A.14', 'Relatório Serviços', 'Reportar performance serviços', 'Controle', 2, true, 39),
+  ('A.15', 'Medição Monitoramento', 'Medir e monitorar serviços', 'Controle', 3, true, 40)
+) AS t(codigo, titulo, descricao, categoria, peso, obrigatorio, ordem)
+ON CONFLICT DO NOTHING;

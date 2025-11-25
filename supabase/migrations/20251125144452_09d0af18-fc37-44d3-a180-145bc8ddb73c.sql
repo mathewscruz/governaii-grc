@@ -1,0 +1,48 @@
+-- 5. ISO 37301:2021 (40 requisitos de sistema de gestão de compliance)
+INSERT INTO gap_analysis_requirements (framework_id, codigo, titulo, descricao, categoria, area_responsavel, peso, obrigatorio, ordem, created_at, updated_at)
+SELECT 
+  (SELECT id FROM gap_analysis_frameworks WHERE nome = 'ISO 37301' AND empresa_id IS NULL),
+  codigo, titulo, descricao, categoria, 'Compliance', peso, obrigatorio, ordem, now(), now()
+FROM (VALUES
+  ('4.1', 'Compreender Organização Contexto', 'Determinar questões internas e externas', 'Contexto', 3, true, 1),
+  ('4.2', 'Necessidades Partes Interessadas', 'Compreender necessidades e expectativas', 'Contexto', 3, true, 2),
+  ('4.3', 'Escopo Sistema Compliance', 'Determinar limites e aplicabilidade', 'Contexto', 3, true, 3),
+  ('4.4', 'Sistema Gestão Compliance', 'Estabelecer, implementar e manter', 'Contexto', 3, true, 4),
+  ('5.1', 'Liderança e Compromisso', 'Alta direção demonstra liderança', 'Liderança', 3, true, 5),
+  ('5.2', 'Política Compliance', 'Estabelecer política de compliance', 'Liderança', 3, true, 6),
+  ('5.3', 'Papéis Responsabilidades', 'Atribuir responsabilidades e autoridades', 'Liderança', 3, true, 7),
+  ('6.1', 'Ações Riscos Oportunidades', 'Planejar ações para riscos e oportunidades', 'Planejamento', 3, true, 8),
+  ('6.2', 'Objetivos Compliance', 'Estabelecer objetivos de compliance', 'Planejamento', 3, true, 9),
+  ('6.3', 'Planejamento Mudanças', 'Planejar mudanças no sistema', 'Planejamento', 2, true, 10),
+  ('7.1', 'Recursos', 'Determinar e prover recursos', 'Apoio', 2, true, 11),
+  ('7.2', 'Competência', 'Determinar competências necessárias', 'Apoio', 3, true, 12),
+  ('7.3', 'Conscientização', 'Assegurar conscientização', 'Apoio', 3, true, 13),
+  ('7.4', 'Comunicação', 'Determinar comunicações necessárias', 'Apoio', 2, true, 14),
+  ('7.5', 'Informação Documentada', 'Criar e atualizar informação documentada', 'Apoio', 2, true, 15),
+  ('8.1', 'Planejamento Controle Operacional', 'Planejar e controlar processos', 'Operação', 3, true, 16),
+  ('8.2', 'Avaliação Obrigações Compliance', 'Identificar e avaliar obrigações', 'Operação', 3, true, 17),
+  ('8.3', 'Estabelecer Controles', 'Estabelecer e manter controles', 'Operação', 3, true, 18),
+  ('8.4', 'Comunicação Preocupações', 'Estabelecer canais de comunicação', 'Operação', 3, true, 19),
+  ('8.5', 'Investigar Tratar Não Conformidades', 'Investigar e responder a preocupações', 'Operação', 3, true, 20),
+  ('9.1', 'Monitoramento Medição', 'Monitorar, medir e analisar', 'Avaliação', 3, true, 21),
+  ('9.2', 'Auditoria Interna', 'Conduzir auditorias internas', 'Avaliação', 3, true, 22),
+  ('9.3', 'Análise Crítica Direção', 'Alta direção analisa criticamente', 'Avaliação', 3, true, 23),
+  ('10.1', 'Não Conformidade Ação Corretiva', 'Reagir e tomar ações corretivas', 'Melhoria', 3, true, 24),
+  ('10.2', 'Melhoria Contínua', 'Melhorar continuamente', 'Melhoria', 2, true, 25),
+  ('A.1', 'Governança Compliance', 'Estrutura de governança', 'Anexo A', 3, true, 26),
+  ('A.2', 'Função Compliance', 'Estabelecer função de compliance', 'Anexo A', 3, true, 27),
+  ('A.3', 'Autoridade Independência', 'Assegurar autoridade e independência', 'Anexo A', 3, true, 28),
+  ('A.4', 'Consulta Assessoramento', 'Fornecer consulta sobre compliance', 'Anexo A', 2, true, 29),
+  ('A.5', 'Cultura Compliance', 'Promover cultura de compliance', 'Anexo A', 3, true, 30),
+  ('A.6', 'Código Conduta', 'Estabelecer código de conduta', 'Anexo A', 3, true, 31),
+  ('A.7', 'Treinamento Conscientização', 'Programa de treinamento', 'Anexo A', 3, true, 32),
+  ('A.8', 'Due Diligence', 'Conduzir due diligence', 'Anexo A', 2, true, 33),
+  ('A.9', 'Gestão Terceiros', 'Gerenciar riscos de terceiros', 'Anexo A', 3, true, 34),
+  ('A.10', 'Monitoramento Testes', 'Monitorar e testar controles', 'Anexo A', 3, true, 35),
+  ('A.11', 'Análise Relatórios', 'Análise e relatórios periódicos', 'Anexo A', 2, true, 36),
+  ('A.12', 'Gestão Registros', 'Manter registros apropriados', 'Anexo A', 2, true, 37),
+  ('A.13', 'Proteção Denunciantes', 'Proteger denunciantes', 'Anexo A', 3, true, 38),
+  ('A.14', 'Ações Disciplinares', 'Estabelecer ações disciplinares', 'Anexo A', 2, true, 39),
+  ('A.15', 'Melhoria Sistema', 'Melhorar continuamente sistema', 'Anexo A', 2, true, 40)
+) AS t(codigo, titulo, descricao, categoria, peso, obrigatorio, ordem)
+ON CONFLICT DO NOTHING;
