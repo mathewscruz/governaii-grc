@@ -8,6 +8,7 @@ interface Requirement {
   codigo?: string | null;
   titulo: string;
   categoria?: string | null;
+  area_responsavel?: string | null;
   peso?: number | null;
 }
 
@@ -25,9 +26,36 @@ interface PillarScore {
   color: string;
 }
 
+interface DomainScore {
+  domain: string;
+  name: string;
+  score: number;
+  totalRequirements: number;
+  evaluatedRequirements: number;
+  color: string;
+}
+
+interface AreaScore {
+  area: string;
+  score: number;
+  totalRequirements: number;
+  evaluatedRequirements: number;
+}
+
+interface SectionScore {
+  section: string;
+  name: string;
+  score: number;
+  totalRequirements: number;
+  evaluatedRequirements: number;
+}
+
 interface FrameworkScore {
   overallScore: number;
   pillarScores: PillarScore[];
+  domainScores: DomainScore[];
+  areaScores: AreaScore[];
+  sectionScores: SectionScore[];
   totalRequirements: number;
   evaluatedRequirements: number;
   loading: boolean;
@@ -56,6 +84,9 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig):
   const [error, setError] = useState<Error | null>(null);
   const [overallScore, setOverallScore] = useState(0);
   const [pillarScores, setPillarScores] = useState<PillarScore[]>([]);
+  const [domainScores, setDomainScores] = useState<DomainScore[]>([]);
+  const [areaScores, setAreaScores] = useState<AreaScore[]>([]);
+  const [sectionScores, setSectionScores] = useState<SectionScore[]>([]);
   const [totalRequirements, setTotalRequirements] = useState(0);
   const [evaluatedRequirements, setEvaluatedRequirements] = useState(0);
 
@@ -70,7 +101,7 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig):
         // Buscar requisitos do framework
         const { data: requirements, error: reqError } = await supabase
           .from('gap_analysis_requirements')
-          .select('id, codigo, titulo, categoria, peso')
+          .select('id, codigo, titulo, categoria, area_responsavel, peso')
           .eq('framework_id', frameworkId)
           .order('ordem', { ascending: true });
 
@@ -147,6 +178,9 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig):
 
         setOverallScore(overall);
         setPillarScores(calculatedPillarScores);
+        setDomainScores([]);
+        setAreaScores([]);
+        setSectionScores([]);
         setTotalRequirements(requirements?.length || 0);
         setEvaluatedRequirements(totalEvaluated);
       } catch (err: any) {
@@ -163,6 +197,9 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig):
   return {
     overallScore,
     pillarScores,
+    domainScores,
+    areaScores,
+    sectionScores,
     totalRequirements,
     evaluatedRequirements,
     loading,

@@ -59,6 +59,9 @@ export default function GapAnalysisFrameworkDetail() {
   const {
     overallScore,
     pillarScores,
+    domainScores,
+    areaScores,
+    sectionScores,
     totalRequirements,
     evaluatedRequirements,
     loading: scoreLoading,
@@ -112,6 +115,9 @@ export default function GapAnalysisFrameworkDetail() {
         <GenericScoreDashboard
           overallScore={overallScore}
           pillarScores={pillarScores}
+          domainScores={domainScores}
+          areaScores={areaScores}
+          sectionScores={sectionScores}
           totalRequirements={totalRequirements}
           evaluatedRequirements={evaluatedRequirements}
           config={config}

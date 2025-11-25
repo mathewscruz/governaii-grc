@@ -17,7 +17,12 @@ export interface FrameworkConfig {
   sections?: {
     id: string;
     title: string;
-    filter: (categoria: string | null) => boolean;
+    filter: (codigo: string | null) => boolean;
+  }[];
+  domains?: {
+    id: string;
+    name: string;
+    color: string;
   }[];
 }
 
@@ -65,13 +70,19 @@ export const FRAMEWORK_CONFIGS: Record<string, FrameworkConfig> = {
       {
         id: 'sgsi',
         title: 'Requisitos do SGSI (Cláusulas 4-10)',
-        filter: (categoria) => categoria !== 'Segurança',
+        filter: (codigo) => !codigo?.startsWith('A.'),
       },
       {
         id: 'anexo-a',
         title: 'Controles do Anexo A',
-        filter: (categoria) => categoria === 'Segurança',
+        filter: (codigo) => codigo?.startsWith('A.'),
       },
+    ],
+    domains: [
+      { id: 'A.5', name: 'A.5 - Controles Organizacionais', color: '#8b5cf6' },
+      { id: 'A.6', name: 'A.6 - Controles de Pessoas', color: '#3b82f6' },
+      { id: 'A.7', name: 'A.7 - Controles Físicos', color: '#10b981' },
+      { id: 'A.8', name: 'A.8 - Controles Tecnológicos', color: '#f59e0b' },
     ],
   },
 };

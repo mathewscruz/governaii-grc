@@ -194,7 +194,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
             </TabsList>
 
             {config.sections.map(section => {
-              const sectionReqs = requirements.filter(r => section.filter(r.categoria));
+              const sectionReqs = requirements.filter(r => section.filter(r.codigo));
               const sectionCategories = [...new Set(sectionReqs.map(r => r.categoria || 'Outros'))].sort();
 
               return (
