@@ -23,6 +23,15 @@ interface Company {
   ativo: boolean;
   status_licenca: 'trial' | 'em_operacao';
   data_inicio_trial: string | null;
+  plano_id: string | null;
+  creditos_consumidos: number;
+  plano?: {
+    nome: string;
+    codigo: string;
+    creditos_franquia: number;
+    icone: string;
+    cor_primaria: string;
+  };
 }
 
 interface AuthContextType {
@@ -78,7 +87,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               contato,
               ativo,
               status_licenca,
-              data_inicio_trial
+              data_inicio_trial,
+              plano_id,
+              creditos_consumidos,
+              plano:planos (
+                nome,
+                codigo,
+                creditos_franquia,
+                icone,
+                cor_primaria
+              )
             )
           `)
           .eq('user_id', userId)

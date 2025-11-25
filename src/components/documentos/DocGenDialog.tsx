@@ -14,6 +14,8 @@ import DocLayoutBuilder from './DocLayoutBuilder';
 import { DocumentoDialog } from '@/components/documentos/DocumentoDialog';
 import jsPDF from 'jspdf';
 import { Document as DocxDocument, Packer, Paragraph, HeadingLevel, TextRun, ImageRun } from 'docx';
+import { CreditsExhaustedDialog } from '@/components/CreditsExhaustedDialog';
+import { useAuth } from '@/components/AuthProvider';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -49,6 +51,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   onDocumentSaved
 }) => {
   const { toast } = useToast();
+  const { company } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -59,6 +62,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   const [generatedDocument, setGeneratedDocument] = useState<any>(null);
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
   const [isEditingLayout, setIsEditingLayout] = useState(false);
+  const [showCreditsDialog, setShowCreditsDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Dialog de criação via DocGen
@@ -147,6 +151,12 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
 
       if (error) throw error;
 
+      // Verificar se créditos foram esgotados
+      if (data?.error === 'CREDITS_EXHAUSTED') {
+        setShowCreditsDialog(true);
+        return;
+      }
+
       const assistantMessage: ChatMessage = {
         role: 'assistant',
         content: data.message,
@@ -188,6 +198,12 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
       });
 
       if (error) throw error;
+
+      // Verificar se créditos foram esgotados
+      if (data?.error === 'CREDITS_EXHAUSTED') {
+        setShowCreditsDialog(true);
+        return;
+      }
 
       setGeneratedDocument(data.document);
       toast({

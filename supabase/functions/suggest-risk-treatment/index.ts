@@ -15,13 +15,18 @@ serve(async (req) => {
   }
 
   try {
-    const { descricao, categoria, nivel_risco, nome } = await req.json();
+    const { error } = await supabase.functions.invoke('suggest-risk-treatment', {
+      body: {
+        nome,
+        descricao,
+        categoria,
+        nivel_risco
+      }
+    });
 
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key não configurada');
-    }
+    if (error) throw error;
 
-    const prompt = `Como especialista em gestão de riscos corporativos, analise o seguinte risco e sugira planos de tratamento:
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
 
 RISCO: ${nome}
 DESCRIÇÃO: ${descricao}

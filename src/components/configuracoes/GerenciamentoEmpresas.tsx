@@ -33,7 +33,16 @@ interface Empresa {
   ativo: boolean;
   status_licenca: 'trial' | 'em_operacao';
   data_inicio_trial?: string;
+  plano_id?: string;
+  creditos_consumidos?: number;
   created_at: string;
+  plano?: {
+    nome: string;
+    codigo: string;
+    creditos_franquia: number;
+    icone: string;
+    cor_primaria: string;
+  };
 }
 
 const GerenciamentoEmpresas = () => {
@@ -60,7 +69,16 @@ const GerenciamentoEmpresas = () => {
     try {
       const { data, error } = await supabase
         .from('empresas')
-        .select('*')
+        .select(`
+          *,
+          plano:planos (
+            nome,
+            codigo,
+            creditos_franquia,
+            icone,
+            cor_primaria
+          )
+        `)
         .order('nome');
 
       if (error) throw error;

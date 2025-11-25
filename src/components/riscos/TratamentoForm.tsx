@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
+import { CreditsExhaustedDialog } from '@/components/CreditsExhaustedDialog';
 
 const tratamentoSchema = z.object({
   tipo_tratamento: z.string().min(1, 'Tipo de tratamento é obrigatório'),
@@ -46,11 +47,12 @@ interface TratamentoFormProps {
 }
 
 export function TratamentoForm({ riscoId, tratamento, onSuccess, riscoData }: TratamentoFormProps) {
-  const { profile } = useAuth();
+  const { profile, company } = useAuth();
   const [loading, setLoading] = useState(false);
   const [iaSuggestionLoading, setIaSuggestionLoading] = useState(false);
   const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
   const [iaSuggestions, setIaSuggestions] = useState<any>(null);
+  const [showCreditsDialog, setShowCreditsDialog] = useState(false);
 
   const form = useForm<TratamentoFormData>({
     resolver: zodResolver(tratamentoSchema),
@@ -127,6 +129,12 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess, riscoData }: Tr
 
       if (error) throw error;
 
+      // Verificar se créditos foram esgotados
+      if (data?.error === 'CREDITS_EXHAUSTED' || error?.message?.includes('CREDITS_EXHAUSTED')) {
+        setShowCreditsDialog(true);
+        return;
+      }
+
       if (data.success) {
         setIaSuggestions(data.data);
         setSuggestionDialogOpen(true);
@@ -134,7 +142,12 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess, riscoData }: Tr
         throw new Error(data.error || 'Erro ao gerar sugestões');
       }
     } catch (error: any) {
-      toast.error('Erro ao gerar sugestões: ' + error.message);
+      // Verificar se o erro é de créditos esgotados
+      if (error?.message?.includes('CREDITS_EXHAUSTED')) {
+        setShowCreditsDialog(true);
+      } else {
+        toast.error('Erro ao gerar sugestões: ' + error.message);
+      }
     } finally {
       setIaSuggestionLoading(false);
     }
@@ -427,6 +440,14 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess, riscoData }: Tr
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Créditos Esgotados */}
+      <CreditsExhaustedDialog 
+        open={showCreditsDialog}
+        onOpenChange={setShowCreditsDialog}
+        planName={company?.plano?.nome}
+        creditsLimit={company?.plano?.creditos_franquia}
+      />
     </form>
   );
 }
