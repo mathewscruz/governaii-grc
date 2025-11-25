@@ -4168,16 +4168,21 @@ export type Database = {
         Row: {
           aceito: boolean | null
           aprovador_aceite: string | null
+          aprovador_id: string | null
           categoria_id: string | null
           causas: string | null
+          comentarios_aprovacao: string | null
           consequencias: string | null
           controles_existentes: string | null
           created_at: string
           data_aceite: string | null
+          data_aprovacao: string | null
           data_avaliacao: string | null
+          data_envio_aprovacao: string | null
           data_identificacao: string
           descricao: string | null
           empresa_id: string
+          historico_aprovacao: Json | null
           id: string
           impacto_inicial: string
           impacto_residual: string | null
@@ -4190,21 +4195,27 @@ export type Database = {
           probabilidade_residual: string | null
           responsavel: string | null
           status: string
+          status_aprovacao: string | null
           updated_at: string
         }
         Insert: {
           aceito?: boolean | null
           aprovador_aceite?: string | null
+          aprovador_id?: string | null
           categoria_id?: string | null
           causas?: string | null
+          comentarios_aprovacao?: string | null
           consequencias?: string | null
           controles_existentes?: string | null
           created_at?: string
           data_aceite?: string | null
+          data_aprovacao?: string | null
           data_avaliacao?: string | null
+          data_envio_aprovacao?: string | null
           data_identificacao?: string
           descricao?: string | null
           empresa_id: string
+          historico_aprovacao?: Json | null
           id?: string
           impacto_inicial: string
           impacto_residual?: string | null
@@ -4217,21 +4228,27 @@ export type Database = {
           probabilidade_residual?: string | null
           responsavel?: string | null
           status?: string
+          status_aprovacao?: string | null
           updated_at?: string
         }
         Update: {
           aceito?: boolean | null
           aprovador_aceite?: string | null
+          aprovador_id?: string | null
           categoria_id?: string | null
           causas?: string | null
+          comentarios_aprovacao?: string | null
           consequencias?: string | null
           controles_existentes?: string | null
           created_at?: string
           data_aceite?: string | null
+          data_aprovacao?: string | null
           data_avaliacao?: string | null
+          data_envio_aprovacao?: string | null
           data_identificacao?: string
           descricao?: string | null
           empresa_id?: string
+          historico_aprovacao?: Json | null
           id?: string
           impacto_inicial?: string
           impacto_residual?: string | null
@@ -4244,12 +4261,20 @@ export type Database = {
           probabilidade_residual?: string | null
           responsavel?: string | null
           status?: string
+          status_aprovacao?: string | null
           updated_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "riscos_aprovador_aceite_fkey"
             columns: ["aprovador_aceite"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "riscos_aprovador_id_fkey"
+            columns: ["aprovador_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
@@ -4315,6 +4340,68 @@ export type Database = {
           url_arquivo?: string
         }
         Relationships: []
+      }
+      riscos_aprovacoes_notificacoes: {
+        Row: {
+          aprovador_id: string | null
+          created_at: string | null
+          empresa_id: string | null
+          id: string
+          lida: boolean | null
+          risco_id: string | null
+          solicitante_id: string | null
+          tipo_notificacao: string | null
+        }
+        Insert: {
+          aprovador_id?: string | null
+          created_at?: string | null
+          empresa_id?: string | null
+          id?: string
+          lida?: boolean | null
+          risco_id?: string | null
+          solicitante_id?: string | null
+          tipo_notificacao?: string | null
+        }
+        Update: {
+          aprovador_id?: string | null
+          created_at?: string | null
+          empresa_id?: string | null
+          id?: string
+          lida?: boolean | null
+          risco_id?: string | null
+          solicitante_id?: string | null
+          tipo_notificacao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "riscos_aprovacoes_notificacoes_aprovador_id_fkey"
+            columns: ["aprovador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "riscos_aprovacoes_notificacoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "riscos_aprovacoes_notificacoes_risco_id_fkey"
+            columns: ["risco_id"]
+            isOneToOne: false
+            referencedRelation: "riscos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "riscos_aprovacoes_notificacoes_solicitante_id_fkey"
+            columns: ["solicitante_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       riscos_ativos: {
         Row: {

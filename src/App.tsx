@@ -14,6 +14,7 @@ import { Riscos } from '@/pages/Riscos';
 import GapAnalysis from '@/pages/GapAnalysis';
 import GapAnalysisFrameworks from '@/pages/GapAnalysisFrameworks';
 import GapAnalysisAderencia from '@/pages/GapAnalysisAderencia';
+import GapAnalysisNIST from '@/pages/GapAnalysisNIST';
 import Controles from '@/pages/Controles';
 import Contratos from '@/pages/Contratos';
 import Auditorias from '@/pages/Auditorias';
@@ -106,6 +107,13 @@ function App() {
               <Layout>
                 <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
                   <GapAnalysisAderencia />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/gap-analysis/nist" element={
+              <Layout>
+                <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
+                  <GapAnalysisNIST />
                 </ProtectedRoute>
               </Layout>
             } />
