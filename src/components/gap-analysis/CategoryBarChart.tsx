@@ -17,19 +17,20 @@ interface CategoryBarChartProps {
 
 export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScores, config }) => {
   const getScoreColor = (score: number) => {
+    // Cores sóbrias em tons de azul
     if (config.scoreType === 'percentage') {
-      if (score >= 80) return "hsl(var(--chart-1))"; // green
-      if (score >= 60) return "hsl(var(--chart-2))"; // blue
-      if (score >= 40) return "hsl(var(--chart-3))"; // yellow
-      if (score >= 20) return "hsl(var(--chart-4))"; // orange
-      return "hsl(var(--chart-5))"; // red
+      if (score >= 80) return "#2563eb"; // Azul forte
+      if (score >= 60) return "#3b82f6"; // Azul médio
+      if (score >= 40) return "#60a5fa"; // Azul claro
+      if (score >= 20) return "#93c5fd"; // Azul muito claro
+      return "#dbeafe"; // Azul pálido
     } else {
       // decimal (0-5) or scale_0_5
-      if (score >= 4.5) return "hsl(var(--chart-1))";
-      if (score >= 3.5) return "hsl(var(--chart-2))";
-      if (score >= 2.5) return "hsl(var(--chart-3))";
-      if (score >= 1.5) return "hsl(var(--chart-4))";
-      return "hsl(var(--chart-5))";
+      if (score >= 4.5) return "#2563eb"; // Azul forte
+      if (score >= 3.5) return "#3b82f6"; // Azul médio
+      if (score >= 2.5) return "#60a5fa"; // Azul claro
+      if (score >= 1.5) return "#93c5fd"; // Azul muito claro
+      return "#dbeafe"; // Azul pálido
     }
   };
 
@@ -50,7 +51,7 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
+          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 20, left: 80, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis 
               type="number" 
@@ -61,7 +62,7 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
               type="category" 
               dataKey="name" 
               tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }}
-              width={90}
+              width={75}
             />
             <Tooltip 
               contentStyle={{

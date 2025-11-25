@@ -203,43 +203,6 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
         </div>
       )}
 
-      {/* Scores por Área Responsável */}
-      {areaScores.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium mb-3">Aderência por Área Responsável</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {areaScores.slice(0, 8).map((area) => (
-              <Card key={area.area}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium truncate" title={area.area}>
-                    {area.area}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-primary">
-                        {formatScore(area.score)}
-                      </span>
-                      <Badge variant="secondary" className="text-xs">
-                        {area.evaluatedRequirements}/{area.totalRequirements}
-                      </Badge>
-                    </div>
-                    <Progress 
-                      value={getProgressValue(area.score)} 
-                      className="h-2"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {getScoreLabel(area.score, config)}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
     </div>
   );
 };

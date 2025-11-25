@@ -17,19 +17,20 @@ interface AreaBarChartProps {
 
 export const AreaBarChart: React.FC<AreaBarChartProps> = ({ areaScores, config }) => {
   const getScoreColor = (score: number) => {
+    // Cores sóbrias em tons de verde-teal
     if (config.scoreType === 'percentage') {
-      if (score >= 80) return "hsl(var(--chart-1))"; // green
-      if (score >= 60) return "hsl(var(--chart-2))"; // blue
-      if (score >= 40) return "hsl(var(--chart-3))"; // yellow
-      if (score >= 20) return "hsl(var(--chart-4))"; // orange
-      return "hsl(var(--chart-5))"; // red
+      if (score >= 80) return "#059669"; // Verde escuro
+      if (score >= 60) return "#10b981"; // Verde médio
+      if (score >= 40) return "#34d399"; // Verde claro
+      if (score >= 20) return "#6ee7b7"; // Verde muito claro
+      return "#d1fae5"; // Verde pálido
     } else {
       // decimal (0-5) or scale_0_5
-      if (score >= 4.5) return "hsl(var(--chart-1))";
-      if (score >= 3.5) return "hsl(var(--chart-2))";
-      if (score >= 2.5) return "hsl(var(--chart-3))";
-      if (score >= 1.5) return "hsl(var(--chart-4))";
-      return "hsl(var(--chart-5))";
+      if (score >= 4.5) return "#059669"; // Verde escuro
+      if (score >= 3.5) return "#10b981"; // Verde médio
+      if (score >= 2.5) return "#34d399"; // Verde claro
+      if (score >= 1.5) return "#6ee7b7"; // Verde muito claro
+      return "#d1fae5"; // Verde pálido
     }
   };
 
