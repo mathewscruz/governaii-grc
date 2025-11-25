@@ -71,7 +71,6 @@ const menuItems = [
     icon: BarChart3,
     subItems: [
       { title: 'Frameworks', url: '/gap-analysis/frameworks', icon: FileText, moduleName: 'gap-analysis' },
-      { title: 'NIST CSF 2.0', url: '/gap-analysis/nist', icon: Shield, moduleName: 'gap-analysis' },
       { title: 'Avaliação de Aderência', url: '/gap-analysis/avaliacao-aderencia', icon: Search, moduleName: 'gap-analysis' },
     ],
   },

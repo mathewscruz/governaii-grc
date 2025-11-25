@@ -13,6 +13,7 @@ import AtivosChaves from '@/pages/AtivosChaves';
 import { Riscos } from '@/pages/Riscos';
 import GapAnalysis from '@/pages/GapAnalysis';
 import GapAnalysisFrameworks from '@/pages/GapAnalysisFrameworks';
+import GapAnalysisFrameworkDetail from '@/pages/GapAnalysisFrameworkDetail';
 import GapAnalysisAderencia from '@/pages/GapAnalysisAderencia';
 import GapAnalysisNIST from '@/pages/GapAnalysisNIST';
 import Controles from '@/pages/Controles';
@@ -100,6 +101,13 @@ function App() {
               <Layout>
                 <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
                   <GapAnalysisFrameworks />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/gap-analysis/framework/:frameworkId" element={
+              <Layout>
+                <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
+                  <GapAnalysisFrameworkDetail />
                 </ProtectedRoute>
               </Layout>
             } />

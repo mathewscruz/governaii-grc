@@ -1,49 +1,77 @@
-import { useState } from 'react';
-import { Plus, BarChart3, FileText, Users, TrendingUp, ChevronLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { BarChart3, FileText, Users, TrendingUp } from 'lucide-react';
 import { useGapAnalysisStats } from '@/hooks/useGapAnalysisStats';
-import { FrameworkDialog } from '@/components/gap-analysis/FrameworkDialog';
-import { AssessmentDialog } from '@/components/gap-analysis/AssessmentDialog';
-import { RequirementsManager } from '@/components/gap-analysis/RequirementsManager';
-import { AssessmentEvaluationView } from '@/components/gap-analysis/AssessmentEvaluationView';
-import { AssessmentsList } from '@/components/gap-analysis/AssessmentsList';
-import { FrameworkTabsView } from '@/components/gap-analysis/FrameworkTabsView';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
+import { FrameworkCard } from '@/components/gap-analysis/FrameworkCard';
+import { supabase } from '@/integrations/supabase/client';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 
 interface Framework {
   id: string;
   nome: string;
   versao: string;
   tipo_framework: string;
-  descricao: string;
-  assessment_count: number;
-}
-
-interface Assessment {
-  id: string;
-  name: string;
-  description?: string;
-  status: string;
-  start_date?: string;
-  end_date?: string;
-  framework_name: string;
-  framework_version: string;
-  framework_type: string;
-  framework_id?: string;
+  descricao?: string;
+  tipo?: string;
 }
 
 export default function GapAnalysisFrameworks() {
-  const { toast } = useToast();
-  const [isFrameworkDialogOpen, setIsFrameworkDialogOpen] = useState(false);
-  const [isAssessmentDialogOpen, setIsAssessmentDialogOpen] = useState(false);
-  const [selectedFramework, setSelectedFramework] = useState<Framework | null>(null);
-  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'requirements' | 'evaluation' | 'assessments'>('dashboard');
+  const navigate = useNavigate();
+  const { empresaId } = useEmpresaId();
+  const [frameworks, setFrameworks] = useState<Framework[]>([]);
+  const [requirementCounts, setRequirementCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
 
-  const { data: stats, loading: statsLoading, refetch: refetchStats } = useGapAnalysisStats();
+  const { data: stats, loading: statsLoading } = useGapAnalysisStats();
+
+  useEffect(() => {
+    loadFrameworks();
+  }, [empresaId]);
+
+  const loadFrameworks = async () => {
+    if (!empresaId) return;
+
+    try {
+      setLoading(true);
+
+      // Buscar todos os frameworks (padrão e personalizados)
+      const { data: fws, error: fwError } = await supabase
+        .from('gap_analysis_frameworks')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .order('created_at', { ascending: false });
+
+      if (fwError) throw fwError;
+
+      setFrameworks(fws || []);
+
+      // Buscar contagem de requisitos para cada framework
+      const counts: Record<string, number> = {};
+      for (const fw of fws || []) {
+        const { count, error: countError } = await supabase
+          .from('gap_analysis_requirements')
+          .select('*', { count: 'exact', head: true })
+          .eq('framework_id', fw.id);
+
+        if (!countError) {
+          counts[fw.id] = count || 0;
+        }
+      }
+
+      setRequirementCounts(counts);
+    } catch (error) {
+      console.error('Erro ao carregar frameworks:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFrameworkClick = (framework: Framework) => {
+    navigate(`/gap-analysis/framework/${framework.id}`);
+  };
 
   const getComplianceVariant = (compliance: number): "success" | "info" | "warning" | "destructive" => {
     if (compliance >= 80) return "success";
@@ -52,105 +80,21 @@ export default function GapAnalysisFrameworks() {
     return "destructive";
   };
 
-  const handleFrameworkSuccess = () => {
-    setIsFrameworkDialogOpen(false);
-    toast({
-      title: "Sucesso",
-      description: "Framework criado/atualizado com sucesso!",
-    });
-  };
-
-  const handleAssessmentSuccess = () => {
-    setIsAssessmentDialogOpen(false);
-    refetchStats();
-    toast({
-      title: "Sucesso",
-      description: "Avaliação criada/atualizada com sucesso!",
-    });
-  };
-
-  const handleStartAssessment = (framework: Framework) => {
-    setSelectedFramework(framework);
-    setIsAssessmentDialogOpen(true);
-  };
-
-  const handleManageRequirements = (framework: Framework) => {
-    setSelectedFramework(framework);
-    setCurrentView('requirements');
-  };
-
-  const handleSelectAssessment = (assessment: Assessment | any) => {
-    const convertedAssessment: Assessment = {
-      id: assessment.id,
-      name: assessment.name || assessment.nome,
-      description: assessment.description || assessment.descricao || '',
-      status: assessment.status,
-      start_date: assessment.start_date || assessment.data_inicio,
-      end_date: assessment.end_date || assessment.data_conclusao,
-      framework_name: assessment.framework_name || assessment.framework?.nome || '',
-      framework_version: assessment.framework_version || assessment.versao || '',
-      framework_type: assessment.framework_type || assessment.framework?.tipo || assessment.tipo_framework || ''
-    };
-    setSelectedAssessment(convertedAssessment);
-    setCurrentView('evaluation');
-  };
-
-  const handleEditAssessment = (assessment: Assessment) => {
-    setSelectedAssessment(assessment);
-    setIsAssessmentDialogOpen(true);
-  };
-
-  const renderBackButton = () => (
-    <Button 
-      variant="ghost" 
-      onClick={() => {
-        setCurrentView('dashboard');
-        setSelectedFramework(null);
-        setSelectedAssessment(null);
-      }}
-      className="mb-4"
-    >
-      <ChevronLeft className="h-4 w-4 mr-2" />
-      Voltar ao Dashboard
-    </Button>
-  );
-
-  if (currentView === 'requirements' && selectedFramework) {
+  if (loading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
-        {renderBackButton()}
-        <RequirementsManager 
-          frameworkId={selectedFramework.id}
-          frameworkName={selectedFramework.nome}
-        />
-      </div>
-    );
-  }
-
-  if (currentView === 'evaluation' && selectedAssessment) {
-    return (
-      <div className="container mx-auto p-6 space-y-6">
-        {renderBackButton()}
-        <AssessmentEvaluationView
-          assessmentId={selectedAssessment.id}
-          frameworkId={selectedAssessment.framework_id || selectedAssessment.id}
-          frameworkName={selectedAssessment.framework_name || selectedAssessment.name}
-          assessmentName={selectedAssessment.name}
-          onSave={() => refetchStats()}
-        />
-      </div>
-    );
-  }
-
-  if (currentView === 'assessments') {
-    return (
-      <div className="container mx-auto p-6 space-y-6">
-        {renderBackButton()}
-        <AssessmentsList
-          onSelectAssessment={handleSelectAssessment}
-          onEditAssessment={handleEditAssessment}
-        />
-      </div>
+      <ErrorBoundary>
+        <div className="space-y-6">
+          <PageHeader
+            title="Frameworks de Conformidade"
+            description="Selecione um framework para avaliar a conformidade organizacional"
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-64 bg-muted rounded-lg"></div>
+            ))}
+          </div>
+        </div>
+      </ErrorBoundary>
     );
   }
 
@@ -159,13 +103,7 @@ export default function GapAnalysisFrameworks() {
       <div className="space-y-6">
         <PageHeader
           title="Frameworks de Conformidade"
-          description="Gerencie frameworks regulatórios e avalie maturidade organizacional"
-          actions={
-            <Button onClick={() => setIsFrameworkDialogOpen(true)} size="lg">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Framework
-            </Button>
-          }
+          description="Selecione um framework para avaliar a conformidade organizacional"
         />
 
         {/* Statistics Cards */}
@@ -202,23 +140,29 @@ export default function GapAnalysisFrameworks() {
           />
         </div>
 
-        {/* Framework Tabs View */}
-        <FrameworkTabsView onCreateFramework={() => setIsFrameworkDialogOpen(true)} />
+        {/* Framework Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {frameworks.map((framework) => (
+            <FrameworkCard
+              key={framework.id}
+              id={framework.id}
+              nome={framework.nome}
+              versao={framework.versao}
+              tipo_framework={framework.tipo_framework}
+              descricao={framework.descricao}
+              requirementCount={requirementCounts[framework.id] || 0}
+              onClick={() => handleFrameworkClick(framework)}
+            />
+          ))}
+        </div>
 
-        {/* Dialogs */}
-        <FrameworkDialog
-          open={isFrameworkDialogOpen}
-          onOpenChange={setIsFrameworkDialogOpen}
-          onSuccess={handleFrameworkSuccess}
-        />
-
-        <AssessmentDialog
-          open={isAssessmentDialogOpen}
-          onOpenChange={setIsAssessmentDialogOpen}
-          framework={selectedFramework}
-          assessment={selectedAssessment}
-          onSuccess={handleAssessmentSuccess}
-        />
+        {frameworks.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">
+              Nenhum framework disponível. Entre em contato com o administrador.
+            </p>
+          </div>
+        )}
       </div>
     </ErrorBoundary>
   );
