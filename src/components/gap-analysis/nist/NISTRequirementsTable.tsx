@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { NIST_PILLARS } from "@/hooks/useNISTScore";
 import { CheckCircle2, XCircle, MinusCircle, Ban, Loader2 } from "lucide-react";
+import { NISTRequirementDetailDialog } from "./NISTRequirementDetailDialog";
 
 interface NISTRequirement {
   id: string;
@@ -38,6 +39,8 @@ export const NISTRequirementsTable: React.FC<NISTRequirementsTableProps> = ({
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("GOVERN");
+  const [selectedRequirement, setSelectedRequirement] = useState<NISTRequirement | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
   useEffect(() => {
     loadRequirements();
@@ -131,6 +134,20 @@ export const NISTRequirementsTable: React.FC<NISTRequirementsTableProps> = ({
     }
   };
 
+  const handleRowClick = (requirement: NISTRequirement) => {
+    setSelectedRequirement(requirement);
+    setDetailDialogOpen(true);
+  };
+
+  const handleDetailDialogClose = () => {
+    setDetailDialogOpen(false);
+    setSelectedRequirement(null);
+    loadRequirements(); // Recarregar após edição
+    if (onStatusChange) {
+      onStatusChange();
+    }
+  };
+
   const getStatusBadge = (status: string | null | undefined) => {
     switch (status) {
       case 'conforme':
@@ -182,7 +199,6 @@ export const NISTRequirementsTable: React.FC<NISTRequirementsTableProps> = ({
                       <TableHead className="w-[100px]">Código</TableHead>
                       <TableHead>Requisito</TableHead>
                       <TableHead className="w-[120px]">Área</TableHead>
-                      <TableHead className="w-[80px] text-center">Peso</TableHead>
                       <TableHead className="w-[150px]">Status</TableHead>
                       <TableHead className="w-[200px]">Avaliação</TableHead>
                     </TableRow>
@@ -190,13 +206,13 @@ export const NISTRequirementsTable: React.FC<NISTRequirementsTableProps> = ({
                   <TableBody>
                     {filteredRequirements.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                           Nenhum requisito encontrado para este pilar
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredRequirements.map((req) => (
-                        <TableRow key={req.id}>
+                        <TableRow key={req.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleRowClick(req)}>
                           <TableCell className="font-mono text-xs">{req.codigo}</TableCell>
                           <TableCell>
                             <div>
@@ -209,15 +225,10 @@ export const NISTRequirementsTable: React.FC<NISTRequirementsTableProps> = ({
                             </div>
                           </TableCell>
                           <TableCell className="text-xs">{req.area_responsavel}</TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="outline" className="text-xs">
-                              {req.peso}
-                            </Badge>
-                          </TableCell>
                           <TableCell>
                             {getStatusBadge(req.conformity_status)}
                           </TableCell>
-                          <TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
                             <Select
                               value={req.conformity_status || ''}
                               onValueChange={(value) => handleStatusChange(req.id, value)}
@@ -243,6 +254,16 @@ export const NISTRequirementsTable: React.FC<NISTRequirementsTableProps> = ({
             </TabsContent>
           ))}
         </Tabs>
+
+        {selectedRequirement && (
+          <NISTRequirementDetailDialog
+            open={detailDialogOpen}
+            onOpenChange={setDetailDialogOpen}
+            requirement={selectedRequirement}
+            frameworkId={frameworkId}
+            onClose={handleDetailDialogClose}
+          />
+        )}
       </CardContent>
     </Card>
   );
