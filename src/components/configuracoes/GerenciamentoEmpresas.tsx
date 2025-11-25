@@ -14,15 +14,29 @@ import { toast } from 'sonner';
 import { Plus, Search, Edit, Trash2, Building2, Upload } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { PlanBadge } from '@/components/PlanBadge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 
 const empresaSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   cnpj: z.string().optional(),
   contato: z.string().optional(),
   status_licenca: z.enum(['trial', 'em_operacao']).default('em_operacao'),
+  plano_id: z.string().optional(),
 });
 
 type EmpresaForm = z.infer<typeof empresaSchema>;
+
+interface Plano {
+  id: string;
+  nome: string;
+  codigo: string;
+  creditos_franquia: number;
+  descricao: string | null;
+  icone: string;
+  cor_primaria: string;
+}
 
 interface Empresa {
   id: string;
@@ -47,6 +61,7 @@ interface Empresa {
 
 const GerenciamentoEmpresas = () => {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [planos, setPlanos] = useState<Plano[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -54,6 +69,7 @@ const GerenciamentoEmpresas = () => {
   const [uploading, setUploading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [empresaToDelete, setEmpresaToDelete] = useState<Empresa | null>(null);
+  const [selectedPlanoId, setSelectedPlanoId] = useState<string>('');
 
   const form = useForm<EmpresaForm>({
     resolver: zodResolver(empresaSchema),
@@ -62,8 +78,24 @@ const GerenciamentoEmpresas = () => {
       cnpj: '',
       contato: '',
       status_licenca: 'em_operacao',
+      plano_id: '',
     },
   });
+
+  const fetchPlanos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('planos')
+        .select('*')
+        .eq('ativo', true)
+        .order('creditos_franquia');
+
+      if (error) throw error;
+      setPlanos(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar planos:', error);
+    }
+  };
 
   const fetchEmpresas = async () => {
     try {
@@ -100,6 +132,7 @@ const GerenciamentoEmpresas = () => {
 
   useEffect(() => {
     fetchEmpresas();
+    fetchPlanos();
   }, []);
 
   const filteredEmpresas = empresas.filter(empresa =>
@@ -115,6 +148,7 @@ const GerenciamentoEmpresas = () => {
           cnpj: data.cnpj,
           contato: data.contato,
           status_licenca: data.status_licenca,
+          plano_id: data.plano_id || null,
         };
 
         // Se mudou para trial e não tinha data de início, definir agora
@@ -136,6 +170,7 @@ const GerenciamentoEmpresas = () => {
           cnpj: data.cnpj,
           contato: data.contato,
           status_licenca: data.status_licenca,
+          plano_id: data.plano_id || null,
         };
 
         if (data.status_licenca === 'trial') {
@@ -162,11 +197,13 @@ const GerenciamentoEmpresas = () => {
 
   const handleEdit = (empresa: Empresa) => {
     setEditingEmpresa(empresa);
+    setSelectedPlanoId(empresa.plano_id || '');
     form.reset({
       nome: empresa.nome,
       cnpj: empresa.cnpj || '',
       contato: empresa.contato || '',
       status_licenca: empresa.status_licenca || 'em_operacao',
+      plano_id: empresa.plano_id || '',
     });
     setDialogOpen(true);
   };
@@ -256,9 +293,15 @@ const GerenciamentoEmpresas = () => {
 
   const openCreateDialog = () => {
     setEditingEmpresa(null);
+    setSelectedPlanoId('');
     form.reset();
     setDialogOpen(true);
   };
+
+  const selectedPlano = planos.find(p => p.id === selectedPlanoId);
+  const creditoConsumido = editingEmpresa?.creditos_consumidos || 0;
+  const creditoFranquia = selectedPlano?.creditos_franquia || editingEmpresa?.plano?.creditos_franquia || 0;
+  const percentualCredito = creditoFranquia > 0 ? (creditoConsumido / creditoFranquia) * 100 : 0;
 
   if (loading) {
     return (
@@ -287,7 +330,7 @@ const GerenciamentoEmpresas = () => {
               Nova Empresa
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingEmpresa ? 'Editar Empresa' : 'Nova Empresa'}
@@ -355,6 +398,74 @@ const GerenciamentoEmpresas = () => {
                     </FormItem>
                   )}
                 />
+
+                <Separator className="my-6" />
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Plano e Créditos</h3>
+                  
+                  <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
+                    {editingEmpresa?.plano && (
+                      <div className="flex items-center gap-3">
+                        <PlanBadge 
+                          planCode={editingEmpresa.plano.codigo as any}
+                          planName={editingEmpresa.plano.nome}
+                          size="md"
+                        />
+                      </div>
+                    )}
+
+                    {editingEmpresa && creditoFranquia > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Consumo de Créditos:</span>
+                          <span className="font-medium">
+                            {creditoConsumido} / {creditoFranquia} ({Math.round(percentualCredito)}%)
+                          </span>
+                        </div>
+                        <Progress value={percentualCredito} className="h-2" />
+                      </div>
+                    )}
+
+                    <FormField
+                      control={form.control}
+                      name="plano_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Plano</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              setSelectedPlanoId(value);
+                            }} 
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione um plano" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {planos.map((plano) => (
+                                <SelectItem key={plano.id} value={plano.id}>
+                                  {plano.nome} ({plano.creditos_franquia} créditos)
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {selectedPlano && (
+                      <div className="text-sm text-muted-foreground bg-background p-3 rounded border">
+                        ℹ️ {selectedPlano.descricao || 'Sem descrição disponível'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
                     type="button"
@@ -381,6 +492,7 @@ const GerenciamentoEmpresas = () => {
               <TableHead>Nome</TableHead>
               <TableHead>CNPJ</TableHead>
               <TableHead>Contato</TableHead>
+              <TableHead>Plano</TableHead>
               <TableHead>Licença</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Ações</TableHead>
@@ -420,6 +532,18 @@ const GerenciamentoEmpresas = () => {
                 <TableCell className="font-medium">{empresa.nome}</TableCell>
                 <TableCell>{empresa.cnpj || '-'}</TableCell>
                 <TableCell>{empresa.contato || '-'}</TableCell>
+                <TableCell>
+                  {empresa.plano ? (
+                    <PlanBadge 
+                      planCode={empresa.plano.codigo as any}
+                      planName={empresa.plano.nome}
+                      size="sm"
+                      showName={false}
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Sem plano</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   {empresa.status_licenca === 'trial' ? (
                     <Badge variant="outline" className="bg-warning/10 text-warning border-warning">
