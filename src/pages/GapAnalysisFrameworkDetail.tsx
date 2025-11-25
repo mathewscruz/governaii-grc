@@ -31,7 +31,7 @@ export default function GapAnalysisFrameworkDetail() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!frameworkId || !empresaId) return;
+    if (!frameworkId) return;
 
     const loadFramework = async () => {
       try {
@@ -39,7 +39,6 @@ export default function GapAnalysisFrameworkDetail() {
           .from('gap_analysis_frameworks')
           .select('*')
           .eq('id', frameworkId)
-          .eq('empresa_id', empresaId)
           .single();
 
         if (error) throw error;
@@ -54,7 +53,7 @@ export default function GapAnalysisFrameworkDetail() {
     };
 
     loadFramework();
-  }, [frameworkId, empresaId, navigate]);
+  }, [frameworkId, navigate]);
 
   const config = framework ? getFrameworkConfig(framework.nome, framework.tipo_framework) : null;
   
