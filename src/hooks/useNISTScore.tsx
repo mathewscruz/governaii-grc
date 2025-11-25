@@ -109,18 +109,29 @@ export const useNISTScore = (frameworkId: string) => {
         // Calcular score por pilar
         const pillarScores: PillarScore[] = NIST_PILLARS.map(pillar => {
           const pillarReqs = enrichedRequirements.filter(r => r.categoria === pillar.code);
-          const applicableReqs = pillarReqs.filter(r => r.conformity_status !== 'nao_aplicavel');
           const evaluatedReqs = pillarReqs.filter(r => r.conformity_status && r.conformity_status !== null);
 
           let totalWeightedScore = 0;
           let totalWeight = 0;
 
-          applicableReqs.forEach(req => {
-            const score = STATUS_SCORES[req.conformity_status || ''];
-            if (score !== null && score !== undefined) {
-              totalWeightedScore += score * req.peso;
-              totalWeight += req.peso;
+          // CORREÇÃO: Considerar TODOS os requisitos (não avaliados = 0 pontos)
+          pillarReqs.forEach(req => {
+            const status = req.conformity_status;
+            let score: number;
+            
+            if (status === 'nao_aplicavel') {
+              // N/A não entra no cálculo
+              return;
+            } else if (status && STATUS_SCORES[status] !== null && STATUS_SCORES[status] !== undefined) {
+              // Requisito avaliado: usar pontuação do status
+              score = STATUS_SCORES[status] as number;
+            } else {
+              // Não avaliado = 0 pontos (comportamento de auditoria real)
+              score = 0;
             }
+            
+            totalWeightedScore += score * req.peso;
+            totalWeight += req.peso;
           });
 
           const pillarScore = totalWeight > 0 ? Number((totalWeightedScore / totalWeight).toFixed(1)) : 0;
