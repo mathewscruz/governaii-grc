@@ -15,6 +15,7 @@ export interface FrameworkConfig {
   id: string;
   name: string;
   scoreType: ScoreType;
+  chartType?: 'radar' | 'funnel' | 'treemap' | 'gauge' | 'stacked';
   pillarField: string;
   scoreLabels: {
     excellent: { label: string; min: number; max: number; color: string };
@@ -62,6 +63,7 @@ export const FRAMEWORK_CONFIGS: Record<string, FrameworkConfig> = {
     id: 'iso-27001',
     name: 'ISO 27001:2022',
     scoreType: 'percentage',
+    chartType: 'funnel',
     pillarField: 'categoria',
     scoreLabels: {
       excellent: { label: 'Conforme', min: 80, max: 100, color: 'text-green-600' },
@@ -109,11 +111,88 @@ export function getFrameworkConfig(frameworkName: string, frameworkType?: string
     return FRAMEWORK_CONFIGS['iso-27001'];
   }
   
-  // Default para outros frameworks (usar modelo percentual)
+  // Detectar frameworks de privacidade (LGPD, GDPR, CCPA, HIPAA, ISO 27701)
+  if (frameworkName.toLowerCase().includes('lgpd') || 
+      frameworkName.toLowerCase().includes('gdpr') ||
+      frameworkName.toLowerCase().includes('ccpa') ||
+      frameworkName.toLowerCase().includes('hipaa') ||
+      frameworkName.includes('27701')) {
+    return {
+      id: 'privacy',
+      name: frameworkName,
+      scoreType: 'percentage',
+      chartType: 'treemap',
+      pillarField: 'categoria',
+      scoreLabels: FRAMEWORK_CONFIGS['iso-27001'].scoreLabels,
+      statusScores: FRAMEWORK_CONFIGS['iso-27001'].statusScores,
+    };
+  }
+  
+  // Detectar frameworks de governança (COBIT, COSO, ISO 31000)
+  if (frameworkName.toLowerCase().includes('cobit') ||
+      frameworkName.toLowerCase().includes('coso') ||
+      frameworkName.includes('31000')) {
+    return {
+      id: 'governance',
+      name: frameworkName,
+      scoreType: 'percentage',
+      chartType: 'gauge',
+      pillarField: 'categoria',
+      scoreLabels: FRAMEWORK_CONFIGS['iso-27001'].scoreLabels,
+      statusScores: FRAMEWORK_CONFIGS['iso-27001'].statusScores,
+    };
+  }
+  
+  // Detectar frameworks de compliance/audit (SOC 2, SOX, PCI DSS, ITIL)
+  if (frameworkName.toLowerCase().includes('soc') ||
+      frameworkName.toLowerCase().includes('sox') ||
+      frameworkName.toLowerCase().includes('pci') ||
+      frameworkName.toLowerCase().includes('itil')) {
+    return {
+      id: 'compliance',
+      name: frameworkName,
+      scoreType: 'percentage',
+      chartType: 'stacked',
+      pillarField: 'categoria',
+      scoreLabels: FRAMEWORK_CONFIGS['iso-27001'].scoreLabels,
+      statusScores: FRAMEWORK_CONFIGS['iso-27001'].statusScores,
+    };
+  }
+  
+  // Detectar CIS Controls (similar ao NIST - usar radar)
+  if (frameworkName.toLowerCase().includes('cis')) {
+    return {
+      id: 'cis',
+      name: frameworkName,
+      scoreType: 'scale_0_5',
+      chartType: 'radar',
+      pillarField: 'categoria',
+      scoreLabels: FRAMEWORK_CONFIGS['nist-csf-2.0'].scoreLabels,
+      statusScores: FRAMEWORK_CONFIGS['nist-csf-2.0'].statusScores,
+    };
+  }
+  
+  // Detectar ISOs de gestão (9001, 14001, 20000, 37301) - usar funnel PDCA
+  if (frameworkName.toLowerCase().includes('iso') && 
+      (frameworkName.includes('9001') || frameworkName.includes('14001') || 
+       frameworkName.includes('20000') || frameworkName.includes('37301'))) {
+    return {
+      id: 'iso-management',
+      name: frameworkName,
+      scoreType: 'percentage',
+      chartType: 'funnel',
+      pillarField: 'categoria',
+      scoreLabels: FRAMEWORK_CONFIGS['iso-27001'].scoreLabels,
+      statusScores: FRAMEWORK_CONFIGS['iso-27001'].statusScores,
+    };
+  }
+  
+  // Default para outros frameworks (usar modelo percentual com gauge)
   return {
     id: 'default',
     name: frameworkName,
     scoreType: 'percentage',
+    chartType: 'gauge',
     pillarField: 'categoria',
     scoreLabels: {
       excellent: { label: 'Excelente', min: 80, max: 100, color: 'text-green-600' },

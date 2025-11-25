@@ -138,23 +138,57 @@ export default function GapAnalysisFrameworkDetail() {
           frameworkId={frameworkId!}
         />
 
-        {/* Radar and Bar Charts side by side */}
-        {(pillarScores.length > 3 || categoryScores.length > 0 || (config.id === 'nist-csf-2.0' && areaScores.length > 0)) && (
+        {/* Charts - Dynamic by framework type */}
+        {config?.chartType === 'radar' && pillarScores.length > 0 && (
           <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-            {pillarScores.length > 3 && (
-              <NISTRadarChart pillarScores={pillarScores} />
-            )}
+            <FrameworkRadarChart 
+              pillarScores={pillarScores} 
+              maxScore={config.scoreType === 'percentage' ? 100 : 5} 
+            />
             {categoryScores.length > 0 && (
-              <CategoryBarChart 
-                categoryScores={categoryScores}
-                config={config}
-              />
+              <CategoryBarChart categoryScores={categoryScores} config={config} />
             )}
-            {config.id === 'nist-csf-2.0' && areaScores.length > 0 && (
-              <AreaBarChart 
-                areaScores={areaScores}
-                config={config}
-              />
+            {areaScores.length > 0 && (
+              <AreaBarChart areaScores={areaScores} config={config} />
+            )}
+          </div>
+        )}
+        
+        {config?.chartType === 'funnel' && sectionScores.length > 0 && (
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+            <ISOProgressFunnel sectionScores={sectionScores} />
+            {categoryScores.length > 0 && (
+              <CategoryBarChart categoryScores={categoryScores} config={config} />
+            )}
+          </div>
+        )}
+        
+        {config?.chartType === 'treemap' && categoryScores.length > 0 && (
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+            <PrivacyTreemap categoryScores={categoryScores} />
+            {areaScores.length > 0 && (
+              <AreaBarChart areaScores={areaScores} config={config} />
+            )}
+          </div>
+        )}
+        
+        {config?.chartType === 'gauge' && (
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+            <GovernanceGauge 
+              overallScore={overallScore} 
+              maxScore={config.scoreType === 'percentage' ? 100 : 5} 
+            />
+            {categoryScores.length > 0 && (
+              <CategoryBarChart categoryScores={categoryScores} config={config} />
+            )}
+          </div>
+        )}
+        
+        {config?.chartType === 'stacked' && categoryScores.length > 0 && (
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+            <ComplianceStackedBar categoryScores={categoryScores} />
+            {areaScores.length > 0 && (
+              <AreaBarChart areaScores={areaScores} config={config} />
             )}
           </div>
         )}
