@@ -9,8 +9,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
-import { FrameworkConfig } from "@/lib/framework-configs";
+import { FrameworkConfig, NIST_PILLAR_NAMES } from "@/lib/framework-configs";
 import { NISTRequirementDetailDialog } from "./nist/NISTRequirementDetailDialog";
+import { saveScoreHistory } from "@/hooks/useScoreHistory";
 
 interface Requirement {
   id: string;
@@ -128,12 +129,45 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       }
 
       await loadRequirements();
+      
+      // Salvar histórico do score após mudança
+      const totalReqs = requirements.length;
+      const evaluatedReqs = requirements.filter(r => r.conformity_status && r.conformity_status !== 'nao_aplicavel').length;
+      const score = calculateScore(requirements);
+      await saveScoreHistory(frameworkId, empresaId, score, totalReqs, evaluatedReqs);
+      
       onStatusChange?.();
       toast.success('Status atualizado com sucesso!');
     } catch (error: any) {
       console.error('Erro ao atualizar status:', error);
       toast.error('Erro ao atualizar status');
     }
+  };
+
+  // Função auxiliar para calcular score
+  const calculateScore = (reqs: Requirement[]): number => {
+    const applicable = reqs.filter(r => r.conformity_status !== 'nao_aplicavel');
+    if (applicable.length === 0) return 0;
+
+    let totalWeight = 0;
+    let weightedScore = 0;
+
+    applicable.forEach(req => {
+      const weight = req.peso || 1;
+      const statusScore = config.statusScores[req.conformity_status || 'nao_conforme'] || 0;
+      totalWeight += weight;
+      weightedScore += statusScore * weight;
+    });
+
+    return totalWeight > 0 ? weightedScore / totalWeight : 0;
+  };
+
+  // Helper para traduzir categorias (usado para NIST)
+  const translateCategory = (cat: string) => {
+    if (frameworkName.toLowerCase().includes('nist')) {
+      return NIST_PILLAR_NAMES[cat] || cat;
+    }
+    return cat;
   };
 
   const handleRowClick = (requirement: Requirement) => {
@@ -260,7 +294,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                     <TabsList className="mb-4">
                       <TabsTrigger value="all">Todos</TabsTrigger>
                       {sectionCategories.map(cat => (
-                        <TabsTrigger key={cat} value={cat}>{cat}</TabsTrigger>
+                        <TabsTrigger key={cat} value={cat}>{translateCategory(cat)}</TabsTrigger>
                       ))}
                     </TabsList>
 
@@ -351,7 +385,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
               const count = requirements.filter(r => (r.categoria || 'Outros') === cat).length;
               return (
                 <TabsTrigger key={cat} value={cat}>
-                  {cat} ({count})
+                  {translateCategory(cat)} ({count})
                 </TabsTrigger>
               );
             })}

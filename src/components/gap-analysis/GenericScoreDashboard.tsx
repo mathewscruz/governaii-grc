@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { FrameworkConfig, getScoreLabel, getScoreColor } from "@/lib/framework-configs";
 import { CategoryBarChart } from "./CategoryBarChart";
+import { ScoreEvolutionChart } from "./ScoreEvolutionChart";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PillarScore {
   pillar: string;
@@ -55,6 +57,7 @@ interface GenericScoreDashboardProps {
   evaluatedRequirements: number;
   config: FrameworkConfig;
   loading?: boolean;
+  frameworkId: string;
 }
 
 export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
@@ -68,6 +71,7 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
   evaluatedRequirements,
   config,
   loading = false,
+  frameworkId,
 }) => {
   const scoreLabel = getScoreLabel(overallScore, config);
   const scoreColorClass = getScoreColor(overallScore, config);
@@ -88,42 +92,53 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">
-        <div className="h-32 bg-muted rounded-lg"></div>
-        <div className="h-32 bg-muted rounded-lg"></div>
-        <div className="h-32 bg-muted rounded-lg"></div>
-        <div className="h-32 bg-muted rounded-lg"></div>
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-24 w-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-48 w-full" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Score Geral */}
-      <Card className="border-2">
-        <CardHeader>
-          <CardTitle className="text-lg">Score Geral de Conformidade</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className={`text-4xl font-bold ${scoreColorClass}`}>
-                {formatScore(overallScore)}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {scoreLabel}
-              </p>
+      {/* Score Geral + Evolução do Score (lado a lado) */}
+      <div className="grid grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Score Geral de Conformidade</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="text-4xl font-bold">{formatScore(overallScore)}</div>
+              <Badge variant={getScoreColor(overallScore, config) as any} className="text-sm">
+                {getScoreLabel(overallScore, config)}
+              </Badge>
             </div>
-            <Badge variant="outline" className="text-sm">
-              {evaluatedRequirements} de {totalRequirements} avaliados
-            </Badge>
-          </div>
-          <Progress 
-            value={getProgressValue(overallScore)} 
-            className="mt-4 h-3"
-          />
-        </CardContent>
-      </Card>
+            <Progress value={getProgressValue(overallScore)} className="h-3" />
+            <p className="text-sm text-muted-foreground">
+              {evaluatedRequirements} de {totalRequirements} requisitos avaliados
+            </p>
+          </CardContent>
+        </Card>
+
+        <ScoreEvolutionChart frameworkId={frameworkId} />
+      </div>
 
       {/* Scores por Seção (se houver) */}
       {sectionScores.length > 0 && (

@@ -3844,6 +3844,54 @@ export type Database = {
           },
         ]
       }
+      gap_analysis_score_history: {
+        Row: {
+          created_at: string | null
+          empresa_id: string
+          evaluated_requirements: number
+          framework_id: string
+          id: string
+          recorded_at: string | null
+          score: number
+          total_requirements: number
+        }
+        Insert: {
+          created_at?: string | null
+          empresa_id: string
+          evaluated_requirements: number
+          framework_id: string
+          id?: string
+          recorded_at?: string | null
+          score: number
+          total_requirements: number
+        }
+        Update: {
+          created_at?: string | null
+          empresa_id?: string
+          evaluated_requirements?: number
+          framework_id?: string
+          id?: string
+          recorded_at?: string | null
+          score?: number
+          total_requirements?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gap_analysis_score_history_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gap_analysis_score_history_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_frameworks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gap_evaluation_risks: {
         Row: {
           created_at: string | null

@@ -126,6 +126,7 @@ export default function GapAnalysisFrameworkDetail() {
           evaluatedRequirements={evaluatedRequirements}
           config={config}
           loading={scoreLoading}
+          frameworkId={frameworkId!}
         />
 
         {/* Radar and Bar Charts side by side */}
