@@ -3841,6 +3841,42 @@ export type Database = {
           },
         ]
       }
+      gap_evaluation_risks: {
+        Row: {
+          created_at: string | null
+          evaluation_id: string
+          id: string
+          risco_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          evaluation_id: string
+          id?: string
+          risco_id: string
+        }
+        Update: {
+          created_at?: string | null
+          evaluation_id?: string
+          id?: string
+          risco_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gap_evaluation_risks_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_evaluations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gap_evaluation_risks_risco_id_fkey"
+            columns: ["risco_id"]
+            isOneToOne: false
+            referencedRelation: "riscos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidentes: {
         Row: {
           ativos_afetados: string[] | null

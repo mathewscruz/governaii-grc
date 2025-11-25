@@ -156,9 +156,10 @@ export const useNISTScore = (frameworkId: string) => {
         });
 
         // Calcular score geral (média dos pilares)
-        const validPillarScores = pillarScores.filter(p => p.totalRequirements > 0 && p.evaluatedRequirements > 0);
-        const overallScore = validPillarScores.length > 0
-          ? Number((validPillarScores.reduce((sum, p) => sum + p.score, 0) / validPillarScores.length).toFixed(1))
+        // CORREÇÃO: Considerar TODOS os pilares com requisitos (independente de avaliação)
+        const activePillars = pillarScores.filter(p => p.totalRequirements > 0);
+        const overallScore = activePillars.length > 0
+          ? Number((activePillars.reduce((sum, p) => sum + p.score, 0) / activePillars.length).toFixed(1))
           : 0;
 
         const totalRequirements = enrichedRequirements.length;
