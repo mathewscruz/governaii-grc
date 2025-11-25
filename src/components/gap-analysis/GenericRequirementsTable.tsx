@@ -68,21 +68,27 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
 
       const { data: evals, error: evalError } = await supabase
         .from('gap_analysis_evaluations')
-        .select('requirement_id, conformity_status')
+        .select('id, requirement_id, conformity_status')
         .eq('framework_id', frameworkId)
         .eq('empresa_id', empresaId);
 
       if (evalError) throw evalError;
 
-      const evalMap = new Map(evals?.map(e => [e.requirement_id, e.conformity_status]) || []);
+      const evalMap = new Map(
+        evals?.map(e => [e.requirement_id, { id: e.id, conformity_status: e.conformity_status }]) || []
+      );
 
-      const merged = (reqs || []).map(req => ({
-        ...req,
-        codigo: req.codigo || '',
-        descricao: req.descricao || '',
-        categoria: req.categoria || 'Outros',
-        conformity_status: evalMap.get(req.id) || 'nao_avaliado',
-      }));
+      const merged = (reqs || []).map(req => {
+        const evaluation = evalMap.get(req.id);
+        return {
+          ...req,
+          codigo: req.codigo || '',
+          descricao: req.descricao || '',
+          categoria: req.categoria || 'Outros',
+          conformity_status: evaluation?.conformity_status || 'nao_avaliado',
+          evaluation_id: evaluation?.id || null,
+        };
+      });
 
       setRequirements(merged);
     } catch (error: any) {
@@ -120,6 +126,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
         const { error } = await supabase
           .from('gap_analysis_evaluations')
           .insert({
+            framework_id: frameworkId,
             requirement_id: requirementId,
             empresa_id: empresaId,
             conformity_status: newStatus,
