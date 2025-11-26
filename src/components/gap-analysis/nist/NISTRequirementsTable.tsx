@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { NIST_PILLARS } from "@/hooks/useNISTScore";
 import { CheckCircle2, XCircle, MinusCircle, Ban, Loader2 } from "lucide-react";
 import { NISTRequirementDetailDialog } from "./NISTRequirementDetailDialog";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface NISTRequirement {
   id: string;
@@ -35,6 +36,7 @@ export const NISTRequirementsTable: React.FC<NISTRequirementsTableProps> = ({
   frameworkId,
   onStatusChange
 }) => {
+  const { empresaId, loading: loadingEmpresa } = useEmpresaId();
   const [requirements, setRequirements] = useState<NISTRequirement[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -87,6 +89,12 @@ export const NISTRequirementsTable: React.FC<NISTRequirementsTableProps> = ({
   };
 
   const handleStatusChange = async (requirementId: string, status: string) => {
+    if (!empresaId) {
+      console.error('❌ empresaId não disponível - usuário pode não estar autenticado corretamente');
+      toast.error('Erro: Empresa não identificada. Por favor, faça login novamente.');
+      return;
+    }
+
     setUpdating(requirementId);
     try {
       const requirement = requirements.find(r => r.id === requirementId);
@@ -110,6 +118,7 @@ export const NISTRequirementsTable: React.FC<NISTRequirementsTableProps> = ({
           .insert({
             framework_id: frameworkId,
             requirement_id: requirementId,
+            empresa_id: empresaId,
             conformity_status: status,
             evidence_status: 'pendente'
           });
@@ -232,10 +241,10 @@ export const NISTRequirementsTable: React.FC<NISTRequirementsTableProps> = ({
                             <Select
                               value={req.conformity_status || ''}
                               onValueChange={(value) => handleStatusChange(req.id, value)}
-                              disabled={updating === req.id}
+                              disabled={loadingEmpresa || !empresaId || updating === req.id}
                             >
                               <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Avaliar..." />
+                                <SelectValue placeholder={loadingEmpresa ? "Carregando..." : "Avaliar..."} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="conforme">Conforme</SelectItem>

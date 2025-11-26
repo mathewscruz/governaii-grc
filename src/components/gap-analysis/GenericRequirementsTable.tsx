@@ -43,7 +43,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   config,
   onStatusChange,
 }) => {
-  const { empresaId } = useEmpresaId();
+  const { empresaId, loading: loadingEmpresa } = useEmpresaId();
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('all');
@@ -104,7 +104,11 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   }, [frameworkId, empresaId]);
 
   const handleStatusChange = async (requirementId: string, newStatus: string) => {
-    if (!empresaId) return;
+    if (!empresaId) {
+      console.error('❌ empresaId não disponível - usuário pode não estar autenticado corretamente');
+      toast.error('Erro: Empresa não identificada. Por favor, faça login novamente.');
+      return;
+    }
 
     try {
       const { data: existing } = await supabase
@@ -337,22 +341,23 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                                 </TableCell>
                                 <TableCell className="text-sm text-muted-foreground">{req.area_responsavel || '-'}</TableCell>
                                 <TableCell>{getStatusBadge(req.conformity_status)}</TableCell>
-                                <TableCell>
-                                  <Select
-                                    value={req.conformity_status || 'nao_avaliado'}
-                                    onValueChange={(value) => handleStatusChange(req.id, value)}
-                                  >
-                                    <SelectTrigger onClick={(e) => e.stopPropagation()}>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="conforme">Conforme</SelectItem>
-                                      <SelectItem value="parcial">Parcial</SelectItem>
-                                      <SelectItem value="nao_conforme">Não Conforme</SelectItem>
-                                      <SelectItem value="nao_aplicavel">N/A</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
+                    <TableCell>
+                      <Select
+                        value={req.conformity_status || 'nao_avaliado'}
+                        onValueChange={(value) => handleStatusChange(req.id, value)}
+                        disabled={loadingEmpresa || !empresaId}
+                      >
+                        <SelectTrigger onClick={(e) => e.stopPropagation()}>
+                          <SelectValue placeholder={loadingEmpresa ? "Carregando..." : "Selecione..."} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="conforme">Conforme</SelectItem>
+                          <SelectItem value="parcial">Parcial</SelectItem>
+                          <SelectItem value="nao_conforme">Não Conforme</SelectItem>
+                          <SelectItem value="nao_aplicavel">N/A</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
                               </TableRow>
                             ))}
                         </TableBody>
@@ -433,9 +438,10 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                       <Select
                         value={req.conformity_status || 'nao_avaliado'}
                         onValueChange={(value) => handleStatusChange(req.id, value)}
+                        disabled={loadingEmpresa || !empresaId}
                       >
                         <SelectTrigger onClick={(e) => e.stopPropagation()}>
-                          <SelectValue />
+                          <SelectValue placeholder={loadingEmpresa ? "Carregando..." : "Selecione..."} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="conforme">Conforme</SelectItem>
