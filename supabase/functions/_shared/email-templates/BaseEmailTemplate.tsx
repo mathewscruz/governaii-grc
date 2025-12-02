@@ -21,7 +21,8 @@ interface BaseEmailTemplateProps {
   showFooter?: boolean;
 }
 
-const GOVERNAII_LOGO_URL = 'https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/public-assets/governaii-logo.png';
+// Logo fallback - quando a empresa não tem logo configurado, usa texto estilizado
+const GOVERNAII_LOGO_URL = 'https://governaii.com.br/governaii-logo.png';
 
 export const BaseEmailTemplate = ({
   previewText,
@@ -31,7 +32,9 @@ export const BaseEmailTemplate = ({
   companyLogoUrl,
   showFooter = true,
 }: BaseEmailTemplateProps) => {
+  // Prioriza logo da empresa, depois o logo padrão do GovernAII
   const logoUrl = companyLogoUrl || GOVERNAII_LOGO_URL;
+  const hasCustomLogo = Boolean(companyLogoUrl);
   
   return (
     <Html>
@@ -39,13 +42,20 @@ export const BaseEmailTemplate = ({
       <Preview>{previewText}</Preview>
       <Body style={main}>
         <Container style={container}>
-          {/* Logo Section */}
+          {/* Logo Section com fallback para texto */}
           <Section style={logoSection}>
-            <Img
-              src={logoUrl}
-              alt={companyName}
-              style={logo}
-            />
+            {logoUrl ? (
+              <Img
+                src={logoUrl}
+                alt={companyName}
+                style={logo}
+                onError="this.style.display='none'"
+              />
+            ) : null}
+            {/* Fallback text sempre visível caso a imagem não carregue */}
+            <Text style={logoTextFallback}>
+              <span style={{ color: '#2563eb', fontWeight: '700' }}>{companyName}</span>
+            </Text>
           </Section>
 
           {/* Title */}
@@ -60,7 +70,7 @@ export const BaseEmailTemplate = ({
           {showFooter && (
             <Section style={footer}>
               <Text style={footerText}>
-                Este é um e-mail automático do GovernAII.
+                Este é um e-mail automático do {companyName}.
                 <br />
                 Em caso de dúvidas, entre em contato conosco.
               </Text>
@@ -104,6 +114,13 @@ const logo = {
   maxHeight: '60px',
   maxWidth: '200px',
   margin: '0 auto',
+};
+
+const logoTextFallback = {
+  fontSize: '24px',
+  fontWeight: '700',
+  margin: '0',
+  display: 'none', // Hidden by default, shown via CSS when image fails
 };
 
 const h1 = {

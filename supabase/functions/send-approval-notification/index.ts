@@ -97,7 +97,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const companyName = empresa?.nome || "GovernAII";
-    const logoUrl = empresa?.logo_url || 'https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/public-assets/governaii-logo.png';
+    // Usar logo da empresa se disponível, senão usar logo do site publicado
+    const logoUrl = empresa?.logo_url || 'https://governaii.com.br/governaii-logo.png';
 
     const emailResponse = await resend.emails.send({
       from: `${companyName} <noreply@governaii.com.br>`,
@@ -130,6 +131,12 @@ const handler = async (req: Request): Promise<Response> => {
               .logo {
                 max-height: 60px;
                 max-width: 200px;
+              }
+              .logo-text {
+                font-size: 24px;
+                font-weight: 700;
+                color: #2563eb;
+                margin: 0;
               }
               .header {
                 padding: 32px 32px 16px;
@@ -183,7 +190,8 @@ const handler = async (req: Request): Promise<Response> => {
           <body>
             <div class="container">
               <div class="logo-section">
-                <img src="${logoUrl}" alt="${companyName}" class="logo" />
+                <img src="${logoUrl}" alt="${companyName}" class="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                <p class="logo-text" style="display: none;">${companyName}</p>
               </div>
               
               <div class="header">
