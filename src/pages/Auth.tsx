@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,28 @@ import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
 import logoImage from '@/assets/governaii-logo-main.png';
 import { ForgotPasswordDialog } from '@/components/ForgotPasswordDialog';
+
+const getErrorMessage = (error: any): string => {
+  const message = error?.message || '';
+  
+  if (message.includes('Invalid login credentials')) {
+    return 'Email ou senha incorretos';
+  }
+  if (message.includes('Email not confirmed')) {
+    return 'Email não confirmado. Verifique sua caixa de entrada.';
+  }
+  if (message.includes('User not found')) {
+    return 'Usuário não encontrado';
+  }
+  if (message.includes('Too many requests')) {
+    return 'Muitas tentativas. Aguarde alguns minutos.';
+  }
+  if (message.includes('Network')) {
+    return 'Erro de conexão. Verifique sua internet.';
+  }
+  
+  return 'Erro ao fazer login. Tente novamente.';
+};
 
 const Auth = () => {
   const { user, loading } = useAuth();
@@ -59,7 +82,7 @@ const Auth = () => {
       // AuthProvider will handle the redirect via Navigate component
     } catch (error: any) {
       console.error('Error signing in:', error);
-      toast.error(error.message || 'Erro ao fazer login');
+      toast.error(getErrorMessage(error));
       setIsLoading(false);
     }
   };

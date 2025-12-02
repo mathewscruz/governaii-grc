@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle, XCircle, Clock, User, Plus } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, User, Plus, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -55,7 +54,46 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
     status: 'pendente',
     comentarios: ''
   });
+  const [actionModal, setActionModal] = useState<{
+    open: boolean;
+    type: 'aprovar' | 'rejeitar' | 'alteracoes' | null;
+    aprovacaoId: string;
+  }>({ open: false, type: null, aprovacaoId: '' });
+  const [actionComment, setActionComment] = useState('');
   const { toast } = useToast();
+
+  const openActionModal = (type: 'aprovar' | 'rejeitar' | 'alteracoes', aprovacaoId: string) => {
+    setActionModal({ open: true, type, aprovacaoId });
+    setActionComment('');
+  };
+
+  const closeActionModal = () => {
+    setActionModal({ open: false, type: null, aprovacaoId: '' });
+    setActionComment('');
+  };
+
+  const executeAction = async () => {
+    if (!actionModal.aprovacaoId || !actionModal.type) return;
+
+    // Validar comentário obrigatório para rejeição/alterações
+    if ((actionModal.type === 'rejeitar' || actionModal.type === 'alteracoes') && !actionComment.trim()) {
+      toast({
+        title: "Comentário obrigatório",
+        description: actionModal.type === 'rejeitar' 
+          ? "Por favor, informe o motivo da rejeição." 
+          : "Por favor, descreva as alterações necessárias.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const novoStatus = actionModal.type === 'aprovar' ? 'aprovado' 
+                     : actionModal.type === 'rejeitar' ? 'rejeitado' 
+                     : 'pendente'; // alteracoes mantém pendente
+
+    await handleStatusChange(actionModal.aprovacaoId, novoStatus, actionComment.trim() || undefined);
+    closeActionModal();
+  };
 
   // Se documento não requer aprovação, mostrar mensagem
   if (!(documento as any).requer_aprovacao) {
@@ -311,17 +349,17 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
     const variants = {
       'pendente': { 
         icon: Clock, 
-        className: 'border-yellow-500 bg-yellow-50 text-yellow-700',
+        className: 'border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
         label: 'Pendente'
       },
       'aprovado': { 
         icon: CheckCircle, 
-        className: 'border-green-500 bg-green-50 text-green-700',
+        className: 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
         label: 'Aprovado'
       },
       'rejeitado': { 
         icon: XCircle, 
-        className: 'border-red-500 bg-red-50 text-red-700',
+        className: 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
         label: 'Rejeitado'
       }
     };
@@ -335,6 +373,24 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
         {config.label}
       </Badge>
     );
+  };
+
+  const getActionModalTitle = () => {
+    switch (actionModal.type) {
+      case 'aprovar': return 'Aprovar Documento';
+      case 'rejeitar': return 'Rejeitar Documento';
+      case 'alteracoes': return 'Solicitar Alterações';
+      default: return '';
+    }
+  };
+
+  const getActionModalDescription = () => {
+    switch (actionModal.type) {
+      case 'aprovar': return 'Confirme a aprovação do documento. Você pode adicionar um comentário opcional.';
+      case 'rejeitar': return 'Informe o motivo da rejeição. Este campo é obrigatório.';
+      case 'alteracoes': return 'Descreva as alterações necessárias. O documento permanecerá pendente até as correções serem realizadas.';
+      default: return '';
+    }
   };
 
   const statusAprovacao = aprovacoes.length > 0 
@@ -447,7 +503,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleStatusChange(aprovacao.id, 'aprovado')}
+                                onClick={() => openActionModal('aprovar', aprovacao.id)}
                                 className="text-green-600 hover:text-green-700"
                               >
                                 <CheckCircle className="h-4 w-4 mr-1" />
@@ -456,7 +512,16 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleStatusChange(aprovacao.id, 'rejeitado')}
+                                onClick={() => openActionModal('alteracoes', aprovacao.id)}
+                                className="text-orange-600 hover:text-orange-700"
+                              >
+                                <MessageSquare className="h-4 w-4 mr-1" />
+                                Solicitar Alterações
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openActionModal('rejeitar', aprovacao.id)}
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <XCircle className="h-4 w-4 mr-1" />
@@ -555,6 +620,54 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Modal de Ação */}
+      <Dialog open={actionModal.open} onOpenChange={(open) => !open && closeActionModal()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{getActionModalTitle()}</DialogTitle>
+            <DialogDescription>{getActionModalDescription()}</DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="action-comment">
+                {actionModal.type === 'rejeitar' && 'Motivo da Rejeição *'}
+                {actionModal.type === 'alteracoes' && 'Alterações Necessárias *'}
+                {actionModal.type === 'aprovar' && 'Comentários (opcional)'}
+              </Label>
+              <Textarea
+                id="action-comment"
+                value={actionComment}
+                onChange={(e) => setActionComment(e.target.value)}
+                placeholder={
+                  actionModal.type === 'alteracoes' 
+                    ? 'Descreva detalhadamente as alterações necessárias...'
+                    : actionModal.type === 'rejeitar'
+                    ? 'Informe o motivo da rejeição...'
+                    : 'Adicione um comentário sobre a aprovação...'
+                }
+                rows={4}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={closeActionModal}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={executeAction}
+              variant={actionModal.type === 'rejeitar' ? 'destructive' : 'default'}
+              className={actionModal.type === 'alteracoes' ? 'bg-orange-600 hover:bg-orange-700' : ''}
+            >
+              {actionModal.type === 'aprovar' && 'Confirmar Aprovação'}
+              {actionModal.type === 'rejeitar' && 'Confirmar Rejeição'}
+              {actionModal.type === 'alteracoes' && 'Enviar Solicitação'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
