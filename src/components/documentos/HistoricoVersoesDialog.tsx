@@ -104,9 +104,30 @@ export const HistoricoVersoesDialog = ({
     }
   };
 
+  const handleVisualizarExterno = async (arquivo_url: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('documentos')
+        .createSignedUrl(arquivo_url, 3600);
+
+      if (error) throw error;
+      
+      window.open(data.signedUrl, '_blank');
+    } catch (error) {
+      console.error('Erro ao gerar URL do arquivo:', error);
+      toast.error('Erro ao abrir documento. Tente novamente.');
+    }
+  };
+
   const handleDownload = async (arquivo_url: string, arquivo_nome: string) => {
     try {
-      const response = await fetch(arquivo_url);
+      const { data, error } = await supabase.storage
+        .from('documentos')
+        .createSignedUrl(arquivo_url, 3600);
+
+      if (error) throw error;
+
+      const response = await fetch(data.signedUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -210,7 +231,7 @@ export const HistoricoVersoesDialog = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => window.open(documento.arquivo_url, '_blank')}
+                        onClick={() => handleVisualizarExterno(documento.arquivo_url!)}
                       >
                         <Eye className="mr-2 h-4 w-4" />
                         Visualizar
@@ -308,7 +329,7 @@ export const HistoricoVersoesDialog = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => window.open(versao.arquivo_url!, '_blank')}
+                              onClick={() => handleVisualizarExterno(versao.arquivo_url!)}
                             >
                               <Eye className="mr-2 h-4 w-4" />
                               Visualizar
