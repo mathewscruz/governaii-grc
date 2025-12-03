@@ -49,6 +49,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     aprovador_id: '',
     status: 'pendente',
@@ -61,6 +62,15 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
   }>({ open: false, type: null, aprovacaoId: '' });
   const [actionComment, setActionComment] = useState('');
   const { toast } = useToast();
+
+  // Obter ID do usuário atual
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
 
   const openActionModal = (type: 'aprovar' | 'rejeitar' | 'alteracoes', aprovacaoId: string) => {
     setActionModal({ open: true, type, aprovacaoId });
@@ -500,41 +510,50 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
                           
                           {aprovacao.status === 'pendente' && (aprovacao as any).tipo_acao === 'solicitacao' && (
                             <div className="flex flex-wrap gap-2 pt-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openActionModal('aprovar', aprovacao.id)}
-                                className="text-green-600 hover:text-green-700"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Aprovar
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openActionModal('alteracoes', aprovacao.id)}
-                                className="text-orange-600 hover:text-orange-700"
-                              >
-                                <MessageSquare className="h-4 w-4 mr-1" />
-                                Solicitar Alterações
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openActionModal('rejeitar', aprovacao.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                Rejeitar
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleCancelarSolicitacao(aprovacao.id)}
-                                className="text-gray-600 hover:text-gray-700"
-                              >
-                                Cancelar
-                              </Button>
+                              {/* Botões para o APROVADOR - só quem foi designado pode aprovar/rejeitar */}
+                              {currentUserId === aprovacao.aprovador_id && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openActionModal('aprovar', aprovacao.id)}
+                                    className="text-green-600 hover:text-green-700"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Aprovar
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openActionModal('alteracoes', aprovacao.id)}
+                                    className="text-orange-600 hover:text-orange-700"
+                                  >
+                                    <MessageSquare className="h-4 w-4 mr-1" />
+                                    Solicitar Alterações
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openActionModal('rejeitar', aprovacao.id)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <XCircle className="h-4 w-4 mr-1" />
+                                    Rejeitar
+                                  </Button>
+                                </>
+                              )}
+                              
+                              {/* Botão Cancelar - só quem solicitou pode cancelar */}
+                              {currentUserId === (aprovacao as any).solicitado_por && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCancelarSolicitacao(aprovacao.id)}
+                                  className="text-gray-600 hover:text-gray-700"
+                                >
+                                  Cancelar Solicitação
+                                </Button>
+                              )}
                             </div>
                           )}
                         </div>

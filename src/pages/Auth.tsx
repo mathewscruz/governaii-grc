@@ -66,7 +66,14 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast.error('Por favor, preencha todos os campos');
+      toast.error('Por favor, preencha todos os campos', {
+        style: {
+          background: '#ffffff',
+          color: '#1e3a5f',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+        }
+      });
       return;
     }
 
@@ -82,7 +89,14 @@ const Auth = () => {
       // AuthProvider will handle the redirect via Navigate component
     } catch (error: any) {
       console.error('Error signing in:', error);
-      toast.error(getErrorMessage(error));
+      toast.error(getErrorMessage(error), {
+        style: {
+          background: '#ffffff',
+          color: '#1e3a5f',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+        }
+      });
       setIsLoading(false);
     }
   };
