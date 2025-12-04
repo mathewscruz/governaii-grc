@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, XCircle, Clock, History, Activity, Shield, Brain, BarChart3, TrendingUp, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,6 +67,7 @@ interface Categoria {
 
 export function Documentos() {
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [documentosFiltrados, setDocumentosFiltrados] = useState<Documento[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -118,6 +119,21 @@ export function Documentos() {
       }
     }
   }, [location.state, documentos]);
+
+  // Detectar parâmetro de aprovação na URL (deep link do e-mail)
+  useEffect(() => {
+    const aprovarId = searchParams.get('aprovar');
+    if (aprovarId && documentos.length > 0) {
+      const documento = documentos.find(d => d.id === aprovarId);
+      if (documento) {
+        // Abrir o popup de aprovação automaticamente
+        setAprovacaoDialog({ open: true, documento });
+        // Limpar o parâmetro da URL para evitar reabrir em refresh
+        searchParams.delete('aprovar');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, documentos, setSearchParams]);
 
   const fetchDocumentos = async () => {
     try {

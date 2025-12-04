@@ -209,8 +209,8 @@ const handler = async (req: Request): Promise<Response> => {
                 </div>
                 
                 <div class="button-section">
-                  <a href="https://governaii.com.br/documentos" class="button">
-                    Acessar Sistema
+                  <a href="https://governaii.com.br/documentos?aprovar=${documento_id}" class="button">
+                    Aprovar Documento
                   </a>
                 </div>
                 
