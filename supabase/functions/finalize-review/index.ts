@@ -15,6 +15,58 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Get the authorization header to verify the user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Não autorizado - token ausente' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create client with user's token to verify identity
+    const supabaseUser = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
+
+    // Verify the user is authenticated
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+    if (authError || !user) {
+      console.error('Authentication failed:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Não autorizado - usuário inválido' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Usuário autenticado:', user.id);
+
+    // Get user's empresa_id from profiles
+    const { data: profile, error: profileError } = await supabaseUser
+      .from('profiles')
+      .select('empresa_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !profile?.empresa_id) {
+      console.error('Profile not found:', profileError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Perfil de usuário não encontrado' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userEmpresaId = profile.empresa_id;
+    console.log('Empresa do usuário:', userEmpresaId);
+
+    // Now use service role client for privileged operations
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -22,16 +74,35 @@ Deno.serve(async (req) => {
 
     const { reviewId }: FinalizeReviewRequest = await req.json();
 
+    if (!reviewId) {
+      return new Response(
+        JSON.stringify({ error: 'ID da revisão é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Finalizando revisão:', reviewId);
 
-    // Buscar revisão
+    // Buscar revisão e verificar se pertence à mesma empresa do usuário
     const { data: review, error: reviewError } = await supabaseClient
       .from('access_reviews')
       .select('*, sistema:sistemas_privilegiados(nome_sistema)')
       .eq('id', reviewId)
       .single();
 
-    if (reviewError) throw reviewError;
+    if (reviewError) {
+      console.error('Erro ao buscar revisão:', reviewError);
+      throw reviewError;
+    }
+
+    // SECURITY: Verify the review belongs to the user's company
+    if (review.empresa_id !== userEmpresaId) {
+      console.error('Tentativa de acesso não autorizado à revisão de outra empresa');
+      return new Response(
+        JSON.stringify({ error: 'Acesso negado - revisão não pertence à sua empresa' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Verificar se todos os itens foram revisados
     const { data: items, error: itemsError } = await supabaseClient
