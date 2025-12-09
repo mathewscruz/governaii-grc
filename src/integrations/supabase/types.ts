@@ -882,6 +882,158 @@ export type Database = {
           },
         ]
       }
+      auditoria_itens: {
+        Row: {
+          auditoria_id: string
+          codigo: string
+          controle_vinculado_id: string | null
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          observacoes: string | null
+          prazo: string | null
+          prioridade: string
+          responsavel_id: string | null
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          auditoria_id: string
+          codigo: string
+          controle_vinculado_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          prazo?: string | null
+          prioridade?: string
+          responsavel_id?: string | null
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          auditoria_id?: string
+          codigo?: string
+          controle_vinculado_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          prazo?: string | null
+          prioridade?: string
+          responsavel_id?: string | null
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_itens_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_itens_controle_vinculado_id_fkey"
+            columns: ["controle_vinculado_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditoria_itens_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      auditoria_itens_comentarios: {
+        Row: {
+          comentario: string
+          created_at: string
+          id: string
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          comentario: string
+          created_at?: string
+          id?: string
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          comentario?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_itens_comentarios_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "auditoria_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditoria_itens_evidencias: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_tamanho: number | null
+          arquivo_tipo: string | null
+          arquivo_url: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          item_id: string
+          nome: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          item_id: string
+          nome: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          item_id?: string
+          nome?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_itens_evidencias_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "auditoria_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auditoria_recomendacoes: {
         Row: {
           achado_id: string
@@ -5126,6 +5278,10 @@ export type Database = {
       }
       assessment_pertence_empresa: {
         Args: { assessment_id: string }
+        Returns: boolean
+      }
+      auditoria_item_pertence_empresa: {
+        Args: { item_id: string }
         Returns: boolean
       }
       auditoria_pertence_empresa: {
