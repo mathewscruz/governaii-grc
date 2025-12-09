@@ -45,15 +45,21 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('*, notification_preferences')
+          .select('*')
           .eq('user_id', user.id)
           .single();
 
         if (error) throw error;
         if (data) {
           setUserProfile(data);
-          if (data.notification_preferences) {
-            setNotificationPreferences(data.notification_preferences as NotificationPreferences);
+          // Load notification preferences from localStorage
+          const savedPrefs = localStorage.getItem(`notification_prefs_${user.id}`);
+          if (savedPrefs) {
+            try {
+              setNotificationPreferences(JSON.parse(savedPrefs));
+            } catch (e) {
+              console.error('Error parsing notification preferences:', e);
+            }
           }
         }
       } catch (error) {
@@ -172,12 +178,8 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
   const saveNotificationPreferences = async () => {
     setSavingPreferences(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ notification_preferences: notificationPreferences })
-        .eq('user_id', user?.id);
-
-      if (error) throw error;
+      // Save to localStorage (DB column doesn't exist yet)
+      localStorage.setItem(`notification_prefs_${user?.id}`, JSON.stringify(notificationPreferences));
       toast.success('Preferências salvas com sucesso!');
     } catch (error: any) {
       console.error('Erro ao salvar preferências:', error);

@@ -513,6 +513,51 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       sortable: true,
       render: (value) => formatDateOnly(value),
     },
+    {
+      key: 'actions',
+      label: 'Ações',
+      className: 'w-24 text-right',
+      render: (_, usuario) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleEdit(usuario)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleManagePermissions(usuario.user_id)}>
+              <Shield className="h-4 w-4 mr-2" />
+              Gerenciar Permissões
+            </DropdownMenuItem>
+            {shouldShowResendButton(usuario) && (
+              <DropdownMenuItem 
+                onClick={() => resendWelcomeEmail(usuario)}
+                disabled={actionLoading[`resend-${usuario.id}`]}
+              >
+                {actionLoading[`resend-${usuario.id}`] ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                ) : (
+                  <Mail className="h-4 w-4 mr-2" />
+                )}
+                Reenviar Convite
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              className="text-destructive"
+              onClick={() => openDeleteDialog(usuario)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
   ];
 
   const filters: Filter[] = [
@@ -548,27 +593,27 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         <StatCard
           title="Total de Usuários"
           value={stats.total}
-          icon={Users}
+          icon={<Users className="h-5 w-5" />}
           variant="default"
         />
         <StatCard
           title="Usuários Ativos"
           value={stats.active}
-          icon={UserCheck}
+          icon={<UserCheck className="h-5 w-5" />}
           variant="default"
           description="Com pelo menos um acesso"
         />
         <StatCard
           title="Pendentes"
           value={stats.pending}
-          icon={Clock}
+          icon={<Clock className="h-5 w-5" />}
           variant={stats.pending > 0 ? 'warning' : 'default'}
           description="Primeiro acesso pendente"
         />
         <StatCard
           title="Administradores"
           value={stats.admins}
-          icon={ShieldCheck}
+          icon={<ShieldCheck className="h-5 w-5" />}
           variant="default"
         />
       </div>
@@ -716,12 +761,11 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         </Dialog>
       </div>
 
-      {/* Users Table */}
       <DataTable
         data={filteredUsuarios}
         columns={columns}
         loading={loading}
-        searchTerm={searchTerm}
+        searchValue={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Buscar por nome ou email..."
         filters={filters}
@@ -729,48 +773,8 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         sortDirection={sortDirection}
         onSort={handleSort}
         onRefresh={fetchUsuarios}
-        actions={(usuario) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleEdit(usuario)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleManagePermissions(usuario.user_id)}>
-                <Shield className="h-4 w-4 mr-2" />
-                Gerenciar Permissões
-              </DropdownMenuItem>
-              {shouldShowResendButton(usuario) && (
-                <DropdownMenuItem 
-                  onClick={() => resendWelcomeEmail(usuario)}
-                  disabled={actionLoading[`resend-${usuario.id}`]}
-                >
-                  {actionLoading[`resend-${usuario.id}`] ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
-                  ) : (
-                    <Mail className="h-4 w-4 mr-2" />
-                  )}
-                  Reenviar Convite
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-destructive"
-                onClick={() => openDeleteDialog(usuario)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
         emptyState={{
-          icon: Users,
+          icon: <Users className="h-12 w-12" />,
           title: 'Nenhum usuário encontrado',
           description: searchTerm ? 'Tente ajustar os filtros' : 'Crie um novo usuário para começar',
         }}

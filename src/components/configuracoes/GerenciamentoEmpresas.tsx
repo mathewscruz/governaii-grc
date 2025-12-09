@@ -414,6 +414,43 @@ const GerenciamentoEmpresas = () => {
       sortable: true,
       render: (value) => formatDateOnly(value),
     },
+    {
+      key: 'actions',
+      label: 'Ações',
+      className: 'w-24 text-right',
+      render: (_, empresa) => (
+        <div className="flex items-center justify-end gap-1">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEdit(empresa)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Editar empresa</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openDeleteDialog(empresa)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Excluir empresa</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      ),
+    },
   ];
 
   const filters: Filter[] = [
@@ -609,7 +646,7 @@ const GerenciamentoEmpresas = () => {
         data={filteredEmpresas}
         columns={columns}
         loading={loading}
-        searchTerm={searchTerm}
+        searchValue={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Buscar por nome ou CNPJ..."
         filters={filters}
@@ -617,40 +654,8 @@ const GerenciamentoEmpresas = () => {
         sortDirection={sortDirection}
         onSort={handleSort}
         onRefresh={fetchEmpresas}
-        actions={(empresa) => (
-          <div className="flex items-center gap-1">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEdit(empresa)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Editar empresa</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openDeleteDialog(empresa)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Excluir empresa</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        )}
         emptyState={{
-          icon: Building2,
+          icon: <Building2 className="h-12 w-12" />,
           title: 'Nenhuma empresa encontrada',
           description: searchTerm ? 'Tente ajustar os filtros' : 'Crie uma nova empresa para começar',
         }}

@@ -17,7 +17,7 @@ export interface Column<T> {
   className?: string
 }
 
-interface Filter {
+export interface Filter {
   key: string
   label: string
   options: { value: string; label: string }[]
