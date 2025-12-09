@@ -11,6 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserSelect } from "@/components/riscos/UserSelect";
 import { RiscoSelect } from "@/components/controles/RiscoSelect";
 import { AuditoriasMultiSelect } from "@/components/controles/AuditoriasMultiSelect";
+import { useIntegrationNotify } from "@/hooks/useIntegrationNotify";
 
 // Função para converter data do input para formato date-only sem timezone
 const formatDateForDatabase = (dateString: string): string | null => {
@@ -73,6 +74,7 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { notify } = useIntegrationNotify();
 
   useEffect(() => {
     if (controle) {
@@ -241,6 +243,24 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
           // Don't throw - notification failure shouldn't block the save
         }
       }
+
+      // Notify integrations
+      await notify(
+        controle ? 'controle_atualizado' : 'controle_criado',
+        {
+          titulo: controle ? `Controle atualizado: ${data.nome}` : `Novo controle: ${data.nome}`,
+          descricao: data.descricao?.substring(0, 200) || undefined,
+          link: `/governanca?tab=controles&controle=${controleId}`,
+          gravidade: data.criticidade === 'critico' ? 'alta' : data.criticidade === 'alto' ? 'media' : 'baixa',
+          dados: {
+            controle_id: controleId,
+            nome: data.nome,
+            tipo: data.tipo,
+            criticidade: data.criticidade,
+            status: data.status
+          }
+        }
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['controles'] });

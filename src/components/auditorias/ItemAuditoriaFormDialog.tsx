@@ -35,6 +35,7 @@ import { Loader2 } from "lucide-react";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { ControleSelect } from "./ControleSelect";
 import { AreaSistemaSelect } from "./AreaSistemaSelect";
+import { useIntegrationNotify } from "@/hooks/useIntegrationNotify";
 
 const formSchema = z.object({
   codigo: z.string().min(1, "Código é obrigatório"),
@@ -70,6 +71,7 @@ export function ItemAuditoriaFormDialog({
 }: ItemAuditoriaFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: usuarios } = useUsuariosEmpresa();
+  const { notify } = useIntegrationNotify();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -186,6 +188,21 @@ export function ItemAuditoriaFormDialog({
           console.error("Erro ao enviar notificação:", notifError);
         }
       }
+
+      // Notify integrations
+      await notify('auditoria_item_atribuido', {
+        titulo: `Item de auditoria: ${data.titulo}`,
+        descricao: `Auditoria: ${auditoriaNome}`,
+        link: `/governanca?tab=auditorias`,
+        gravidade: data.prioridade === 'alta' ? 'alta' : 'media',
+        dados: {
+          item_codigo: data.codigo,
+          item_titulo: data.titulo,
+          auditoria_nome: auditoriaNome,
+          prioridade: data.prioridade,
+          status: data.status
+        }
+      });
 
       onSuccess();
       onOpenChange(false);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Edit, Trash2, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, Download, Shield } from 'lucide-react';
+import { Plus, Edit, Trash2, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, Download, Shield, CloudCog, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -137,6 +137,70 @@ const Ativos = () => {
   const [manutencaoDialog, setManutencaoDialog] = useState<{open: boolean, ativoId: string, ativoNome: string}>({open: false, ativoId: '', ativoNome: ''});
   const [auditDialog, setAuditDialog] = useState<{open: boolean, ativoId?: string}>({open: false});
   const [importDialog, setImportDialog] = useState(false);
+  const [azureSyncing, setAzureSyncing] = useState(false);
+
+  // Check if Azure integration is configured
+  const [azureIntegration, setAzureIntegration] = useState<{
+    id: string;
+    configuracoes: any;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchAzureIntegration = async () => {
+      if (!profile?.empresa_id) return;
+      try {
+        // @ts-ignore - Supabase type recursion issue
+        const result = await supabase
+          .from('integracoes_config')
+          .select('id, configuracoes')
+          .eq('empresa_id', profile.empresa_id)
+          .eq('tipo_integracao', 'azure')
+          .eq('ativo', true)
+          .limit(1);
+        
+        if (result.data && result.data.length > 0) {
+          setAzureIntegration(result.data[0]);
+        }
+      } catch (e) {
+        console.error('Error fetching azure integration:', e);
+        setAzureIntegration(null);
+      }
+    };
+    fetchAzureIntegration();
+  }, [profile?.empresa_id]);
+
+  const handleAzureSync = async () => {
+    if (!azureIntegration || !profile?.empresa_id) return;
+
+    setAzureSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('azure-integration', {
+        body: {
+          action: 'sync',
+          empresa_id: profile.empresa_id,
+          config: azureIntegration.configuracoes
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sincronização concluída",
+        description: `${data.synced_count || 0} dispositivos sincronizados do Azure/Intune`,
+      });
+      
+      fetchAtivos();
+    } catch (error: any) {
+      console.error('Azure sync error:', error);
+      toast({
+        title: "Erro na sincronização",
+        description: error.message || "Falha ao sincronizar com Azure",
+        variant: "destructive",
+      });
+    } finally {
+      setAzureSyncing(false);
+    }
+  };
   const [editingAtivo, setEditingAtivo] = useState<Ativo | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; ativoId: string }>({
     open: false,
@@ -655,6 +719,32 @@ const Ativos = () => {
       <PageHeader
         title="Gestão de Ativos"
         description="Gerencie todos os ativos da organização de forma centralizada"
+        actions={
+          azureIntegration && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleAzureSync}
+                    disabled={azureSyncing}
+                    className="gap-2"
+                  >
+                    {azureSyncing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <CloudCog className="h-4 w-4" />
+                    )}
+                    Sincronizar Azure
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Sincronizar dispositivos do Microsoft Intune/Azure AD</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )
+        }
       />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
