@@ -54,6 +54,7 @@ interface Controle {
     nome: string;
     cor: string;
   };
+  testesCount?: number;
 }
 
 interface Categoria {
@@ -147,11 +148,24 @@ export default function ControlesContent() {
       
       if (error) throw error;
       
-      // Buscar nomes e fotos dos responsáveis
+      // Buscar nomes e fotos dos responsáveis e contagem de testes
       if (data && data.length > 0) {
         const responsavelIds = data
           .map(c => c.responsavel_id)
           .filter(r => r && r.trim() !== '');
+        
+        // Buscar contagem de testes para cada controle
+        const { data: testes } = await supabase
+          .from('controles_testes')
+          .select('controle_id');
+        
+        const testesCountMap = new Map<string, number>();
+        testes?.forEach(t => {
+          const count = testesCountMap.get(t.controle_id) || 0;
+          testesCountMap.set(t.controle_id, count + 1);
+        });
+        
+        let profileMap = new Map<string, { nome: string; foto_url: string | null }>();
         
         if (responsavelIds.length > 0) {
           const { data: profiles } = await supabase
@@ -159,23 +173,24 @@ export default function ControlesContent() {
             .select('user_id, nome, foto_url')
             .in('user_id', responsavelIds);
           
-          const profileMap = new Map(
+          profileMap = new Map(
             profiles?.map(p => [p.user_id, { nome: p.nome, foto_url: p.foto_url }]) || []
           );
-          
-          const mappedData = data.map(controle => {
-            const profileData = (controle.responsavel_id && controle.responsavel_id.trim() !== '') 
-              ? profileMap.get(controle.responsavel_id) 
-              : null;
-            return {
-              ...controle,
-              responsavel_nome: profileData?.nome || null,
-              responsavel_foto: profileData?.foto_url || null
-            };
-          });
-          
-          return mappedData as Controle[];
         }
+        
+        const mappedData = data.map(controle => {
+          const profileData = (controle.responsavel_id && controle.responsavel_id.trim() !== '') 
+            ? profileMap.get(controle.responsavel_id) 
+            : null;
+          return {
+            ...controle,
+            responsavel_nome: profileData?.nome || null,
+            responsavel_foto: profileData?.foto_url || null,
+            testesCount: testesCountMap.get(controle.id) || 0
+          };
+        });
+        
+        return mappedData as Controle[];
       }
       
       return data as Controle[];
@@ -517,12 +532,40 @@ export default function ControlesContent() {
       }
     },
     {
-      key: 'proxima_avaliacao' as keyof Controle,
-      label: 'Vencimento da Avaliação',
+      key: 'testesCount' as keyof Controle,
+      label: 'Testes',
       sortable: true,
-      render: (value: any, controle: Controle) => controle.proxima_avaliacao ? 
-        formatDateOnly(controle.proxima_avaliacao) : 
-        <span className="text-muted-foreground">-</span>
+      render: (value: any, controle: Controle) => (
+        <Badge 
+          variant={controle.testesCount && controle.testesCount > 0 ? "secondary" : "outline"}
+          className="whitespace-nowrap"
+        >
+          {controle.testesCount || 0}
+        </Badge>
+      )
+    },
+    {
+      key: 'proxima_avaliacao' as keyof Controle,
+      label: 'Vencimento',
+      sortable: true,
+      render: (value: any, controle: Controle) => {
+        if (!controle.proxima_avaliacao) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const dataAvaliacao = new Date(controle.proxima_avaliacao);
+        dataAvaliacao.setHours(0, 0, 0, 0);
+        const isVencido = dataAvaliacao < hoje;
+        
+        return (
+          <span className={isVencido ? "text-destructive font-medium" : ""}>
+            {formatDateOnly(controle.proxima_avaliacao)}
+            {isVencido && <span className="ml-1 text-xs">(Vencido)</span>}
+          </span>
+        );
+      }
     },
     {
       key: 'actions' as keyof Controle,
@@ -584,18 +627,19 @@ export default function ControlesContent() {
           loading={isLoading}
         />
         <StatCard
-          title="Vencimento Próximo"
-          value={stats?.vencendoAvaliacao || 0}
-          description="Próximo 1 mês"
-          icon={<Clock className="h-4 w-4" />}
-          variant="warning"
+          title="Avaliações Vencidas"
+          value={stats?.vencidos || 0}
+          description="Requerem atenção imediata"
+          icon={<AlertTriangle className="h-4 w-4" />}
+          variant="destructive"
           loading={isLoading}
         />
         <StatCard
-          title="Avaliações Pendentes"
+          title="Vencendo em 30 Dias"
           value={stats?.vencendoAvaliacao || 0}
-          description="Próximos 30 dias"
+          description="Próximas avaliações"
           icon={<Clock className="h-4 w-4" />}
+          variant="warning"
           loading={isLoading}
         />
         <StatCard

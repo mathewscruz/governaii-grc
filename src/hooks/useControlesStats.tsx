@@ -5,6 +5,7 @@ interface ControlesStats {
   total: number;
   ativos: number;
   inativos: number;
+  emRevisao: number;
   criticos: number;
   altos: number;
   medios: number;
@@ -13,6 +14,7 @@ interface ControlesStats {
   detectivos: number;
   corretivos: number;
   vencendoAvaliacao: number;
+  vencidos: number;
 }
 
 export const useControlesStats = () => {
@@ -28,6 +30,7 @@ export const useControlesStats = () => {
       const total = controles?.length || 0;
       const ativos = controles?.filter(c => c.status === 'ativo').length || 0;
       const inativos = controles?.filter(c => c.status === 'inativo').length || 0;
+      const emRevisao = controles?.filter(c => c.status === 'em_revisao').length || 0;
       
       const criticos = controles?.filter(c => c.criticidade === 'critico').length || 0;
       const altos = controles?.filter(c => c.criticidade === 'alto').length || 0;
@@ -38,19 +41,31 @@ export const useControlesStats = () => {
       const detectivos = controles?.filter(c => c.tipo === 'detectivo').length || 0;
       const corretivos = controles?.filter(c => c.tipo === 'corretivo').length || 0;
       
-      // Controles com avaliação vencendo em 30 dias
       const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
       const em30Dias = new Date(hoje.getTime() + (30 * 24 * 60 * 60 * 1000));
+      
+      // Controles com avaliação vencendo em 30 dias (não vencidos ainda)
       const vencendoAvaliacao = controles?.filter(c => {
         if (!c.proxima_avaliacao) return false;
         const dataAvaliacao = new Date(c.proxima_avaliacao);
+        dataAvaliacao.setHours(0, 0, 0, 0);
         return dataAvaliacao <= em30Dias && dataAvaliacao >= hoje;
+      }).length || 0;
+      
+      // Controles com avaliação já vencida
+      const vencidos = controles?.filter(c => {
+        if (!c.proxima_avaliacao) return false;
+        const dataAvaliacao = new Date(c.proxima_avaliacao);
+        dataAvaliacao.setHours(0, 0, 0, 0);
+        return dataAvaliacao < hoje;
       }).length || 0;
 
       return {
         total,
         ativos,
         inativos,
+        emRevisao,
         criticos,
         altos,
         medios,
@@ -58,7 +73,8 @@ export const useControlesStats = () => {
         preventivos,
         detectivos,
         corretivos,
-        vencendoAvaliacao
+        vencendoAvaliacao,
+        vencidos
       };
     },
   });
