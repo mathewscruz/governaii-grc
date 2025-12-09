@@ -343,12 +343,13 @@ export function LicencaDialog({ open, onOpenChange, licenca }: LicencaDialogProp
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="ativa">Ativa</SelectItem>
-                        <SelectItem value="vencida">Vencida</SelectItem>
-                        <SelectItem value="cancelada">Cancelada</SelectItem>
-                        <SelectItem value="em_renovacao">Em Renovação</SelectItem>
-                      </SelectContent>
+                  <SelectContent>
+                    <SelectItem value="ativa">Ativa</SelectItem>
+                    <SelectItem value="vencida">Vencida</SelectItem>
+                    <SelectItem value="a_vencer">A Vencer</SelectItem>
+                    <SelectItem value="em_renovacao">Em Renovação</SelectItem>
+                    <SelectItem value="cancelada">Cancelada</SelectItem>
+                  </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>

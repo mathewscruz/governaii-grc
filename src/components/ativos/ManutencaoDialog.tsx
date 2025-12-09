@@ -13,6 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { UserSelect } from '@/components/riscos/UserSelect';
+import { formatDateOnly } from '@/lib/date-utils';
 
 interface Manutencao {
   id: string;
@@ -391,10 +393,10 @@ const ManutencaoDialog: React.FC<ManutencaoDialogProps> = ({ ativoId, ativoNome,
                   <div className="grid grid-cols-2 gap-5">
                     <div className="space-y-2">
                       <Label htmlFor="responsavel">Responsável</Label>
-                      <Input
-                        id="responsavel"
+                      <UserSelect
                         value={formData.responsavel}
-                        onChange={(e) => setFormData(prev => ({...prev, responsavel: e.target.value}))}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, responsavel: value }))}
+                        placeholder="Selecione o responsável"
                       />
                     </div>
                     
@@ -502,7 +504,7 @@ const ManutencaoDialog: React.FC<ManutencaoDialogProps> = ({ ativoId, ativoNome,
                     {manutencoes.map((manutencao) => (
                       <TableRow key={manutencao.id}>
                         <TableCell>
-                          {new Date(manutencao.data_manutencao).toLocaleDateString('pt-BR')}
+                          {formatDateOnly(manutencao.data_manutencao)}
                         </TableCell>
                         <TableCell>
                           <Badge variant={getBadgeVariant('tipo', manutencao.tipo_manutencao) as any}>
