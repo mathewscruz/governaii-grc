@@ -421,6 +421,16 @@ export default function ControlesContent() {
 
   const controlesColumns = [
     {
+      key: 'id' as keyof Controle,
+      label: 'ID',
+      sortable: true,
+      render: (value: any, controle: Controle) => (
+        <span className="font-mono text-xs text-muted-foreground">
+          CTRL-{controle.id.slice(0, 6).toUpperCase()}
+        </span>
+      )
+    },
+    {
       key: 'nome' as keyof Controle,
       label: 'Nome',
       sortable: true,
