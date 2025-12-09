@@ -14,6 +14,12 @@ import { DataTable } from '@/components/ui/data-table';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
 import { formatStatus, capitalizeText } from '@/lib/text-utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ContaPrivilegiada {
   id: string;
@@ -377,7 +383,30 @@ export default function ContasPrivilegiadas() {
       key: 'data_expiracao',
       label: 'Data Expiração',
       sortable: true,
-      render: (_: any, conta: ContaPrivilegiada) => formatDateOnly(conta.data_expiracao)
+      render: (_: any, conta: ContaPrivilegiada) => {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const expiracao = new Date(conta.data_expiracao + 'T00:00:00');
+        const diffDays = Math.ceil((expiracao.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0 && conta.status === 'ativo') {
+          return (
+            <div className="flex items-center gap-2">
+              <span>{formatDateOnly(conta.data_expiracao)}</span>
+              <Badge variant="destructive" className="whitespace-nowrap">Expirada</Badge>
+            </div>
+          );
+        } else if (diffDays <= 30 && diffDays >= 0 && conta.status === 'ativo') {
+          return (
+            <div className="flex items-center gap-2">
+              <span>{formatDateOnly(conta.data_expiracao)}</span>
+              <Badge variant="secondary" className="bg-amber-100 text-amber-800 whitespace-nowrap">Vence em {diffDays}d</Badge>
+            </div>
+          );
+        }
+
+        return formatDateOnly(conta.data_expiracao);
+      }
     },
     {
       key: 'status',
@@ -389,23 +418,35 @@ export default function ContasPrivilegiadas() {
       key: 'acoes',
       label: 'Ações',
       render: (_: any, conta: ContaPrivilegiada) => (
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEditConta(conta)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDeleteConta(conta.id, conta.usuario_beneficiario)}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        <TooltipProvider>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEditConta(conta)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Editar</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteConta(conta.id, conta.usuario_beneficiario)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Excluir</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
       )
     }
   ];
@@ -460,23 +501,35 @@ export default function ContasPrivilegiadas() {
       key: 'acoes',
       label: 'Ações',
       render: (_: any, sistema: SistemaPrivilegiado) => (
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEditSistema(sistema)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDeleteSistema(sistema.id, sistema.nome_sistema)}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        <TooltipProvider>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEditSistema(sistema)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Editar</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteSistema(sistema.id, sistema.nome_sistema)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Excluir</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
       )
     }
   ];

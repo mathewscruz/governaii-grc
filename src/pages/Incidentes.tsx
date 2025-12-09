@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useIncidentesStats } from '@/hooks/useIncidentesStats';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from '@/components/ui/data-table';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
-import { EmptyState } from '@/components/ui/empty-state';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,28 +23,22 @@ import {
 import {
   AlertTriangle,
   Shield,
-  Database,
-  Search,
-  MoreHorizontal,
   Calendar,
   Clock,
-  Users,
-  FileText,
-  MessageSquare,
-  Play,
-  CheckCircle,
-  AlertCircle,
-  XCircle,
-  Plus,
+  MoreHorizontal,
   Edit,
   Trash2,
   Filter,
+  MessageSquare,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatStatus } from '@/lib/text-utils';
+import { formatDateOnly } from '@/lib/date-utils';
 import { IncidenteDialog } from '@/components/incidentes/IncidenteDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { TratamentoDialog } from '@/components/incidentes/TratamentoDialog';
@@ -69,17 +66,12 @@ interface Incidente {
 
 export default function Incidentes() {
   const [incidentes, setIncidentes] = useState<Incidente[]>([]);
-  const [filteredIncidentes, setFilteredIncidentes] = useState<Incidente[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIncidente, setSelectedIncidente] = useState<Incidente | null>(null);
-  const [metrics, setMetrics] = useState({
-    total: 0,
-    abertos: 0,
-    investigacao: 0,
-    resolvidos: 0,
-    criticos: 0,
-  });
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [comunicacaoDialogOpen, setComunicacaoDialogOpen] = useState(false);
+  const [evidenciaDialogOpen, setEvidenciaDialogOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; incidenteId: string }>({
     open: false,
     incidenteId: ''
@@ -88,16 +80,16 @@ export default function Incidentes() {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
   const [criticidadeFilter, setCriticidadeFilter] = useState<string>("todos");
+  const [sortField, setSortField] = useState<string>('data_deteccao');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const { toast } = useToast();
   
-  // Buscar estatísticas dos incidentes
   const { data: statsIncidentes } = useIncidentesStats();
 
   const loadIncidentes = async () => {
     try {
       setLoading(true);
       
-      // Buscar incidentes com contadores
       const { data: incidentesData, error } = await supabase
         .from('incidentes')
         .select('*')
@@ -105,19 +97,7 @@ export default function Incidentes() {
 
       if (error) throw error;
 
-      const processedData = incidentesData || [];
-
-      setIncidentes(processedData);
-      setFilteredIncidentes(processedData);
-
-      // Calcular métricas
-      const total = processedData.length;
-      const abertos = processedData.filter(i => i.status === 'aberto').length;
-      const investigacao = processedData.filter(i => i.status === 'investigacao').length;
-      const resolvidos = processedData.filter(i => i.status === 'resolvido').length;
-      const criticos = processedData.filter(i => i.criticidade === 'critica').length;
-
-      setMetrics({ total, abertos, investigacao, resolvidos, criticos });
+      setIncidentes(incidentesData || []);
     } catch (error: any) {
       toast({
         title: 'Erro',
@@ -133,14 +113,50 @@ export default function Incidentes() {
     loadIncidentes();
   }, []);
 
-  useEffect(() => {
-    const filtered = incidentes.filter(incidente =>
+  // Aplicar filtros
+  const filteredIncidentes = incidentes.filter(incidente => {
+    const matchesSearch = searchTerm === '' || 
       incidente.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       incidente.categoria?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incidente.responsavel_tratamento?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredIncidentes(filtered);
-  }, [searchTerm, incidentes]);
+      incidente.responsavel_tratamento?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'todos' || incidente.status === statusFilter;
+    const matchesTipo = tipoFilter === 'todos' || incidente.tipo_incidente === tipoFilter;
+    const matchesCriticidade = criticidadeFilter === 'todos' || incidente.criticidade === criticidadeFilter;
+
+    return matchesSearch && matchesStatus && matchesTipo && matchesCriticidade;
+  });
+
+  // Ordenar
+  const sortedIncidentes = [...filteredIncidentes].sort((a, b) => {
+    let aValue = a[sortField as keyof Incidente];
+    let bValue = b[sortField as keyof Incidente];
+
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortDirection === 'asc' 
+        ? aValue.localeCompare(bValue) 
+        : bValue.localeCompare(aValue);
+    }
+
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const handleEdit = (incidente: Incidente) => {
+    setSelectedIncidente(incidente);
+    setEditDialogOpen(true);
+  };
+
+  const handleComunicacao = (incidente: Incidente) => {
+    setSelectedIncidente(incidente);
+    setComunicacaoDialogOpen(true);
+  };
+
+  const handleEvidencias = (incidente: Incidente) => {
+    setSelectedIncidente(incidente);
+    setEvidenciaDialogOpen(true);
+  };
 
   const handleDelete = (id: string) => {
     setDeleteConfirm({ open: true, incidenteId: id });
@@ -172,79 +188,6 @@ export default function Incidentes() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      aberto: 'destructive',
-      investigacao: 'secondary',
-      contido: 'default',
-      resolvido: 'secondary',
-      fechado: 'outline',
-    };
-    
-    const labels: Record<string, string> = {
-      aberto: 'Aberto',
-      investigacao: 'Investigação',
-      contido: 'Contido',
-      resolvido: 'Resolvido',
-      fechado: 'Fechado',
-    };
-
-    return (
-      <Badge variant={variants[status as keyof typeof variants] as any} className="whitespace-nowrap">
-        {labels[status] || formatStatus(status)}
-      </Badge>
-    );
-  };
-
-  const getCriticidadeBadge = (criticidade: string) => {
-    const variants = {
-      baixa: 'outline',
-      media: 'secondary',
-      alta: 'default',
-      critica: 'destructive',
-    };
-
-    return (
-      <Badge variant={variants[criticidade as keyof typeof variants] as any} className="whitespace-nowrap">
-        {formatStatus(criticidade)}
-      </Badge>
-    );
-  };
-
-  const getTipoIcon = (tipo: string) => {
-    const icons = {
-      seguranca: Shield,
-      privacidade: Database,
-      disponibilidade: AlertTriangle,
-    };
-    
-    const Icon = icons[tipo as keyof typeof icons] || AlertTriangle;
-    return <Icon className="h-4 w-4" />;
-  };
-
-  const updateIncidenteStatus = async (incidenteId: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from('incidentes')
-        .update({ 
-          status: newStatus,
-          ...(newStatus === 'resolvido' ? { data_resolucao: new Date().toISOString() } : {})
-        })
-        .eq('id', incidenteId);
-
-      if (error) throw error;
-      
-      toast({ title: `Status atualizado para ${newStatus}` });
-      loadIncidentes();
-    } catch (error: any) {
-      toast({
-        title: 'Erro',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     const icons = {
       aberto: XCircle,
@@ -254,8 +197,16 @@ export default function Incidentes() {
       fechado: CheckCircle,
     };
     
-    const Icon = icons[status as keyof typeof icons] || AlertCircle;
-    return Icon;
+    return icons[status as keyof typeof icons] || AlertCircle;
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
   };
 
   const incidentesColumns = [
@@ -272,7 +223,7 @@ export default function Incidentes() {
       label: "Tipo",
       sortable: true,
       render: (item: Incidente) => (
-        <Badge variant="outline">{item.tipo_incidente}</Badge>
+        <Badge variant="outline" className="whitespace-nowrap">{formatStatus(item.tipo_incidente)}</Badge>
       )
     },
     {
@@ -306,39 +257,39 @@ export default function Incidentes() {
       key: "data_deteccao" as keyof Incidente,
       label: "Data Detecção",
       sortable: true,
-      render: (item: Incidente) => (
-        format(new Date(item.data_deteccao), 'dd/MM/yyyy', { locale: ptBR })
-      )
+      render: (item: Incidente) => formatDateOnly(item.data_deteccao)
     },
     {
       key: "actions" as keyof Incidente,
       label: "Ações",
       render: (item: Incidente) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => {}}>
-              <Edit className="mr-2 h-4 w-4" />
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {}}>
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Comunicação
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {}}>
-              <FileText className="mr-2 h-4 w-4" />
-              Evidências
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleDelete(item.id)}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Excluir
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <TooltipProvider>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleEdit(item)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleComunicacao(item)}>
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Comunicação
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleEvidencias(item)}>
+                <FileText className="mr-2 h-4 w-4" />
+                Evidências
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDelete(item.id)} className="text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TooltipProvider>
       )
     }
   ];
@@ -370,6 +321,48 @@ export default function Incidentes() {
     }
   ];
 
+  const filters = [
+    {
+      key: 'status',
+      label: 'Status',
+      value: statusFilter,
+      onChange: setStatusFilter,
+      options: [
+        { value: 'todos', label: 'Todos os Status' },
+        { value: 'aberto', label: 'Aberto' },
+        { value: 'investigacao', label: 'Investigação' },
+        { value: 'contido', label: 'Contido' },
+        { value: 'resolvido', label: 'Resolvido' },
+        { value: 'fechado', label: 'Fechado' },
+      ]
+    },
+    {
+      key: 'tipo',
+      label: 'Tipo',
+      value: tipoFilter,
+      onChange: setTipoFilter,
+      options: [
+        { value: 'todos', label: 'Todos os Tipos' },
+        { value: 'seguranca', label: 'Segurança' },
+        { value: 'privacidade', label: 'Privacidade' },
+        { value: 'disponibilidade', label: 'Disponibilidade' },
+      ]
+    },
+    {
+      key: 'criticidade',
+      label: 'Criticidade',
+      value: criticidadeFilter,
+      onChange: setCriticidadeFilter,
+      options: [
+        { value: 'todos', label: 'Todas as Criticidades' },
+        { value: 'baixa', label: 'Baixa' },
+        { value: 'media', label: 'Média' },
+        { value: 'alta', label: 'Alta' },
+        { value: 'critica', label: 'Crítica' },
+      ]
+    }
+  ];
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -392,165 +385,49 @@ export default function Incidentes() {
         ))}
       </div>
 
-      {/* Lista de Incidentes */}
+      {/* Lista de Incidentes com DataTable */}
       <Card className="rounded-lg border overflow-hidden">
         <CardContent className="p-0">
-          <div className="p-6 pb-4">
-            <div className="flex items-center justify-between gap-4 mb-4">
-              <Input
-                placeholder="Buscar incidentes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-              />
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filtros
-                </Button>
-                <IncidenteDialog onSuccess={loadIncidentes} />
-              </div>
-            </div>
+          <DataTable
+            data={sortedIncidentes}
+            columns={incidentesColumns}
+            loading={loading}
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Buscar incidentes..."
+            filters={filters}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={handleSort}
+            onRefresh={loadIncidentes}
+            emptyState={{
+              icon: <AlertTriangle className="h-8 w-8" />,
+              title: 'Nenhum incidente encontrado',
+              description: 'Registre o primeiro incidente para começar o monitoramento.'
+            }}
+          />
+          <div className="p-4 border-t">
+            <IncidenteDialog 
+              incidente={selectedIncidente} 
+              onSuccess={() => {
+                loadIncidentes();
+                setEditDialogOpen(false);
+                setSelectedIncidente(null);
+              }}
+            />
           </div>
-          {showFilters && (
-            <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg mb-4">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Status</SelectItem>
-                  <SelectItem value="aberto">Aberto</SelectItem>
-                  <SelectItem value="investigacao">Investigação</SelectItem>
-                  <SelectItem value="contido">Contido</SelectItem>
-                  <SelectItem value="resolvido">Resolvido</SelectItem>
-                  <SelectItem value="fechado">Fechado</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={tipoFilter} onValueChange={setTipoFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os Tipos</SelectItem>
-                  <SelectItem value="seguranca">Segurança</SelectItem>
-                  <SelectItem value="privacidade">Privacidade</SelectItem>
-                  <SelectItem value="disponibilidade">Disponibilidade</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={criticidadeFilter} onValueChange={setCriticidadeFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Criticidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todas as Criticidades</SelectItem>
-                  <SelectItem value="baixa">Baixa</SelectItem>
-                  <SelectItem value="media">Média</SelectItem>
-                  <SelectItem value="alta">Alta</SelectItem>
-                  <SelectItem value="critica">Crítica</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Título</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Criticidade</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Data Detecção</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                [...Array(5)].map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                  </TableRow>
-                ))
-              ) : filteredIncidentes.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="p-0">
-                    <EmptyState
-                      icon={<AlertTriangle className="h-8 w-8" />}
-                      title='Nenhum incidente encontrado'
-                      description='Registre o primeiro incidente para começar o monitoramento.'
-                      action={{
-                        label: 'Novo Incidente',
-                        onClick: () => {} // O IncidenteDialog já está no header
-                      }}
-                    />
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredIncidentes.map((incidente) => (
-                  <TableRow key={incidente.id}>
-                    <TableCell>
-                      <div className="font-medium">{incidente.titulo}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{incidente.tipo_incidente}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {getCriticidadeBadge(incidente.criticidade)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {(() => {
-                          const StatusIcon = getStatusIcon(incidente.status);
-                          return <StatusIcon className="h-4 w-4" />;
-                        })()}
-                        {getStatusBadge(incidente.status)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(incidente.data_deteccao), 'dd/MM/yyyy', { locale: ptBR })}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => {}}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {}}>
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            Comunicação
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {}}>
-                            <FileText className="mr-2 h-4 w-4" />
-                            Evidências
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDelete(incidente.id)}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
         </CardContent>
       </Card>
+
+      {/* Dialog de Comunicação */}
+      <ComunicacaoDialog
+        incidenteId={selectedIncidente?.id || ''}
+      />
+
+      {/* Dialog de Evidências */}
+      <EvidenciaDialog
+        incidenteId={selectedIncidente?.id || ''}
+      />
 
       <ConfirmDialog
         open={deleteConfirm.open}

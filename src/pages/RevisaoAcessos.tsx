@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, RefreshCw, Download, Settings } from "lucide-react";
+import { Plus, RefreshCw, Download, Eye, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,10 +13,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { ReviewDialog } from "@/components/revisao-acessos/ReviewDialog";
 import { ReviewItemsDialog } from "@/components/revisao-acessos/ReviewItemsDialog";
-import { formatDateForInput } from "@/lib/date-utils";
+import { formatDateOnly } from "@/lib/date-utils";
 import { formatStatus } from "@/lib/text-utils";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function RevisaoAcessos() {
   const { empresaId } = useEmpresaId();
@@ -61,6 +67,31 @@ export default function RevisaoAcessos() {
     { cacheKey: `reviews-${empresaId}-${statusFilter}` }
   );
 
+  // Buscar histórico (revisões concluídas ou canceladas)
+  const {
+    data: historico,
+    loading: historicoLoading,
+  } = useOptimizedQuery(
+    async () => {
+      if (!empresaId) return { data: [], error: null };
+
+      const { data, error } = await supabase
+        .from("access_reviews")
+        .select(`
+          *,
+          sistema:sistemas_privilegiados(nome_sistema),
+          responsavel:responsavel_revisao(nome)
+        `)
+        .eq("empresa_id", empresaId)
+        .in("status", ["concluida", "cancelada"])
+        .order("data_conclusao", { ascending: false });
+
+      return { data: data || [], error };
+    },
+    [empresaId],
+    { cacheKey: `reviews-historico-${empresaId}` }
+  );
+
   const handleEdit = (review: any) => {
     setSelectedReview(review);
     setReviewDialogOpen(true);
@@ -99,6 +130,35 @@ export default function RevisaoAcessos() {
         {formatStatus(status)}
       </Badge>
     );
+  };
+
+  const getVencimentoBadge = (dataLimite: string, status: string) => {
+    if (status === 'concluida' || status === 'cancelada') {
+      return formatDateOnly(dataLimite);
+    }
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const limite = new Date(dataLimite + 'T00:00:00');
+    const diffDays = Math.ceil((limite.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return (
+        <div className="flex items-center gap-2">
+          <span>{formatDateOnly(dataLimite)}</span>
+          <Badge variant="destructive" className="whitespace-nowrap">Vencida</Badge>
+        </div>
+      );
+    } else if (diffDays <= 7) {
+      return (
+        <div className="flex items-center gap-2">
+          <span>{formatDateOnly(dataLimite)}</span>
+          <Badge variant="secondary" className="bg-amber-100 text-amber-800 whitespace-nowrap">Vence em {diffDays}d</Badge>
+        </div>
+      );
+    }
+
+    return formatDateOnly(dataLimite);
   };
 
   const filteredAndSortedReviews = reviews
@@ -144,7 +204,7 @@ export default function RevisaoAcessos() {
       key: "data_limite",
       label: "Prazo",
       sortable: true,
-      render: (review) => formatDateForInput(review.data_limite),
+      render: (review) => getVencimentoBadge(review.data_limite, review.status),
     },
     {
       key: "progress",
@@ -155,6 +215,97 @@ export default function RevisaoAcessos() {
       key: "status",
       label: "Status",
       sortable: true,
+      render: (review) => getStatusBadge(review.status),
+    },
+    {
+      key: "actions",
+      label: "Ações",
+      render: (review) => (
+        <TooltipProvider>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleViewItems(review)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Ver Itens</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEdit(review)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Editar</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDeleteConfirm(review.id)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Excluir</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
+      ),
+    },
+  ];
+
+  const historicoColumns: Column<any>[] = [
+    {
+      key: "nome_revisao",
+      label: "Nome da Revisão",
+      sortable: true,
+    },
+    {
+      key: "sistema.nome_sistema",
+      label: "Sistema",
+      render: (review) => review.sistema?.nome_sistema || "-",
+    },
+    {
+      key: "responsavel.nome",
+      label: "Responsável",
+      render: (review) => review.responsavel?.nome || "-",
+    },
+    {
+      key: "data_conclusao",
+      label: "Data Conclusão",
+      sortable: true,
+      render: (review) => review.data_conclusao ? formatDateOnly(review.data_conclusao) : "-",
+    },
+    {
+      key: "contas_revisadas",
+      label: "Contas Revisadas",
+      render: (review) => `${review.contas_revisadas}/${review.total_contas}`,
+    },
+    {
+      key: "contas_aprovadas",
+      label: "Aprovadas",
+      render: (review) => review.contas_aprovadas || 0,
+    },
+    {
+      key: "contas_revogadas",
+      label: "Revogadas",
+      render: (review) => review.contas_revogadas || 0,
+    },
+    {
+      key: "status",
+      label: "Status",
       render: (review) => getStatusBadge(review.status),
     },
   ];
@@ -246,8 +397,17 @@ export default function RevisaoAcessos() {
             />
           </TabsContent>
 
-          <TabsContent value="historico">
-            <p className="text-muted-foreground">Histórico de revisões concluídas</p>
+          <TabsContent value="historico" className="space-y-4">
+            <DataTable
+              data={historico || []}
+              columns={historicoColumns}
+              loading={historicoLoading}
+              searchPlaceholder="Buscar no histórico..."
+              emptyState={{
+                title: "Nenhuma revisão concluída",
+                description: "As revisões finalizadas aparecerão aqui."
+              }}
+            />
           </TabsContent>
         </Tabs>
       </Card>

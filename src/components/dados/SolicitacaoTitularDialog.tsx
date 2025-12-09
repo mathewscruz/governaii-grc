@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,11 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format, addDays, parse } from "date-fns";
+import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
+import { parseDateForDB } from "@/lib/date-utils";
 
 interface SolicitacaoTitularDialogProps {
   isOpen: boolean;
@@ -22,26 +22,94 @@ interface SolicitacaoTitularDialogProps {
 }
 
 export function SolicitacaoTitularDialog({ isOpen, onClose, onSave, solicitacao }: SolicitacaoTitularDialogProps) {
+  // Campos separados para dados do titular (mais amigáveis)
+  const [titularNome, setTitularNome] = useState("");
+  const [titularEmail, setTitularEmail] = useState("");
+  const [titularDocumento, setTitularDocumento] = useState("");
+  const [titularTelefone, setTitularTelefone] = useState("");
+  
   const [formData, setFormData] = useState({
-    tipo_solicitacao: solicitacao?.tipo_solicitacao || "",
-    dados_titular: JSON.stringify(solicitacao?.dados_titular || { nome: "", email: "", documento: "" }, null, 2),
-    dados_solicitados: solicitacao?.dados_solicitados || "",
-    justificativa: solicitacao?.justificativa || "",
-    canal_solicitacao: solicitacao?.canal_solicitacao || "",
-    status: solicitacao?.status || "pendente",
-    data_resposta: solicitacao?.data_resposta ? new Date(solicitacao.data_resposta) : undefined,
-    prazo_resposta: solicitacao?.prazo_resposta ? new Date(solicitacao.prazo_resposta) : addDays(new Date(), 15),
-    responsavel_analise: solicitacao?.responsavel_analise || "",
-    observacoes_internas: solicitacao?.observacoes_internas || "",
-    resposta_titular: solicitacao?.resposta_titular || "",
-    evidencias_atendimento: solicitacao?.evidencias_atendimento || ""
+    tipo_solicitacao: "",
+    dados_solicitados: "",
+    justificativa: "",
+    canal_solicitacao: "",
+    status: "pendente",
+    data_resposta: undefined as Date | undefined,
+    prazo_resposta: addDays(new Date(), 15),
+    responsavel_analise: "",
+    observacoes_internas: "",
+    resposta_titular: "",
+    evidencias_atendimento: ""
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Carregar dados existentes quando editar
+  useEffect(() => {
+    if (solicitacao) {
+      const dadosTitular = solicitacao.dados_titular || {};
+      setTitularNome(dadosTitular.nome || "");
+      setTitularEmail(dadosTitular.email || "");
+      setTitularDocumento(dadosTitular.documento || "");
+      setTitularTelefone(dadosTitular.telefone || "");
+      
+      setFormData({
+        tipo_solicitacao: solicitacao.tipo_solicitacao || "",
+        dados_solicitados: solicitacao.dados_solicitados || "",
+        justificativa: solicitacao.justificativa || "",
+        canal_solicitacao: solicitacao.canal_solicitacao || "",
+        status: solicitacao.status || "pendente",
+        data_resposta: solicitacao.data_resposta ? new Date(solicitacao.data_resposta) : undefined,
+        prazo_resposta: solicitacao.prazo_resposta ? new Date(solicitacao.prazo_resposta) : addDays(new Date(), 15),
+        responsavel_analise: solicitacao.responsavel_analise || "",
+        observacoes_internas: solicitacao.observacoes_internas || "",
+        resposta_titular: solicitacao.resposta_titular || "",
+        evidencias_atendimento: solicitacao.evidencias_atendimento || ""
+      });
+    } else {
+      // Resetar para novo
+      setTitularNome("");
+      setTitularEmail("");
+      setTitularDocumento("");
+      setTitularTelefone("");
+      setFormData({
+        tipo_solicitacao: "",
+        dados_solicitados: "",
+        justificativa: "",
+        canal_solicitacao: "",
+        status: "pendente",
+        data_resposta: undefined,
+        prazo_resposta: addDays(new Date(), 15),
+        responsavel_analise: "",
+        observacoes_internas: "",
+        resposta_titular: "",
+        evidencias_atendimento: ""
+      });
+    }
+  }, [solicitacao, isOpen]);
+
   const handleSave = async () => {
     try {
       setIsLoading(true);
+      
+      // Validar campos obrigatórios
+      if (!formData.tipo_solicitacao) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Selecione o tipo de solicitação",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!titularNome && !titularEmail) {
+        toast({
+          title: "Dados do titular obrigatórios",
+          description: "Informe pelo menos o nome ou email do titular",
+          variant: "destructive"
+        });
+        return;
+      }
       
       const { data: profile } = await supabase
         .from('profiles')
@@ -53,11 +121,27 @@ export function SolicitacaoTitularDialog({ isOpen, onClose, onSave, solicitacao 
         throw new Error('Empresa não encontrada');
       }
 
+      // Montar objeto dados_titular a partir dos campos separados
+      const dadosTitular = {
+        nome: titularNome,
+        email: titularEmail,
+        documento: titularDocumento,
+        telefone: titularTelefone
+      };
+
       const payload = {
-        ...formData,
-        dados_titular: JSON.parse(formData.dados_titular),
+        tipo_solicitacao: formData.tipo_solicitacao,
+        dados_titular: dadosTitular,
+        dados_solicitados: formData.dados_solicitados,
+        justificativa: formData.justificativa,
+        canal_solicitacao: formData.canal_solicitacao,
+        status: formData.status,
         data_resposta: formData.data_resposta ? parseDateForDB(format(formData.data_resposta, 'yyyy-MM-dd')) : null,
         prazo_resposta: parseDateForDB(format(formData.prazo_resposta, 'yyyy-MM-dd')),
+        responsavel_analise: formData.responsavel_analise,
+        observacoes_internas: formData.observacoes_internas,
+        resposta_titular: formData.resposta_titular,
+        evidencias_atendimento: formData.evidencias_atendimento,
         empresa_id: profile.empresa_id
       };
 
@@ -101,6 +185,52 @@ export function SolicitacaoTitularDialog({ isOpen, onClose, onSave, solicitacao 
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
+          {/* Dados do Titular - Campos separados */}
+          <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+            <h3 className="font-medium text-sm text-muted-foreground">Dados do Titular</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="titular_nome">Nome do Titular *</Label>
+                <Input
+                  id="titular_nome"
+                  value={titularNome}
+                  onChange={(e) => setTitularNome(e.target.value)}
+                  placeholder="Nome completo"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="titular_email">E-mail *</Label>
+                <Input
+                  id="titular_email"
+                  type="email"
+                  value={titularEmail}
+                  onChange={(e) => setTitularEmail(e.target.value)}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="titular_documento">CPF/Documento</Label>
+                <Input
+                  id="titular_documento"
+                  value={titularDocumento}
+                  onChange={(e) => setTitularDocumento(e.target.value)}
+                  placeholder="000.000.000-00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="titular_telefone">Telefone</Label>
+                <Input
+                  id="titular_telefone"
+                  value={titularTelefone}
+                  onChange={(e) => setTitularTelefone(e.target.value)}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="tipo_solicitacao">Tipo de Solicitação *</Label>
@@ -134,17 +264,6 @@ export function SolicitacaoTitularDialog({ isOpen, onClose, onSave, solicitacao 
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="dados_titular">Dados do Titular (JSON) *</Label>
-            <Textarea
-              id="dados_titular"
-              value={formData.dados_titular}
-              onChange={(e) => setFormData({ ...formData, dados_titular: e.target.value })}
-              placeholder='{"nome": "João Silva", "email": "joao@email.com", "documento": "123.456.789-00"}'
-              rows={4}
-            />
           </div>
 
           <div className="space-y-2">
