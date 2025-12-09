@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import governaiiLogo from "@/assets/governaii-logo.png";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -441,36 +442,36 @@ const LandingPage = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 to-cyan-500/30 blur-3xl rounded-3xl" />
                 
                 {/* Main Dashboard Card */}
-                <div className="relative landing-glass rounded-2xl p-4 lg:p-6 landing-border-gradient">
+                <div className="relative bg-white rounded-2xl p-4 lg:p-6 shadow-2xl">
                   <div className="space-y-4">
                     {/* Header */}
-                    <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                    <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                       <div className="flex items-center gap-3">
                         <div className="w-3 h-3 rounded-full bg-red-500" />
                         <div className="w-3 h-3 rounded-full bg-yellow-500" />
                         <div className="w-3 h-3 rounded-full bg-green-500" />
                       </div>
-                      <span className="text-xs text-gray-500">dashboard.governaii.com.br</span>
+                      <img src={governaiiLogo} alt="GovernAII" className="h-5 object-contain" />
                     </div>
 
                     {/* Score Cards */}
                     <div className="grid grid-cols-3 gap-2 lg:gap-3">
-                      <div className="bg-white/5 rounded-lg p-2 lg:p-3 text-center">
-                        <div className="text-lg lg:text-2xl font-bold text-green-400">87%</div>
-                        <div className="text-[10px] lg:text-xs text-gray-500">Conformidade</div>
+                      <div className="bg-gray-100 rounded-lg p-2 lg:p-3 text-center">
+                        <div className="text-lg lg:text-2xl font-bold text-green-600">87%</div>
+                        <div className="text-[10px] lg:text-xs text-gray-600">Conformidade</div>
                       </div>
-                      <div className="bg-white/5 rounded-lg p-2 lg:p-3 text-center">
-                        <div className="text-lg lg:text-2xl font-bold text-blue-400">4.2</div>
-                        <div className="text-[10px] lg:text-xs text-gray-500">Score NIST</div>
+                      <div className="bg-gray-100 rounded-lg p-2 lg:p-3 text-center">
+                        <div className="text-lg lg:text-2xl font-bold text-blue-600">4.2</div>
+                        <div className="text-[10px] lg:text-xs text-gray-600">Score NIST</div>
                       </div>
-                      <div className="bg-white/5 rounded-lg p-2 lg:p-3 text-center">
-                        <div className="text-lg lg:text-2xl font-bold text-cyan-400">12</div>
-                        <div className="text-[10px] lg:text-xs text-gray-500">Riscos Ativos</div>
+                      <div className="bg-gray-100 rounded-lg p-2 lg:p-3 text-center">
+                        <div className="text-lg lg:text-2xl font-bold text-cyan-600">12</div>
+                        <div className="text-[10px] lg:text-xs text-gray-600">Riscos Ativos</div>
                       </div>
                     </div>
 
                     {/* Chart Placeholder */}
-                    <div className="h-24 lg:h-32 bg-gradient-to-t from-blue-500/10 to-transparent rounded-lg flex items-end justify-around px-4 pb-4">
+                    <div className="h-24 lg:h-32 bg-gradient-to-t from-blue-100 to-transparent rounded-lg flex items-end justify-around px-4 pb-4">
                       {[40, 65, 45, 80, 55, 90, 70].map((height, i) => (
                         <div
                           key={i}
@@ -483,8 +484,8 @@ const LandingPage = () => {
                     {/* Recent Items */}
                     <div className="space-y-2">
                       {["Auditoria ISO 27001 - Em andamento", "Risco #45 - Mitigação concluída", "Controle AC-01 - Aprovado"].map((item, i) => (
-                        <div key={i} className="flex items-center gap-3 text-xs text-gray-400 bg-white/5 rounded-lg p-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0" />
+                        <div key={i} className="flex items-center gap-3 text-xs text-gray-700 bg-gray-100 rounded-lg p-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
                           <span className="truncate">{item}</span>
                         </div>
                       ))}
