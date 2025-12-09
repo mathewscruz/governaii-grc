@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,9 +8,10 @@ import {
   Trash2,
   Calendar,
   User,
-  ClipboardCheck
+  ClipboardList
 } from "lucide-react";
 import { formatStatus } from "@/lib/text-utils";
+import { formatDateOnly } from "@/lib/date-utils";
 
 interface AuditoriaCardAccordionProps {
   auditoria: any;
@@ -94,15 +94,15 @@ export function AuditoriaCardAccordion({
               {formatStatus(auditoria.prioridade)}
             </Badge>
             
-            {/* Botão Controles com progresso */}
+            {/* Botão Itens com progresso */}
             <Button
               variant="outline"
               size="sm"
               onClick={onOpenControles}
               className="h-6 px-2 text-[11px] gap-1.5"
             >
-              <ClipboardCheck className="h-3 w-3" />
-              <span>Controles</span>
+              <ClipboardList className="h-3 w-3" />
+              <span>Itens</span>
               <Badge variant="secondary" className="h-4 px-1 text-[10px] ml-1">
                 {counts.itensConcluidos}/{counts.itens}
               </Badge>
@@ -120,7 +120,7 @@ export function AuditoriaCardAccordion({
             {auditoria.data_inicio && (
               <Badge variant="outline" className="text-[11px] py-0 h-5 px-2">
                 <Calendar className="h-3 w-3 mr-1" />
-                {new Date(auditoria.data_inicio).toLocaleDateString('pt-BR')}
+                {formatDateOnly(auditoria.data_inicio)}
               </Badge>
             )}
             {auditorNome && (

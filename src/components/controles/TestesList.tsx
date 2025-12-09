@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ControlesTestesDialog from "./ControlesTestesDialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { formatDateOnly } from "@/lib/date-utils";
 
 interface ControleTeste {
   id: string;
@@ -168,7 +168,7 @@ export default function TestesList({ controleId, controleNome }: TestesListProps
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-base">
-                      Teste de {new Date(teste.data_teste).toLocaleDateString()}
+                      Teste de {formatDateOnly(teste.data_teste)}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-4 mt-1">
                       {teste.testador && (
@@ -180,7 +180,7 @@ export default function TestesList({ controleId, controleNome }: TestesListProps
                       {teste.proxima_avaliacao && (
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          Próxima: {new Date(teste.proxima_avaliacao).toLocaleDateString()}
+                          Próxima: {formatDateOnly(teste.proxima_avaliacao)}
                         </span>
                       )}
                     </CardDescription>

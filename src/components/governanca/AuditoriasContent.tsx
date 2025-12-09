@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { Plus, FileText, AlertTriangle, CheckCircle, Clock, Filter } from "lucide-react";
+import { Plus, FileText, AlertTriangle, CheckCircle, Clock, Filter, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,6 +15,17 @@ import AuditoriaDialog from "@/components/auditorias/AuditoriaDialog";
 import { ItensAuditoriaDialog } from "@/components/auditorias/ItensAuditoriaDialog";
 import { AuditoriaCardAccordion } from "@/components/auditorias/AuditoriaCardAccordion";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { formatDateOnly } from "@/lib/date-utils";
+import { formatStatus } from "@/lib/text-utils";
 
 export default function AuditoriasContent() {
   const { toast } = useToast();
@@ -27,6 +38,8 @@ export default function AuditoriasContent() {
   const [showControlesDialog, setShowControlesDialog] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; nome?: string }>({ open: false, id: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const { data: usuarios } = useUsuariosEmpresa();
 
@@ -158,9 +171,60 @@ export default function AuditoriasContent() {
     }
   }, [location.state, auditorias]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, tipoFilter, searchTerm]);
+
+  // Exportar para CSV
+  const handleExportCSV = () => {
+    if (!auditorias || auditorias.length === 0) return;
+    
+    const headers = ['Nome', 'Tipo', 'Status', 'Prioridade', 'Data Início', 'Auditor', 'Itens', 'Concluídos', '% Progresso'];
+    
+    const rows = auditorias.map(a => {
+      const counts = auditoriasCounts?.[a.id] || { itens: 0, itensConcluidos: 0 };
+      const auditor = usuarios?.find((u: any) => u.user_id === a.auditor_responsavel);
+      const progresso = counts.itens > 0 ? Math.round((counts.itensConcluidos / counts.itens) * 100) : 0;
+      
+      return [
+        a.nome,
+        formatStatus(a.tipo),
+        formatStatus(a.status),
+        formatStatus(a.prioridade),
+        a.data_inicio ? formatDateOnly(a.data_inicio) : '-',
+        auditor?.nome || '-',
+        counts.itens,
+        counts.itensConcluidos,
+        `${progresso}%`
+      ].join(';');
+    });
+    
+    const csvContent = [headers.join(';'), ...rows].join('\n');
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `auditorias_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    
+    toast({
+      title: "Exportação concluída",
+      description: `${auditorias.length} auditorias exportadas para CSV.`,
+    });
+  };
+
   // Calcular estatísticas
   const totalItens = Object.values(auditoriasCounts || {}).reduce((acc, c) => acc + c.itens, 0);
   const totalConcluidos = Object.values(auditoriasCounts || {}).reduce((acc, c) => acc + c.itensConcluidos, 0);
+
+  // Pagination
+  const paginatedAuditorias = useMemo(() => {
+    if (!auditorias) return [];
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return auditorias.slice(startIndex, startIndex + itemsPerPage);
+  }, [auditorias, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil((auditorias?.length || 0) / itemsPerPage);
 
   const statsCards = [
     {
@@ -217,6 +281,15 @@ export default function AuditoriasContent() {
                 className="max-w-sm"
               />
               <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleExportCSV}
+                  disabled={!auditorias || auditorias.length === 0}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar CSV
+                </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -282,24 +355,84 @@ export default function AuditoriasContent() {
               }}
             />
           ) : (
-            <div className="space-y-1 px-4 pb-4">
-              {auditorias.map((auditoria) => {
-                const counts = auditoriasCounts?.[auditoria.id] || { itens: 0, itensConcluidos: 0 };
-                const auditorResponsavel = usuarios?.find((u: any) => u.user_id === auditoria.auditor_responsavel);
-                
-                return (
-                  <AuditoriaCardAccordion
-                    key={auditoria.id}
-                    auditoria={auditoria}
-                    counts={counts}
-                    onEdit={() => handleEdit(auditoria)}
-                    onDelete={() => handleDelete(auditoria.id, auditoria.nome)}
-                    onOpenControles={() => handleOpenControles(auditoria)}
-                    auditorNome={auditorResponsavel?.nome}
-                  />
-                );
-              })}
-            </div>
+            <>
+              <div className="space-y-1 px-4 pb-4">
+                {paginatedAuditorias.map((auditoria) => {
+                  const counts = auditoriasCounts?.[auditoria.id] || { itens: 0, itensConcluidos: 0 };
+                  const auditorResponsavel = usuarios?.find((u: any) => u.user_id === auditoria.auditor_responsavel);
+                  
+                  return (
+                    <AuditoriaCardAccordion
+                      key={auditoria.id}
+                      auditoria={auditoria}
+                      counts={counts}
+                      onEdit={() => handleEdit(auditoria)}
+                      onDelete={() => handleDelete(auditoria.id, auditoria.nome)}
+                      onOpenControles={() => handleOpenControles(auditoria)}
+                      auditorNome={auditorResponsavel?.nome}
+                    />
+                  );
+                })}
+              </div>
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, auditorias.length)} de {auditorias.length} auditorias
+                  </div>
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                      
+                      {[...Array(totalPages)].map((_, index) => {
+                        const pageNumber = index + 1;
+                        
+                        if (
+                          pageNumber === 1 ||
+                          pageNumber === totalPages ||
+                          (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                        ) {
+                          return (
+                            <PaginationItem key={pageNumber}>
+                              <PaginationLink
+                                onClick={() => setCurrentPage(pageNumber)}
+                                isActive={currentPage === pageNumber}
+                                className="cursor-pointer"
+                              >
+                                {pageNumber}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        } else if (
+                          pageNumber === currentPage - 2 ||
+                          pageNumber === currentPage + 2
+                        ) {
+                          return (
+                            <PaginationItem key={pageNumber}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+                        return null;
+                      })}
+                      
+                      <PaginationItem>
+                        <PaginationNext 
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
