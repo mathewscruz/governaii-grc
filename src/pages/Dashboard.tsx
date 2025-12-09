@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,7 +16,6 @@ export default function Dashboard() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   
-  // Usar hooks otimizados para dados reais
   const ativosStats = useAtivosStats();
   const controlesStats = useControlesStats();
   const incidentesStats = useIncidentesStats();
@@ -26,13 +24,11 @@ export default function Dashboard() {
   if (ativosStats.isLoading || controlesStats.isLoading || incidentesStats.isLoading || dashboardStats.isLoading) {
     return (
       <div className="space-y-6">
-        {/* Header Skeleton */}
         <div className="mb-8">
           <Skeleton className="h-8 w-64 mb-2" />
           <Skeleton className="h-4 w-96" />
         </div>
         
-        {/* KPI Cards Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="animate-fade-in">
@@ -48,7 +44,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Bottom Section Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Skeleton className="h-96 rounded-lg" />
           <Skeleton className="h-96 rounded-lg" />
@@ -70,32 +65,32 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* 1ª Linha - KPIs Principais */}
+      {/* KPIs Principais com nova identidade visual */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 w-full">
         {/* Card 1: Gestão de Ativos */}
         <Card 
-          variant="elevated" 
+          variant="accent"
           interactive 
-          className="group cursor-pointer"
+          className="group"
           onClick={() => navigate('/ativos')}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && navigate('/ativos')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors pl-2">
               Gestão de Ativos
             </CardTitle>
-            <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+            <div className="p-2.5 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
               <HardDrive className="h-4 w-4" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-2">{ativosStats.data?.total || 0}</div>
+          <CardContent className="pl-7">
+            <div className="text-3xl font-bold mb-2 tracking-tight">{ativosStats.data?.total || 0}</div>
             <div className="flex items-center gap-2 flex-wrap">
               <Badge 
-                variant={ativosStats.data?.criticos > 0 ? "destructive" : "success"}
-                icon={<div className="w-2 h-2 rounded-full bg-current" />}
+                variant={ativosStats.data?.criticos > 0 ? "destructive" : "soft"}
+                icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}
               >
                 {ativosStats.data?.ativos || 0} ativos
               </Badge>
@@ -109,21 +104,25 @@ export default function Dashboard() {
         </Card>
 
         {/* Card 2: Alertas Críticos */}
-        <Card variant="elevated" interactive className="group">
+        <Card 
+          variant="accent" 
+          interactive 
+          className="group before:!bg-gradient-to-b before:!from-warning before:!to-warning/70"
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors pl-2">
               Alertas Críticos
             </CardTitle>
-            <div className="p-2 rounded-lg bg-warning/10 text-warning group-hover:bg-warning/20 transition-colors">
+            <div className="p-2.5 rounded-lg bg-warning/10 text-warning group-hover:bg-warning/20 transition-colors">
               <Bell className="h-4 w-4" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-2">{dashboardStats.data?.criticalAlerts || 0}</div>
+          <CardContent className="pl-7">
+            <div className="text-3xl font-bold mb-2 tracking-tight">{dashboardStats.data?.criticalAlerts || 0}</div>
             <div className="flex items-center">
               <Badge 
                 variant={(dashboardStats.data?.criticalAlerts || 0) > 5 ? "destructive" : (dashboardStats.data?.criticalAlerts || 0) > 0 ? "warning" : "success"}
-                icon={<div className="w-2 h-2 rounded-full bg-current" />}
+                icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}
               >
                 {(dashboardStats.data?.criticalAlerts || 0) > 5 ? 'Atenção urgente' : (dashboardStats.data?.criticalAlerts || 0) > 0 ? 'Monitorar' : 'Tudo ok'}
               </Badge>
@@ -133,28 +132,28 @@ export default function Dashboard() {
 
         {/* Card 3: Controles Internos */}
         <Card 
-          variant="elevated" 
+          variant="accent"
           interactive 
-          className="group cursor-pointer"
-          onClick={() => navigate('/controles')}
+          className="group before:!bg-gradient-to-b before:!from-success before:!to-success/70"
+          onClick={() => navigate('/governanca')}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && navigate('/controles')}
+          onKeyDown={(e) => e.key === 'Enter' && navigate('/governanca')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors pl-2">
               Controles Internos
             </CardTitle>
-            <div className="p-2 rounded-lg bg-success/10 text-success group-hover:bg-success/20 transition-colors">
+            <div className="p-2.5 rounded-lg bg-success/10 text-success group-hover:bg-success/20 transition-colors">
               <Shield className="h-4 w-4" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-2">{controlesStats.data?.ativos || 0}</div>
+          <CardContent className="pl-7">
+            <div className="text-3xl font-bold mb-2 tracking-tight">{controlesStats.data?.ativos || 0}</div>
             <div className="flex items-center gap-2 flex-wrap">
               <Badge 
                 variant={controlesStats.data?.vencendoAvaliacao > 0 ? "warning" : "success"}
-                icon={<div className="w-2 h-2 rounded-full bg-current" />}
+                icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}
               >
                 {controlesStats.data?.vencendoAvaliacao || 0} vencendo
               </Badge>
@@ -167,30 +166,30 @@ export default function Dashboard() {
 
         {/* Card 4: Incidentes de Segurança */}
         <Card 
-          variant="elevated" 
+          variant="accent"
           interactive 
-          className="group cursor-pointer"
+          className="group before:!bg-gradient-to-b before:!from-destructive before:!to-destructive/70"
           onClick={() => navigate('/incidentes')}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && navigate('/incidentes')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+            <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors pl-2">
               Incidentes Ativos
             </CardTitle>
-            <div className="p-2 rounded-lg bg-destructive/10 text-destructive group-hover:bg-destructive/20 transition-colors">
+            <div className="p-2.5 rounded-lg bg-destructive/10 text-destructive group-hover:bg-destructive/20 transition-colors">
               <AlertCircle className="h-4 w-4" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-2">
+          <CardContent className="pl-7">
+            <div className="text-3xl font-bold mb-2 tracking-tight">
               {(incidentesStats.data?.abertos || 0) + (incidentesStats.data?.investigacao || 0)}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <Badge 
                 variant={(incidentesStats.data?.mes || 0) > 0 ? "info" : "neutral"}
-                icon={<div className="w-2 h-2 rounded-full bg-current" />}
+                icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}
               >
                 +{incidentesStats.data?.mes || 0} este mês
               </Badge>
@@ -204,13 +203,13 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* 2ª Linha - Matriz de Risco e Atividades Recentes */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6 w-full">
-          <MultiDimensionalRadar />
-          <RecentActivities />
-        </div>
+      {/* Matriz de Risco e Atividades Recentes */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6 w-full">
+        <MultiDimensionalRadar />
+        <RecentActivities />
+      </div>
 
-      {/* 3ª Linha - Timeline do Score de Risco */}
+      {/* Timeline do Score de Risco */}
       <RiskScoreTimeline />
     </div>
   );

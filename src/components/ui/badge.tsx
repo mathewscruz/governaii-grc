@@ -1,33 +1,29 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center gap-1 rounded-md border font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 whitespace-nowrap",
   {
     variants: {
       variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-sm",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/90",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-sm",
-        success:
-          "border-transparent bg-success text-success-foreground hover:bg-success/90 hover:shadow-sm",
-        warning:
-          "border-transparent bg-warning text-warning-foreground hover:bg-warning/90 hover:shadow-sm",
-        info:
-          "border-transparent bg-info text-info-foreground hover:bg-info/90 hover:shadow-sm",
-        neutral:
-          "border-transparent bg-neutral text-neutral-foreground hover:bg-neutral/90",
-        outline: "text-foreground border-border hover:bg-accent hover:text-accent-foreground",
+        default: "border-transparent bg-primary text-primary-foreground shadow-sm",
+        secondary: "border-transparent bg-secondary text-secondary-foreground",
+        destructive: "border-transparent bg-destructive/15 text-destructive",
+        success: "border-transparent bg-success/15 text-success",
+        warning: "border-transparent bg-warning/15 text-warning-foreground",
+        info: "border-transparent bg-info/15 text-info",
+        neutral: "border-transparent bg-muted text-muted-foreground",
+        outline: "border-border text-foreground bg-transparent",
         ghost: "border-transparent hover:bg-accent hover:text-accent-foreground",
+        // GovernAII Signature Variants
+        gradient: "border-transparent bg-gradient-primary text-primary-foreground shadow-sm",
+        soft: "border-primary/20 bg-primary/10 text-primary",
+        glow: "border-transparent bg-primary text-primary-foreground shadow-glow",
       },
       size: {
         default: "px-2.5 py-0.5 text-xs",
-        sm: "px-2 py-0.5 text-xs",
+        sm: "px-2 py-0.5 text-[10px]",
         lg: "px-3 py-1 text-sm",
       },
     },
@@ -41,7 +37,7 @@ const badgeVariants = cva(
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {
-  icon?: React.ReactNode;
+  icon?: React.ReactNode
 }
 
 function Badge({ className, variant, size, icon, children, ...props }: BadgeProps) {

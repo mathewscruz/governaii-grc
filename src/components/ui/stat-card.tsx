@@ -6,24 +6,24 @@ import { Badge } from "@/components/ui/badge"
 import { TrendingUp, TrendingDown, Minus } from "lucide-react"
 
 const statCardVariants = cva(
-  "relative overflow-hidden transition-all duration-200",
+  "relative overflow-hidden transition-all duration-300",
   {
     variants: {
       variant: {
-        default: "border-border",
-        success: "border-success/20 bg-success/5",
-        warning: "border-warning/20 bg-warning/5", 
-        destructive: "border-destructive/20 bg-destructive/5",
-        info: "border-info/20 bg-info/5",
-        primary: "border-primary/20 bg-primary/5",
+        default: "",
+        success: "governaii-accent-bar before:!bg-gradient-to-b before:!from-success before:!to-success/70",
+        warning: "governaii-accent-bar before:!bg-gradient-to-b before:!from-warning before:!to-warning/70",
+        destructive: "governaii-accent-bar before:!bg-gradient-to-b before:!from-destructive before:!to-destructive/70",
+        info: "governaii-accent-bar before:!bg-gradient-to-b before:!from-info before:!to-info/70",
+        primary: "governaii-accent-bar",
       },
       interactive: {
-        true: "hover:shadow-md hover:-translate-y-0.5 cursor-pointer",
+        true: "cursor-pointer governaii-card-hover",
         false: "",
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "primary",
       interactive: false,
     },
   }
@@ -40,10 +40,11 @@ interface StatCardProps
     value: number
     label?: string
     period?: string
+    direction?: 'up' | 'down' | 'neutral'
   }
   badge?: {
     label: string
-    variant?: "default" | "secondary" | "destructive" | "success" | "warning" | "info"
+    variant?: "default" | "secondary" | "destructive" | "success" | "warning" | "info" | "soft"
   }
   actions?: React.ReactNode
   loading?: boolean
@@ -61,70 +62,81 @@ export function StatCard({
   badge,
   actions,
   loading = false,
+  onClick,
   ...props
 }: StatCardProps) {
   const getTrendIcon = () => {
     if (!trend) return null
-    
-    if (trend.value > 0) return <TrendingUp className="h-3 w-3" />
-    if (trend.value < 0) return <TrendingDown className="h-3 w-3" />
-    return <Minus className="h-3 w-3" />
+    const dir = trend.direction ?? (trend.value > 0 ? 'up' : trend.value < 0 ? 'down' : 'neutral')
+    if (dir === 'up') return <TrendingUp className="h-3.5 w-3.5" />
+    if (dir === 'down') return <TrendingDown className="h-3.5 w-3.5" />
+    return <Minus className="h-3.5 w-3.5" />
   }
 
   const getTrendColor = () => {
     if (!trend) return ""
-    
-    if (trend.value > 0) return "text-success"
-    if (trend.value < 0) return "text-destructive"
+    const dir = trend.direction ?? (trend.value > 0 ? 'up' : trend.value < 0 ? 'down' : 'neutral')
+    if (dir === 'up') return "text-success"
+    if (dir === 'down') return "text-destructive"
     return "text-muted-foreground"
   }
 
   if (loading) {
     return (
-      <Card className={cn(statCardVariants({ variant, interactive }), className)}>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div className="space-y-2">
-            <div className="h-4 w-20 bg-muted animate-pulse rounded" />
-            {badge && <div className="h-5 w-16 bg-muted animate-pulse rounded-full" />}
-          </div>
-          <div className="h-5 w-5 bg-muted animate-pulse rounded" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+      <Card className={cn("p-5", className)}>
+        <div className="flex items-start justify-between">
+          <div className="space-y-3 flex-1">
             <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+            <div className="h-8 w-20 bg-muted animate-pulse rounded" />
+            <div className="h-3 w-32 bg-muted animate-pulse rounded" />
           </div>
-        </CardContent>
+          <div className="h-10 w-10 bg-muted animate-pulse rounded-lg" />
+        </div>
       </Card>
     )
   }
 
   return (
-    <Card className={cn(statCardVariants({ variant, interactive }), className)} {...props}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="space-y-1">
-          <CardTitle className="text-sm font-medium leading-none">{title}</CardTitle>
-          {badge && (
-            <Badge variant={badge.variant} size="sm">
-              {badge.label}
-            </Badge>
-          )}
+    <Card 
+      variant="elevated"
+      interactive={interactive || !!onClick}
+      className={cn(statCardVariants({ variant, interactive: interactive || !!onClick }), className)} 
+      onClick={onClick}
+      {...props}
+    >
+      <CardHeader className="flex flex-row items-start justify-between pb-2">
+        <div className="space-y-1 flex-1 min-w-0 pl-2">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground truncate">
+              {title}
+            </CardTitle>
+            {badge && (
+              <Badge variant={badge.variant || 'soft'} size="sm">
+                {badge.label}
+              </Badge>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {icon && (
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted/50">
-              {icon}
-            </div>
-          )}
-          {actions}
-        </div>
+        
+        {icon && (
+          <div className="flex-shrink-0 p-2.5 rounded-lg bg-primary/10 text-primary">
+            {icon}
+          </div>
+        )}
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          <div className="text-2xl font-bold leading-none">{value}</div>
-          <div className="flex items-center justify-between text-xs">
+      
+      <CardContent className="pl-7">
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-bold tracking-tight text-foreground">
+            {value}
+          </span>
+          {actions && <div className="ml-auto">{actions}</div>}
+        </div>
+
+        {(description || trend) && (
+          <div className="mt-2 flex items-center gap-3 text-sm">
             {description && (
-              <p className="text-muted-foreground">{description}</p>
+              <span className="text-muted-foreground">{description}</span>
             )}
             {trend && (
               <div className={cn("flex items-center gap-1 font-medium", getTrendColor())}>
@@ -134,20 +146,15 @@ export function StatCard({
                   {trend.label && ` ${trend.label}`}
                 </span>
                 {trend.period && (
-                  <span className="text-muted-foreground ml-1">
+                  <span className="text-muted-foreground font-normal ml-1">
                     vs {trend.period}
                   </span>
                 )}
               </div>
             )}
           </div>
-        </div>
+        )}
       </CardContent>
-
-      {/* Decorative gradient overlay for visual appeal */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <div className="h-full w-full bg-gradient-to-br from-primary/20 to-transparent" />
-      </div>
     </Card>
   )
 }

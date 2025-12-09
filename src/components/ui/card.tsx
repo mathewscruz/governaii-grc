@@ -1,43 +1,44 @@
 import * as React from "react"
-
+import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "default" | "elevated" | "outline" | "ghost" | "gradient";
-  interactive?: boolean;
-}
+const cardVariants = cva(
+  "rounded-lg text-card-foreground transition-all duration-300",
+  {
+    variants: {
+      variant: {
+        default: "bg-card border border-border shadow-card",
+        elevated: "bg-card border border-border shadow-elegant",
+        outline: "border border-border bg-transparent",
+        ghost: "bg-transparent border-none shadow-none",
+        gradient: "bg-gradient-card border border-border/50 shadow-card",
+        accent: "bg-card border border-border shadow-card governaii-accent-bar",
+      },
+      interactive: {
+        true: "cursor-pointer governaii-card-hover hover:border-primary/30",
+        false: "",
+      }
+    },
+    defaultVariants: {
+      variant: "default",
+      interactive: false,
+    },
+  }
+)
 
-const Card = React.forwardRef<
-  HTMLDivElement,
-  CardProps
->(({ className, variant = "default", interactive = false, ...props }, ref) => {
-  const baseClasses = "rounded-lg border bg-card text-card-foreground transition-all duration-200";
-  
-  const variantClasses = {
-    default: "shadow-sm hover:shadow-md",
-    elevated: "shadow-card hover:shadow-elegant",
-    outline: "border-2 border-border shadow-none hover:border-primary/20",
-    ghost: "border-transparent shadow-none hover:bg-accent/5",
-    gradient: "bg-gradient-card shadow-card hover:shadow-elegant"
-  };
+export interface CardProps 
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof cardVariants> {}
 
-  const interactiveClasses = interactive 
-    ? "cursor-pointer hover:-translate-y-1 hover:shadow-lg" 
-    : "";
-
-  return (
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, variant, interactive, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(
-        baseClasses,
-        variantClasses[variant],
-        interactiveClasses,
-        className
-      )}
+      className={cn(cardVariants({ variant, interactive }), className)}
       {...props}
     />
-  );
-})
+  )
+)
 Card.displayName = "Card"
 
 const CardHeader = React.forwardRef<
@@ -46,7 +47,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    className={cn("flex flex-col space-y-1.5 p-5", className)}
     {...props}
   />
 ))
@@ -58,10 +59,7 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn(
-      "text-2xl font-semibold leading-none tracking-tight",
-      className
-    )}
+    className={cn("text-lg font-semibold leading-none tracking-tight", className)}
     {...props}
   />
 ))
@@ -73,7 +71,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn("text-sm text-muted-foreground leading-relaxed", className)}
     {...props}
   />
 ))
@@ -83,7 +81,7 @@ const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+  <div ref={ref} className={cn("p-5 pt-0", className)} {...props} />
 ))
 CardContent.displayName = "CardContent"
 
@@ -93,10 +91,10 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center p-6 pt-0", className)}
+    className={cn("flex items-center p-5 pt-0", className)}
     {...props}
   />
 ))
 CardFooter.displayName = "CardFooter"
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, cardVariants }
