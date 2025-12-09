@@ -46,14 +46,24 @@ export function DadosPessoaisCard({
     }
   };
 
-  const getSensibilidadeBadge = () => {
+  const getSensibilidadeColor = (): string => {
     if (dado.tipo_dados === 'sensivel' || dado.sensibilidade === 'muito_sensivel') {
-      return <Badge variant="destructive"><Shield className="h-3 w-3 mr-1" />Sensível</Badge>;
+      return 'bg-red-100 text-red-800 border-red-200';
     }
     if (dado.sensibilidade === 'sensivel') {
-      return <Badge variant="secondary"><Shield className="h-3 w-3 mr-1" />Moderado</Badge>;
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     }
-    return <Badge variant="outline"><Shield className="h-3 w-3 mr-1" />Comum</Badge>;
+    return 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+  
+  const getSensibilidadeLabel = (): string => {
+    if (dado.tipo_dados === 'sensivel' || dado.sensibilidade === 'muito_sensivel') {
+      return 'Sensível';
+    }
+    if (dado.sensibilidade === 'sensivel') {
+      return 'Moderado';
+    }
+    return 'Comum';
   };
 
   return (
@@ -87,7 +97,7 @@ export function DadosPessoaisCard({
 
         <div className="flex flex-wrap gap-2 mb-3">
           <Badge variant="outline">{dado.categoria_dados}</Badge>
-          {getSensibilidadeBadge()}
+          <Badge className={`${getSensibilidadeColor()} border whitespace-nowrap`}><Shield className="h-3 w-3 mr-1" />{getSensibilidadeLabel()}</Badge>
           <Badge variant="outline">{dado.base_legal}</Badge>
         </div>
 

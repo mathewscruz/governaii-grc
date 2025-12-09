@@ -38,18 +38,54 @@ interface ControleDetalheDialogProps {
   onEdit: () => void;
 }
 
-const statusOptions: Record<string, { label: string; color: string }> = {
-  ativo: { label: "Ativo", color: "bg-green-100 text-green-800" },
-  inativo: { label: "Inativo", color: "bg-gray-100 text-gray-800" },
-  em_revisao: { label: "Em Revisão", color: "bg-amber-100 text-amber-800" },
-  descontinuado: { label: "Descontinuado", color: "bg-red-100 text-red-800" },
+const getStatusColor = (status: string): string => {
+  switch (status) {
+    case 'ativo':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'inativo':
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'em_revisao':
+      return 'bg-amber-100 text-amber-800 border-amber-200';
+    case 'descontinuado':
+      return 'bg-red-100 text-red-800 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
 };
 
-const criticidadeOptions: Record<string, { label: string; color: string }> = {
-  critico: { label: "Crítico", color: "bg-red-600 text-white" },
-  alto: { label: "Alto", color: "bg-orange-100 text-orange-800" },
-  medio: { label: "Médio", color: "bg-yellow-100 text-yellow-800" },
-  baixo: { label: "Baixo", color: "bg-green-100 text-green-800" },
+const getStatusLabel = (status: string): string => {
+  switch (status) {
+    case 'ativo': return 'Ativo';
+    case 'inativo': return 'Inativo';
+    case 'em_revisao': return 'Em Revisão';
+    case 'descontinuado': return 'Descontinuado';
+    default: return status;
+  }
+};
+
+const getCriticidadeColor = (criticidade: string): string => {
+  switch (criticidade) {
+    case 'critico':
+      return 'bg-red-100 text-red-800 border-red-200';
+    case 'alto':
+      return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'medio':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'baixo':
+      return 'bg-green-100 text-green-800 border-green-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+const getCriticidadeLabel = (criticidade: string): string => {
+  switch (criticidade) {
+    case 'critico': return 'Crítico';
+    case 'alto': return 'Alto';
+    case 'medio': return 'Médio';
+    case 'baixo': return 'Baixo';
+    default: return criticidade;
+  }
 };
 
 export function ControleDetalheDialog({
@@ -265,9 +301,6 @@ export function ControleDetalheDialog({
 
   if (!controle) return null;
 
-  const statusInfo = statusOptions[controle.status] || statusOptions.ativo;
-  const criticidadeInfo = criticidadeOptions[controle.criticidade] || criticidadeOptions.medio;
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -280,11 +313,11 @@ export function ControleDetalheDialog({
                     <Shield className="h-3 w-3" />
                     {capitalizeText(controle.tipo)}
                   </Badge>
-                  <Badge className={`${criticidadeInfo.color} border-0`}>
-                    {criticidadeInfo.label}
+                  <Badge className={`${getCriticidadeColor(controle.criticidade)} border whitespace-nowrap`}>
+                    {getCriticidadeLabel(controle.criticidade)}
                   </Badge>
-                  <Badge className={`${statusInfo.color} border-0`}>
-                    {statusInfo.label}
+                  <Badge className={`${getStatusColor(controle.status)} border whitespace-nowrap`}>
+                    {getStatusLabel(controle.status)}
                   </Badge>
                 </div>
                 <DialogTitle className="text-xl">{controle.nome}</DialogTitle>

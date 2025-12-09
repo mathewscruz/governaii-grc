@@ -86,18 +86,28 @@ export function DueDiligenceDashboard() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case 'concluido':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Concluído</Badge>;
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'em_andamento':
-        return <Badge variant="secondary">Em Andamento</Badge>;
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'enviado':
-        return <Badge variant="outline">Enviado</Badge>;
+        return 'bg-slate-100 text-slate-800 border-slate-200';
       case 'expirado':
-        return <Badge variant="destructive">Expirado</Badge>;
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case 'concluido': return 'Concluído';
+      case 'em_andamento': return 'Em Andamento';
+      case 'enviado': return 'Enviado';
+      case 'expirado': return 'Expirado';
+      default: return status;
     }
   };
 
@@ -201,7 +211,7 @@ export function DueDiligenceDashboard() {
                         {assessment.score_final.toFixed(1)}%
                       </span>
                     )}
-                    {getStatusBadge(assessment.status)}
+                    <Badge className={`${getStatusColor(assessment.status)} border whitespace-nowrap`}>{getStatusLabel(assessment.status)}</Badge>
                   </div>
                 </div>
               ))}

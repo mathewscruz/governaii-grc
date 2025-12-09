@@ -222,29 +222,57 @@ export function MarcosDialog({ contrato, open, onOpenChange }: MarcosDialogProps
     setShowForm(false);
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusMap = {
-      pendente: { color: 'bg-yellow-500', label: 'Pendente' },
-      concluido: { color: 'bg-green-500', label: 'Concluído' },
-      atrasado: { color: 'bg-red-500', label: 'Atrasado' },
-      cancelado: { color: 'bg-gray-500', label: 'Cancelado' }
-    };
-    
-    const statusInfo = statusMap[status as keyof typeof statusMap] || { color: 'bg-gray-500', label: status };
-    return <Badge className={`${statusInfo.color} text-white`}>{statusInfo.label}</Badge>;
+  const getStatusColor = (status: string): string => {
+    switch (status) {
+      case 'pendente':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'concluido':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'atrasado':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'cancelado':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+  
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case 'pendente': return 'Pendente';
+      case 'concluido': return 'Concluído';
+      case 'atrasado': return 'Atrasado';
+      case 'cancelado': return 'Cancelado';
+      default: return status;
+    }
   };
 
-  const getTipoBadge = (tipo: string) => {
-    const tipoMap = {
-      vencimento: { color: 'bg-red-500', label: 'Vencimento' },
-      renovacao: { color: 'bg-blue-500', label: 'Renovação' },
-      pagamento: { color: 'bg-green-500', label: 'Pagamento' },
-      entrega: { color: 'bg-purple-500', label: 'Entrega' },
-      revisao: { color: 'bg-orange-500', label: 'Revisão' }
-    };
-    
-    const tipoInfo = tipoMap[tipo as keyof typeof tipoMap] || { color: 'bg-gray-500', label: tipo };
-    return <Badge variant="outline" className={`${tipoInfo.color} text-white border-0`}>{tipoInfo.label}</Badge>;
+  const getTipoColor = (tipo: string): string => {
+    switch (tipo) {
+      case 'vencimento':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'renovacao':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'pagamento':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'entrega':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'revisao':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+  
+  const getTipoLabel = (tipo: string): string => {
+    switch (tipo) {
+      case 'vencimento': return 'Vencimento';
+      case 'renovacao': return 'Renovação';
+      case 'pagamento': return 'Pagamento';
+      case 'entrega': return 'Entrega';
+      case 'revisao': return 'Revisão';
+      default: return tipo;
+    }
   };
 
   const isOverdue = (dataPrevista: string, status: string) => {
@@ -439,8 +467,8 @@ export function MarcosDialog({ contrato, open, onOpenChange }: MarcosDialogProps
                       <p className="text-sm text-muted-foreground">{marco.descricao}</p>
                     </div>
                     <div className="flex gap-2">
-                      {getTipoBadge(marco.tipo)}
-                      {getStatusBadge(marco.status)}
+                      <Badge className={`${getTipoColor(marco.tipo)} border whitespace-nowrap`}>{getTipoLabel(marco.tipo)}</Badge>
+                      <Badge className={`${getStatusColor(marco.status)} border whitespace-nowrap`}>{getStatusLabel(marco.status)}</Badge>
                     </div>
                   </div>
 

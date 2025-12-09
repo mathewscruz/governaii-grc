@@ -38,31 +38,49 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
     { cacheKey: 'adherence-assessments', cacheDuration: 0 }
   );
 
-  const getStatusBadge = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case 'concluido':
-        return <Badge className="bg-green-500 text-white">Concluído</Badge>;
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'processando':
-        return <Badge className="bg-blue-500 text-white"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Processando</Badge>;
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'erro':
-        return <Badge variant="destructive">Erro</Badge>;
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getResultBadge = (resultado?: string) => {
-    if (!resultado) return null;
-    
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'concluido': return 'Concluído';
+      case 'processando': return <><Loader2 className="h-3 w-3 mr-1 animate-spin inline" />Processando</>;
+      case 'erro': return 'Erro';
+      default: return status;
+    }
+  };
+
+  const getResultColor = (resultado?: string): string => {
+    if (!resultado) return '';
     switch (resultado) {
       case 'conforme':
-        return <Badge className="bg-green-500 text-white">Conforme</Badge>;
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'nao_conforme':
-        return <Badge variant="destructive">Não Conforme</Badge>;
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'parcial':
-        return <Badge className="bg-yellow-500 text-white">Parcial</Badge>;
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       default:
-        return null;
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getResultLabel = (resultado?: string): string | null => {
+    if (!resultado) return null;
+    switch (resultado) {
+      case 'conforme': return 'Conforme';
+      case 'nao_conforme': return 'Não Conforme';
+      case 'parcial': return 'Parcial';
+      default: return resultado;
     }
   };
 
@@ -175,8 +193,8 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h4 className="font-semibold">{assessment.nome_analise}</h4>
-                      {getStatusBadge(assessment.status)}
-                      {getResultBadge(assessment.resultado_geral)}
+                      <Badge className={`${getStatusColor(assessment.status)} border whitespace-nowrap`}>{getStatusLabel(assessment.status)}</Badge>
+                      {assessment.resultado_geral && <Badge className={`${getResultColor(assessment.resultado_geral)} border whitespace-nowrap`}>{getResultLabel(assessment.resultado_geral)}</Badge>}
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-3">

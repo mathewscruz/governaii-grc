@@ -314,41 +314,22 @@ export default function Controles() {
     );
   };
 
-  const getCriticidadeBadgeVariant = (criticidade: string): "default" | "destructive" | "secondary" | "outline" => {
-    switch (criticidade) {
+  const getCriticidadeColor = (criticidade: string): string => {
+    const value = criticidade?.toLowerCase() || '';
+    switch (value) {
       case 'critico':
-        return 'destructive';
+      case 'crítico':
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'alto':
-        return 'default';
+        return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'medio':
-        return 'secondary';
+      case 'médio':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'baixo':
-        return 'outline';
+        return 'bg-green-100 text-green-800 border-green-200';
       default:
-        return 'secondary';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-  };
-
-  const getCriticidadeCustomClass = (criticidade: string) => {
-    switch (criticidade) {
-      case 'critico':
-        return 'bg-red-600 text-white border-red-700 hover:bg-red-700';
-      case 'alto':
-        return 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200';
-      default:
-        return '';
-    }
-  };
-
-  const getCriticidadeBadge = (criticidade: string) => {
-    return (
-      <Badge 
-        variant={getCriticidadeBadgeVariant(criticidade)} 
-        className={getCriticidadeCustomClass(criticidade)}
-      >
-        {capitalizeText(criticidade)}
-      </Badge>
-    );
   };
 
   const getTipoBadgeVariant = (tipo: string): "default" | "destructive" | "secondary" | "outline" => {
@@ -450,7 +431,11 @@ export default function Controles() {
       key: 'criticidade' as keyof Controle,
       label: 'Criticidade',
       sortable: true,
-      render: (value: any, controle: Controle) => getCriticidadeBadge(controle.criticidade)
+      render: (value: any, controle: Controle) => (
+        <Badge className={`${getCriticidadeColor(controle.criticidade)} border whitespace-nowrap`}>
+          {capitalizeText(controle.criticidade)}
+        </Badge>
+      )
     },
     {
       key: 'responsavel' as keyof Controle,

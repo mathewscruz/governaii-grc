@@ -101,16 +101,25 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
     }
   };
 
-  const getPrioridadeBadge = (prioridade: string) => {
+  const getPrioridadeColor = (prioridade: string): string => {
     switch (prioridade) {
       case 'alta':
-        return <Badge variant="destructive">Alta</Badge>;
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'media':
-        return <Badge className="bg-yellow-500">Média</Badge>;
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'baixa':
-        return <Badge variant="outline">Baixa</Badge>;
+        return 'bg-green-100 text-green-800 border-green-200';
       default:
-        return null;
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+  
+  const getPrioridadeLabel = (prioridade: string): string => {
+    switch (prioridade) {
+      case 'alta': return 'Alta';
+      case 'media': return 'Média';
+      case 'baixa': return 'Baixa';
+      default: return prioridade;
     }
   };
 
@@ -214,7 +223,7 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
               <Card key={index} className="p-4 bg-gray-50 border-gray-200">
                 <div className="flex items-start justify-between mb-2">
                   <h4 className="font-semibold text-gray-900">{ponto.titulo}</h4>
-                  {getPrioridadeBadge(ponto.prioridade)}
+                  <Badge className={`${getPrioridadeColor(ponto.prioridade)} border whitespace-nowrap`}>{getPrioridadeLabel(ponto.prioridade)}</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">{ponto.descricao}</p>
               </Card>
