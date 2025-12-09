@@ -287,8 +287,9 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
               id="descricao"
               value={formData.descricao}
               onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
-              placeholder="Descrição do controle"
-              rows={3}
+              placeholder="Descrição do controle (suporta quebras de linha)"
+              rows={6}
+              className="whitespace-pre-wrap"
             />
           </div>
 

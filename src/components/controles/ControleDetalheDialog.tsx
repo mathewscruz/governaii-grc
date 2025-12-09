@@ -295,31 +295,26 @@ export function ControleDetalheDialog({
             </div>
           </DialogHeader>
 
-          {/* Info do controle */}
-          <div className="flex-shrink-0 bg-muted/50 rounded-lg p-4 space-y-2">
-            {controle.descricao && (
-              <p className="text-sm text-muted-foreground">{controle.descricao}</p>
+          {/* Metadados do controle - linha separada */}
+          <div className="flex-shrink-0 flex flex-wrap gap-4 items-center text-sm border-b pb-4">
+            {controle.responsavel_nome && (
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{controle.responsavel_nome}</span>
+              </div>
             )}
-            <div className="flex gap-4 text-sm flex-wrap">
-              {controle.responsavel_nome && (
-                <div className="flex items-center gap-1">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span>{controle.responsavel_nome}</span>
-                </div>
-              )}
-              {controle.frequencia && (
-                <div className="flex items-center gap-1">
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                  <span>Frequência: {capitalizeText(controle.frequencia)}</span>
-                </div>
-              )}
-              {controle.proxima_avaliacao && (
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>Próx. Avaliação: {formatDateOnly(controle.proxima_avaliacao)}</span>
-                </div>
-              )}
-            </div>
+            {controle.frequencia && (
+              <div className="flex items-center gap-1.5">
+                <Activity className="h-4 w-4 text-muted-foreground" />
+                <span>{capitalizeText(controle.frequencia)}</span>
+              </div>
+            )}
+            {controle.proxima_avaliacao && (
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span>{formatDateOnly(controle.proxima_avaliacao)}</span>
+              </div>
+            )}
             {controle.categoria && (
               <Badge 
                 variant="outline" 
@@ -329,6 +324,15 @@ export function ControleDetalheDialog({
               </Badge>
             )}
           </div>
+
+          {/* Descrição separada com suporte a quebras de linha */}
+          {controle.descricao && (
+            <div className="flex-shrink-0 bg-muted/50 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {controle.descricao}
+              </p>
+            </div>
+          )}
 
           {/* Tabs */}
           <Tabs defaultValue="comentarios" className="flex-1 flex flex-col overflow-hidden">
