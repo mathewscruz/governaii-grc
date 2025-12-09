@@ -24,7 +24,7 @@ import TemplatesContratos from '@/components/contratos/TemplatesContratos';
 import { useContratosStats } from '@/hooks/useContratosStats';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
-import { formatStatus } from '@/lib/text-utils';
+import { formatStatus, getContratoStatusColor, getCriticidadeColor } from '@/lib/text-utils';
 
 interface Contrato {
   id: string;
@@ -234,31 +234,19 @@ export default function Contratos() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusMap = {
-      ativo: { color: 'bg-green-500', label: 'Ativo' },
-      rascunho: { color: 'bg-gray-500', label: 'Rascunho' },
-      negociacao: { color: 'bg-yellow-500', label: 'Negociação' },
-      aprovacao: { color: 'bg-blue-500', label: 'Aprovação' },
-      suspenso: { color: 'bg-orange-500', label: 'Suspenso' },
-      encerrado: { color: 'bg-red-500', label: 'Encerrado' },
-      cancelado: { color: 'bg-red-600', label: 'Cancelado' },
-      inativo: { color: 'bg-gray-400', label: 'Inativo' }
-    };
-    
-    const statusInfo = statusMap[status as keyof typeof statusMap] || { color: 'bg-gray-500', label: formatStatus(status) };
-    return <Badge className={`${statusInfo.color} text-white whitespace-nowrap`}>{statusInfo.label}</Badge>;
+    return (
+      <Badge className={`${getContratoStatusColor(status)} whitespace-nowrap`}>
+        {formatStatus(status)}
+      </Badge>
+    );
   };
 
   const getRiskBadge = (risk: string) => {
-    const riskMap = {
-      baixo: { color: 'bg-green-500', label: 'Baixo' },
-      medio: { color: 'bg-yellow-500', label: 'Médio' },
-      alto: { color: 'bg-orange-500', label: 'Alto' },
-      critico: { color: 'bg-red-500', label: 'Crítico' }
-    };
-    
-    const riskInfo = riskMap[risk as keyof typeof riskMap] || { color: 'bg-gray-500', label: formatStatus(risk) };
-    return <Badge className={`${riskInfo.color} text-white whitespace-nowrap`}>{riskInfo.label}</Badge>;
+    return (
+      <Badge className={`${getCriticidadeColor(risk)} whitespace-nowrap`}>
+        {formatStatus(risk)}
+      </Badge>
+    );
   };
 
   const getVencimentoBadge = (dataFim: string | null) => {

@@ -15,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useChavesStats } from '@/hooks/useChavesStats';
 import { formatDateOnly } from '@/lib/date-utils';
+import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/text-utils';
 
 interface ChaveCriptografica {
   id: string;
@@ -141,18 +142,18 @@ export default function AtivosChaves() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      'ativa': { variant: 'default' as const, label: 'Ativa', icon: CheckCircle },
-      'expirada': { variant: 'destructive' as const, label: 'Expirada', icon: AlertTriangle },
-      'revogada': { variant: 'outline' as const, label: 'Revogada', icon: AlertTriangle },
-      'em_rotacao': { variant: 'secondary' as const, label: 'Em Rotação', icon: Clock },
+    const statusConfig: Record<string, { icon: React.ComponentType<any>, label: string }> = {
+      'ativa': { icon: CheckCircle, label: 'Ativa' },
+      'expirada': { icon: AlertTriangle, label: 'Expirada' },
+      'revogada': { icon: AlertTriangle, label: 'Revogada' },
+      'em_rotacao': { icon: Clock, label: 'Em Rotação' },
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.ativa;
+    const config = statusConfig[status] || statusConfig.ativa;
     const Icon = config.icon;
 
     return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
+      <Badge className={`${getItemStatusColor(status)} flex items-center gap-1 whitespace-nowrap`}>
         <Icon className="h-3 w-3" />
         {config.label}
       </Badge>
@@ -160,16 +161,9 @@ export default function AtivosChaves() {
   };
 
   const getCriticidadeBadge = (criticidade: string) => {
-    const colors = {
-      'critica': 'bg-red-100 text-red-800 border-red-200',
-      'alta': 'bg-orange-100 text-orange-800 border-orange-200',
-      'media': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'baixa': 'bg-green-100 text-green-800 border-green-200',
-    };
-
     return (
-      <Badge className={colors[criticidade as keyof typeof colors] || colors.media}>
-        {criticidade.charAt(0).toUpperCase() + criticidade.slice(1)}
+      <Badge className={`${getCriticidadeColor(criticidade)} whitespace-nowrap`}>
+        {formatStatus(criticidade)}
       </Badge>
     );
   };

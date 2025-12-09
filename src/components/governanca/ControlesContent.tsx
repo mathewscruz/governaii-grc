@@ -32,7 +32,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { capitalizeText, formatStatus } from '@/lib/text-utils';
+import { capitalizeText, formatStatus, getCriticidadeColor, getItemStatusColor, getControleTipoColor } from '@/lib/text-utils';
 import { formatDateOnly } from '@/lib/date-utils';
 
 interface Controle {
@@ -315,100 +315,20 @@ export default function ControlesContent() {
     });
   }, [controles, sortField, sortDirection, statusFilter, tipoFilter, criticidadeFilter, auditoriaFilter, vinculos, searchValue]);
 
-  const getStatusBadgeVariant = (status: string): "default" | "destructive" | "secondary" | "outline" => {
-    switch (status) {
-      case 'ativo':
-        return 'default';
-      case 'inativo':
-        return 'secondary';
-      case 'em_revisao':
-        return 'outline';
-      case 'descontinuado':
-        return 'destructive';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const getStatusCustomClass = (status: string) => {
-    switch (status) {
-      case 'ativo':
-        return 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200';
-      case 'em_revisao':
-        return 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200';
-      default:
-        return '';
-    }
-  };
-
   const getStatusBadge = (status: string) => {
     return (
-      <Badge 
-        variant={getStatusBadgeVariant(status)} 
-        className={`${getStatusCustomClass(status)} whitespace-nowrap`}
-      >
+      <Badge className={`${getItemStatusColor(status)} whitespace-nowrap`}>
         {formatStatus(status)}
       </Badge>
     );
   };
 
-  const getCriticidadeBadgeVariant = (criticidade: string): "default" | "destructive" | "secondary" | "outline" => {
-    switch (criticidade) {
-      case 'critico':
-        return 'destructive';
-      case 'alto':
-        return 'default';
-      case 'medio':
-        return 'secondary';
-      case 'baixo':
-        return 'outline';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const getCriticidadeCustomClass = (criticidade: string) => {
-    switch (criticidade) {
-      case 'critico':
-        return 'bg-red-600 text-white border-red-700 hover:bg-red-700';
-      case 'alto':
-        return 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200';
-      default:
-        return '';
-    }
-  };
-
   const getCriticidadeBadge = (criticidade: string) => {
     return (
-      <Badge 
-        variant={getCriticidadeBadgeVariant(criticidade)} 
-        className={`${getCriticidadeCustomClass(criticidade)} whitespace-nowrap`}
-      >
+      <Badge className={`${getCriticidadeColor(criticidade)} whitespace-nowrap`}>
         {formatStatus(criticidade)}
       </Badge>
     );
-  };
-
-  const getTipoBadgeVariant = (tipo: string): "default" | "destructive" | "secondary" | "outline" => {
-    switch (tipo) {
-      case 'preventivo':
-        return 'default';
-      case 'detectivo':
-        return 'secondary';
-      case 'corretivo':
-        return 'outline';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const getTipoCustomClass = (tipo: string) => {
-    switch (tipo) {
-      case 'corretivo':
-        return 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200';
-      default:
-        return '';
-    }
   };
 
   const getTipoIcon = (tipo: string) => {
@@ -477,10 +397,7 @@ export default function ControlesContent() {
       label: 'Tipo',
       sortable: true,
       render: (value: any, controle: Controle) => (
-        <Badge 
-          variant={getTipoBadgeVariant(controle.tipo)} 
-          className={getTipoCustomClass(controle.tipo)}
-        >
+        <Badge className={`${getControleTipoColor(controle.tipo)} whitespace-nowrap`}>
           {capitalizeText(controle.tipo)}
         </Badge>
       )

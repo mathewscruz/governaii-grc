@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { formatStatus } from '@/lib/text-utils';
+import { formatStatus, getCriticidadeColor, getWorkflowStatusColor } from '@/lib/text-utils';
 import { formatDateOnly } from '@/lib/date-utils';
 import { IncidenteDialog } from '@/components/incidentes/IncidenteDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -230,12 +230,11 @@ export default function Incidentes() {
       key: "criticidade" as keyof Incidente,
       label: "Criticidade",
       sortable: true,
-      render: (item: Incidente) => {
-        const variant = item.criticidade === 'critica' ? 'destructive' :
-                       item.criticidade === 'alta' ? 'destructive' :
-                       item.criticidade === 'media' ? 'secondary' : 'outline';
-        return <Badge variant={variant} className="whitespace-nowrap">{formatStatus(item.criticidade)}</Badge>;
-      }
+      render: (item: Incidente) => (
+        <Badge className={`${getCriticidadeColor(item.criticidade)} whitespace-nowrap`}>
+          {formatStatus(item.criticidade)}
+        </Badge>
+      )
     },
     {
       key: "status" as keyof Incidente,
@@ -243,12 +242,12 @@ export default function Incidentes() {
       sortable: true,
       render: (item: Incidente) => {
         const StatusIcon = getStatusIcon(item.status);
-        const variant = item.status === 'resolvido' || item.status === 'fechado' ? 'default' :
-                       item.status === 'aberto' ? 'destructive' : 'secondary';
         return (
           <div className="flex items-center gap-2">
             <StatusIcon className="h-4 w-4" />
-            <Badge variant={variant} className="whitespace-nowrap">{formatStatus(item.status)}</Badge>
+            <Badge className={`${getWorkflowStatusColor(item.status)} whitespace-nowrap`}>
+              {formatStatus(item.status)}
+            </Badge>
           </div>
         );
       }

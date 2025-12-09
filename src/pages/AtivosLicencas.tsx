@@ -15,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useLicencasStats } from '@/hooks/useLicencasStats';
 import { formatDateOnly } from '@/lib/date-utils';
+import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/text-utils';
 
 interface Licenca {
   id: string;
@@ -137,19 +138,19 @@ export default function AtivosLicencas() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      'ativa': { variant: 'default' as const, label: 'Ativa', icon: CheckCircle },
-      'vencida': { variant: 'destructive' as const, label: 'Vencida', icon: AlertTriangle },
-      'a_vencer': { variant: 'secondary' as const, label: 'A Vencer', icon: Clock },
-      'em_renovacao': { variant: 'outline' as const, label: 'Em Renovação', icon: Clock },
-      'cancelada': { variant: 'outline' as const, label: 'Cancelada', icon: Clock },
+    const statusConfig: Record<string, { icon: React.ComponentType<any>, label: string }> = {
+      'ativa': { icon: CheckCircle, label: 'Ativa' },
+      'vencida': { icon: AlertTriangle, label: 'Vencida' },
+      'a_vencer': { icon: Clock, label: 'A Vencer' },
+      'em_renovacao': { icon: Clock, label: 'Em Renovação' },
+      'cancelada': { icon: Clock, label: 'Cancelada' },
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.ativa;
+    const config = statusConfig[status] || statusConfig.ativa;
     const Icon = config.icon;
 
     return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
+      <Badge className={`${getItemStatusColor(status)} flex items-center gap-1 whitespace-nowrap`}>
         <Icon className="h-3 w-3" />
         {config.label}
       </Badge>
@@ -157,16 +158,9 @@ export default function AtivosLicencas() {
   };
 
   const getCriticidadeBadge = (criticidade: string) => {
-    const colors = {
-      'critica': 'bg-red-100 text-red-800 border-red-200',
-      'alta': 'bg-orange-100 text-orange-800 border-orange-200',
-      'media': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'baixa': 'bg-green-100 text-green-800 border-green-200',
-    };
-
     return (
-      <Badge className={colors[criticidade as keyof typeof colors] || colors.media}>
-        {criticidade.charAt(0).toUpperCase() + criticidade.slice(1)}
+      <Badge className={`${getCriticidadeColor(criticidade)} whitespace-nowrap`}>
+        {formatStatus(criticidade)}
       </Badge>
     );
   };

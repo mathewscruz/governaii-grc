@@ -29,7 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { capitalizeText, getStatusColor, getTipoColor, getClassificacaoColor } from '@/lib/text-utils';
+import { capitalizeText, getItemStatusColor, getTipoColor, getClassificacaoColor, formatStatus } from '@/lib/text-utils';
 import { formatDateOnly } from '@/lib/date-utils';
 
 interface Documento {

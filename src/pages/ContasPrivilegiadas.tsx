@@ -14,7 +14,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
-import { formatStatus, capitalizeText } from '@/lib/text-utils';
+import { formatStatus, capitalizeText, getCriticidadeColor, getItemStatusColor } from '@/lib/text-utils';
 import {
   Tooltip,
   TooltipContent,
@@ -226,18 +226,18 @@ export default function ContasPrivilegiadas() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      'ativo': { variant: 'default' as const, label: 'Ativo', icon: CheckCircle },
-      'expirado': { variant: 'destructive' as const, label: 'Expirado', icon: AlertTriangle },
-      'pendente_aprovacao': { variant: 'secondary' as const, label: 'Pendente Aprovação', icon: Clock },
-      'revogado': { variant: 'outline' as const, label: 'Revogado', icon: Shield },
+    const statusConfig: Record<string, { icon: React.ComponentType<any>, label: string }> = {
+      'ativo': { icon: CheckCircle, label: 'Ativo' },
+      'expirado': { icon: AlertTriangle, label: 'Expirado' },
+      'pendente_aprovacao': { icon: Clock, label: 'Pendente Aprovação' },
+      'revogado': { icon: Shield, label: 'Revogado' },
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pendente_aprovacao;
+    const config = statusConfig[status] || statusConfig.pendente_aprovacao;
     const Icon = config.icon;
 
     return (
-      <Badge variant={config.variant} className="flex items-center gap-1 whitespace-nowrap">
+      <Badge className={`${getItemStatusColor(status)} flex items-center gap-1 whitespace-nowrap`}>
         <Icon className="h-3 w-3" />
         {config.label}
       </Badge>
@@ -245,18 +245,8 @@ export default function ContasPrivilegiadas() {
   };
 
   const getCriticidadeBadge = (criticidade: string) => {
-    const colors: Record<string, string> = {
-      'critico': 'bg-red-100 text-red-800 border-red-200',
-      'alto': 'bg-orange-100 text-orange-800 border-orange-200',
-      'alta': 'bg-red-100 text-red-800 border-red-200',
-      'media': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'medio': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'baixa': 'bg-green-100 text-green-800 border-green-200',
-      'baixo': 'bg-green-100 text-green-800 border-green-200',
-    };
-
     return (
-      <Badge className={`${colors[criticidade] || colors.media} whitespace-nowrap`}>
+      <Badge className={`${getCriticidadeColor(criticidade)} whitespace-nowrap`}>
         {formatStatus(criticidade)}
       </Badge>
     );
