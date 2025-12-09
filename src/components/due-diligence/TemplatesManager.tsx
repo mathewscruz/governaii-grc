@@ -1,15 +1,19 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Copy, Trash2, FileText, Settings as SettingsIcon, Star, RefreshCw, Filter } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Plus, Edit, Copy, Trash2, FileText, Settings as SettingsIcon, Star, RefreshCw, Filter, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TemplateDialog } from './TemplateDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { formatDateOnly } from '@/lib/date-utils';
 
 interface Template {
   id: string;
@@ -29,7 +33,6 @@ interface Template {
 const fetchTemplates = async (): Promise<Template[]> => {
   console.log('🔄 Iniciando busca de templates...');
   
-  // Buscar templates primeiro
   const { data: templatesData, error: templatesError } = await supabase
     .from('due_diligence_templates')
     .select(`
@@ -52,7 +55,6 @@ const fetchTemplates = async (): Promise<Template[]> => {
 
   console.log('✅ Templates encontrados:', templatesData?.length || 0);
 
-  // Buscar contagem de perguntas e avaliações para cada template
   const templatesWithCounts = await Promise.all(
     (templatesData || []).map(async (template) => {
       console.log(`🔍 Buscando dados para template: ${template.nome} (ID: ${template.id})`);
@@ -107,11 +109,12 @@ export function TemplatesManager() {
   }>({ open: false });
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [categoriaFilter, setCategoriaFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // React Query para gerenciar os templates
   const {
     data: templates = [],
     isLoading,
@@ -120,11 +123,10 @@ export function TemplatesManager() {
   } = useQuery({
     queryKey: ['due-diligence-templates'],
     queryFn: fetchTemplates,
-    staleTime: 1000 * 60 * 5, // 5 minutos
-    gcTime: 1000 * 60 * 10, // 10 minutos
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
   });
 
-  // Mostrar erro se houver
   if (error) {
     console.error('❌ Erro na query de templates:', error);
     toast({
@@ -134,9 +136,44 @@ export function TemplatesManager() {
     });
   }
 
+  // Lista de categorias únicas
+  const categorias = useMemo(() => {
+    const cats = new Set(templates.map(t => t.categoria));
+    return Array.from(cats).filter(Boolean);
+  }, [templates]);
+
+  // Filtrar templates
+  const filteredTemplates = useMemo(() => {
+    return templates.filter(template => {
+      // Filtro por busca
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        if (
+          !template.nome.toLowerCase().includes(term) &&
+          !template.categoria.toLowerCase().includes(term) &&
+          !template.descricao?.toLowerCase().includes(term)
+        ) {
+          return false;
+        }
+      }
+
+      // Filtro por categoria
+      if (categoriaFilter !== 'all' && template.categoria !== categoriaFilter) {
+        return false;
+      }
+
+      // Filtro por status
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'ativo' && !template.ativo) return false;
+        if (statusFilter === 'inativo' && template.ativo) return false;
+      }
+
+      return true;
+    });
+  }, [templates, searchTerm, categoriaFilter, statusFilter]);
+
   const handleDeleteTemplate = async (template: Template) => {
     try {
-      // Verificar se o template tem avaliações
       if (template._count?.assessments && template._count.assessments > 0) {
         toast({
           title: "Não é possível excluir",
@@ -158,7 +195,6 @@ export function TemplatesManager() {
         description: "O template foi excluído com sucesso.",
       });
 
-      // Invalidar cache e refazer busca
       queryClient.invalidateQueries({ queryKey: ['due-diligence-templates'] });
       refetch();
     } catch (error: any) {
@@ -187,7 +223,6 @@ export function TemplatesManager() {
         description: `Template ${!template.ativo ? 'ativado' : 'desativado'} com sucesso.`,
       });
 
-      // Invalidar cache e refazer busca
       queryClient.invalidateQueries({ queryKey: ['due-diligence-templates'] });
       refetch();
     } catch (error: any) {
@@ -212,6 +247,14 @@ export function TemplatesManager() {
     };
     return colors[categoria] || colors['geral'];
   };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setCategoriaFilter('all');
+    setStatusFilter('all');
+  };
+
+  const hasActiveFilters = searchTerm || categoriaFilter !== 'all' || statusFilter !== 'all';
 
   if (isLoading) {
     return (
@@ -257,278 +300,331 @@ export function TemplatesManager() {
   }
 
   return (
-    <div>
-      <Card className="rounded-lg border overflow-hidden">
-      <CardContent className="p-0">
-        <div className="p-6 pb-4">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Input
-                placeholder="Buscar templates..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+    <TooltipProvider>
+      <div>
+        <Card className="rounded-lg border overflow-hidden">
+          <CardContent className="p-0">
+            <div className="p-6 pb-4">
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Input
+                    placeholder="Buscar templates..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => refetch()}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''} mr-2`} />
+                    Atualizar
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filtros
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={() => setTemplateDialog({ open: true, mode: 'create' })}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Template
+                  </Button>
+                </div>
+              </div>
+              
+              {showFilters && (
+                <div className="bg-muted/50 rounded-lg p-4 mb-4 flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">Categoria:</Label>
+                    <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        {categorias.map((cat) => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">Status:</Label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="ativo">Ativo</SelectItem>
+                        <SelectItem value="inativo">Inativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {hasActiveFilters && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={clearFilters}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Limpar Filtros
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => refetch()}
-                disabled={isLoading}
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''} mr-2`} />
-                Atualizar
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-              </Button>
-              <Button 
-                size="sm"
-                onClick={() => setTemplateDialog({ open: true, mode: 'create' })}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Template
-              </Button>
-            </div>
-          </div>
-          
-          {showFilters && (
-            <div className="bg-muted/50 rounded-lg p-4 mb-4">
-              <p className="text-sm text-muted-foreground">Filtros serão implementados em breve</p>
-            </div>
-          )}
-        </div>
 
-        {templates.length > 0 ? (
-          <div className="space-y-3">
-            {templates.filter(template => 
-              searchTerm === '' || 
-              template.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              template.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              template.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
-            ).map((template) => (
-            <Card key={template.id} className={`${!template.ativo ? 'opacity-60' : ''} ${template.padrao ? 'border-amber-200 bg-amber-50/50' : ''}`}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-lg font-semibold truncate">{template.nome}</h3>
-                          {template.padrao && (
-                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
-                              <Star className="h-3 w-3 mr-1" />
-                              Padrão
-                            </Badge>
-                          )}
-                          <Badge className={getCategoryColor(template.categoria)}>
-                            {template.categoria}
-                          </Badge>
+            {filteredTemplates.length > 0 ? (
+              <div className="space-y-3 p-6 pt-0">
+                {filteredTemplates.map((template) => (
+                  <Card key={template.id} className={`${!template.ativo ? 'opacity-60' : ''} ${template.padrao ? 'border-amber-200 bg-amber-50/50' : ''}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="text-lg font-semibold truncate">{template.nome}</h3>
+                                {template.padrao && (
+                                  <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                                    <Star className="h-3 w-3 mr-1" />
+                                    Padrão
+                                  </Badge>
+                                )}
+                                <Badge className={getCategoryColor(template.categoria)}>
+                                  {template.categoria}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {template.descricao || 'Sem descrição'}
+                              </p>
+                            </div>
+                            
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>{template._count?.questions || 0} perguntas</span>
+                              <span>{template._count?.assessments || 0} avaliações</span>
+                              <Badge variant={template.ativo ? "default" : "secondary"} className="whitespace-nowrap">
+                                {template.ativo ? 'Ativo' : 'Inativo'}
+                              </Badge>
+                              <span className="text-xs">v{template.versao}</span>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {template.descricao || 'Sem descrição'}
-                        </p>
+                        
+                        <div className="flex items-center gap-1 ml-4">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setTemplateDialog({ 
+                                  open: true, 
+                                  template, 
+                                  mode: 'questions' 
+                                })}
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Gerenciar perguntas</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => {
+                                  const event = new CustomEvent('createAssessmentFromTemplate', {
+                                    detail: { templateId: template.id, templateNome: template.nome }
+                                  });
+                                  window.dispatchEvent(event);
+                                }}
+                                className="bg-primary"
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Usar Template
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Criar avaliação com este template</TooltipContent>
+                          </Tooltip>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setTemplateDialog({ 
+                                  open: true, 
+                                  template, 
+                                  mode: 'edit' 
+                                })}
+                                disabled={template.padrao}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar template</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setTemplateDialog({ 
+                                  open: true, 
+                                  template, 
+                                  mode: 'duplicate' 
+                                })}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Duplicar template</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleTemplateStatus(template)}
+                                disabled={template.padrao}
+                              >
+                                <SettingsIcon className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Alterar status</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeleteDialog({ open: true, template })}
+                                disabled={template.padrao || (!!template._count?.assessments && template._count.assessments > 0)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Excluir template</TooltipContent>
+                          </Tooltip>
+                        </div>
                       </div>
                       
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{template._count?.questions || 0} perguntas</span>
-                        <span>{template._count?.assessments || 0} avaliações</span>
-                        <Badge variant={template.ativo ? "default" : "secondary"}>
-                          {template.ativo ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                        <span className="text-xs">v{template.versao}</span>
+                      <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
+                        Criado em {formatDateOnly(template.created_at)}
                       </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-1 ml-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setTemplateDialog({ 
-                        open: true, 
-                        template, 
-                        mode: 'questions' 
-                      })}
-                      title="Gerenciar perguntas"
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="m-6 mt-0">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Nenhum template encontrado</h3>
+                  <p className="text-muted-foreground text-center mb-4">
+                    {hasActiveFilters 
+                      ? 'Tente ajustar os filtros para encontrar templates'
+                      : 'Crie seu primeiro template de questionário para começar a avaliar fornecedores'
+                    }
+                  </p>
+                  {!hasActiveFilters && (
+                    <Button 
+                      onClick={() => setTemplateDialog({ open: true, mode: 'create' })}
+                      className="flex items-center gap-2"
                     >
-                      <FileText className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
+                      Criar Primeiro Template
                     </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </CardContent>
+        </Card>
 
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => {
-                        const event = new CustomEvent('createAssessmentFromTemplate', {
-                          detail: { templateId: template.id, templateNome: template.nome }
-                        });
-                        window.dispatchEvent(event);
-                      }}
-                      title="Usar este template para criar avaliação"
-                      className="bg-primary"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Usar Template
-                    </Button>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setTemplateDialog({ 
-                        open: true, 
-                        template, 
-                        mode: 'edit' 
-                      })}
-                      title="Editar template"
-                      disabled={template.padrao}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
+        <div>
+          <TemplateDialog
+            open={templateDialog.open}
+            onOpenChange={(open) => setTemplateDialog({ open })}
+            template={templateDialog.template}
+            mode={templateDialog.mode}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ['due-diligence-templates'] });
+              refetch();
+              setTemplateDialog({ open: false });
+            }}
+          />
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setTemplateDialog({ 
-                        open: true, 
-                        template, 
-                        mode: 'duplicate' 
-                      })}
-                      title="Duplicar template"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+          <ConfirmDialog
+            open={deleteDialog.open}
+            onOpenChange={(open) => setDeleteDialog({ open })}
+            title="Excluir Template"
+            description={`Tem certeza que deseja excluir o template "${deleteDialog.template?.nome}"? Esta ação não pode ser desfeita.`}
+            onConfirm={() => deleteDialog.template && handleDeleteTemplate(deleteDialog.template)}
+          />
+        </div>
 
-                     <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleTemplateStatus(template)}
-                      title="Alterar status"
-                      disabled={template.padrao}
-                    >
-                      <SettingsIcon className="h-4 w-4" />
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteDialog({ open: true, template })}
-                      title="Excluir template"
-                      disabled={template.padrao || (!!template._count?.assessments && template._count.assessments > 0)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
-                  Criado em {new Date(template.created_at).toLocaleDateString('pt-BR')}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-          </div>
-        ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nenhum template encontrado</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Crie seu primeiro template de questionário para começar a avaliar fornecedores
-            </p>
-            <Button 
-              onClick={() => setTemplateDialog({ open: true, mode: 'create' })}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Criar Primeiro Template
+        {/* Seção de Automações */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <SettingsIcon className="h-4 w-4" />
+              Automações
+            </CardTitle>
+            <CardDescription>
+              Configure ações automáticas baseadas nos resultados das avaliações
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between border rounded-lg p-4">
+              <div>
+                <p className="font-medium">Alerta de Score Baixo</p>
+                <p className="text-sm text-muted-foreground">
+                  Notificar quando score for inferior a 50%
+                </p>
+              </div>
+              <Switch />
+            </div>
+            <div className="flex items-center justify-between border rounded-lg p-4">
+              <div>
+                <p className="font-medium">Lembrete de Expiração</p>
+                <p className="text-sm text-muted-foreground">
+                  Enviar lembrete 7 dias antes da expiração
+                </p>
+              </div>
+              <Switch defaultChecked />
+            </div>
+            <div className="flex items-center justify-between border rounded-lg p-4">
+              <div>
+                <p className="font-medium">Relatório Automático</p>
+                <p className="text-sm text-muted-foreground">
+                  Gerar relatório ao concluir avaliação
+                </p>
+              </div>
+              <Switch />
+            </div>
+            <Button variant="outline" className="w-full">
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Regra de Automação
             </Button>
           </CardContent>
-          </Card>
-        )}
-      </CardContent>
-    </Card>
-
-    <div>
-      <TemplateDialog
-        open={templateDialog.open}
-        onOpenChange={(open) => setTemplateDialog({ open })}
-        template={templateDialog.template}
-        mode={templateDialog.mode}
-        onSuccess={() => {
-          // Invalidar cache e refazer busca
-          queryClient.invalidateQueries({ queryKey: ['due-diligence-templates'] });
-          refetch();
-          setTemplateDialog({ open: false });
-        }}
-      />
-
-      <ConfirmDialog
-        open={deleteDialog.open}
-        onOpenChange={(open) => setDeleteDialog({ open })}
-        title="Excluir Template"
-        description={`Tem certeza que deseja excluir o template "${deleteDialog.template?.nome}"? Esta ação não pode ser desfeita.`}
-        onConfirm={() => deleteDialog.template && handleDeleteTemplate(deleteDialog.template)}
-      />
-    </div>
-
-    {/* Seção de Automações */}
-    <Card className="mt-6">
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <SettingsIcon className="h-4 w-4" />
-          Automações Configuradas
-        </CardTitle>
-        <CardDescription>
-          Configure ações automáticas baseadas nos resultados das avaliações
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* Regra 1 */}
-          <div className="flex items-center justify-between p-3 border rounded-lg">
-            <div>
-              <p className="font-medium">Criar Risco Automaticamente</p>
-              <p className="text-sm text-muted-foreground">
-                Quando score &lt; 50%, criar risco no módulo de riscos
-              </p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-          
-          {/* Regra 2 */}
-          <div className="flex items-center justify-between p-3 border rounded-lg">
-            <div>
-              <p className="font-medium">Solicitar Documentação</p>
-              <p className="text-sm text-muted-foreground">
-                Quando score entre 50-70%, enviar email solicitando docs
-              </p>
-            </div>
-            <Switch />
-          </div>
-          
-          {/* Regra 3 */}
-          <div className="flex items-center justify-between p-3 border rounded-lg">
-            <div>
-              <p className="font-medium">Notificar Aprovação</p>
-              <p className="text-sm text-muted-foreground">
-                Quando score &gt;= 80%, notificar time de compras
-              </p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-          
-          <Button variant="outline" size="sm" className="w-full">
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Nova Regra
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-    </div>
+        </Card>
+      </div>
+    </TooltipProvider>
   );
 }

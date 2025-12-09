@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { 
   Plus, 
   Edit, 
@@ -17,9 +17,8 @@ import {
   Tag
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { formatDateOnly } from '@/lib/date-utils';
 
 interface Categoria {
   id: string;
@@ -51,6 +50,10 @@ export function CategoriasDenuncia() {
   const [editingCategoria, setEditingCategoria] = useState<Categoria | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoriaToDelete, setCategoriaToDelete] = useState<Categoria | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortField, setSortField] = useState<string>('nome');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -122,7 +125,6 @@ export function CategoriasDenuncia() {
     setSaving(true);
     try {
       if (editingCategoria) {
-        // Atualizar categoria existente
         const { error } = await supabase
           .from('denuncias_categorias')
           .update({
@@ -139,14 +141,13 @@ export function CategoriasDenuncia() {
           description: "Categoria atualizada com sucesso"
         });
       } else {
-        // Criar nova categoria - empresa_id será sobrescrito pelo DEFAULT na tabela
         const { error } = await supabase
           .from('denuncias_categorias')
           .insert({
             nome: formData.nome.trim(),
             descricao: formData.descricao.trim(),
             cor: formData.cor,
-            empresa_id: '00000000-0000-0000-0000-000000000000' // Placeholder, será sobrescrito pelo DEFAULT
+            empresa_id: '00000000-0000-0000-0000-000000000000'
           });
 
         if (error) throw error;
@@ -235,13 +236,127 @@ export function CategoriasDenuncia() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Filtrar e ordenar
+  const filteredAndSortedCategorias = useMemo(() => {
+    let filtered = categorias;
+
+    // Filtro por busca
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(c =>
+        c.nome.toLowerCase().includes(term) ||
+        c.descricao?.toLowerCase().includes(term)
+      );
+    }
+
+    // Filtro por status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(c => 
+        statusFilter === 'ativo' ? c.ativo : !c.ativo
+      );
+    }
+
+    // Ordenar
+    filtered.sort((a, b) => {
+      let aValue: any = a[sortField as keyof Categoria];
+      let bValue: any = b[sortField as keyof Categoria];
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [categorias, searchTerm, statusFilter, sortField, sortDirection]);
+
+  const columns: Column<Categoria>[] = [
+    {
+      key: 'nome',
+      label: 'Categoria',
+      sortable: true,
+      render: (cat) => (
+        <div className="flex items-center gap-2">
+          <div 
+            className="w-4 h-4 rounded-full flex-shrink-0"
+            style={{ backgroundColor: cat.cor }}
+          />
+          <span className="font-medium">{cat.nome}</span>
+        </div>
+      )
+    },
+    {
+      key: 'descricao',
+      label: 'Descrição',
+      sortable: true,
+      render: (cat) => (
+        <span className="max-w-xs truncate block">{cat.descricao || '-'}</span>
+      )
+    },
+    {
+      key: 'ativo',
+      label: 'Status',
+      sortable: true,
+      render: (cat) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => toggleAtivo(cat)}
+        >
+          <Badge variant={cat.ativo ? "default" : "secondary"} className="whitespace-nowrap">
+            {cat.ativo ? 'Ativo' : 'Inativo'}
+          </Badge>
+        </Button>
+      )
+    },
+    {
+      key: 'created_at',
+      label: 'Criado em',
+      sortable: true,
+      render: (cat) => formatDateOnly(cat.created_at)
+    },
+    {
+      key: 'acoes',
+      label: 'Ações',
+      render: (cat) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => abrirDialog(cat)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => confirmarDelete(cat)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const filters = [
+    {
+      key: 'status',
+      label: 'Status',
+      value: statusFilter,
+      onChange: setStatusFilter,
+      options: [
+        { value: 'all', label: 'Todos' },
+        { value: 'ativo', label: 'Ativo' },
+        { value: 'inativo', label: 'Inativo' }
+      ]
+    }
+  ];
 
   return (
     <div className="space-y-6">
@@ -353,77 +468,30 @@ export function CategoriasDenuncia() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {categorias.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Criado em</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categorias.map((categoria) => (
-                    <TableRow key={categoria.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: categoria.cor }}
-                          />
-                          <span className="font-medium">{categoria.nome}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate">
-                        {categoria.descricao || '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleAtivo(categoria)}
-                        >
-                          <Badge variant={categoria.ativo ? "default" : "secondary"}>
-                            {categoria.ativo ? 'Ativo' : 'Inativo'}
-                          </Badge>
-                        </Button>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(categoria.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => abrirDialog(categoria)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => confirmarDelete(categoria)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Tag className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhuma categoria cadastrada</p>
-              <p className="text-sm">Clique em "Nova Categoria" para começar</p>
-            </div>
-          )}
+          <DataTable
+            data={filteredAndSortedCategorias}
+            columns={columns}
+            loading={loading}
+            searchPlaceholder="Buscar categorias..."
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            filters={filters}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={(field) => {
+              if (field === sortField) {
+                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortField(field);
+                setSortDirection('asc');
+              }
+            }}
+            emptyState={{
+              icon: <Tag className="w-12 h-12" />,
+              title: "Nenhuma categoria encontrada",
+              description: "Clique em 'Nova Categoria' para começar"
+            }}
+          />
         </CardContent>
       </Card>
 

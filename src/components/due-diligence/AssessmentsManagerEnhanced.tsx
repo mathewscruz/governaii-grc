@@ -3,10 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { StatCard } from '@/components/ui/stat-card';
-import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw, Award, TrendingUp, Filter, CheckCircle, Users, ArrowUpDown } from 'lucide-react';
+import { Plus, Send, Clock, AlertTriangle, FileText, Eye, User, Edit2, Trash2, RefreshCw, Award, TrendingUp, Filter, CheckCircle, Users, ArrowUpDown, MoreHorizontal, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDueDiligenceStats } from '@/hooks/useDueDiligenceStats';
@@ -54,7 +57,6 @@ function ReminderDialog({ assessment, open, onOpenChange, onSuccess }: ReminderD
     try {
       setSending(true);
       
-      // Buscar dados da empresa atual
       const { data: profileData } = await supabase
         .from('profiles')
         .select('empresa_id')
@@ -93,7 +95,6 @@ function ReminderDialog({ assessment, open, onOpenChange, onSuccess }: ReminderD
         }
       });
 
-      // Atualizar último lembrete enviado
       await supabase
         .from('due_diligence_assessments')
         .update({ ultimo_lembrete_enviado: new Date().toISOString() })
@@ -156,14 +157,20 @@ interface AssessmentsManagerEnhancedProps {
   } | null;
 }
 
+// Número de itens por página
+const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50];
+
 export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhancedProps = {}) {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [categoriaFilter, setCategoriaFilter] = useState('all');
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [reminderDialog, setReminderDialog] = useState<{ open: boolean; assessment: Assessment | null }>({
     open: false,
     assessment: null
@@ -204,14 +211,12 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
     fetchAssessments();
   }, []);
 
-  // Aplicar filtro inicial quando filter prop mudar
   useEffect(() => {
     if (filter?.fornecedorNome) {
       setSearchTerm(filter.fornecedorNome);
     }
   }, [filter]);
 
-  // Listener para criar nova assessment com fornecedor pré-selecionado
   useEffect(() => {
     const handleCreateAssessment = (event: CustomEvent) => {
       setAssessmentDialog({ 
@@ -245,11 +250,9 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
 
       if (error) throw error;
 
-      // Processar status baseado na data de expiração e conclusão
       const formattedAssessments: Assessment[] = (data || []).map(assessment => {
         let status = assessment.status;
         
-        // Se expirou e não foi concluído
         if (new Date() > new Date(assessment.data_expiracao) && status !== 'concluido') {
           status = 'expirado';
         }
@@ -286,6 +289,12 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
     }
   };
 
+  // Lista de categorias únicas
+  const categorias = useMemo(() => {
+    const cats = new Set(assessments.map(a => a.template.categoria));
+    return Array.from(cats).filter(Boolean);
+  }, [assessments]);
+
   // Filtrar e ordenar assessments
   const filteredAndSortedAssessments = useMemo(() => {
     let filtered = assessments;
@@ -302,12 +311,15 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
       filtered = filtered.filter(assessment => assessment.status === statusFilter);
     }
 
+    if (categoriaFilter && categoriaFilter !== 'all') {
+      filtered = filtered.filter(assessment => assessment.template.categoria === categoriaFilter);
+    }
+
     // Ordenar
     filtered.sort((a, b) => {
       let aValue: any = a[sortField as keyof Assessment];
       let bValue: any = b[sortField as keyof Assessment];
 
-      // Tratar campos aninhados
       if (sortField === 'template.nome') {
         aValue = a.template.nome;
         bValue = b.template.nome;
@@ -328,7 +340,20 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
     });
 
     return filtered;
-  }, [assessments, searchTerm, statusFilter, sortField, sortDirection]);
+  }, [assessments, searchTerm, statusFilter, categoriaFilter, sortField, sortDirection]);
+
+  // Paginação
+  const paginatedAssessments = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedAssessments.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndSortedAssessments, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredAndSortedAssessments.length / itemsPerPage);
+
+  // Reset page quando filtros mudam
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, categoriaFilter]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -363,6 +388,21 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
     return new Date() > new Date(dateString);
   };
 
+  const isExpiringSoon = (dateString: string) => {
+    const expirationDate = new Date(dateString);
+    const now = new Date();
+    const diffTime = expirationDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 && diffDays <= 7;
+  };
+
+  const getDaysUntilExpiration = (dateString: string) => {
+    const expirationDate = new Date(dateString);
+    const now = new Date();
+    const diffTime = expirationDate.getTime() - now.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
   const canSendReminder = (assessment: Assessment) => {
     return assessment.status !== 'concluido' && !isExpired(assessment.data_expiracao);
   };
@@ -374,7 +414,6 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
 
   const resendAssessment = async (assessment: Assessment) => {
     try {
-      // Buscar dados da empresa atual
       const { data: profileData } = await supabase
         .from('profiles')
         .select('empresa_id')
@@ -453,6 +492,14 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
     }
   };
 
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setCategoriaFilter('all');
+  };
+
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || categoriaFilter !== 'all';
+
   if (loading) {
     return <div className="text-center p-8">Carregando assessments...</div>;
   }
@@ -497,336 +544,417 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* StatCards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total de Avaliações"
-          value={assessments.length}
-          description="Avaliações criadas"
-          icon={<Users className="h-4 w-4" />}
-          loading={statsLoading}
-        />
-        <StatCard
-          title="Concluídas"
-          value={assessments.filter(a => a.status === 'concluido').length}
-          description={`${assessments.filter(a => a.status !== 'concluido').length} pendentes`}
-          icon={<CheckCircle className="h-4 w-4" />}
-          loading={statsLoading}
-          variant="success"
-        />
-        <StatCard
-          title="Expiradas"
-          value={assessments.filter(a => isExpired(a.data_expiracao) && a.status !== 'concluido').length}
-          description="Requerem atenção"
-          icon={<AlertTriangle className="h-4 w-4" />}
-          loading={statsLoading}
-          variant="destructive"
-        />
-        <StatCard
-          title="Score Médio"
-          value={`${calcularScoreMedio().toFixed(1)}%`}
-          description="Média das avaliações concluídas"
-          icon={<TrendingUp className="h-4 w-4" />}
-          loading={statsLoading}
-          variant={calcularScoreMedio() >= 80 ? 'success' : calcularScoreMedio() >= 60 ? 'warning' : 'destructive'}
-        />
-      </div>
+  // Função para obter classe de borda baseada na expiração
+  const getExpirationBorderClass = (assessment: Assessment) => {
+    if (assessment.status === 'concluido') return '';
+    if (isExpired(assessment.data_expiracao)) return 'border-l-4 border-l-red-500';
+    if (isExpiringSoon(assessment.data_expiracao)) return 'border-l-4 border-l-amber-500';
+    return '';
+  };
 
-      <Card className="rounded-lg border overflow-hidden">
-      <CardContent className="p-0">
-        <div className="p-6 pb-4">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Input
-                placeholder="Buscar por fornecedor ou template..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2">
-              <ReportsSidebar />
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={fetchAssessments}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Atualizar
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-              </Button>
-              <Button 
-                size="sm"
-                onClick={() => setAssessmentDialog({ open: true, assessment: null, mode: 'create' })}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Avaliação
-              </Button>
-            </div>
-          </div>
-          
-          {showFilters && (
-            <div className="bg-muted/50 rounded-lg p-4 mb-4">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filtrar por status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os status</SelectItem>
-                  <SelectItem value="pendente">Pendente</SelectItem>
-                  <SelectItem value="ativo">Ativo</SelectItem>
-                  <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                  <SelectItem value="concluido">Concluído</SelectItem>
-                  <SelectItem value="expirado">Expirado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+  return (
+    <TooltipProvider>
+      <div className="space-y-6">
+        {/* StatCards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total de Avaliações"
+            value={assessments.length}
+            description="Avaliações criadas"
+            icon={<Users className="h-4 w-4" />}
+            loading={statsLoading}
+          />
+          <StatCard
+            title="Concluídas"
+            value={assessments.filter(a => a.status === 'concluido').length}
+            description={`${assessments.filter(a => a.status !== 'concluido').length} pendentes`}
+            icon={<CheckCircle className="h-4 w-4" />}
+            loading={statsLoading}
+            variant="success"
+          />
+          <StatCard
+            title="Expiradas"
+            value={assessments.filter(a => isExpired(a.data_expiracao) && a.status !== 'concluido').length}
+            description="Requerem atenção"
+            icon={<AlertTriangle className="h-4 w-4" />}
+            loading={statsLoading}
+            variant="destructive"
+          />
+          <StatCard
+            title="Score Médio"
+            value={`${calcularScoreMedio().toFixed(1)}%`}
+            description="Média das avaliações concluídas"
+            icon={<TrendingUp className="h-4 w-4" />}
+            loading={statsLoading}
+            variant={calcularScoreMedio() >= 80 ? 'success' : calcularScoreMedio() >= 60 ? 'warning' : 'destructive'}
+          />
         </div>
 
-        {/* Lista de assessments */}
-        <div className="grid gap-4">
-          {filteredAndSortedAssessments.map((assessment) => (
-          <Card key={assessment.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{assessment.fornecedor_nome}</CardTitle>
-                  <CardDescription>{assessment.fornecedor_email}</CardDescription>
+        <Card className="rounded-lg border overflow-hidden">
+          <CardContent className="p-0">
+            <div className="p-6 pb-4">
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Input
+                    placeholder="Buscar por fornecedor ou template..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <ReportsSidebar />
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={fetchAssessments}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Atualizar
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filtros
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={() => setAssessmentDialog({ open: true, assessment: null, mode: 'create' })}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nova Avaliação
+                  </Button>
+                </div>
+              </div>
+              
+              {showFilters && (
+                <div className="bg-muted/50 rounded-lg p-4 mb-4 flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">Status:</Label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Filtrar por status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os status</SelectItem>
+                        <SelectItem value="pendente">Pendente</SelectItem>
+                        <SelectItem value="ativo">Ativo</SelectItem>
+                        <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                        <SelectItem value="concluido">Concluído</SelectItem>
+                        <SelectItem value="expirado">Expirado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">Categoria:</Label>
+                    <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        {categorias.map((cat) => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {hasActiveFilters && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={clearFilters}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Limpar Filtros
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Lista de assessments */}
+            <div className="grid gap-4 p-6 pt-0">
+              {paginatedAssessments.map((assessment) => (
+                <Card key={assessment.id} className={getExpirationBorderClass(assessment)}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg">{assessment.fornecedor_nome}</CardTitle>
+                        <CardDescription>{assessment.fornecedor_email}</CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(assessment.status)}
+                        {isExpired(assessment.data_expiracao) && assessment.status !== 'concluido' && (
+                          <Badge variant="destructive">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Expirado
+                          </Badge>
+                        )}
+                        {isExpiringSoon(assessment.data_expiracao) && assessment.status !== 'concluido' && !isExpired(assessment.data_expiracao) && (
+                          <Badge variant="outline" className="border-amber-500 text-amber-600">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Vence em {getDaysUntilExpiration(assessment.data_expiracao)}d
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Template:</span>
+                        <p className="font-medium">{assessment.template.nome}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Categoria:</span>
+                        <p className="font-medium">{assessment.template.categoria}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Expira em:</span>
+                        <p className="font-medium">
+                          {formatDateOnly(assessment.data_expiracao)}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Score:</span>
+                        <div className="flex items-center gap-2">
+                          {assessment.score_final && assessment.score_final > 0 ? (
+                            <button
+                              onClick={() => handleScoreClick(assessment)}
+                              className="hover:underline cursor-pointer flex items-center gap-2"
+                            >
+                              <Badge 
+                                variant={getScoreBadge(assessment.score_final).variant}
+                                className="transition-all hover:scale-105"
+                              >
+                                <Award className="h-3 w-3 mr-1" />
+                                {getScoreBadge(assessment.score_final).text}
+                                <span className="ml-1 font-mono">
+                                  {(assessment.score_final * 10).toFixed(1)}%
+                                </span>
+                              </Badge>
+                            </button>
+                          ) : assessment.status === 'concluido' ? (
+                            <span className="text-sm text-muted-foreground">Calculando...</span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Pendente</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        {assessment.data_inicio ? (
+                          <span>Iniciado em {formatDateOnly(assessment.data_inicio)}</span>
+                        ) : (
+                          <span>Ainda não iniciado</span>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => viewAssessment(assessment)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Visualizar
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Abrir formulário de avaliação</TooltipContent>
+                        </Tooltip>
+
+                        <DropdownMenu>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>Mais ações</TooltipContent>
+                          </Tooltip>
+                          <DropdownMenuContent align="end">
+                            {assessment.score_final && assessment.score_final > 0 && (
+                              <DropdownMenuItem onClick={() => setScoreDialog({ open: true, assessment, scoreData: null })}>
+                                <Award className="h-4 w-4 mr-2" />
+                                Ver Score
+                              </DropdownMenuItem>
+                            )}
+                            {assessment.status === 'concluido' && (
+                              <DropdownMenuItem onClick={() => setResponsesDialog({ open: true, assessment })}>
+                                <FileText className="h-4 w-4 mr-2" />
+                                Ver Respostas
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => setAssessmentDialog({ open: true, assessment, mode: 'view' })}>
+                              <Edit2 className="h-4 w-4 mr-2" />
+                              Detalhes
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => resendAssessment(assessment)}
+                              disabled={assessment.status === 'concluido'}
+                            >
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Reenviar
+                            </DropdownMenuItem>
+                            {canSendReminder(assessment) && (
+                              <DropdownMenuItem onClick={() => setReminderDialog({ open: true, assessment })}>
+                                <Send className="h-4 w-4 mr-2" />
+                                Lembrete
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => setDeleteDialog({ open: true, assessment })}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Paginação */}
+            {filteredAndSortedAssessments.length > 0 && (
+              <div className="flex items-center justify-between p-6 pt-0 border-t">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredAndSortedAssessments.length)} de {filteredAndSortedAssessments.length}</span>
+                  <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                    <SelectTrigger className="w-20 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ITEMS_PER_PAGE_OPTIONS.map((n) => (
+                        <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span>por página</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {getStatusBadge(assessment.status)}
-                  {isExpired(assessment.data_expiracao) && assessment.status !== 'concluido' && (
-                    <Badge variant="destructive">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      Expirado
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Template:</span>
-                  <p className="font-medium">{assessment.template.nome}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Categoria:</span>
-                  <p className="font-medium">{assessment.template.categoria}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Expira em:</span>
-                  <p className="font-medium">
-                    {new Date(assessment.data_expiracao).toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Score:</span>
-                  <div className="flex items-center gap-2">
-                    {assessment.score_final && assessment.score_final > 0 ? (
-                      <button
-                        onClick={() => handleScoreClick(assessment)}
-                        className="hover:underline cursor-pointer flex items-center gap-2"
-                      >
-                        <Badge 
-                          variant={getScoreBadge(assessment.score_final).variant}
-                          className="transition-all hover:scale-105"
-                        >
-                          <Award className="h-3 w-3 mr-1" />
-                          {getScoreBadge(assessment.score_final).text}
-                          <span className="ml-1 font-mono">
-                            {(assessment.score_final * 10).toFixed(1)}%
-                          </span>
-                        </Badge>
-                      </button>
-                    ) : assessment.status === 'concluido' ? (
-                      <span className="text-sm text-muted-foreground">Calculando...</span>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">Pendente</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  {assessment.data_inicio ? (
-                    <span>Iniciado em {new Date(assessment.data_inicio).toLocaleDateString('pt-BR')}</span>
-                  ) : (
-                    <span>Ainda não iniciado</span>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => viewAssessment(assessment)}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
                   >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Visualizar
+                    Anterior
                   </Button>
-
-                  {assessment.score_final && assessment.score_final > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setScoreDialog({ open: true, assessment, scoreData: null })}
-                    >
-                      <Award className="h-4 w-4 mr-1" />
-                      Ver Score
-                    </Button>
-                  )}
-
-                  {assessment.status === 'concluido' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setResponsesDialog({ open: true, assessment })}
-                    >
-                      <FileText className="h-4 w-4 mr-1" />
-                      Ver Respostas
-                    </Button>
-                  )}
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAssessmentDialog({ open: true, assessment, mode: 'view' })}
+                  <span className="text-sm">
+                    Página {currentPage} de {totalPages || 1}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage >= totalPages}
                   >
-                    <Edit2 className="h-4 w-4 mr-1" />
-                    Visualizar Dados
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => resendAssessment(assessment)}
-                    disabled={assessment.status === 'concluido'}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-1" />
-                    Reenviar
-                  </Button>
-
-                  {canSendReminder(assessment) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setReminderDialog({ open: true, assessment })}
-                    >
-                      <Send className="h-4 w-4 mr-1" />
-                      Lembrete
-                    </Button>
-                  )}
-
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setDeleteDialog({ open: true, assessment })}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Excluir
+                    Próxima
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-
-    <div>
-      {filteredAndSortedAssessments.length === 0 && !loading && (
-        <Card>
-          <CardContent className="text-center py-8">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nenhum assessment encontrado</h3>
-            <p className="text-muted-foreground">
-              {searchTerm || statusFilter !== 'all' 
-                ? 'Tente ajustar os filtros para encontrar assessments'
-                : 'Crie seu primeiro assessment para começar'}
-            </p>
+            )}
           </CardContent>
         </Card>
-      )}
 
-      <ReminderDialog
-        assessment={reminderDialog.assessment}
-        open={reminderDialog.open}
-        onOpenChange={(open) => setReminderDialog({ open, assessment: null })}
-        onSuccess={fetchAssessments}
-      />
+        <div>
+          {filteredAndSortedAssessments.length === 0 && !loading && (
+            <Card>
+              <CardContent className="text-center py-8">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Nenhum assessment encontrado</h3>
+                <p className="text-muted-foreground">
+                  {hasActiveFilters 
+                    ? 'Tente ajustar os filtros para encontrar assessments'
+                    : 'Crie seu primeiro assessment para começar'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
-      <AssessmentDialog
-        open={assessmentDialog.open}
-        onOpenChange={(open) => setAssessmentDialog({ open, assessment: null, mode: 'create' })}
-        assessment={assessmentDialog.assessment as any}
-        mode={assessmentDialog.mode}
-        onSuccess={fetchAssessments}
-      />
+          <ReminderDialog
+            assessment={reminderDialog.assessment}
+            open={reminderDialog.open}
+            onOpenChange={(open) => setReminderDialog({ open, assessment: null })}
+            onSuccess={fetchAssessments}
+          />
 
-      <ConfirmDialog
-        open={deleteDialog.open}
-        onOpenChange={(open) => setDeleteDialog({ open, assessment: null })}
-        title="Confirmar Exclusão"
-        description={`Tem certeza que deseja excluir a avaliação de ${deleteDialog.assessment?.fornecedor_nome}? Esta ação não pode ser desfeita.`}
-        onConfirm={() => deleteDialog.assessment && deleteAssessment(deleteDialog.assessment)}
-        confirmText="Excluir"
-        cancelText="Cancelar"
-      />
+          <AssessmentDialog
+            open={assessmentDialog.open}
+            onOpenChange={(open) => setAssessmentDialog({ open, assessment: null, mode: 'create' })}
+            assessment={assessmentDialog.assessment as any}
+            mode={assessmentDialog.mode}
+            onSuccess={fetchAssessments}
+          />
 
-      {/* Dialog de Score com Integrações */}
-      <Dialog open={scoreDialog.open} onOpenChange={(open) => setScoreDialog({ open, assessment: null, scoreData: null })}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
-              Resultado da Avaliação - {scoreDialog.assessment?.fornecedor_nome}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              {scoreDialog.assessment && (
-                <ScoreVisualizationWrapper assessment={scoreDialog.assessment} />
-              )}
-            </div>
-            
-            <div className="lg:col-span-1">
-              {scoreDialog.assessment && scoreDialog.assessment.score_final && (
-                <IntegrationSuggestions 
-                  assessment={{
-                    id: scoreDialog.assessment.id,
-                    fornecedor_nome: scoreDialog.assessment.fornecedor_nome,
-                    score_final: scoreDialog.assessment.score_final
-                  }}
-                />
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          <ConfirmDialog
+            open={deleteDialog.open}
+            onOpenChange={(open) => setDeleteDialog({ open, assessment: null })}
+            title="Confirmar Exclusão"
+            description={`Tem certeza que deseja excluir a avaliação de ${deleteDialog.assessment?.fornecedor_nome}? Esta ação não pode ser desfeita.`}
+            onConfirm={() => deleteDialog.assessment && deleteAssessment(deleteDialog.assessment)}
+            confirmText="Excluir"
+            cancelText="Cancelar"
+          />
 
-      {/* Dialog de Respostas */}
-      <AssessmentResponsesViewer
-        open={responsesDialog.open}
-        onOpenChange={(open) => setResponsesDialog({ open, assessment: null })}
-        assessment={responsesDialog.assessment}
-      />
-    </div>
-    </div>
+          {/* Dialog de Score com Integrações */}
+          <Dialog open={scoreDialog.open} onOpenChange={(open) => setScoreDialog({ open, assessment: null, scoreData: null })}>
+            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  Resultado da Avaliação - {scoreDialog.assessment?.fornecedor_nome}
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  {scoreDialog.assessment && (
+                    <ScoreVisualizationWrapper assessment={scoreDialog.assessment} />
+                  )}
+                </div>
+                
+                <div className="lg:col-span-1">
+                  {scoreDialog.assessment && scoreDialog.assessment.score_final && (
+                    <IntegrationSuggestions 
+                      assessment={{
+                        id: scoreDialog.assessment.id,
+                        fornecedor_nome: scoreDialog.assessment.fornecedor_nome,
+                        score_final: scoreDialog.assessment.score_final
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Dialog de Respostas */}
+          <AssessmentResponsesViewer
+            open={responsesDialog.open}
+            onOpenChange={(open) => setResponsesDialog({ open, assessment: null })}
+            assessment={responsesDialog.assessment}
+          />
+        </div>
+      </div>
+    </TooltipProvider>
   );
 }
 

@@ -23,8 +23,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDateOnly } from '@/lib/date-utils';
 
 interface DenunciaDialogProps {
   denuncia: any;
@@ -92,7 +91,7 @@ export function DenunciaDialog({
   const carregarDados = async () => {
     setLoading(true);
     try {
-      // Carregar movimentações (sem join por enquanto)
+      // Carregar movimentações
       const { data: movData } = await supabase
         .from('denuncias_movimentacoes')
         .select('*')
@@ -224,6 +223,14 @@ export function DenunciaDialog({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const formatDateTime = (dateString: string) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    const datePart = formatDateOnly(dateString);
+    const timePart = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return `${datePart} ${timePart}`;
+  };
+
   const gravidadeMap = {
     baixa: { label: 'Baixa', color: 'bg-green-100 text-green-800' },
     media: { label: 'Média', color: 'bg-yellow-100 text-yellow-800' },
@@ -283,7 +290,7 @@ export function DenunciaDialog({
                     <Label className="text-xs text-muted-foreground">Data da Denúncia</Label>
                     <div className="flex items-center gap-1 text-sm">
                       <Calendar className="h-4 w-4" />
-                      {format(new Date(denuncia.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                      {formatDateTime(denuncia.created_at)}
                     </div>
                   </div>
 
@@ -447,7 +454,7 @@ export function DenunciaDialog({
                             {formatBytes(anexo.tamanho_arquivo)} • {anexo.tipo_anexo}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {format(new Date(anexo.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                            {formatDateTime(anexo.created_at)}
                           </div>
                         </div>
                       </div>
@@ -480,23 +487,24 @@ export function DenunciaDialog({
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
                           <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                          <div className="space-y-1">
-                            <div className="font-medium">{mov.acao.replace('_', ' ').toUpperCase()}</div>
-                            {mov.status_anterior && mov.status_novo && (
-                              <div className="text-sm text-muted-foreground">
-                                De "{mov.status_anterior}" para "{mov.status_novo}"
-                              </div>
-                            )}
+                          <div>
+                            <div className="font-medium">
+                              {mov.acao === 'status_alterado' 
+                                ? `Status alterado de "${mov.status_anterior}" para "${mov.status_novo}"`
+                                : mov.acao === 'observacao_adicionada'
+                                ? 'Observação adicionada'
+                                : mov.acao
+                              }
+                            </div>
                             {mov.observacoes && (
-                              <div className="text-sm bg-muted p-2 rounded mt-2">
-                                <MessageSquare className="h-4 w-4 inline mr-1" />
+                              <div className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
                                 {mov.observacoes}
                               </div>
                             )}
-                            <div className="text-xs text-muted-foreground">
-                              {mov.usuario?.nome || 'Sistema'} • {format(new Date(mov.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                            </div>
                           </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDateTime(mov.created_at)}
                         </div>
                       </div>
                     </CardContent>
@@ -504,7 +512,8 @@ export function DenunciaDialog({
                 ))
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nenhuma movimentação encontrada
+                  <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhuma movimentação registrada</p>
                 </div>
               )}
             </div>
