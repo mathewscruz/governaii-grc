@@ -33,16 +33,6 @@ interface AuditoriaCardAccordionProps {
   onOpenItens: () => void;
   auditorNome?: string;
 }
-  counts: { trabalhos: number; achados: number; recomendacoes: number; controles?: number };
-  onEdit: () => void;
-  onDelete: () => void;
-  onOpenTrabalhos: () => void;
-  onOpenAchados: () => void;
-  onOpenRecomendacoes: () => void;
-  onOpenEvidencias: () => void;
-  onOpenControles: () => void;
-  auditorNome?: string;
-}
 
 const getStatusBadgeVariant = (status: string): "default" | "destructive" | "secondary" | "outline" => {
   switch (status) {
@@ -87,6 +77,7 @@ export function AuditoriaCardAccordion({
   onOpenRecomendacoes,
   onOpenEvidencias,
   onOpenControles,
+  onOpenItens,
   auditorNome
 }: AuditoriaCardAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
