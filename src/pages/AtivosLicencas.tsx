@@ -11,6 +11,7 @@ import { LicencaDialog } from '@/components/ativos/LicencaDialog';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
+import { Card, CardContent } from '@/components/ui/card';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useLicencasStats } from '@/hooks/useLicencasStats';
 import { formatDateOnly } from '@/lib/date-utils';
@@ -430,59 +431,63 @@ export default function AtivosLicencas() {
         </Button>
       </div>
 
-      <DataTable
-        data={filteredAndSortedLicencas}
-        columns={columns}
-        loading={isLoading}
-        searchable
-        searchPlaceholder="Buscar licenças..."
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        filters={filters}
-        sortField={sortField}
-        sortDirection={sortDirection}
-        onSort={(field) => {
-          if (sortField === field) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-          } else {
-            setSortField(field);
-            setSortDirection('asc');
-          }
-        }}
-        onExport={() => {
-          const csvContent = [
-            ['Nome', 'Tipo', 'Fornecedor', 'Vencimento', 'Valor Renovação', 'Criticidade', 'Status', 'Responsável'].join(','),
-            ...filteredAndSortedLicencas.map(l => [
-              l.nome,
-              l.tipo_licenca,
-              l.fornecedor,
-              formatDateOnly(l.data_vencimento),
-              l.valor_renovacao?.toString() || '',
-              l.criticidade,
-              l.status,
-              l.responsavel_nome || ''
-            ].join(','))
-          ].join('\n');
+      <Card className="rounded-lg border overflow-hidden">
+        <CardContent className="p-0">
+          <DataTable
+            data={filteredAndSortedLicencas}
+            columns={columns}
+            loading={isLoading}
+            searchable
+            searchPlaceholder="Buscar licenças..."
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            filters={filters}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={(field) => {
+              if (sortField === field) {
+                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortField(field);
+                setSortDirection('asc');
+              }
+            }}
+            onExport={() => {
+              const csvContent = [
+                ['Nome', 'Tipo', 'Fornecedor', 'Vencimento', 'Valor Renovação', 'Criticidade', 'Status', 'Responsável'].join(','),
+                ...filteredAndSortedLicencas.map(l => [
+                  l.nome,
+                  l.tipo_licenca,
+                  l.fornecedor,
+                  formatDateOnly(l.data_vencimento),
+                  l.valor_renovacao?.toString() || '',
+                  l.criticidade,
+                  l.status,
+                  l.responsavel_nome || ''
+                ].join(','))
+              ].join('\n');
 
-          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = `licencas-${new Date().toISOString().split('T')[0]}.csv`;
-          link.click();
-        }}
-        emptyState={{
-          icon: <FileCheck className="h-8 w-8" />,
-          title: searchTerm ? "Nenhuma licença encontrada" : "Nenhuma licença cadastrada",
-          description: searchTerm 
-            ? "Tente ajustar os termos de busca ou limpe os filtros."
-            : "Comece cadastrando as licenças de software da sua organização para monitorar renovações e custos.",
-          action: !searchTerm ? {
-            label: "Cadastrar Primeira Licença",
-            onClick: handleNew
-          } : undefined
-        }}
-        onRefresh={refetch}
-      />
+              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+              const link = document.createElement('a');
+              link.href = URL.createObjectURL(blob);
+              link.download = `licencas-${new Date().toISOString().split('T')[0]}.csv`;
+              link.click();
+            }}
+            emptyState={{
+              icon: <FileCheck className="h-8 w-8" />,
+              title: searchTerm ? "Nenhuma licença encontrada" : "Nenhuma licença cadastrada",
+              description: searchTerm 
+                ? "Tente ajustar os termos de busca ou limpe os filtros."
+                : "Comece cadastrando as licenças de software da sua organização para monitorar renovações e custos.",
+              action: !searchTerm ? {
+                label: "Cadastrar Primeira Licença",
+                onClick: handleNew
+              } : undefined
+            }}
+            onRefresh={refetch}
+          />
+        </CardContent>
+      </Card>
 
       {/* Diálogos */}
       <LicencaDialog

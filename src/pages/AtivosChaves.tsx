@@ -11,6 +11,7 @@ import { ChaveDialog } from '@/components/ativos/ChaveDialog';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
+import { Card, CardContent } from '@/components/ui/card';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useChavesStats } from '@/hooks/useChavesStats';
 import { formatDateOnly } from '@/lib/date-utils';
@@ -449,59 +450,63 @@ export default function AtivosChaves() {
         </Button>
       </div>
 
-      <DataTable
-        data={filteredAndSortedChaves}
-        columns={columns}
-        loading={isLoading}
-        searchable
-        searchPlaceholder="Buscar chaves..."
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        filters={filters}
-        sortField={sortField}
-        sortDirection={sortDirection}
-        onSort={(field) => {
-          if (sortField === field) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-          } else {
-            setSortField(field);
-            setSortDirection('asc');
-          }
-        }}
-        onExport={() => {
-          const csvContent = [
-            ['Nome', 'Tipo', 'Ambiente', 'Localização', 'Próxima Rotação', 'Criticidade', 'Status', 'Responsável'].join(','),
-            ...filteredAndSortedChaves.map(c => [
-              c.nome,
-              c.tipo_chave,
-              c.ambiente,
-              c.localizacao,
-              formatDateOnly(c.data_proxima_rotacao),
-              c.criticidade,
-              c.status,
-              c.responsavel_nome || ''
-            ].join(','))
-          ].join('\n');
+      <Card className="rounded-lg border overflow-hidden">
+        <CardContent className="p-0">
+          <DataTable
+            data={filteredAndSortedChaves}
+            columns={columns}
+            loading={isLoading}
+            searchable
+            searchPlaceholder="Buscar chaves..."
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            filters={filters}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={(field) => {
+              if (sortField === field) {
+                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortField(field);
+                setSortDirection('asc');
+              }
+            }}
+            onExport={() => {
+              const csvContent = [
+                ['Nome', 'Tipo', 'Ambiente', 'Localização', 'Próxima Rotação', 'Criticidade', 'Status', 'Responsável'].join(','),
+                ...filteredAndSortedChaves.map(c => [
+                  c.nome,
+                  c.tipo_chave,
+                  c.ambiente,
+                  c.localizacao,
+                  formatDateOnly(c.data_proxima_rotacao),
+                  c.criticidade,
+                  c.status,
+                  c.responsavel_nome || ''
+                ].join(','))
+              ].join('\n');
 
-          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = `chaves-criptograficas-${new Date().toISOString().split('T')[0]}.csv`;
-          link.click();
-        }}
-        emptyState={{
-          icon: <Key className="h-8 w-8" />,
-          title: searchTerm ? "Nenhuma chave encontrada" : "Nenhuma chave cadastrada",
-          description: searchTerm 
-            ? "Tente ajustar os termos de busca ou limpe os filtros."
-            : "Comece cadastrando as chaves criptográficas da sua organização para monitorar rotações e manter a segurança.",
-          action: !searchTerm ? {
-            label: "Cadastrar Primeira Chave",
-            onClick: handleNew
-          } : undefined
-        }}
-        onRefresh={refetch}
-      />
+              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+              const link = document.createElement('a');
+              link.href = URL.createObjectURL(blob);
+              link.download = `chaves-criptograficas-${new Date().toISOString().split('T')[0]}.csv`;
+              link.click();
+            }}
+            emptyState={{
+              icon: <Key className="h-8 w-8" />,
+              title: searchTerm ? "Nenhuma chave encontrada" : "Nenhuma chave cadastrada",
+              description: searchTerm 
+                ? "Tente ajustar os termos de busca ou limpe os filtros."
+                : "Comece cadastrando as chaves criptográficas da sua organização para monitorar rotações e manter a segurança.",
+              action: !searchTerm ? {
+                label: "Cadastrar Primeira Chave",
+                onClick: handleNew
+              } : undefined
+            }}
+            onRefresh={refetch}
+          />
+        </CardContent>
+      </Card>
 
       {/* Diálogos */}
       <ChaveDialog
