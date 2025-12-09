@@ -423,25 +423,25 @@ const LandingPage = () => {
               </div>
 
               {/* Stats - Indicadores reais */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 landing-fade-in-up landing-stagger-5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 pt-6 landing-fade-in-up landing-stagger-5">
                 {stats.map((stat, index) => (
-                  <div key={index} className="text-center p-3 rounded-lg bg-white/5 border border-white/10">
-                    <stat.icon className="h-5 w-5 text-blue-400 mx-auto mb-2" />
-                    <div className="text-xl sm:text-2xl font-bold text-white">{stat.value}</div>
-                    <div className="text-xs text-gray-500">{stat.label}</div>
+                  <div key={index} className="text-center p-2 sm:p-3 rounded-lg bg-white/5 border border-white/10 min-w-0">
+                    <stat.icon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 mx-auto mb-1 sm:mb-2" />
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate">{stat.value}</div>
+                    <div className="text-[10px] sm:text-xs text-gray-500 leading-tight">{stat.label}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Right Content - Dashboard Preview */}
-            <div className="relative landing-fade-in-right landing-stagger-3">
+            <div className="relative landing-fade-in-right landing-stagger-3 hidden lg:block">
               <div className="relative landing-float">
                 {/* Glow behind */}
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 to-cyan-500/30 blur-3xl rounded-3xl" />
                 
                 {/* Main Dashboard Card */}
-                <div className="relative landing-glass rounded-2xl p-6 landing-border-gradient">
+                <div className="relative landing-glass rounded-2xl p-4 lg:p-6 landing-border-gradient">
                   <div className="space-y-4">
                     {/* Header */}
                     <div className="flex items-center justify-between pb-4 border-b border-white/10">
@@ -454,27 +454,27 @@ const LandingPage = () => {
                     </div>
 
                     {/* Score Cards */}
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-white/5 rounded-lg p-3 text-center">
-                        <div className="text-2xl font-bold text-green-400">87%</div>
-                        <div className="text-xs text-gray-500">Conformidade</div>
+                    <div className="grid grid-cols-3 gap-2 lg:gap-3">
+                      <div className="bg-white/5 rounded-lg p-2 lg:p-3 text-center">
+                        <div className="text-lg lg:text-2xl font-bold text-green-400">87%</div>
+                        <div className="text-[10px] lg:text-xs text-gray-500">Conformidade</div>
                       </div>
-                      <div className="bg-white/5 rounded-lg p-3 text-center">
-                        <div className="text-2xl font-bold text-blue-400">4.2</div>
-                        <div className="text-xs text-gray-500">Score NIST</div>
+                      <div className="bg-white/5 rounded-lg p-2 lg:p-3 text-center">
+                        <div className="text-lg lg:text-2xl font-bold text-blue-400">4.2</div>
+                        <div className="text-[10px] lg:text-xs text-gray-500">Score NIST</div>
                       </div>
-                      <div className="bg-white/5 rounded-lg p-3 text-center">
-                        <div className="text-2xl font-bold text-cyan-400">12</div>
-                        <div className="text-xs text-gray-500">Riscos Ativos</div>
+                      <div className="bg-white/5 rounded-lg p-2 lg:p-3 text-center">
+                        <div className="text-lg lg:text-2xl font-bold text-cyan-400">12</div>
+                        <div className="text-[10px] lg:text-xs text-gray-500">Riscos Ativos</div>
                       </div>
                     </div>
 
                     {/* Chart Placeholder */}
-                    <div className="h-32 bg-gradient-to-t from-blue-500/10 to-transparent rounded-lg flex items-end justify-around px-4 pb-4">
+                    <div className="h-24 lg:h-32 bg-gradient-to-t from-blue-500/10 to-transparent rounded-lg flex items-end justify-around px-4 pb-4">
                       {[40, 65, 45, 80, 55, 90, 70].map((height, i) => (
                         <div
                           key={i}
-                          className="w-6 bg-gradient-to-t from-blue-500 to-cyan-400 rounded-t"
+                          className="w-4 lg:w-6 bg-gradient-to-t from-blue-500 to-cyan-400 rounded-t"
                           style={{ height: `${height}%` }}
                         />
                       ))}
@@ -484,8 +484,8 @@ const LandingPage = () => {
                     <div className="space-y-2">
                       {["Auditoria ISO 27001 - Em andamento", "Risco #45 - Mitigação concluída", "Controle AC-01 - Aprovado"].map((item, i) => (
                         <div key={i} className="flex items-center gap-3 text-xs text-gray-400 bg-white/5 rounded-lg p-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-400" />
-                          {item}
+                          <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0" />
+                          <span className="truncate">{item}</span>
                         </div>
                       ))}
                     </div>
@@ -516,28 +516,28 @@ const LandingPage = () => {
         {/* Infinite Carousel */}
         <div className="relative">
           {/* Gradient masks */}
-          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#0A1628] to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#0A1628] to-transparent z-10 pointer-events-none" />
+          <div className="absolute left-0 top-0 bottom-0 w-12 sm:w-24 md:w-32 bg-gradient-to-r from-[#0A1628] to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-12 sm:w-24 md:w-32 bg-gradient-to-l from-[#0A1628] to-transparent z-10 pointer-events-none" />
           
           {/* Scrolling content */}
           <div className="flex animate-scroll-left">
             {/* First set */}
-            <div className="flex gap-8 shrink-0 px-4">
+            <div className="flex gap-4 sm:gap-6 md:gap-8 shrink-0 px-4">
               {frameworks.map((framework, index) => (
                 <div
                   key={`first-${index}`}
-                  className="shrink-0 px-6 py-3 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-blue-500/50 transition-all text-sm font-medium whitespace-nowrap"
+                  className="shrink-0 px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-blue-500/50 transition-all text-xs sm:text-sm font-medium whitespace-nowrap"
                 >
                   {framework}
                 </div>
               ))}
             </div>
             {/* Duplicate for seamless loop */}
-            <div className="flex gap-8 shrink-0 px-4">
+            <div className="flex gap-4 sm:gap-6 md:gap-8 shrink-0 px-4">
               {frameworks.map((framework, index) => (
                 <div
                   key={`second-${index}`}
-                  className="shrink-0 px-6 py-3 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-blue-500/50 transition-all text-sm font-medium whitespace-nowrap"
+                  className="shrink-0 px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-blue-500/50 transition-all text-xs sm:text-sm font-medium whitespace-nowrap"
                 >
                   {framework}
                 </div>
@@ -551,85 +551,85 @@ const LandingPage = () => {
       <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
       {/* Esqueça as Planilhas Section */}
-      <section className="relative py-20 bg-gradient-to-b from-[#0A1628] via-[#0F2340] to-[#0A1628]">
+      <section className="relative py-12 sm:py-16 lg:py-20 bg-gradient-to-b from-[#0A1628] via-[#0F2340] to-[#0A1628]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
               Esqueça as <span className="landing-gradient-text">Planilhas</span>
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
+            <p className="text-gray-400 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
               Centralize toda a governança da sua empresa em um único lugar. 
               Chega de arquivos espalhados, versões desatualizadas e erros manuais.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
             {/* Left - Visual Transition */}
-            <div className="relative">
-              <div className="flex items-center justify-center gap-8">
+            <div className="relative w-full lg:w-auto lg:flex-1">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 lg:gap-8">
                 {/* Spreadsheet Chaos */}
                 <div className="relative">
-                  <div className="w-48 h-56 bg-gradient-to-br from-red-900/30 to-red-800/20 rounded-2xl border border-red-500/30 p-4 transform -rotate-6 shadow-2xl">
-                    <div className="flex items-center gap-2 mb-3">
-                      <TableProperties className="h-5 w-5 text-red-400" />
-                      <span className="text-xs text-red-400 font-medium">planilha_v23_final.xlsx</span>
+                  <div className="w-36 h-44 sm:w-44 sm:h-52 lg:w-48 lg:h-56 bg-gradient-to-br from-red-900/30 to-red-800/20 rounded-2xl border border-red-500/30 p-3 sm:p-4 transform -rotate-6 shadow-2xl">
+                    <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                      <TableProperties className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
+                      <span className="text-[10px] sm:text-xs text-red-400 font-medium truncate">planilha_v23.xlsx</span>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 sm:space-y-2">
                       {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="h-4 bg-red-500/10 rounded animate-pulse" style={{ width: `${60 + Math.random() * 40}%` }} />
+                        <div key={i} className="h-3 sm:h-4 bg-red-500/10 rounded animate-pulse" style={{ width: `${60 + Math.random() * 40}%` }} />
                       ))}
                     </div>
-                    <div className="absolute -bottom-2 -right-2 bg-red-500 text-white text-[10px] px-2 py-1 rounded-full">
+                    <div className="absolute -bottom-2 -right-2 bg-red-500 text-white text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">
                       DESATUALIZADO
                     </div>
                   </div>
-                  <div className="absolute -top-4 -left-4 w-40 h-48 bg-gradient-to-br from-orange-900/30 to-orange-800/20 rounded-2xl border border-orange-500/30 p-3 transform rotate-3 -z-10">
+                  <div className="hidden sm:block absolute -top-4 -left-4 w-32 sm:w-40 h-40 sm:h-48 bg-gradient-to-br from-orange-900/30 to-orange-800/20 rounded-2xl border border-orange-500/30 p-3 transform rotate-3 -z-10">
                     <div className="space-y-2">
                       {[1, 2, 3].map((i) => (
                         <div key={i} className="h-3 bg-orange-500/10 rounded" style={{ width: `${50 + Math.random() * 50}%` }} />
                       ))}
                     </div>
                   </div>
-                  <div className="absolute -top-8 left-8 w-36 h-44 bg-gradient-to-br from-yellow-900/30 to-yellow-800/20 rounded-2xl border border-yellow-500/30 p-3 transform -rotate-12 -z-20 opacity-60" />
+                  <div className="hidden md:block absolute -top-8 left-8 w-28 sm:w-36 h-36 sm:h-44 bg-gradient-to-br from-yellow-900/30 to-yellow-800/20 rounded-2xl border border-yellow-500/30 p-3 transform -rotate-12 -z-20 opacity-60" />
                 </div>
 
                 {/* Arrow */}
-                <div className="flex flex-col items-center gap-2">
-                  <RefreshCw className="h-8 w-8 text-blue-400 animate-spin-slow" />
-                  <ArrowRight className="h-12 w-12 text-blue-400" />
-                  <span className="text-xs text-blue-400 font-medium">TRANSFORME</span>
+                <div className="flex flex-row sm:flex-col items-center gap-2 py-2 sm:py-0">
+                  <RefreshCw className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400 animate-spin-slow" />
+                  <ArrowRight className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-blue-400 rotate-90 sm:rotate-0" />
+                  <span className="text-[10px] sm:text-xs text-blue-400 font-medium">TRANSFORME</span>
                 </div>
 
                 {/* GovernAII System */}
                 <div className="relative">
-                  <div className="w-52 h-60 bg-gradient-to-br from-blue-900/40 to-cyan-800/30 rounded-2xl border border-blue-500/50 p-4 shadow-2xl shadow-blue-500/20">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Shield className="h-5 w-5 text-blue-400" />
-                      <span className="text-xs text-blue-400 font-medium">GovernAII</span>
+                  <div className="w-40 h-48 sm:w-48 sm:h-56 lg:w-52 lg:h-60 bg-gradient-to-br from-blue-900/40 to-cyan-800/30 rounded-2xl border border-blue-500/50 p-3 sm:p-4 shadow-2xl shadow-blue-500/20">
+                    <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                      <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
+                      <span className="text-[10px] sm:text-xs text-blue-400 font-medium">GovernAII</span>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        <span className="text-xs text-gray-300">Riscos</span>
+                        <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+                        <span className="text-[10px] sm:text-xs text-gray-300">Riscos</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        <span className="text-xs text-gray-300">Controles</span>
+                        <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+                        <span className="text-[10px] sm:text-xs text-gray-300">Controles</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        <span className="text-xs text-gray-300">Gap Analysis</span>
+                        <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+                        <span className="text-[10px] sm:text-xs text-gray-300">Gap Analysis</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        <span className="text-xs text-gray-300">Documentos</span>
+                        <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+                        <span className="text-[10px] sm:text-xs text-gray-300">Documentos</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        <span className="text-xs text-gray-300">Auditorias</span>
+                        <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+                        <span className="text-[10px] sm:text-xs text-gray-300">Auditorias</span>
                       </div>
                     </div>
-                    <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-[10px] px-2 py-1 rounded-full">
+                    <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
                       INTEGRADO
                     </div>
                   </div>
@@ -638,26 +638,26 @@ const LandingPage = () => {
             </div>
 
             {/* Right - Problems vs Solutions */}
-            <div className="space-y-4">
+            <div className="w-full lg:flex-1 space-y-3 sm:space-y-4">
               {spreadsheetProblems.map((item, index) => (
-                <div key={index} className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-blue-500/30 transition-colors">
-                  <div className="flex items-center gap-3 flex-1">
-                    <XCircle className="h-5 w-5 text-red-400 shrink-0" />
-                    <span className="text-sm text-gray-400 line-through">{item.problem}</span>
+                <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 p-3 sm:p-4 rounded-xl bg-white/5 border border-white/10 hover:border-blue-500/30 transition-colors">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-400 shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-400 line-through">{item.problem}</span>
                   </div>
-                  <ArrowRight className="h-5 w-5 text-gray-600 shrink-0" />
-                  <div className="flex items-center gap-3 flex-1">
-                    <CheckCircle className="h-5 w-5 text-green-400 shrink-0" />
-                    <span className="text-sm text-white font-medium">{item.solution}</span>
+                  <ArrowRight className="hidden sm:block h-4 w-4 sm:h-5 sm:w-5 text-gray-600 shrink-0" />
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 pl-6 sm:pl-0">
+                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 shrink-0" />
+                    <span className="text-xs sm:text-sm text-white font-medium">{item.solution}</span>
                   </div>
                 </div>
               ))}
 
-              <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-500/30">
-                <p className="text-lg text-white font-medium mb-2">
+              <div className="mt-4 sm:mt-6 p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-500/30">
+                <p className="text-base sm:text-lg text-white font-medium mb-2">
                   Mais de 500 horas economizadas por ano
                 </p>
-                <p className="text-sm text-gray-400">
+                <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
                   Empresas que migram de planilhas para o GovernAII relatam redução significativa 
                   no tempo gasto com gestão manual e retrabalho.
                 </p>
@@ -671,20 +671,20 @@ const LandingPage = () => {
       <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
       {/* How It Works Section */}
-      <section id="como-funciona" className="relative py-20 bg-[#0F2340]/50">
+      <section id="como-funciona" className="relative py-12 sm:py-16 lg:py-20 bg-[#0F2340]/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
               Como <span className="landing-gradient-text">Funciona</span>
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
+            <p className="text-gray-400 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
               Em três passos simples, transforme sua gestão de governança e compliance
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
             {howItWorks.map((item, index) => (
-              <div key={index} className="relative">
+              <div key={index} className={`relative ${index === 2 ? 'sm:col-span-2 md:col-span-1 sm:max-w-md sm:mx-auto md:max-w-none' : ''}`}>
                 {/* Connector line with flow animation */}
                 {index < howItWorks.length - 1 && (
                   <div className="hidden md:block absolute top-16 left-1/2 w-full h-1 flow-line-container rounded-full">
@@ -697,25 +697,25 @@ const LandingPage = () => {
                   </div>
                 )}
                 
-                <div className="relative landing-glass rounded-2xl p-8 text-center landing-border-gradient hover:transform hover:scale-105 transition-all duration-300">
+                <div className="relative landing-glass rounded-2xl p-5 sm:p-6 lg:p-8 text-center landing-border-gradient hover:transform hover:scale-105 transition-all duration-300">
                   {/* Step number */}
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                  <div className="absolute -top-3 sm:-top-4 left-1/2 -translate-x-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
                     {item.step}
                   </div>
                   
-                  <div className="inline-flex p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 mb-6 mt-2">
-                    <item.icon className="h-8 w-8 text-blue-400" />
+                  <div className="inline-flex p-3 sm:p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 mb-4 sm:mb-6 mt-2">
+                    <item.icon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400" />
                   </div>
                   
-                  <h3 className="text-xl font-semibold text-white mb-3">{item.title}</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">{item.description}</p>
+                  <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 sm:mb-3">{item.title}</h3>
+                  <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">{item.description}</p>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Diferenciais */}
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="mt-8 sm:mt-12 lg:mt-16 grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             {[
               { icon: Zap, text: "Avaliação com IA" },
               { icon: FileCheck, text: "Templates Prontos" },
@@ -724,10 +724,10 @@ const LandingPage = () => {
             ].map((item, index) => (
               <div
                 key={index}
-                className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10"
+                className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl bg-white/5 border border-white/10"
               >
-                <item.icon className="h-5 w-5 text-green-400 shrink-0" />
-                <span className="text-sm text-gray-300">{item.text}</span>
+                <item.icon className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 shrink-0" />
+                <span className="text-xs sm:text-sm text-gray-300">{item.text}</span>
               </div>
             ))}
           </div>
@@ -738,35 +738,35 @@ const LandingPage = () => {
       <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
       {/* Features Section */}
-      <section id="modulos" className="relative py-20">
+      <section id="modulos" className="relative py-12 sm:py-16 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
               Módulos <span className="landing-gradient-text">Integrados</span>
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
+            <p className="text-gray-400 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
               Uma plataforma completa para gestão de governança, riscos e conformidade
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="group landing-glass-light rounded-2xl p-5 hover:bg-white/5 transition-all duration-300 landing-card-glow"
+                className="group landing-glass-light rounded-2xl p-4 sm:p-5 hover:bg-white/5 transition-all duration-300 landing-card-glow"
               >
                 <div
-                  className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${feature.color} mb-4 group-hover:scale-110 transition-transform`}
+                  className={`inline-flex p-2.5 sm:p-3 rounded-xl bg-gradient-to-br ${feature.color} mb-3 sm:mb-4 group-hover:scale-110 transition-transform`}
                 >
-                  <feature.icon className="h-5 w-5 text-white" />
+                  <feature.icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-white">{feature.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>
+                <h3 className="text-base sm:text-lg font-semibold mb-2 text-white">{feature.title}</h3>
+                <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">{feature.description}</p>
                 <button 
                   onClick={() => setSelectedFeature(index)}
-                  className="mt-4 flex items-center text-blue-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity hover:text-blue-300"
+                  className="mt-3 sm:mt-4 flex items-center text-blue-400 text-xs sm:text-sm font-medium sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:text-blue-300"
                 >
-                  Saiba mais <ChevronRight className="h-4 w-4 ml-1" />
+                  Saiba mais <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                 </button>
               </div>
             ))}
@@ -814,45 +814,45 @@ const LandingPage = () => {
       <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
       {/* Benefits Section */}
-      <section id="beneficios" className="relative py-20 bg-[#0F2340]/30">
+      <section id="beneficios" className="relative py-12 sm:py-16 lg:py-20 bg-[#0F2340]/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8">
-              <h2 className="text-3xl sm:text-4xl font-bold">
+          <div className="flex flex-col lg:flex-row gap-8 sm:gap-12 lg:gap-16 items-center">
+            <div className="w-full lg:flex-1 space-y-6 sm:space-y-8">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
                 Por que escolher o{" "}
                 <span className="landing-gradient-text">GovernAII</span>?
               </h2>
-              <p className="text-gray-400">
+              <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
                 Desenvolvido por especialistas em governança para atender às demandas
                 reais de compliance, segurança e gestão de riscos.
               </p>
 
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {benefits.map((benefit, index) => (
-                  <div key={index} className="flex gap-4 group">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                      <benefit.icon className="h-6 w-6 text-blue-400" />
+                  <div key={index} className="flex gap-3 sm:gap-4 group">
+                    <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                      <benefit.icon className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-white mb-1">{benefit.title}</h3>
-                      <p className="text-sm text-gray-400">{benefit.description}</p>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-white mb-1 text-sm sm:text-base">{benefit.title}</h3>
+                      <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">{benefit.description}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="relative">
-              <div className="landing-glass rounded-2xl p-8 landing-border-gradient">
-                <div className="grid grid-cols-2 gap-6">
+            <div className="relative w-full lg:flex-1">
+              <div className="landing-glass rounded-2xl p-4 sm:p-6 lg:p-8 landing-border-gradient">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
                   {benefitStats.map((stat, index) => (
                     <div
                       key={index}
-                      className="text-center p-6 bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
+                      className="text-center p-3 sm:p-4 lg:p-6 bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
                     >
-                      <stat.icon className="h-8 w-8 text-cyan-400 mx-auto mb-3" />
-                      <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-                      <div className="text-sm text-gray-400">{stat.label}</div>
+                      <stat.icon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-cyan-400 mx-auto mb-2 sm:mb-3" />
+                      <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1">{stat.value}</div>
+                      <div className="text-xs sm:text-sm text-gray-400">{stat.label}</div>
                     </div>
                   ))}
                 </div>
@@ -866,44 +866,44 @@ const LandingPage = () => {
       <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
       {/* Contact Section */}
-      <section id="contato" className="relative py-20 bg-[#0F2340]/50">
+      <section id="contato" className="relative py-12 sm:py-16 lg:py-20 bg-[#0F2340]/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-16">
-            <div className="space-y-8">
-              <h2 className="text-3xl sm:text-4xl font-bold">
+          <div className="flex flex-col lg:flex-row gap-8 sm:gap-12 lg:gap-16">
+            <div className="w-full lg:flex-1 space-y-6 sm:space-y-8">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
                 Pronto para transformar sua{" "}
                 <span className="landing-gradient-text">Governança</span>?
               </h2>
-              <p className="text-gray-400">
+              <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
                 Entre em contato com nossa equipe e descubra como o GovernAII pode
                 ajudar sua empresa a atingir excelência em compliance e gestão de riscos.
               </p>
 
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 text-gray-300">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-blue-400" />
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-center gap-3 sm:gap-4 text-gray-300">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
                   </div>
-                  <span>Demonstração personalizada da plataforma</span>
+                  <span className="text-sm sm:text-base">Demonstração personalizada da plataforma</span>
                 </div>
-                <div className="flex items-center gap-4 text-gray-300">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-blue-400" />
+                <div className="flex items-center gap-3 sm:gap-4 text-gray-300">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
                   </div>
-                  <span>Consultoria inicial gratuita</span>
+                  <span className="text-sm sm:text-base">Consultoria inicial gratuita</span>
                 </div>
-                <div className="flex items-center gap-4 text-gray-300">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-blue-400" />
+                <div className="flex items-center gap-3 sm:gap-4 text-gray-300">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
                   </div>
-                  <span>Implantação assistida por especialistas</span>
+                  <span className="text-sm sm:text-base">Implantação assistida por especialistas</span>
                 </div>
               </div>
             </div>
 
-            <div className="relative z-20 landing-glass rounded-2xl p-8 landing-border-gradient">
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid sm:grid-cols-2 gap-4">
+            <div className="relative z-20 w-full lg:flex-1 landing-glass rounded-2xl p-5 sm:p-6 lg:p-8 landing-border-gradient">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Nome *
@@ -933,7 +933,7 @@ const LandingPage = () => {
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Empresa
@@ -991,18 +991,18 @@ const LandingPage = () => {
       </main>
 
       {/* Footer */}
-      <footer className="relative py-12 border-t border-white/5" role="contentinfo">
+      <footer className="relative py-8 sm:py-10 lg:py-12 border-t border-white/5" role="contentinfo">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div className="md:col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
+            <div className="sm:col-span-2">
               <div className="flex items-center mb-4">
                 <img
                   src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/empresa-logos/Governiaa%20(500%20x%20200%20px).png"
                   alt="GovernAII - Logotipo da empresa"
-                  className="h-12 w-auto"
+                  className="h-10 sm:h-12 w-auto"
                 />
               </div>
-              <p className="text-gray-400 text-sm max-w-sm">
+              <p className="text-gray-400 text-xs sm:text-sm max-w-sm leading-relaxed">
                 Plataforma completa para gestão de governança, riscos e conformidade.
               </p>
             </div>
@@ -1068,8 +1068,8 @@ const LandingPage = () => {
             </div>
           </div>
 
-          <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-gray-500 text-sm">
+          <div className="pt-6 sm:pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-gray-500 text-xs sm:text-sm text-center sm:text-left">
               © {new Date().getFullYear()} GovernAII. Todos os direitos reservados.
             </p>
           </div>
