@@ -1922,6 +1922,41 @@ export type Database = {
         }
         Relationships: []
       }
+      controles_comentarios: {
+        Row: {
+          comentario: string
+          controle_id: string
+          created_at: string
+          id: string
+          mencoes: string[] | null
+          user_id: string
+        }
+        Insert: {
+          comentario: string
+          controle_id: string
+          created_at?: string
+          id?: string
+          mencoes?: string[] | null
+          user_id: string
+        }
+        Update: {
+          comentario?: string
+          controle_id?: string
+          created_at?: string
+          id?: string
+          mencoes?: string[] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controles_comentarios_controle_id_fkey"
+            columns: ["controle_id"]
+            isOneToOne: false
+            referencedRelation: "controles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       controles_evidencias: {
         Row: {
           arquivo_nome: string | null

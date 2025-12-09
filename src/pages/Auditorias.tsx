@@ -66,7 +66,7 @@ const Auditorias = () => {
     },
   });
 
-  // Buscar contagens de itens para todas as auditorias
+  // Buscar contagens de itens para todas as auditorias (inclui auditoria_itens + controles_auditorias)
   const { data: auditoriasCounts } = useQuery({
     queryKey: ['auditorias-counts', auditorias?.map(a => a.id)],
     queryFn: async () => {
@@ -75,14 +75,25 @@ const Auditorias = () => {
       const counts: Record<string, { itens: number; itensConcluidos: number }> = {};
       
       for (const auditoria of auditorias) {
-        // Total de itens
+        // Total de itens manuais
         const itensRes = await supabase
           .from('auditoria_itens')
-          .select('id, status', { count: 'exact' })
+          .select('id, status')
           .eq('auditoria_id', auditoria.id);
         
-        const itensTotal = itensRes.data?.length || 0;
-        const itensConcluidos = itensRes.data?.filter(i => i.status === 'concluido').length || 0;
+        // Controles vinculados via controles_auditorias
+        const controlesRes = await supabase
+          .from('controles_auditorias')
+          .select(`
+            controle_id,
+            controle:controles(id, status)
+          `)
+          .eq('auditoria_id', auditoria.id);
+        
+        const itensTotal = (itensRes.data?.length || 0) + (controlesRes.data?.length || 0);
+        const itensManuaisConcluidos = itensRes.data?.filter(i => i.status === 'concluido').length || 0;
+        const controlesAtivos = controlesRes.data?.filter((c: any) => c.controle?.status === 'ativo').length || 0;
+        const itensConcluidos = itensManuaisConcluidos + controlesAtivos;
         
         counts[auditoria.id] = {
           itens: itensTotal,
