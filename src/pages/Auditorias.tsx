@@ -19,6 +19,7 @@ import AchadosDialog from "@/components/auditorias/AchadosDialog";
 import RecomendacoesDialog from "@/components/auditorias/RecomendacoesDialog";
 import EvidenciasDialog from "@/components/auditorias/EvidenciasDialog";
 import ControlesAuditoriaDialog from "@/components/auditorias/ControlesAuditoriaDialog";
+import { ItensAuditoriaDialog } from "@/components/auditorias/ItensAuditoriaDialog";
 import { AuditoriaCardAccordion } from "@/components/auditorias/AuditoriaCardAccordion";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
@@ -35,6 +36,7 @@ const Auditorias = () => {
   const [showRecomendacoesDialog, setShowRecomendacoesDialog] = useState(false);
   const [showEvidenciasDialog, setShowEvidenciasDialog] = useState(false);
   const [showControlesDialog, setShowControlesDialog] = useState(false);
+  const [showItensDialog, setShowItensDialog] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; nome?: string }>({ open: false, id: '' });
 
@@ -103,12 +105,18 @@ const Auditorias = () => {
           .from('controles_auditorias')
           .select('id', { count: 'exact', head: true })
           .eq('auditoria_id', auditoria.id);
+
+        const itensRes = await supabase
+          .from('auditoria_itens')
+          .select('id', { count: 'exact', head: true })
+          .eq('auditoria_id', auditoria.id);
         
         counts[auditoria.id] = {
           trabalhos: trabalhosRes.count ?? 0,
           achados: achadosRes.count ?? 0,
           recomendacoes: recomendacoesRes.count ?? 0,
           controles: controlesRes.count ?? 0,
+          itens: itensRes.count ?? 0,
         };
       }
       
@@ -175,6 +183,11 @@ const Auditorias = () => {
   const handleOpenControles = (auditoria: any) => {
     setSelectedAuditoria(auditoria);
     setShowControlesDialog(true);
+  };
+
+  const handleOpenItens = (auditoria: any) => {
+    setSelectedAuditoria(auditoria);
+    setShowItensDialog(true);
   };
 
   // Detectar se veio com itemId do dashboard
@@ -319,7 +332,7 @@ const Auditorias = () => {
           ) : (
             <div className="space-y-1 px-4 pb-4">
               {auditorias.map((auditoria) => {
-                const counts = auditoriasCounts?.[auditoria.id] || { trabalhos: 0, achados: 0, recomendacoes: 0, controles: 0 };
+                const counts = auditoriasCounts?.[auditoria.id] || { trabalhos: 0, achados: 0, recomendacoes: 0, controles: 0, itens: 0 };
                 const auditorResponsavel = usuarios?.find((u: any) => u.user_id === auditoria.auditor_responsavel);
                 
                 return (
@@ -334,6 +347,7 @@ const Auditorias = () => {
                     onOpenRecomendacoes={() => handleOpenRecomendacoes(auditoria)}
                     onOpenEvidencias={() => handleOpenEvidencias(auditoria)}
                     onOpenControles={() => handleOpenControles(auditoria)}
+                    onOpenItens={() => handleOpenItens(auditoria)}
                     auditorNome={auditorResponsavel?.nome}
                   />
                 );
@@ -381,6 +395,13 @@ const Auditorias = () => {
         open={showControlesDialog}
         onOpenChange={setShowControlesDialog}
         auditoria={selectedAuditoria}
+      />
+
+      <ItensAuditoriaDialog
+        open={showItensDialog}
+        onOpenChange={setShowItensDialog}
+        auditoriaId={selectedAuditoria?.id}
+        auditoriaNome={selectedAuditoria?.nome}
       />
 
       <ConfirmDialog
