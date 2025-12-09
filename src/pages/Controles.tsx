@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ControleDialog from "@/components/controles/ControleDialog";
+import { ControleDetalheDialog } from "@/components/controles/ControleDetalheDialog";
 import CategoriasDialog from "@/components/controles/CategoriasDialog";
 import TestesDialog from "@/components/controles/TestesDialog";
 import ControlesVinculacaoDialog from "@/components/controles/ControlesVinculacaoDialog";
@@ -73,6 +74,8 @@ export default function Controles() {
   const [editingControle, setEditingControle] = useState<Controle | null>(null);
   const [selectedControleForTests, setSelectedControleForTests] = useState<Controle | null>(null);
   const [selectedControleForVinculacao, setSelectedControleForVinculacao] = useState<Controle | null>(null);
+  const [selectedControleForDetail, setSelectedControleForDetail] = useState<Controle | null>(null);
+  const [detalheDialogOpen, setDetalheDialogOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; controleId: string }>({
     open: false,
     controleId: ''
@@ -212,6 +215,11 @@ export default function Controles() {
   const handleEdit = (controle: Controle) => {
     setEditingControle(controle);
     setControleDialogOpen(true);
+  };
+
+  const handleOpenDetail = (controle: Controle) => {
+    setSelectedControleForDetail(controle);
+    setDetalheDialogOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -395,7 +403,15 @@ export default function Controles() {
       label: 'Nome',
       sortable: true,
       render: (value: any, controle: Controle) => (
-        <span className="font-medium">{controle.nome}</span>
+        <button 
+          className="font-medium text-left hover:text-primary hover:underline transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleOpenDetail(controle);
+          }}
+        >
+          {controle.nome}
+        </button>
       )
     },
     {
@@ -754,6 +770,21 @@ export default function Controles() {
       <RelatoriosDialog
         open={relatoriosDialogOpen}
         onOpenChange={setRelatoriosDialogOpen}
+      />
+
+      <ControleDetalheDialog
+        open={detalheDialogOpen}
+        onOpenChange={(open) => {
+          setDetalheDialogOpen(open);
+          if (!open) setSelectedControleForDetail(null);
+        }}
+        controle={selectedControleForDetail}
+        onEdit={() => {
+          setDetalheDialogOpen(false);
+          if (selectedControleForDetail) {
+            handleEdit(selectedControleForDetail);
+          }
+        }}
       />
 
       <ConfirmDialog

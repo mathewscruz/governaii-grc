@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, FileText, MessageSquare, Paperclip, User, Calendar, ChevronRight, Download, Shield } from "lucide-react";
+import { Plus, Search, FileText, MessageSquare, Paperclip, User, Calendar, ChevronRight, Download, Shield, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { ItemAuditoriaFormDialog } from "./ItemAuditoriaFormDialog";
 import { ItemAuditoriaDetalheDialog } from "./ItemAuditoriaDetalheDialog";
@@ -72,10 +72,12 @@ export function ItensAuditoriaDialog({
 
   const { data: usuarios } = useUsuariosEmpresa();
 
+  // Buscar itens manuais + controles vinculados
   const { data: itens, isLoading } = useQuery({
     queryKey: ["auditoria-itens", auditoriaId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Buscar itens manuais
+      const { data: itensData, error: itensError } = await supabase
         .from("auditoria_itens")
         .select(`
           *,
@@ -84,8 +86,52 @@ export function ItensAuditoriaDialog({
         .eq("auditoria_id", auditoriaId)
         .order("codigo");
 
-      if (error) throw error;
-      return data || [];
+      if (itensError) throw itensError;
+
+      // Buscar controles vinculados via controles_auditorias
+      const { data: controlesData, error: controlesError } = await supabase
+        .from("controles_auditorias")
+        .select(`
+          controle_id,
+          observacoes,
+          controle:controles(id, nome, descricao, status, criticidade, responsavel_id, tipo)
+        `)
+        .eq("auditoria_id", auditoriaId);
+
+      if (controlesError) throw controlesError;
+
+      // Buscar nomes dos responsáveis dos controles
+      const responsavelIds = controlesData
+        ?.map((c: any) => c.controle?.responsavel_id)
+        .filter(Boolean) || [];
+      
+      let responsaveisMap = new Map();
+      if (responsavelIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, nome, email")
+          .in("user_id", responsavelIds);
+        responsaveisMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      }
+
+      // Mapear controles vinculados para o formato de itens
+      const controlesAsItens = controlesData?.map((cv: any) => ({
+        id: cv.controle?.id,
+        codigo: `CTRL-${cv.controle?.id?.slice(0, 6).toUpperCase()}`,
+        titulo: cv.controle?.nome,
+        descricao: cv.controle?.descricao,
+        status: cv.controle?.status === 'ativo' ? 'concluido' : 'pendente',
+        prioridade: cv.controle?.criticidade === 'critico' ? 'alta' : cv.controle?.criticidade === 'alto' ? 'alta' : 'media',
+        controle_vinculado_id: cv.controle?.id,
+        responsavel_id: cv.controle?.responsavel_id,
+        responsavel: responsaveisMap.get(cv.controle?.responsavel_id) || null,
+        prazo: null,
+        observacoes: cv.observacoes,
+        is_controle_vinculado: true,
+      })) || [];
+
+      // Combinar itens manuais + controles vinculados
+      return [...(itensData || []), ...controlesAsItens];
     },
     enabled: open && !!auditoriaId,
   });
@@ -295,20 +341,33 @@ export function ItensAuditoriaDialog({
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => handleOpenDetalhe(item)}
                     >
-                      <TableCell className="font-mono text-sm">{item.codigo}</TableCell>
+                      <TableCell className="font-mono text-sm">
+                        <div className="flex items-center gap-1">
+                          {(item as any).is_controle_vinculado && (
+                            <Link2 className="h-3 w-3 text-primary" />
+                          )}
+                          {item.codigo}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{item.titulo}</span>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                            <span className="flex items-center gap-1">
-                              <Paperclip className="h-3 w-3" />
-                              {contagens?.evidencias?.[item.id] || 0}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <MessageSquare className="h-3 w-3" />
-                              {contagens?.comentarios?.[item.id] || 0}
-                            </span>
-                          </div>
+                          {(item as any).is_controle_vinculado ? (
+                            <Badge variant="outline" className="w-fit mt-1 text-[10px] py-0 px-1">
+                              Controle Vinculado
+                            </Badge>
+                          ) : (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                              <span className="flex items-center gap-1">
+                                <Paperclip className="h-3 w-3" />
+                                {contagens?.evidencias?.[item.id] || 0}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MessageSquare className="h-3 w-3" />
+                                {contagens?.comentarios?.[item.id] || 0}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
