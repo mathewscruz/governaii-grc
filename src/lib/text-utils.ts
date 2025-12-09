@@ -5,6 +5,16 @@ export const capitalizeText = (text: string): string => {
   return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
 };
 
+// Formata status dinâmicos: substitui underscores, capitaliza cada palavra
+export const formatStatus = (status: string): string => {
+  if (!status) return '';
+  return status
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 export const getStatusColor = (status: string): string => {
   switch (status.toLowerCase()) {
     case 'ativo':

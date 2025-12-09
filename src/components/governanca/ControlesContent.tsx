@@ -32,7 +32,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { capitalizeText } from '@/lib/text-utils';
+import { capitalizeText, formatStatus } from '@/lib/text-utils';
 import { formatDateOnly } from '@/lib/date-utils';
 
 interface Controle {
@@ -327,14 +327,12 @@ export default function ControlesContent() {
   };
 
   const getStatusBadge = (status: string) => {
-    const displayText = status.replace(/_/g, ' ');
-    
     return (
       <Badge 
         variant={getStatusBadgeVariant(status)} 
         className={`${getStatusCustomClass(status)} whitespace-nowrap`}
       >
-        {capitalizeText(displayText)}
+        {formatStatus(status)}
       </Badge>
     );
   };
@@ -369,9 +367,9 @@ export default function ControlesContent() {
     return (
       <Badge 
         variant={getCriticidadeBadgeVariant(criticidade)} 
-        className={getCriticidadeCustomClass(criticidade)}
+        className={`${getCriticidadeCustomClass(criticidade)} whitespace-nowrap`}
       >
-        {capitalizeText(criticidade)}
+        {formatStatus(criticidade)}
       </Badge>
     );
   };

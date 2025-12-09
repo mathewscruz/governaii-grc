@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ReviewDialog } from "@/components/revisao-acessos/ReviewDialog";
 import { ReviewItemsDialog } from "@/components/revisao-acessos/ReviewItemsDialog";
 import { formatDateForInput } from "@/lib/date-utils";
+import { formatStatus } from "@/lib/text-utils";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
 
@@ -93,7 +94,11 @@ export default function RevisaoAcessos() {
       concluida: "secondary",
       cancelada: "destructive",
     };
-    return <Badge variant={variants[status] || "default"}>{status.replace("_", " ")}</Badge>;
+    return (
+      <Badge variant={variants[status] || "default"} className="whitespace-nowrap">
+        {formatStatus(status)}
+      </Badge>
+    );
   };
 
   const filteredAndSortedReviews = reviews
@@ -127,7 +132,7 @@ export default function RevisaoAcessos() {
       key: "tipo_revisao",
       label: "Tipo",
       sortable: true,
-      render: (review) => review.tipo_revisao.replace("_", " "),
+      render: (review) => formatStatus(review.tipo_revisao),
     },
     {
       key: "responsavel.nome",

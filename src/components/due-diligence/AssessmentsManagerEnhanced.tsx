@@ -340,7 +340,7 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['pendente'];
-    return <Badge variant={config.variant}>{config.text}</Badge>;
+    return <Badge variant={config.variant} className="whitespace-nowrap">{config.text}</Badge>;
   };
 
   const getScoreColor = (score?: number) => {

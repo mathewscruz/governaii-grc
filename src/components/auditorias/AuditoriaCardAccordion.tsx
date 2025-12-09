@@ -11,7 +11,7 @@ import {
   User,
   ClipboardCheck
 } from "lucide-react";
-import { capitalizeText } from "@/lib/text-utils";
+import { formatStatus } from "@/lib/text-utils";
 
 interface AuditoriaCardAccordionProps {
   auditoria: any;
@@ -78,20 +78,20 @@ export function AuditoriaCardAccordion({
 
           {/* Badges */}
           <div className="flex items-center gap-1.5 flex-1 flex-wrap">
-            <Badge variant="outline" className="text-[11px] py-0 h-5 px-2">
-              {capitalizeText(auditoria.tipo)}
+            <Badge variant="outline" className="text-[11px] py-0 h-5 px-2 whitespace-nowrap">
+              {formatStatus(auditoria.tipo)}
             </Badge>
             <Badge 
               variant={getStatusBadgeVariant(auditoria.status)}
-              className={`text-[11px] py-0 h-5 px-2 ${getStatusCustomClass(auditoria.status)}`}
+              className={`text-[11px] py-0 h-5 px-2 whitespace-nowrap ${getStatusCustomClass(auditoria.status)}`}
             >
-              {capitalizeText(auditoria.status.replace(/_/g, ' '))}
+              {formatStatus(auditoria.status)}
             </Badge>
             <Badge 
               variant={getPrioridadeBadgeVariant(auditoria.prioridade)}
-              className={`text-[11px] py-0 h-5 px-2 ${getPrioridadeCustomClass(auditoria.prioridade)}`}
+              className={`text-[11px] py-0 h-5 px-2 whitespace-nowrap ${getPrioridadeCustomClass(auditoria.prioridade)}`}
             >
-              {capitalizeText(auditoria.prioridade)}
+              {formatStatus(auditoria.prioridade)}
             </Badge>
             
             {/* Botão Controles com progresso */}

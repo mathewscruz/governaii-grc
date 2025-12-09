@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
+import { formatStatus } from '@/lib/text-utils';
 
 export default function Dados() {
   const [activeTab, setActiveTab] = useState("catalogo");
@@ -105,12 +106,12 @@ export default function Dados() {
 
   const getSensibilidadeBadge = (tipo: string, sensibilidade: string) => {
     if (tipo === 'sensivel' || sensibilidade === 'muito_sensivel') {
-      return <Badge variant="destructive">Sensível</Badge>;
+      return <Badge variant="destructive" className="whitespace-nowrap">Sensível</Badge>;
     }
     if (sensibilidade === 'sensivel') {
-      return <Badge variant="secondary">Moderado</Badge>;
+      return <Badge variant="secondary" className="whitespace-nowrap">Moderado</Badge>;
     }
-    return <Badge variant="outline">Comum</Badge>;
+    return <Badge variant="outline" className="whitespace-nowrap">Comum</Badge>;
   };
 
   const getStatusBadge = (status: string) => {
@@ -120,7 +121,7 @@ export default function Dados() {
       atendida: "outline",
       rejeitada: "destructive"
     };
-    return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
+    return <Badge variant={variants[status] || "outline"} className="whitespace-nowrap">{formatStatus(status)}</Badge>;
   };
 
   // ROPA DataTable columns

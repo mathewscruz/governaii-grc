@@ -41,12 +41,25 @@ interface ItensAuditoriaDialogProps {
   auditoriaNome: string;
 }
 
+const statusLabels: Record<string, string> = {
+  pendente: "Pendente",
+  em_andamento: "Em Andamento",
+  concluido: "Concluído",
+  nao_aplicavel: "Não Aplicável",
+};
+
 const statusOptions = [
   { value: "pendente", label: "Pendente", color: "bg-gray-100 text-gray-800" },
   { value: "em_andamento", label: "Em Andamento", color: "bg-blue-100 text-blue-800" },
   { value: "concluido", label: "Concluído", color: "bg-green-100 text-green-800" },
   { value: "nao_aplicavel", label: "Não Aplicável", color: "bg-slate-100 text-slate-600" },
 ];
+
+const prioridadeLabels: Record<string, string> = {
+  alta: "Alta",
+  media: "Média",
+  baixa: "Baixa",
+};
 
 const prioridadeOptions = [
   { value: "alta", label: "Alta", color: "bg-red-100 text-red-800" },
@@ -219,8 +232,8 @@ export function ItensAuditoriaDialog({
   const getStatusBadge = (status: string) => {
     const option = statusOptions.find((o) => o.value === status);
     return (
-      <Badge className={`${option?.color || ""} border-0`}>
-        {option?.label || status}
+      <Badge className={`${option?.color || ""} border-0 whitespace-nowrap`}>
+        {statusLabels[status] || status}
       </Badge>
     );
   };
@@ -228,8 +241,8 @@ export function ItensAuditoriaDialog({
   const getPrioridadeBadge = (prioridade: string) => {
     const option = prioridadeOptions.find((o) => o.value === prioridade);
     return (
-      <Badge variant="outline" className={option?.color || ""}>
-        {option?.label || prioridade}
+      <Badge variant="outline" className={`${option?.color || ""} whitespace-nowrap`}>
+        {prioridadeLabels[prioridade] || prioridade}
       </Badge>
     );
   };

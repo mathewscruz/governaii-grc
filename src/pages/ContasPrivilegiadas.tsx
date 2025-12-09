@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
+import { formatStatus, capitalizeText } from '@/lib/text-utils';
 
 interface ContaPrivilegiada {
   id: string;
@@ -221,7 +222,7 @@ export default function ContasPrivilegiadas() {
     const statusConfig = {
       'ativo': { variant: 'default' as const, label: 'Ativo', icon: CheckCircle },
       'expirado': { variant: 'destructive' as const, label: 'Expirado', icon: AlertTriangle },
-      'pendente_aprovacao': { variant: 'secondary' as const, label: 'Pendente', icon: Clock },
+      'pendente_aprovacao': { variant: 'secondary' as const, label: 'Pendente Aprovação', icon: Clock },
       'revogado': { variant: 'outline' as const, label: 'Revogado', icon: Shield },
     };
 
@@ -229,7 +230,7 @@ export default function ContasPrivilegiadas() {
     const Icon = config.icon;
 
     return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
+      <Badge variant={config.variant} className="flex items-center gap-1 whitespace-nowrap">
         <Icon className="h-3 w-3" />
         {config.label}
       </Badge>
@@ -237,7 +238,7 @@ export default function ContasPrivilegiadas() {
   };
 
   const getCriticidadeBadge = (criticidade: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       'critico': 'bg-red-100 text-red-800 border-red-200',
       'alto': 'bg-orange-100 text-orange-800 border-orange-200',
       'alta': 'bg-red-100 text-red-800 border-red-200',
@@ -248,14 +249,10 @@ export default function ContasPrivilegiadas() {
     };
 
     return (
-      <Badge className={colors[criticidade as keyof typeof colors] || colors.media}>
-        {criticidade.charAt(0).toUpperCase() + criticidade.slice(1)}
+      <Badge className={`${colors[criticidade] || colors.media} whitespace-nowrap`}>
+        {formatStatus(criticidade)}
       </Badge>
     );
-  };
-
-  const capitalizeText = (text: string) => {
-    return text.charAt(0).toUpperCase() + text.slice(1);
   };
 
   // Filtrar e ordenar contas

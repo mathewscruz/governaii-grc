@@ -41,6 +41,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { formatStatus } from '@/lib/text-utils';
 import { IncidenteDialog } from '@/components/incidentes/IncidenteDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { TratamentoDialog } from '@/components/incidentes/TratamentoDialog';
@@ -180,7 +181,7 @@ export default function Incidentes() {
       fechado: 'outline',
     };
     
-    const labels = {
+    const labels: Record<string, string> = {
       aberto: 'Aberto',
       investigacao: 'Investigação',
       contido: 'Contido',
@@ -189,8 +190,8 @@ export default function Incidentes() {
     };
 
     return (
-      <Badge variant={variants[status as keyof typeof variants] as any}>
-        {labels[status as keyof typeof labels]}
+      <Badge variant={variants[status as keyof typeof variants] as any} className="whitespace-nowrap">
+        {labels[status] || formatStatus(status)}
       </Badge>
     );
   };
@@ -204,8 +205,8 @@ export default function Incidentes() {
     };
 
     return (
-      <Badge variant={variants[criticidade as keyof typeof variants] as any}>
-        {criticidade.charAt(0).toUpperCase() + criticidade.slice(1)}
+      <Badge variant={variants[criticidade as keyof typeof variants] as any} className="whitespace-nowrap">
+        {formatStatus(criticidade)}
       </Badge>
     );
   };
@@ -282,7 +283,7 @@ export default function Incidentes() {
         const variant = item.criticidade === 'critica' ? 'destructive' :
                        item.criticidade === 'alta' ? 'destructive' :
                        item.criticidade === 'media' ? 'secondary' : 'outline';
-        return <Badge variant={variant}>{item.criticidade}</Badge>;
+        return <Badge variant={variant} className="whitespace-nowrap">{formatStatus(item.criticidade)}</Badge>;
       }
     },
     {
@@ -296,7 +297,7 @@ export default function Incidentes() {
         return (
           <div className="flex items-center gap-2">
             <StatusIcon className="h-4 w-4" />
-            <Badge variant={variant}>{item.status}</Badge>
+            <Badge variant={variant} className="whitespace-nowrap">{formatStatus(item.status)}</Badge>
           </div>
         );
       }
