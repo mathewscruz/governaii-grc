@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, Column } from '@/components/ui/data-table';
+import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -757,8 +758,8 @@ const Ativos = () => {
                   {editingAtivo ? 'Atualize as informações do ativo' : 'Cadastre um novo ativo na plataforma'}
                 </DialogDescription>
               </DialogHeader>
-              <ScrollArea className="max-h-[calc(90vh-140px)]">
-              <form onSubmit={handleSubmit} className="space-y-4 pr-4">
+              <ScrollArea className="max-h-[calc(90vh-140px)] pr-4">
+              <form onSubmit={handleSubmit} className="space-y-4 px-1">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="nome">Nome *</Label>
@@ -1004,39 +1005,43 @@ const Ativos = () => {
       </div>
 
       {/* DataTable */}
-      <DataTable
-        data={filteredAndSortedAtivos}
-        columns={columns}
-        loading={loading}
-        searchable
-        searchPlaceholder="Buscar ativos..."
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        filters={filters}
-        sortField={sortField}
-        sortDirection={sortDirection}
-        onSort={(field) => {
-          if (sortField === field) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-          } else {
-            setSortField(field);
-            setSortDirection('asc');
-          }
-        }}
-        onExport={exportData}
-        onRefresh={fetchAtivos}
-        emptyState={{
-          icon: <Server className="h-8 w-8" />,
-          title: searchTerm ? "Nenhum ativo encontrado" : "Nenhum ativo cadastrado",
-          description: searchTerm 
-            ? "Tente ajustar os termos de busca ou limpe os filtros."
-            : "Comece cadastrando os ativos da sua organização.",
-          action: !searchTerm ? {
-            label: "Cadastrar Primeiro Ativo",
-            onClick: () => setIsDialogOpen(true)
-          } : undefined
-        }}
-      />
+      <Card className="rounded-lg border overflow-hidden">
+        <CardContent className="p-0">
+          <DataTable
+            data={filteredAndSortedAtivos}
+            columns={columns}
+            loading={loading}
+            searchable
+            searchPlaceholder="Buscar ativos..."
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            filters={filters}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={(field) => {
+              if (sortField === field) {
+                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortField(field);
+                setSortDirection('asc');
+              }
+            }}
+            onExport={exportData}
+            onRefresh={fetchAtivos}
+            emptyState={{
+              icon: <Server className="h-8 w-8" />,
+              title: searchTerm ? "Nenhum ativo encontrado" : "Nenhum ativo cadastrado",
+              description: searchTerm 
+                ? "Tente ajustar os termos de busca ou limpe os filtros."
+                : "Comece cadastrando os ativos da sua organização.",
+              action: !searchTerm ? {
+                label: "Cadastrar Primeiro Ativo",
+                onClick: () => setIsDialogOpen(true)
+              } : undefined
+            }}
+          />
+        </CardContent>
+      </Card>
 
       <ConfirmDialog
         open={deleteConfirm.open}
