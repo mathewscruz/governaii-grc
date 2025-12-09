@@ -22,7 +22,7 @@ interface Licenca {
   quantidade_licencas: number;
   data_aquisicao: string;
   data_vencimento: string;
-  custo_mensal?: number;
+  valor_renovacao?: number;
   criticidade: string;
   status: string;
   observacoes?: string;
@@ -105,6 +105,7 @@ export default function AtivosLicencas() {
       'ativa': { variant: 'default' as const, label: 'Ativa', icon: CheckCircle },
       'vencida': { variant: 'destructive' as const, label: 'Vencida', icon: AlertTriangle },
       'a_vencer': { variant: 'secondary' as const, label: 'A Vencer', icon: Clock },
+      'em_renovacao': { variant: 'outline' as const, label: 'Em Renovação', icon: Clock },
       'cancelada': { variant: 'outline' as const, label: 'Cancelada', icon: Clock },
     };
 
@@ -202,12 +203,12 @@ export default function AtivosLicencas() {
       render: (_: any, licenca: Licenca) => formatDateOnly(licenca.data_vencimento)
     },
     {
-      key: 'custo_mensal',
-      label: 'Custo Mensal',
+      key: 'valor_renovacao',
+      label: 'Valor Renovação',
       sortable: true,
       render: (_: any, licenca: Licenca) => (
-        licenca.custo_mensal 
-          ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(licenca.custo_mensal)
+        licenca.valor_renovacao 
+          ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(licenca.valor_renovacao)
           : '-'
       )
     },
@@ -257,10 +258,11 @@ export default function AtivosLicencas() {
       onChange: setStatusFilter,
       options: [
         { value: 'todos', label: 'Todos os status' },
-        { value: 'ativa', label: 'Ativa' },
-        { value: 'vencida', label: 'Vencida' },
-        { value: 'a_vencer', label: 'A Vencer' },
-        { value: 'cancelada', label: 'Cancelada' },
+          { value: 'ativa', label: 'Ativa' },
+          { value: 'vencida', label: 'Vencida' },
+          { value: 'a_vencer', label: 'A Vencer' },
+          { value: 'em_renovacao', label: 'Em Renovação' },
+          { value: 'cancelada', label: 'Cancelada' },
       ]
     },
     {
@@ -283,11 +285,10 @@ export default function AtivosLicencas() {
       onChange: setTipoFilter,
       options: [
         { value: 'todos', label: 'Todos os tipos' },
-        { value: 'perpetua', label: 'Perpétua' },
-        { value: 'anual', label: 'Anual' },
-        { value: 'mensal', label: 'Mensal' },
-        { value: 'trial', label: 'Trial' },
-        { value: 'outro', label: 'Outro' },
+          { value: 'software', label: 'Software' },
+          { value: 'servico', label: 'Serviço' },
+          { value: 'certificacao', label: 'Certificação' },
+          { value: 'outro', label: 'Outro' },
       ]
     }
   ];
