@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
 
 interface Documento {
   id: string;
@@ -62,6 +63,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
   }>({ open: false, type: null, aprovacaoId: '' });
   const [actionComment, setActionComment] = useState('');
   const { toast } = useToast();
+  const { notify } = useIntegrationNotify();
 
   // Obter ID do usuário atual
   useEffect(() => {
@@ -328,6 +330,23 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
         .eq('id', aprovacaoId);
 
       if (error) throw error;
+
+      // Notify integrations
+      if (novoStatus === 'aprovado') {
+        notify('documento_aprovado', {
+          titulo: `Documento aprovado: ${documento.nome}`,
+          descricao: comentarios || 'Documento foi aprovado com sucesso',
+          link: '/documentos',
+          gravidade: 'baixa'
+        });
+      } else if (novoStatus === 'rejeitado') {
+        notify('documento_rejeitado', {
+          titulo: `Documento rejeitado: ${documento.nome}`,
+          descricao: comentarios || 'Documento foi rejeitado',
+          link: '/documentos',
+          gravidade: 'media'
+        });
+      }
 
       toast({
         title: "Status atualizado",

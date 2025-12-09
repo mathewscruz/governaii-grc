@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateOnly } from '@/lib/date-utils';
+import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
 
 interface DenunciaDialogProps {
   denuncia: any;
@@ -74,6 +75,7 @@ export function DenunciaDialog({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { notify } = useIntegrationNotify();
 
   const [formData, setFormData] = useState({
     status: denuncia.status,

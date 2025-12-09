@@ -2,47 +2,124 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Webhook, 
-  Zap, 
-  FolderOpen,
-  Settings,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  Info,
-  Cloud
-} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/components/AuthProvider';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Plug, 
+  CheckCircle2, 
+  XCircle, 
+  Info,
+  Loader2,
+  History
+} from 'lucide-react';
 import { SlackConfigDialog } from './integrations/SlackConfigDialog';
 import { TeamsConfigDialog } from './integrations/TeamsConfigDialog';
 import { WebhooksConfigDialog } from './integrations/WebhooksConfigDialog';
 import { JiraConfigDialog } from './integrations/JiraConfigDialog';
 import { AzureConfigDialog } from './integrations/AzureConfigDialog';
+import { IntegrationLogViewer } from './integrations/IntegrationLogViewer';
+
+// Logos inline SVG
+const SlackLogo = () => (
+  <svg viewBox="0 0 127 127" className="w-8 h-8">
+    <path d="M27.2 80c0 7.3-5.9 13.2-13.2 13.2C6.7 93.2.8 87.3.8 80c0-7.3 5.9-13.2 13.2-13.2h13.2V80zm6.6 0c0-7.3 5.9-13.2 13.2-13.2 7.3 0 13.2 5.9 13.2 13.2v33c0 7.3-5.9 13.2-13.2 13.2-7.3 0-13.2-5.9-13.2-13.2V80z" fill="#E01E5A"/>
+    <path d="M47 27c-7.3 0-13.2-5.9-13.2-13.2C33.8 6.5 39.7.6 47 .6c7.3 0 13.2 5.9 13.2 13.2V27H47zm0 6.7c7.3 0 13.2 5.9 13.2 13.2 0 7.3-5.9 13.2-13.2 13.2H14c-7.3 0-13.2-5.9-13.2-13.2 0-7.3 5.9-13.2 13.2-13.2h33z" fill="#36C5F0"/>
+    <path d="M99.9 46.9c0-7.3 5.9-13.2 13.2-13.2 7.3 0 13.2 5.9 13.2 13.2 0 7.3-5.9 13.2-13.2 13.2H99.9V46.9zm-6.6 0c0 7.3-5.9 13.2-13.2 13.2-7.3 0-13.2-5.9-13.2-13.2V14c0-7.3 5.9-13.2 13.2-13.2 7.3 0 13.2 5.9 13.2 13.2v32.9z" fill="#2EB67D"/>
+    <path d="M80.1 99.8c7.3 0 13.2 5.9 13.2 13.2 0 7.3-5.9 13.2-13.2 13.2-7.3 0-13.2-5.9-13.2-13.2V99.8h13.2zm0-6.6c-7.3 0-13.2-5.9-13.2-13.2 0-7.3 5.9-13.2 13.2-13.2h33c7.3 0 13.2 5.9 13.2 13.2 0 7.3-5.9 13.2-13.2 13.2h-33z" fill="#ECB22E"/>
+  </svg>
+);
+
+const TeamsLogo = () => (
+  <svg viewBox="0 0 48 48" className="w-8 h-8">
+    <path fill="#5059C9" d="M44 22v10c0 2.2-1.8 4-4 4h-4V18h4C42.2 18 44 19.8 44 22z"/>
+    <circle fill="#5059C9" cx="36" cy="12" r="4"/>
+    <circle fill="#7B83EB" cx="28" cy="10" r="6"/>
+    <path fill="#7B83EB" d="M36 18H20c-2.2 0-4 1.8-4 4v14c0 5.5 4.5 10 10 10s10-4.5 10-10V22C36 19.8 34.2 18 32 18z"/>
+  </svg>
+);
+
+const OneDriveLogo = () => (
+  <svg viewBox="0 0 48 48" className="w-8 h-8">
+    <path fill="#1565C0" d="M26 33c-6.1 0-11-4.9-11-11 0-5.5 4.1-10.1 9.4-10.9C26.2 7.8 29.9 5 34.2 5 39.5 5 44 9.5 44 15c0 1-.2 2-.5 3h.5c2.2 0 4 1.8 4 4v7c0 2.2-1.8 4-4 4H26z"/>
+    <path fill="#42A5F5" d="M14 39c-4.4 0-8-3.6-8-8 0-3.6 2.4-6.7 5.7-7.7C12.5 21.5 14.5 20 17 20c3.3 0 6 2.7 6 6 0 .3 0 .7-.1 1h.1c2.8 0 5 2.2 5 5v3c0 2.2-1.8 4-4 4H14z"/>
+  </svg>
+);
+
+const GoogleDriveLogo = () => (
+  <svg viewBox="0 0 87.3 78" className="w-8 h-8">
+    <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+    <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+    <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+    <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+    <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+    <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+  </svg>
+);
+
+const ZapierLogo = () => (
+  <svg viewBox="0 0 200 200" className="w-8 h-8">
+    <path fill="#FF4A00" d="M134.9 100l-16.6-16.6c-4.3-4.3-4.3-11.3 0-15.6l32.1-32.1c4.3-4.3 4.3-11.3 0-15.6l-6.4-6.4c-4.3-4.3-11.3-4.3-15.6 0L96.3 45.8c-4.3 4.3-11.3 4.3-15.6 0L48.6 13.7c-4.3-4.3-11.3-4.3-15.6 0l-6.4 6.4c-4.3 4.3-4.3 11.3 0 15.6l32.1 32.1c4.3 4.3 4.3 11.3 0 15.6L42.1 100l16.6 16.6c4.3 4.3 4.3 11.3 0 15.6l-32.1 32.1c-4.3 4.3-4.3 11.3 0 15.6l6.4 6.4c4.3 4.3 11.3 4.3 15.6 0l32.1-32.1c4.3-4.3 11.3-4.3 15.6 0l32.1 32.1c4.3 4.3 11.3 4.3 15.6 0l6.4-6.4c4.3-4.3 4.3-11.3 0-15.6l-32.1-32.1c-4.3-4.3-4.3-11.3 0-15.6L134.9 100z"/>
+    <circle fill="#FF4A00" cx="100" cy="100" r="22"/>
+  </svg>
+);
+
+const JiraLogo = () => (
+  <svg viewBox="0 0 32 32" className="w-8 h-8">
+    <defs>
+      <linearGradient id="jira-a" x1="99%" y1="26%" x2="24%" y2="99%">
+        <stop offset="18%" stopColor="#0052cc"/>
+        <stop offset="100%" stopColor="#2684ff"/>
+      </linearGradient>
+      <linearGradient id="jira-b" x1="12%" y1="80%" x2="79%" y2="20%">
+        <stop offset="18%" stopColor="#0052cc"/>
+        <stop offset="100%" stopColor="#2684ff"/>
+      </linearGradient>
+    </defs>
+    <path fill="url(#jira-a)" d="M15.52 1.09L1.09 15.52a.75.75 0 000 1.06l14.43 14.43a.75.75 0 001.06 0l7.22-7.22L16.03 16l7.77-7.79-7.22-7.22a.75.75 0 00-1.06.1z"/>
+    <path fill="url(#jira-b)" d="M15.52 9.44L9.06 16l6.46 6.56 6.97-6.97a.84.84 0 000-1.18z"/>
+  </svg>
+);
+
+const AzureLogo = () => (
+  <svg viewBox="0 0 96 96" className="w-8 h-8">
+    <defs>
+      <linearGradient id="azure-a" x1="50%" y1="0%" x2="50%" y2="100%">
+        <stop offset="0%" stopColor="#114a8b"/>
+        <stop offset="100%" stopColor="#0669bc"/>
+      </linearGradient>
+      <linearGradient id="azure-c" x1="40%" y1="0%" x2="57%" y2="100%">
+        <stop offset="0%" stopColor="#3ccbf4"/>
+        <stop offset="100%" stopColor="#2892df"/>
+      </linearGradient>
+    </defs>
+    <path fill="url(#azure-a)" d="M33.34 6.54H56.8L32.54 88.55a3.58 3.58 0 01-3.4 2.45H7.9a3.58 3.58 0 01-3.39-4.71L28 9a3.58 3.58 0 013.34-2.46z"/>
+    <path fill="url(#azure-c)" d="M33.34 6.54a3.54 3.54 0 00-3.38 2.51L6.51 86.32a3.58 3.58 0 003.39 4.68h22.62a3.73 3.73 0 002.87-2.39l5.06-14.89 17.76 16.6a3.64 3.64 0 002.3.68h24.44l-10.7-30.74-36.08.02L56.8 6.54z"/>
+  </svg>
+);
+
+const WebhookIcon = () => (
+  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+    <Plug className="w-5 h-5 text-white" />
+  </div>
+);
 
 interface Integration {
   id: string;
   tipo: string;
   nome: string;
   descricao: string;
-  categoria: 'comunicacao' | 'armazenamento' | 'automacao' | 'itsm' | 'identidade';
-  logoUrl?: string;
-  icon?: React.ElementType;
-  cor: string;
+  categoria: string;
   disponivel: boolean;
-  documentacaoUrl?: string;
+  cor: string;
+  Logo: React.FC;
 }
 
 interface IntegrationConfig {
   id: string;
   tipo_integracao: string;
-  nome_exibicao: string;
   status: string;
-  configuracoes: Record<string, unknown>;
-  webhook_url: string | null;
-  ultima_sincronizacao: string | null;
+  configuracoes: any;
+  ultima_sincronizacao?: string;
 }
 
 const INTEGRACOES_DISPONIVEIS: Integration[] = [
@@ -50,109 +127,98 @@ const INTEGRACOES_DISPONIVEIS: Integration[] = [
     id: 'slack',
     tipo: 'slack',
     nome: 'Slack',
-    descricao: 'Envie notificações para canais do Slack quando ocorrerem eventos importantes.',
+    descricao: 'Receba notificações de incidentes, riscos e controles diretamente no Slack.',
     categoria: 'comunicacao',
-    logoUrl: 'https://cdn.worldvectorlogo.com/logos/slack-new-logo.svg',
-    cor: '#4A154B',
     disponivel: true,
-    documentacaoUrl: 'https://api.slack.com/messaging/webhooks'
+    cor: '#4A154B',
+    Logo: SlackLogo
   },
   {
     id: 'teams',
     tipo: 'teams',
     nome: 'Microsoft Teams',
-    descricao: 'Integre com canais do Teams para alertas e notificações em tempo real.',
+    descricao: 'Integre com o Teams para notificações e colaboração em tempo real.',
     categoria: 'comunicacao',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c9/Microsoft_Office_Teams_%282018%E2%80%93present%29.svg',
-    cor: '#6264A7',
     disponivel: true,
-    documentacaoUrl: 'https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook'
-  },
-  {
-    id: 'google_drive',
-    tipo: 'google_drive',
-    nome: 'Google Drive',
-    descricao: 'Sincronize documentos aprovados automaticamente com o Google Drive.',
-    categoria: 'armazenamento',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg',
-    cor: '#4285F4',
-    disponivel: false,
-    documentacaoUrl: 'https://developers.google.com/drive'
-  },
-  {
-    id: 'onedrive',
-    tipo: 'onedrive',
-    nome: 'OneDrive / SharePoint',
-    descricao: 'Integre com OneDrive e SharePoint para gerenciamento de documentos.',
-    categoria: 'armazenamento',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Microsoft_Office_OneDrive_%282019%E2%80%93present%29.svg',
-    icon: FolderOpen,
-    cor: '#0078D4',
-    disponivel: false
+    cor: '#5059C9',
+    Logo: TeamsLogo
   },
   {
     id: 'webhooks',
     tipo: 'webhooks',
     nome: 'Webhooks',
-    descricao: 'Configure webhooks personalizados para integrar com qualquer sistema.',
+    descricao: 'Configure webhooks genéricos para integrar com qualquer sistema.',
     categoria: 'automacao',
-    icon: Webhook,
-    cor: '#10B981',
-    disponivel: true
+    disponivel: true,
+    cor: '#7C3AED',
+    Logo: WebhookIcon
+  },
+  {
+    id: 'jira',
+    tipo: 'jira',
+    nome: 'Jira',
+    descricao: 'Sincronize itens de auditoria e controles com o Jira.',
+    categoria: 'itsm',
+    disponivel: true,
+    cor: '#0052CC',
+    Logo: JiraLogo
+  },
+  {
+    id: 'azure',
+    tipo: 'azure',
+    nome: 'Azure / Intune',
+    descricao: 'Sincronize dispositivos do Intune e Azure AD com o módulo de Ativos.',
+    categoria: 'cloud',
+    disponivel: true,
+    cor: '#0078D4',
+    Logo: AzureLogo
+  },
+  {
+    id: 'onedrive',
+    tipo: 'onedrive',
+    nome: 'OneDrive',
+    descricao: 'Sincronize documentos aprovados com o OneDrive/SharePoint.',
+    categoria: 'armazenamento',
+    disponivel: false,
+    cor: '#0078D4',
+    Logo: OneDriveLogo
+  },
+  {
+    id: 'google-drive',
+    tipo: 'google-drive',
+    nome: 'Google Drive',
+    descricao: 'Backup automático de documentos e evidências no Google Drive.',
+    categoria: 'armazenamento',
+    disponivel: false,
+    cor: '#4285F4',
+    Logo: GoogleDriveLogo
   },
   {
     id: 'zapier',
     tipo: 'zapier',
     nome: 'Zapier',
-    descricao: 'Conecte com mais de 5.000 aplicativos através do Zapier.',
+    descricao: 'Conecte com milhares de apps via Zapier.',
     categoria: 'automacao',
-    logoUrl: 'https://cdn.worldvectorlogo.com/logos/zapier.svg',
-    icon: Zap,
-    cor: '#FF4A00',
     disponivel: false,
-    documentacaoUrl: 'https://zapier.com/developer'
-  },
-  // ITSM
-  {
-    id: 'jira',
-    tipo: 'jira',
-    nome: 'Jira Service Management',
-    descricao: 'Crie tickets automaticamente a partir de incidentes e riscos.',
-    categoria: 'itsm',
-    logoUrl: 'https://cdn.worldvectorlogo.com/logos/jira-1.svg',
-    icon: Settings,
-    cor: '#0052CC',
-    disponivel: true,
-    documentacaoUrl: 'https://developer.atlassian.com/cloud/jira/platform/'
-  },
-  // Identidade
-  {
-    id: 'azure',
-    tipo: 'azure',
-    nome: 'Microsoft Azure / Intune',
-    descricao: 'Sincronize dispositivos do Intune e Azure AD com o módulo de Ativos.',
-    categoria: 'identidade',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Microsoft_Azure.svg',
-    icon: Cloud,
-    cor: '#0078D4',
-    disponivel: true,
-    documentacaoUrl: 'https://learn.microsoft.com/en-us/graph/api/resources/intune-devices-manageddevice'
+    cor: '#FF4A00',
+    Logo: ZapierLogo
   }
 ];
 
 const CATEGORIAS = {
-  comunicacao: { nome: 'Comunicação', descricao: 'Notificações e alertas' },
-  armazenamento: { nome: 'Armazenamento', descricao: 'Sincronização de documentos' },
-  automacao: { nome: 'Automação', descricao: 'Workflows e webhooks' },
-  itsm: { nome: 'ITSM & Ticketing', descricao: 'Gestão de serviços' },
-  identidade: { nome: 'Identidade', descricao: 'SSO e provisionamento' }
+  comunicacao: { nome: 'Comunicação', descricao: 'Ferramentas de comunicação e colaboração' },
+  automacao: { nome: 'Automação', descricao: 'Plataformas de automação e webhooks' },
+  itsm: { nome: 'ITSM / Gestão de TI', descricao: 'Ferramentas de gestão de serviços' },
+  cloud: { nome: 'Cloud & Identidade', descricao: 'Provedores de nuvem e gestão de identidade' },
+  armazenamento: { nome: 'Armazenamento', descricao: 'Armazenamento e backup de documentos' }
 };
 
 export function IntegrationHub() {
-  const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [configuredIntegrations, setConfiguredIntegrations] = useState<IntegrationConfig[]>([]);
   const [empresaId, setEmpresaId] = useState<string | null>(null);
+  const [logViewerOpen, setLogViewerOpen] = useState(false);
   
   // Dialog states
   const [slackDialogOpen, setSlackDialogOpen] = useState(false);
@@ -167,10 +233,13 @@ export function IntegrationHub() {
 
   const fetchIntegrations = async () => {
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('empresa_id')
-        .eq('user_id', user?.id)
+        .eq('user_id', userData.user.id)
         .single();
 
       if (profile?.empresa_id) {
@@ -181,7 +250,13 @@ export function IntegrationHub() {
           .eq('empresa_id', profile.empresa_id);
 
         if (error) throw error;
-        setConfiguredIntegrations((data || []) as IntegrationConfig[]);
+        setConfiguredIntegrations((data || []).map(d => ({
+          id: d.id,
+          tipo_integracao: d.tipo_integracao,
+          status: d.status,
+          configuracoes: d.configuracoes,
+          ultima_sincronizacao: d.ultima_sincronizacao
+        })));
       }
     } catch (error) {
       console.error('Erro ao buscar integrações:', error);
@@ -202,8 +277,9 @@ export function IntegrationHub() {
 
   const handleConfigureClick = (integration: Integration) => {
     if (!integration.disponivel) {
-      toast.info('Em breve', {
-        description: `A integração com ${integration.nome} estará disponível em breve.`
+      toast({
+        title: 'Em breve',
+        description: `A integração com ${integration.nome} estará disponível em breve.`,
       });
       return;
     }
@@ -229,7 +305,7 @@ export function IntegrationHub() {
 
   const renderIntegrationCard = (integration: Integration) => {
     const status = getIntegrationStatus(integration.tipo);
-    const Icon = integration.icon;
+    const Logo = integration.Logo;
 
     return (
       <Card 
@@ -247,21 +323,10 @@ export function IntegrationHub() {
         <CardHeader className="pb-3">
           <div className="flex items-start gap-3">
             <div 
-              className="p-2.5 rounded-lg flex items-center justify-center" 
+              className="p-2 rounded-lg flex items-center justify-center" 
               style={{ backgroundColor: `${integration.cor}15` }}
             >
-              {integration.logoUrl ? (
-                <img 
-                  src={integration.logoUrl} 
-                  alt={integration.nome}
-                  className="h-6 w-6 object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              ) : Icon ? (
-                <Icon className="h-6 w-6" style={{ color: integration.cor }} />
-              ) : null}
+              <Logo />
             </div>
             <div className="flex-1 min-w-0">
               <CardTitle className="text-base flex items-center gap-2">
@@ -293,6 +358,7 @@ export function IntegrationHub() {
               variant="outline" 
               size="sm"
               onClick={() => handleConfigureClick(integration)}
+              disabled={!integration.disponivel}
             >
               {status === 'conectado' ? 'Configurar' : 'Conectar'}
             </Button>
@@ -318,11 +384,17 @@ export function IntegrationHub() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border">
-        <Info className="h-5 w-5 text-primary" />
-        <p className="text-sm text-muted-foreground">
-          Conecte o GovernAII com suas ferramentas favoritas para automatizar processos e receber notificações em tempo real.
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border flex-1">
+          <Info className="h-5 w-5 text-primary shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            Conecte o GovernAII com suas ferramentas favoritas para automatizar processos e receber notificações em tempo real.
+          </p>
+        </div>
+        <Button variant="outline" className="ml-4" onClick={() => setLogViewerOpen(true)}>
+          <History className="h-4 w-4 mr-2" />
+          Ver Logs
+        </Button>
       </div>
 
       {Object.entries(integracoesPorCategoria).map(([categoria, integracoes]) => (
@@ -378,6 +450,8 @@ export function IntegrationHub() {
           />
         </>
       )}
+
+      <IntegrationLogViewer open={logViewerOpen} onOpenChange={setLogViewerOpen} />
     </div>
   );
 }
