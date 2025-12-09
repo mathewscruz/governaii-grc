@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -25,6 +27,8 @@ interface Manutencao {
   data_prevista_conclusao: string | null;
   data_conclusao: string | null;
   responsavel: string | null;
+  responsavel_nome?: string | null;
+  responsavel_avatar?: string | null;
   fornecedor: string | null;
   custo: number | null;
   status: string;
@@ -102,6 +106,41 @@ const ManutencaoDialog: React.FC<ManutencaoDialogProps> = ({ ativoId, ativoNome,
         .order('data_manutencao', { ascending: false });
 
       if (error) throw error;
+      
+      // Fetch responsible user profiles
+      if (data && data.length > 0) {
+        const responsavelIds = data
+          .map(m => m.responsavel)
+          .filter(r => r && r.trim() !== '');
+        
+        if (responsavelIds.length > 0) {
+          const { data: profiles, error: profilesError } = await supabase
+            .rpc('get_profiles_by_text_ids', { text_ids: responsavelIds });
+          
+          if (!profilesError && profiles) {
+            const profileMap = new Map(
+              profiles.map((p: any) => [p.user_id.toString(), { nome: p.nome, foto_url: p.foto_url }])
+            );
+            
+            const mappedData = data.map(manutencao => {
+              const profileData = (manutencao.responsavel && manutencao.responsavel.trim() !== '')
+                ? profileMap.get(manutencao.responsavel)
+                : null;
+              
+              return {
+                ...manutencao,
+                responsavel_nome: profileData?.nome || null,
+                responsavel_avatar: profileData?.foto_url || null
+              };
+            });
+            
+            setManutencoes(mappedData);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+      
       setManutencoes(data || []);
     } catch (error) {
       console.error('Error fetching manutencoes:', error);
@@ -228,6 +267,38 @@ const ManutencaoDialog: React.FC<ManutencaoDialogProps> = ({ ativoId, ativoNome,
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  const renderResponsavel = (manutencao: Manutencao) => {
+    if (!manutencao.responsavel_nome) return '-';
+    
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                {manutencao.responsavel_avatar && (
+                  <AvatarImage src={manutencao.responsavel_avatar} alt={manutencao.responsavel_nome} />
+                )}
+                <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                  {manutencao.responsavel_nome
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm">{manutencao.responsavel_nome.split(' ')[0]}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{manutencao.responsavel_nome}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   };
 
   return (
@@ -524,24 +595,43 @@ const ManutencaoDialog: React.FC<ManutencaoDialogProps> = ({ ativoId, ativoNome,
                             {criticidades.find(c => c.value === manutencao.criticidade)?.label}
                           </Badge>
                         </TableCell>
-                        <TableCell>{manutencao.responsavel || '-'}</TableCell>
+                        <TableCell>{renderResponsavel(manutencao)}</TableCell>
                         <TableCell>{formatCurrency(manutencao.custo)}</TableCell>
                         <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(manutencao)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(manutencao.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          <div className="flex items-center gap-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEdit(manutencao)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Editar manutenção</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDelete(manutencao.id)}
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Excluir manutenção</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                         </TableCell>
                       </TableRow>

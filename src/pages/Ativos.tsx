@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Filter, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, ArrowUpDown, Download, Shield } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Plus, Edit, Trash2, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, Download, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DataTable, Column } from '@/components/ui/data-table';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -25,6 +23,7 @@ import ManutencaoDialog from '@/components/ativos/ManutencaoDialog';
 import TrilhaAuditoriaAtivos from '@/components/ativos/TrilhaAuditoriaAtivos';
 import ImportacaoAtivos from '@/components/ativos/ImportacaoAtivos';
 import { UserSelect } from '@/components/riscos/UserSelect';
+import { formatDateOnly } from '@/lib/date-utils';
 
 interface Ativo {
   id: string;
@@ -46,6 +45,7 @@ interface Ativo {
   cliente: string | null;
   quantidade: number | null;
   created_at: string;
+  manutencoes_count?: number;
 }
 
 const tiposAtivo = [
@@ -128,14 +128,11 @@ const Ativos = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   
   // Estados para filtros
-  const [filtros, setFiltros] = useState({
-    status: 'all',
-    criticidade: 'all',
-    tipo: 'all',
-    valor_negocio: 'all',
-    localizacao: 'all'
-  });
-  const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('todos');
+  const [criticidadeFilter, setCriticidadeFilter] = useState('todos');
+  const [tipoFilter, setTipoFilter] = useState('todos');
+  const [valorNegocioFilter, setValorNegocioFilter] = useState('todos');
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [manutencaoDialog, setManutencaoDialog] = useState<{open: boolean, ativoId: string, ativoNome: string}>({open: false, ativoId: '', ativoNome: ''});
   const [auditDialog, setAuditDialog] = useState<{open: boolean, ativoId?: string}>({open: false});
@@ -165,35 +162,49 @@ const Ativos = () => {
 
   useEffect(() => {
     fetchAtivos();
-  }, [sortField, sortDirection]);
+  }, []);
 
   const fetchAtivos = async () => {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('ativos')
         .select('*')
-        .order(sortField, { ascending: sortDirection === 'asc' });
+        .order('created_at', { ascending: false });
 
-      const { data, error } = await query;
       if (error) throw error;
       
-      // Fetch user names for proprietarios
+      // Fetch user names for proprietarios and maintenance counts
       if (data && data.length > 0) {
         const proprietarioIds = data
           .map(a => a.proprietario)
-          .filter(p => p && p.trim() !== ''); // Excluir null, undefined e strings vazias
+          .filter(p => p && p.trim() !== '');
+        
+        const ativoIds = data.map(a => a.id);
+        
+        // Fetch maintenance counts
+        const { data: manutencoesCounts, error: manutencoesError } = await supabase
+          .from('ativos_manutencoes')
+          .select('ativo_id')
+          .in('ativo_id', ativoIds);
+        
+        const countMap = new Map<string, number>();
+        if (!manutencoesError && manutencoesCounts) {
+          manutencoesCounts.forEach(m => {
+            countMap.set(m.ativo_id, (countMap.get(m.ativo_id) || 0) + 1);
+          });
+        }
         
         if (proprietarioIds.length > 0) {
-          // Usar função RPC para buscar profiles (resolve incompatibilidade TEXT vs UUID)
           const { data: profiles, error: profilesError } = await supabase
             .rpc('get_profiles_by_text_ids', { text_ids: proprietarioIds });
 
           if (profilesError) {
             console.error('Erro ao buscar profiles:', profilesError);
-            setAtivos(data);
+            setAtivos(data.map(ativo => ({
+              ...ativo,
+              manutencoes_count: countMap.get(ativo.id) || 0
+            })));
           } else {
-            console.log('Profiles fetched via RPC:', profiles);
-            
             const profileMap = new Map(
               profiles?.map((p: any) => [p.user_id.toString(), { nome: p.nome, foto_url: p.foto_url }]) || []
             );
@@ -203,21 +214,21 @@ const Ativos = () => {
                 ? profileMap.get(ativo.proprietario) 
                 : null;
               
-              console.log('Ativo:', ativo.nome, 'Profile data:', profileData);
-              
               return {
                 ...ativo,
                 proprietario_nome: profileData?.nome || null,
-                proprietario_avatar: profileData?.foto_url || null
+                proprietario_avatar: profileData?.foto_url || null,
+                manutencoes_count: countMap.get(ativo.id) || 0
               };
             });
-            
-            console.log('Mapped data:', mappedData);
             
             setAtivos(mappedData);
           }
         } else {
-          setAtivos(data);
+          setAtivos(data.map(ativo => ({
+            ...ativo,
+            manutencoes_count: countMap.get(ativo.id) || 0
+          })));
         }
       } else {
         setAtivos(data || []);
@@ -362,39 +373,6 @@ const Ativos = () => {
     });
   };
 
-  const filteredAtivos = ativos.filter(ativo => {
-    // Filtro de busca por texto
-    const matchesSearch = !searchTerm || 
-      ativo.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ativo.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ativo.proprietario?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ativo.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ativo.imei?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ativo.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    // Filtros específicos
-    const matchesStatus = !filtros.status || filtros.status === 'all' || ativo.status === filtros.status;
-    const matchesCriticidade = !filtros.criticidade || filtros.criticidade === 'all' || ativo.criticidade === filtros.criticidade;
-    const matchesTipo = !filtros.tipo || filtros.tipo === 'all' || ativo.tipo === filtros.tipo;
-    const matchesValorNegocio = !filtros.valor_negocio || filtros.valor_negocio === 'all' || ativo.valor_negocio === filtros.valor_negocio;
-    const matchesLocalizacao = !filtros.localizacao || filtros.localizacao === 'all' || ativo.localizacao === filtros.localizacao;
-
-    return matchesSearch && matchesStatus && matchesCriticidade && matchesTipo && matchesValorNegocio && matchesLocalizacao;
-  });
-
-  const clearFilters = () => {
-    setFiltros({
-      status: 'all',
-      criticidade: 'all',
-      tipo: 'all',
-      valor_negocio: 'all',
-      localizacao: 'all'
-    });
-    setSearchTerm('');
-  };
-
-  const hasActiveFilters = Object.values(filtros).some(f => f !== '' && f !== 'all') || searchTerm !== '';
-
   const getTipoLabel = (value: string) => {
     const tipo = tiposAtivo.find(t => t.value === value);
     return tipo?.label || value;
@@ -410,26 +388,55 @@ const Ativos = () => {
     return stat?.color || 'default';
   };
 
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
+  // Filter and sort data
+  const filteredAndSortedAtivos = useMemo(() => {
+    let filtered = ativos.filter(ativo => {
+      const matchesSearch = searchTerm === '' || 
+        ativo.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ativo.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ativo.proprietario_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ativo.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ativo.imei?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ativo.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const matchesStatus = statusFilter === 'todos' || ativo.status === statusFilter;
+      const matchesCriticidade = criticidadeFilter === 'todos' || ativo.criticidade === criticidadeFilter;
+      const matchesTipo = tipoFilter === 'todos' || ativo.tipo === tipoFilter;
+      const matchesValorNegocio = valorNegocioFilter === 'todos' || ativo.valor_negocio === valorNegocioFilter;
+
+      return matchesSearch && matchesStatus && matchesCriticidade && matchesTipo && matchesValorNegocio;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      const aValue = a[sortField as keyof Ativo];
+      const bValue = b[sortField as keyof Ativo];
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
+      }
+
+      if ((aValue ?? '') < (bValue ?? '')) return sortDirection === 'asc' ? -1 : 1;
+      if ((aValue ?? '') > (bValue ?? '')) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [ativos, searchTerm, statusFilter, criticidadeFilter, tipoFilter, valorNegocioFilter, sortField, sortDirection]);
 
   const exportData = () => {
     const csvContent = [
       ['Nome', 'Tipo', 'Status', 'Criticidade', 'Proprietário', 'Localização', 'Data Aquisição'].join(','),
-      ...filteredAtivos.map(ativo => [
+      ...filteredAndSortedAtivos.map(ativo => [
         ativo.nome,
-        ativo.tipo,
-        ativo.status,
-        ativo.criticidade,
-        ativo.proprietario || '',
+        getTipoLabel(ativo.tipo),
+        statusOptions.find(s => s.value === ativo.status)?.label || ativo.status,
+        criticidades.find(c => c.value === ativo.criticidade)?.label || ativo.criticidade,
+        ativo.proprietario_nome || '',
         ativo.localizacao || '',
-        ativo.data_aquisicao || ''
+        ativo.data_aquisicao ? formatDateOnly(ativo.data_aquisicao) : ''
       ].join(','))
     ].join('\n');
 
@@ -444,48 +451,44 @@ const Ativos = () => {
     document.body.removeChild(link);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  const ativoColumns = [
+  // Column configuration
+  const columns: Column<Ativo>[] = [
     {
       key: 'nome',
       label: 'Nome',
       sortable: true,
-      render: (value: string) => <span className="font-medium">{value}</span>
+      render: (_: any, ativo: Ativo) => <span className="font-medium">{ativo.nome}</span>
     },
     {
       key: 'tipo',
       label: 'Tipo',
-      render: (value: string) => getTipoLabel(value)
+      sortable: true,
+      render: (_: any, ativo: Ativo) => getTipoLabel(ativo.tipo)
     },
     {
       key: 'criticidade',
       label: 'Criticidade',
-      render: (value: string) => (
-        <Badge variant={getCriticidadeColor(value) as any}>
-          {criticidades.find(c => c.value === value)?.label || value}
+      sortable: true,
+      render: (_: any, ativo: Ativo) => (
+        <Badge variant={getCriticidadeColor(ativo.criticidade) as any}>
+          {criticidades.find(c => c.value === ativo.criticidade)?.label || ativo.criticidade}
         </Badge>
       )
     },
     {
       key: 'status',
       label: 'Status',
-      render: (value: string) => (
-        <Badge variant={getStatusColor(value) as any}>
-          {statusOptions.find(s => s.value === value)?.label || value}
+      sortable: true,
+      render: (_: any, ativo: Ativo) => (
+        <Badge variant={getStatusColor(ativo.status) as any}>
+          {statusOptions.find(s => s.value === ativo.status)?.label || ativo.status}
         </Badge>
       )
     },
     {
       key: 'proprietario',
       label: 'Proprietário',
-      render: (value: string, ativo: Ativo) => {
+      render: (_: any, ativo: Ativo) => {
         if (!ativo.proprietario_nome) return '-';
         
         return (
@@ -515,73 +518,135 @@ const Ativos = () => {
       }
     },
     {
-      key: 'localizacao',
-      label: 'Localização',
-      render: (value: string) => value || '-'
+      key: 'manutencoes_count',
+      label: 'Manutenções',
+      sortable: true,
+      render: (_: any, ativo: Ativo) => (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-muted flex items-center gap-1"
+                onClick={() => setManutencaoDialog({open: true, ativoId: ativo.id, ativoNome: ativo.nome})}
+              >
+                <Wrench className="h-3 w-3" />
+                {ativo.manutencoes_count || 0}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Clique para ver manutenções</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )
     },
     {
-      key: 'actions',
+      key: 'localizacao',
+      label: 'Localização',
+      sortable: true,
+      render: (_: any, ativo: Ativo) => ativo.localizacao || '-'
+    },
+    {
+      key: 'acoes',
       label: 'Ações',
-      render: (value: any, ativo: Ativo) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEdit(ativo)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setManutencaoDialog({open: true, ativoId: ativo.id, ativoNome: ativo.nome})}
-          >
-            <Wrench className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete(ativo.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+      render: (_: any, ativo: Ativo) => (
+        <div className="flex items-center gap-1">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEdit(ativo)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Editar ativo</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setManutencaoDialog({open: true, ativoId: ativo.id, ativoNome: ativo.nome})}
+                >
+                  <Wrench className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Manutenções</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(ativo.id)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Excluir ativo</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       )
     }
   ];
 
+  // Filter configuration
   const filters = [
     {
       key: 'status',
       label: 'Status',
-      type: 'select' as const,
-      options: statusOptions.map(status => ({ value: status.value, label: status.label })),
-      value: filtros.status,
-      onChange: (value: string) => setFiltros(prev => ({ ...prev, status: value }))
+      value: statusFilter,
+      onChange: setStatusFilter,
+      options: [
+        { value: 'todos', label: 'Todos os status' },
+        ...statusOptions.map(status => ({ value: status.value, label: status.label }))
+      ]
     },
     {
       key: 'criticidade',
       label: 'Criticidade',
-      type: 'select' as const,
-      options: criticidades.map(crit => ({ value: crit.value, label: crit.label })),
-      value: filtros.criticidade,
-      onChange: (value: string) => setFiltros(prev => ({ ...prev, criticidade: value }))
+      value: criticidadeFilter,
+      onChange: setCriticidadeFilter,
+      options: [
+        { value: 'todos', label: 'Todas' },
+        ...criticidades.map(crit => ({ value: crit.value, label: crit.label }))
+      ]
     },
     {
       key: 'tipo',
       label: 'Tipo',
-      type: 'select' as const,
-      options: tiposAtivo.map(tipo => ({ value: tipo.value, label: tipo.label })),
-      value: filtros.tipo,
-      onChange: (value: string) => setFiltros(prev => ({ ...prev, tipo: value }))
+      value: tipoFilter,
+      onChange: setTipoFilter,
+      options: [
+        { value: 'todos', label: 'Todos os tipos' },
+        ...tiposAtivo.map(tipo => ({ value: tipo.value, label: tipo.label }))
+      ]
     },
     {
       key: 'valor_negocio',
       label: 'Valor de Negócio',
-      type: 'select' as const,
-      options: valoresNegocio.map(valor => ({ value: valor, label: valor.charAt(0).toUpperCase() + valor.slice(1) })),
-      value: filtros.valor_negocio,
-      onChange: (value: string) => setFiltros(prev => ({ ...prev, valor_negocio: value }))
+      value: valorNegocioFilter,
+      onChange: setValorNegocioFilter,
+      options: [
+        { value: 'todos', label: 'Todos' },
+        ...valoresNegocio.map(valor => ({ value: valor, label: valor.charAt(0).toUpperCase() + valor.slice(1) }))
+      ]
     }
   ];
 
@@ -828,210 +893,60 @@ const Ativos = () => {
         />
       </div>
 
-      {/* Tabela de Ativos */}
-      <Card className="rounded-lg border overflow-hidden">
-        <CardContent className="p-0">
-          <div className="p-6 pb-4">
-            <div className="flex items-center justify-between gap-4 mb-4">
-              <Input
-                placeholder="Buscar ativos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-              />
-              <div className="flex gap-2">
-                <Button onClick={exportData} variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </Button>
-                <Button onClick={() => setImportDialog(true)} variant="outline" size="sm">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Importar
-                </Button>
-                <Button onClick={() => setAuditDialog({open: true})} variant="outline" size="sm">
-                  <History className="h-4 w-4 mr-2" />
-                  Auditoria
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros
-                </Button>
-                <Button size="sm" onClick={() => {
-                  setEditingAtivo(null);
-                  resetForm();
-                  setIsDialogOpen(true);
-                }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Ativo
-                </Button>
-              </div>
-            </div>
-            {showFilters && (
-              <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg">
-                <Select value={filtros.status} onValueChange={(value) => setFiltros(prev => ({ ...prev, status: value }))}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {statusOptions.map(status => (
-                      <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={filtros.criticidade} onValueChange={(value) => setFiltros(prev => ({ ...prev, criticidade: value }))}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Criticidade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    {criticidades.map(crit => (
-                      <SelectItem key={crit.value} value={crit.value}>{crit.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={filtros.tipo} onValueChange={(value) => setFiltros(prev => ({ ...prev, tipo: value }))}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {tiposAtivo.map(tipo => (
-                      <SelectItem key={tipo.value} value={tipo.value}>{tipo.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {hasActiveFilters && (
-                  <Button variant="outline" size="sm" onClick={clearFilters}>
-                    Limpar Filtros
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Criticidade</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Proprietário</TableHead>
-                <TableHead>Localização</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                [...Array(5)].map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
-                  </TableRow>
-                ))
-              ) : filteredAtivos.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="p-0">
-                    <EmptyState
-                      icon={<Server className="h-8 w-8" />}
-                      title={searchTerm || hasActiveFilters
-                        ? 'Nenhum ativo encontrado'
-                        : 'Nenhum ativo cadastrado'}
-                      description={searchTerm || hasActiveFilters
-                        ? 'Tente ajustar os filtros para encontrar o que procura.'
-                        : 'Comece cadastrando os ativos da sua organização.'}
-                      action={!searchTerm && !hasActiveFilters ? {
-                        label: 'Cadastrar Primeiro Ativo',
-                        onClick: () => setIsDialogOpen(true)
-                      } : undefined}
-                    />
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredAtivos.map((ativo) => (
-                  <TableRow key={ativo.id}>
-                    <TableCell>
-                      <span className="font-medium">{ativo.nome}</span>
-                    </TableCell>
-                    <TableCell>
-                      {getTipoLabel(ativo.tipo)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getCriticidadeColor(ativo.criticidade) as any}>
-                        {criticidades.find(c => c.value === ativo.criticidade)?.label || ativo.criticidade}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusColor(ativo.status) as any}>
-                        {statusOptions.find(s => s.value === ativo.status)?.label || ativo.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {ativo.proprietario_nome ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Avatar className="h-8 w-8 cursor-pointer">
-                                {ativo.proprietario_avatar && (
-                                  <AvatarImage src={ativo.proprietario_avatar} alt={ativo.proprietario_nome} />
-                                )}
-                                <AvatarFallback className="bg-primary/10 text-primary">
-                                  {ativo.proprietario_nome
-                                    .split(' ')
-                                    .map(n => n[0])
-                                    .join('')
-                                    .toUpperCase()
-                                    .slice(0, 2)}
-                                </AvatarFallback>
-                              </Avatar>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{ativo.proprietario_nome}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {ativo.localizacao || '-'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(ativo)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setManutencaoDialog({open: true, ativoId: ativo.id, ativoNome: ativo.nome})}
-                        >
-                          <Wrench className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(ativo.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-2">
+        <Button onClick={() => setImportDialog(true)} variant="outline" size="sm">
+          <Upload className="h-4 w-4 mr-2" />
+          Importar
+        </Button>
+        <Button onClick={() => setAuditDialog({open: true})} variant="outline" size="sm">
+          <History className="h-4 w-4 mr-2" />
+          Auditoria
+        </Button>
+        <Button size="sm" onClick={() => {
+          setEditingAtivo(null);
+          resetForm();
+          setIsDialogOpen(true);
+        }}>
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Ativo
+        </Button>
+      </div>
+
+      {/* DataTable */}
+      <DataTable
+        data={filteredAndSortedAtivos}
+        columns={columns}
+        loading={loading}
+        searchable
+        searchPlaceholder="Buscar ativos..."
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        filters={filters}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={(field) => {
+          if (sortField === field) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+          } else {
+            setSortField(field);
+            setSortDirection('asc');
+          }
+        }}
+        onExport={exportData}
+        onRefresh={fetchAtivos}
+        emptyState={{
+          icon: <Server className="h-8 w-8" />,
+          title: searchTerm ? "Nenhum ativo encontrado" : "Nenhum ativo cadastrado",
+          description: searchTerm 
+            ? "Tente ajustar os termos de busca ou limpe os filtros."
+            : "Comece cadastrando os ativos da sua organização.",
+          action: !searchTerm ? {
+            label: "Cadastrar Primeiro Ativo",
+            onClick: () => setIsDialogOpen(true)
+          } : undefined
+        }}
+      />
 
       <ConfirmDialog
         open={deleteConfirm.open}

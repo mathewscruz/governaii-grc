@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Plus, FileCheck, AlertTriangle, CheckCircle, Clock, Edit, Trash2 } from 'lucide-react';
+import { Plus, FileCheck, AlertTriangle, CheckCircle, Clock, Edit, Trash2, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -27,6 +29,8 @@ interface Licenca {
   status: string;
   observacoes?: string;
   responsavel?: string;
+  responsavel_nome?: string | null;
+  responsavel_avatar?: string | null;
 }
 
 export default function AtivosLicencas() {
@@ -58,6 +62,37 @@ export default function AtivosLicencas() {
         .order('data_vencimento');
 
       if (error) throw error;
+      
+      // Fetch responsible user profiles
+      if (data && data.length > 0) {
+        const responsavelIds = data
+          .map(l => l.responsavel)
+          .filter(r => r && r.trim() !== '');
+        
+        if (responsavelIds.length > 0) {
+          const { data: profiles, error: profilesError } = await supabase
+            .rpc('get_profiles_by_text_ids', { text_ids: responsavelIds });
+          
+          if (!profilesError && profiles) {
+            const profileMap = new Map(
+              profiles.map((p: any) => [p.user_id.toString(), { nome: p.nome, foto_url: p.foto_url }])
+            );
+            
+            return data.map(licenca => {
+              const profileData = (licenca.responsavel && licenca.responsavel.trim() !== '')
+                ? profileMap.get(licenca.responsavel)
+                : null;
+              
+              return {
+                ...licenca,
+                responsavel_nome: profileData?.nome || null,
+                responsavel_avatar: profileData?.foto_url || null
+              };
+            }) as Licenca[];
+          }
+        }
+      }
+      
       return (data || []) as Licenca[];
     },
   });
@@ -225,25 +260,75 @@ export default function AtivosLicencas() {
       render: (_: any, licenca: Licenca) => getStatusBadge(licenca.status)
     },
     {
+      key: 'responsavel',
+      label: 'Responsável',
+      render: (_: any, licenca: Licenca) => {
+        if (!licenca.responsavel_nome) return '-';
+        
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Avatar className="h-8 w-8 cursor-pointer">
+                  {licenca.responsavel_avatar && (
+                    <AvatarImage src={licenca.responsavel_avatar} alt={licenca.responsavel_nome} />
+                  )}
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {licenca.responsavel_nome
+                      .split(' ')
+                      .map(n => n[0])
+                      .join('')
+                      .toUpperCase()
+                      .slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{licenca.responsavel_nome}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
+    },
+    {
       key: 'acoes',
       label: 'Ações',
       render: (_: any, licenca: Licenca) => (
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEdit(licenca)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete(licenca.id, licenca.nome)}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEdit(licenca)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Editar licença</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(licenca.id, licenca.nome)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Excluir licença</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       )
     }
@@ -363,6 +448,27 @@ export default function AtivosLicencas() {
             setSortField(field);
             setSortDirection('asc');
           }
+        }}
+        onExport={() => {
+          const csvContent = [
+            ['Nome', 'Tipo', 'Fornecedor', 'Vencimento', 'Valor Renovação', 'Criticidade', 'Status', 'Responsável'].join(','),
+            ...filteredAndSortedLicencas.map(l => [
+              l.nome,
+              l.tipo_licenca,
+              l.fornecedor,
+              formatDateOnly(l.data_vencimento),
+              l.valor_renovacao?.toString() || '',
+              l.criticidade,
+              l.status,
+              l.responsavel_nome || ''
+            ].join(','))
+          ].join('\n');
+
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `licencas-${new Date().toISOString().split('T')[0]}.csv`;
+          link.click();
         }}
         emptyState={{
           icon: <FileCheck className="h-8 w-8" />,

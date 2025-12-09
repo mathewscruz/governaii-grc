@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { Plus, Key, AlertTriangle, CheckCircle, Clock, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -29,6 +31,8 @@ interface ChaveCriptografica {
   algoritmo?: string;
   observacoes?: string;
   responsavel?: string;
+  responsavel_nome?: string | null;
+  responsavel_avatar?: string | null;
   rotacao_automatica: boolean;
 }
 
@@ -62,6 +66,37 @@ export default function AtivosChaves() {
         .order('data_proxima_rotacao');
 
       if (error) throw error;
+      
+      // Fetch responsible user profiles
+      if (data && data.length > 0) {
+        const responsavelIds = data
+          .map(c => c.responsavel)
+          .filter(r => r && r.trim() !== '');
+        
+        if (responsavelIds.length > 0) {
+          const { data: profiles, error: profilesError } = await supabase
+            .rpc('get_profiles_by_text_ids', { text_ids: responsavelIds });
+          
+          if (!profilesError && profiles) {
+            const profileMap = new Map(
+              profiles.map((p: any) => [p.user_id.toString(), { nome: p.nome, foto_url: p.foto_url }])
+            );
+            
+            return data.map(chave => {
+              const profileData = (chave.responsavel && chave.responsavel.trim() !== '')
+                ? profileMap.get(chave.responsavel)
+                : null;
+              
+              return {
+                ...chave,
+                responsavel_nome: profileData?.nome || null,
+                responsavel_avatar: profileData?.foto_url || null
+              };
+            }) as ChaveCriptografica[];
+          }
+        }
+      }
+      
       return (data || []) as ChaveCriptografica[];
     },
   });
@@ -230,25 +265,75 @@ export default function AtivosChaves() {
       render: (_: any, chave: ChaveCriptografica) => getStatusBadge(chave.status)
     },
     {
+      key: 'responsavel',
+      label: 'Responsável',
+      render: (_: any, chave: ChaveCriptografica) => {
+        if (!chave.responsavel_nome) return '-';
+        
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Avatar className="h-8 w-8 cursor-pointer">
+                  {chave.responsavel_avatar && (
+                    <AvatarImage src={chave.responsavel_avatar} alt={chave.responsavel_nome} />
+                  )}
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {chave.responsavel_nome
+                      .split(' ')
+                      .map(n => n[0])
+                      .join('')
+                      .toUpperCase()
+                      .slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{chave.responsavel_nome}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
+    },
+    {
       key: 'acoes',
       label: 'Ações',
       render: (_: any, chave: ChaveCriptografica) => (
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEdit(chave)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete(chave.id, chave.nome)}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEdit(chave)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Editar chave</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(chave.id, chave.nome)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Excluir chave</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       )
     }
@@ -382,6 +467,27 @@ export default function AtivosChaves() {
             setSortField(field);
             setSortDirection('asc');
           }
+        }}
+        onExport={() => {
+          const csvContent = [
+            ['Nome', 'Tipo', 'Ambiente', 'Localização', 'Próxima Rotação', 'Criticidade', 'Status', 'Responsável'].join(','),
+            ...filteredAndSortedChaves.map(c => [
+              c.nome,
+              c.tipo_chave,
+              c.ambiente,
+              c.localizacao,
+              formatDateOnly(c.data_proxima_rotacao),
+              c.criticidade,
+              c.status,
+              c.responsavel_nome || ''
+            ].join(','))
+          ].join('\n');
+
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `chaves-criptograficas-${new Date().toISOString().split('T')[0]}.csv`;
+          link.click();
         }}
         emptyState={{
           icon: <Key className="h-8 w-8" />,
