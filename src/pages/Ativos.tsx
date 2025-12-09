@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Edit, Trash2, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, Download, Shield, CloudCog, RefreshCw, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, Download, Shield, CloudCog, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
