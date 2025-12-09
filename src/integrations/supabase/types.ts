@@ -4434,6 +4434,113 @@ export type Database = {
         }
         Relationships: []
       }
+      integracoes_config: {
+        Row: {
+          configuracoes: Json | null
+          created_at: string
+          created_by: string | null
+          credenciais_encrypted: string | null
+          empresa_id: string
+          erro_ultima_sincronizacao: string | null
+          id: string
+          nome_exibicao: string
+          status: string
+          tipo_integracao: string
+          ultima_sincronizacao: string | null
+          updated_at: string
+          webhook_url: string | null
+        }
+        Insert: {
+          configuracoes?: Json | null
+          created_at?: string
+          created_by?: string | null
+          credenciais_encrypted?: string | null
+          empresa_id: string
+          erro_ultima_sincronizacao?: string | null
+          id?: string
+          nome_exibicao: string
+          status?: string
+          tipo_integracao: string
+          ultima_sincronizacao?: string | null
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          configuracoes?: Json | null
+          created_at?: string
+          created_by?: string | null
+          credenciais_encrypted?: string | null
+          empresa_id?: string
+          erro_ultima_sincronizacao?: string | null
+          id?: string
+          nome_exibicao?: string
+          status?: string
+          tipo_integracao?: string
+          ultima_sincronizacao?: string | null
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integracoes_config_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integracoes_webhook_logs: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          evento: string
+          id: string
+          integracao_id: string | null
+          payload: Json | null
+          resposta: string | null
+          status_code: number | null
+          sucesso: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          evento: string
+          id?: string
+          integracao_id?: string | null
+          payload?: Json | null
+          resposta?: string | null
+          status_code?: number | null
+          sucesso?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          evento?: string
+          id?: string
+          integracao_id?: string | null
+          payload?: Json | null
+          resposta?: string | null
+          status_code?: number | null
+          sucesso?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integracoes_webhook_logs_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integracoes_webhook_logs_integracao_id_fkey"
+            columns: ["integracao_id"]
+            isOneToOne: false
+            referencedRelation: "integracoes_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string

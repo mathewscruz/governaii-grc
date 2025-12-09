@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Building2, Settings, Shield } from 'lucide-react';
+import { Users, Building2, Settings, Shield, Plug } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
 import GerenciamentoUsuariosEnhanced from '@/components/configuracoes/GerenciamentoUsuariosEnhanced';
 import { PermissionMatrix } from '@/components/configuracoes/PermissionMatrix';
 import ConfiguracoesGerais from '@/components/configuracoes/ConfiguracoesGerais';
 import { ReminderSettings } from '@/components/configuracoes/ReminderSettings';
+import { IntegrationHub } from '@/components/configuracoes/IntegrationHub';
 
 const Configuracoes = () => {
   const { user } = useAuth();
@@ -62,7 +63,7 @@ const Configuracoes = () => {
       </div>
 
       <Tabs defaultValue="usuarios" className="space-y-6">
-        <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-4' : isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
+        <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-5' : isAdmin ? 'grid-cols-4' : 'grid-cols-2'}`}>
           {isSuperAdmin && (
             <TabsTrigger value="empresas" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
@@ -77,6 +78,12 @@ const Configuracoes = () => {
             <TabsTrigger value="permissoes" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               <span className="hidden sm:inline">Permissões</span>
+            </TabsTrigger>
+          )}
+          {isAdmin && (
+            <TabsTrigger value="integracoes" className="flex items-center gap-2">
+              <Plug className="h-4 w-4" />
+              <span className="hidden sm:inline">Integrações</span>
             </TabsTrigger>
           )}
           <TabsTrigger value="geral" className="flex items-center gap-2">
@@ -118,6 +125,22 @@ const Configuracoes = () => {
         {isAdmin && (
           <TabsContent value="permissoes">
             <PermissionMatrix />
+          </TabsContent>
+        )}
+
+        {isAdmin && (
+          <TabsContent value="integracoes">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plug className="h-5 w-5" />
+                  Integrações
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <IntegrationHub />
+              </CardContent>
+            </Card>
           </TabsContent>
         )}
 
