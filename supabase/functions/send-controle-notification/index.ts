@@ -206,11 +206,11 @@ const handler = async (req: Request): Promise<Response> => {
       .from("notifications")
       .insert({
         user_id: responsavel_id,
-        tipo: "controle_atribuido",
-        titulo: "Novo controle atribuído",
-        mensagem: `Você foi designado como responsável pelo controle: ${controle_nome}`,
-        link: `/governanca?tab=controles&controle=${controle_id}`,
-        empresa_id: responsavelData.empresa_id,
+        type: "info",
+        title: "Novo controle atribuído",
+        message: `Você foi designado como responsável pelo controle: ${controle_nome}`,
+        link_to: `/governanca?tab=controles&controle=${controle_id}`,
+        read: false,
       });
 
     if (notificationError) {
