@@ -281,8 +281,8 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-2 gap-5">
             <div>
               <Label htmlFor="nome">Nome *</Label>
               <Input
@@ -382,7 +382,7 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-5">
             <div>
               <Label htmlFor="frequencia">Frequência</Label>
               <Select value={formData.frequencia} onValueChange={(value) => setFormData(prev => ({ ...prev, frequencia: value }))}>

@@ -159,7 +159,7 @@ export function AppSidebar() {
   
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
-      ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-l-4 border-blue-600 dark:border-blue-400 font-semibold shadow-sm' 
+      ? 'bg-primary/15 text-primary border-l-4 border-primary font-semibold shadow-sm' 
       : 'hover:bg-sidebar-accent/50 text-sidebar-foreground';
 
   const handleSignOut = () => {
@@ -250,22 +250,22 @@ export function AppSidebar() {
                     >
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton 
-                          className={`w-full justify-between transition-all duration-300 ease-out h-9 px-3 group hover:scale-105 hover:shadow-sm ${
+                        className={`w-full justify-between transition-all duration-300 ease-out h-9 px-3 group hover:scale-105 hover:shadow-sm ${
                             hasActiveSubItem(item.subItems) 
-                              ? 'bg-blue-500/10 border-l-2 border-blue-500' 
+                              ? 'bg-primary/10 border-l-2 border-primary' 
                               : 'hover:bg-sidebar-accent/50'
                           }`}
                         >
                           <div className="flex items-center min-w-0">
                             <item.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out ${
                               hasActiveSubItem(item.subItems) || openGroups.includes(item.title) 
-                                ? 'text-blue-600 dark:text-blue-400 scale-110 rotate-3' 
+                                ? 'text-primary scale-110 rotate-3' 
                                 : 'group-hover:scale-110'
                             }`} />
                             {!isCollapsed && (
                               <span className={`text-sm font-medium transition-all duration-300 ease-out truncate ${
                                 hasActiveSubItem(item.subItems) 
-                                  ? 'text-blue-600 dark:text-blue-400 font-semibold' 
+                                  ? 'text-primary font-semibold' 
                                   : openGroups.includes(item.title) ? 'text-primary' : ''
                               }`}>
                                 {item.title}
@@ -300,10 +300,10 @@ export function AppSidebar() {
                                    className={({ isActive }) => getNavCls({ isActive })}
                                  >
                                    <subItem.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out ${
-                                     isActive(subItem.url) ? 'text-blue-600 dark:text-blue-400 scale-110' : ''
+                                     isActive(subItem.url) ? 'text-primary scale-110' : ''
                                    }`} />
                                    <span className={`text-sm transition-all duration-300 ease-out truncate ${
-                                     isActive(subItem.url) ? 'text-blue-600 dark:text-blue-400 font-semibold' : ''
+                                     isActive(subItem.url) ? 'text-primary font-semibold' : ''
                                    }`}>
                                      {subItem.title}
                                    </span>
@@ -315,18 +315,18 @@ export function AppSidebar() {
                       )}
                     </Collapsible>
                   ) : (
-                    <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-9">
+                    <SidebarMenuButton asChild className="transition-all duration-300 ease-out hover:scale-105 hover:shadow-sm h-9 min-w-0">
                       <NavLink 
                         to={item.url} 
                         onClick={handleNavClick}
-                        className={({ isActive }) => getNavCls({ isActive })}
+                        className={({ isActive }) => `flex items-center w-full min-w-0 ${getNavCls({ isActive })}`}
                       >
                         <item.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out ${
-                          isActive(item.url) ? 'text-blue-600 dark:text-blue-400 scale-110' : ''
+                          isActive(item.url) ? 'text-primary scale-110' : ''
                         }`} />
                         {!isCollapsed && (
                           <span className={`text-sm font-medium transition-all duration-300 ease-out truncate ${
-                            isActive(item.url) ? 'text-blue-600 dark:text-blue-400 font-semibold' : ''
+                            isActive(item.url) ? 'text-primary font-semibold' : ''
                           }`}>
                             {item.title}
                           </span>
@@ -352,11 +352,11 @@ export function AppSidebar() {
                       className={({ isActive }) => getNavCls({ isActive })}
                     >
                       <Settings className={`h-4 w-4 mr-3 flex-shrink-0 transition-all duration-300 ease-out ${
-                        isActive('/configuracoes') ? 'text-blue-600 dark:text-blue-400 scale-110' : ''
+                        isActive('/configuracoes') ? 'text-primary scale-110' : ''
                       }`} />
                       {!isCollapsed && (
                         <span className={`text-sm font-medium transition-all duration-300 ease-out truncate ${
-                          isActive('/configuracoes') ? 'text-blue-600 dark:text-blue-400 font-semibold' : ''
+                          isActive('/configuracoes') ? 'text-primary font-semibold' : ''
                         }`}>
                           Configurações
                         </span>

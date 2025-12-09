@@ -143,8 +143,8 @@ export function LicencaDialog({ open, onOpenChange, licenca }: LicencaDialogProp
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <div className="grid grid-cols-2 gap-5">
               <FormField
                 control={form.control}
                 name="nome"
@@ -397,7 +397,7 @@ export function LicencaDialog({ open, onOpenChange, licenca }: LicencaDialogProp
               />
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-3 pt-4 border-t border-border/50">
               <Button
                 type="button"
                 variant="outline"
