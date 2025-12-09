@@ -78,8 +78,7 @@ const menuItems = [
     title: 'Controles Internos',
     icon: FileCheck,
     subItems: [
-      { title: 'Controles', url: '/controles', icon: Shield, moduleName: 'controles' },
-      { title: 'Auditorias', url: '/auditorias', icon: Search, moduleName: 'auditorias' },
+      { title: 'Governança', url: '/governanca', icon: Shield, moduleName: 'controles' },
       { title: 'Contratos', url: '/contratos', icon: Handshake, moduleName: 'contratos' },
       { title: 'Documentos', url: '/documentos', icon: FileText, moduleName: 'documentos' },
     ],

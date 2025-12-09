@@ -33,9 +33,9 @@
     /* Table hover - Very light neutral gray */
     --table-row-hover: 220 10% 97%;
 
-    /* Accent - Vibrant blue */
-    --accent: 221 83% 53%;
-    --accent-foreground: 0 0% 98%;
+    /* Accent - Neutral gray for hover states */
+    --accent: 220 14% 96%;
+    --accent-foreground: 215 28% 17%;
 
     /* Status colors */
     --destructive: 0 84% 60%;

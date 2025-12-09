@@ -19,6 +19,7 @@ import GapAnalysisNIST from '@/pages/GapAnalysisNIST';
 import Controles from '@/pages/Controles';
 import Contratos from '@/pages/Contratos';
 import Auditorias from '@/pages/Auditorias';
+import Governanca from '@/pages/Governanca';
 import Documentos from '@/pages/Documentos';
 import ContasPrivilegiadas from '@/pages/ContasPrivilegiadas';
 import Incidentes from '@/pages/Incidentes';
@@ -125,17 +126,25 @@ function App() {
                 </ProtectedRoute>
               </Layout>
             } />
+            <Route path="/governanca" element={
+              <Layout>
+                <ProtectedRoute moduleName="controles" fallbackToRoleCheck={false}>
+                  <Governanca />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            {/* Redirects para rotas antigas */}
             <Route path="/controles" element={
               <Layout>
                 <ProtectedRoute moduleName="controles" fallbackToRoleCheck={false}>
-                  <Controles />
+                  <Governanca />
                 </ProtectedRoute>
               </Layout>
             } />
             <Route path="/auditorias" element={
               <Layout>
                 <ProtectedRoute moduleName="auditorias" fallbackToRoleCheck={false}>
-                  <Auditorias />
+                  <Governanca />
                 </ProtectedRoute>
               </Layout>
             } />
