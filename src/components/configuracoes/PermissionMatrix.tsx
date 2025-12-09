@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { Loader2, Save, RotateCcw, Shield, Eye, Plus, Edit, Trash2, Users } from 'lucide-react';
+import { Loader2, Save, RotateCcw, Shield, Users, AlertTriangle, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface Module {
   id: string;
@@ -38,14 +40,44 @@ interface PermissionMatrixProps {
   selectedUserId?: string;
 }
 
+type PermissionKey = 'can_access' | 'can_create' | 'can_read' | 'can_update' | 'can_delete';
+
+const PERMISSION_LEGEND: { key: PermissionKey; label: string; shortLabel: string; description: string }[] = [
+  { key: 'can_access', label: 'Acessar', shortLabel: 'A', description: 'Pode ver o módulo no menu' },
+  { key: 'can_create', label: 'Criar', shortLabel: 'C', description: 'Pode criar novos registros' },
+  { key: 'can_read', label: 'Ler', shortLabel: 'L', description: 'Pode visualizar registros' },
+  { key: 'can_update', label: 'Editar', shortLabel: 'E', description: 'Pode editar registros existentes' },
+  { key: 'can_delete', label: 'Excluir', shortLabel: 'D', description: 'Pode excluir registros' },
+];
+
 export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUserId }) => {
   const [modules, setModules] = useState<Module[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [permissions, setPermissions] = useState<UserPermission[]>([]);
+  const [originalPermissions, setOriginalPermissions] = useState<UserPermission[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [applyingToAll, setApplyingToAll] = useState(false);
+
+  // Track unsaved changes
+  const hasUnsavedChanges = useMemo(() => {
+    return JSON.stringify(permissions) !== JSON.stringify(originalPermissions);
+  }, [permissions, originalPermissions]);
+
+  // Track modified users
+  const modifiedUsers = useMemo(() => {
+    const modified = new Set<string>();
+    permissions.forEach(p => {
+      const original = originalPermissions.find(
+        op => op.user_id === p.user_id && op.module_id === p.module_id
+      );
+      if (!original || JSON.stringify(p) !== JSON.stringify(original)) {
+        modified.add(p.user_id);
+      }
+    });
+    return modified;
+  }, [permissions, originalPermissions]);
 
   useEffect(() => {
     fetchData();
@@ -55,7 +87,6 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
     try {
       setLoading(true);
 
-      // Buscar módulos
       const { data: modulesData, error: modulesError } = await supabase
         .from('system_modules')
         .select('*')
@@ -64,7 +95,6 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
 
       if (modulesError) throw modulesError;
 
-      // Buscar usuários
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('user_id, nome, email, role')
@@ -73,7 +103,6 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
 
       if (usersError) throw usersError;
 
-      // Buscar permissões existentes
       const { data: permissionsData, error: permissionsError } = await supabase
         .from('user_module_permissions')
         .select('*');
@@ -83,6 +112,7 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
       setModules(modulesData || []);
       setUsers(usersData?.map(u => ({ id: u.user_id, nome: u.nome, email: u.email, role: u.role })) || []);
       setPermissions(permissionsData || []);
+      setOriginalPermissions(permissionsData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Erro ao carregar dados');
@@ -103,7 +133,7 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
     };
   };
 
-  const updatePermission = (userId: string, moduleId: string, field: keyof UserPermission, value: boolean) => {
+  const updatePermission = (userId: string, moduleId: string, field: PermissionKey, value: boolean) => {
     setPermissions(prev => {
       const existing = prev.find(p => p.user_id === userId && p.module_id === moduleId);
       
@@ -133,7 +163,6 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
       const { data: { user } } = await supabase.auth.getUser();
       const currentUserId = user?.id;
       
-      // PROTEÇÃO CRÍTICA: Verificar se o usuário atual está perdendo permissões de configuração
       const configuracaoModule = modules.find(m => m.name === 'configuracoes');
       if (configuracaoModule && currentUserId) {
         const currentUserConfigPermission = permissions.find(p => 
@@ -141,18 +170,16 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
         );
         
         if (currentUserConfigPermission && !currentUserConfigPermission.can_access) {
-          toast.error("⚠️ BLOQUEADO: Você não pode remover seu próprio acesso ao módulo de configurações!");
+          toast.error("Você não pode remover seu próprio acesso às Configurações!");
           setSaving(false);
           return;
         }
       }
 
-      // Filtrar apenas permissões válidas (com pelo menos uma flag true)
       const validPermissions = permissions.filter(p => 
         p.can_access || p.can_create || p.can_read || p.can_update || p.can_delete
       );
 
-      // Buscar permissões existentes para comparação
       const { data: existingPermissions } = await supabase
         .from('user_module_permissions')
         .select('*');
@@ -162,18 +189,15 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
         existingMap.set(`${p.user_id}-${p.module_id}`, p);
       });
 
-      // Processar mudanças de forma incremental
       const toInsert = [];
       const toUpdate = [];
       const toDelete = [];
 
-      // Identificar mudanças
       validPermissions.forEach(permission => {
         const key = `${permission.user_id}-${permission.module_id}`;
         const existing = existingMap.get(key);
         
         if (existing) {
-          // Verificar se houve mudança
           const hasChanged = 
             existing.can_access !== permission.can_access ||
             existing.can_create !== permission.can_create ||
@@ -197,7 +221,6 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
         }
       });
 
-      // Identificar permissões a serem removidas (existem mas não estão mais na lista válida)
       existingPermissions?.forEach(existing => {
         const found = validPermissions.find(p => 
           p.user_id === existing.user_id && p.module_id === existing.module_id
@@ -207,7 +230,6 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
         }
       });
 
-      // Executar mudanças atomicamente
       if (toInsert.length > 0) {
         const { error } = await supabase
           .from('user_module_permissions')
@@ -228,7 +250,6 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
 
       if (toDelete.length > 0) {
         for (const permission of toDelete) {
-          // PROTEÇÃO: Não deletar permissões do usuário atual para configurações
           if (permission.user_id === currentUserId && 
               configuracaoModule && 
               permission.module_id === configuracaoModule.id) {
@@ -244,15 +265,13 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
         }
       }
 
-      toast.success(`✅ Permissões salvas com sucesso! ${toInsert.length} inseridas, ${toUpdate.length} atualizadas, ${toDelete.length} removidas.`);
+      setOriginalPermissions([...permissions]);
+      toast.success(`Permissões salvas! ${toInsert.length} inseridas, ${toUpdate.length} atualizadas, ${toDelete.length} removidas.`);
       
-      // Recarregar dados para garantir consistência
       await fetchData();
     } catch (error: any) {
       console.error('Error saving permissions:', error);
-      toast.error(`❌ Erro ao salvar permissões: ${error.message}`);
-      
-      // Recarregar dados em caso de erro para garantir consistência
+      toast.error(`Erro ao salvar permissões: ${error.message}`);
       await fetchData();
     } finally {
       setSaving(false);
@@ -285,9 +304,6 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
 
       if (data?.successful > 0) {
         toast.success(`Permissões aplicadas para ${data.successful} usuários`);
-        if (data?.failed > 0) {
-          toast.warning(`${data.failed} usuários falharam na aplicação`);
-        }
         await fetchData();
       } else {
         toast.error('Nenhuma permissão foi aplicada');
@@ -338,15 +354,51 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Matriz de Permissões
-          </CardTitle>
-          <CardDescription>
-            Configure as permissões específicas por usuário e módulo. Use as permissões padrão baseadas na role ou customize individualmente.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Matriz de Permissões
+                {hasUnsavedChanges && (
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Alterações não salvas
+                  </Badge>
+                )}
+              </CardTitle>
+              <CardDescription>
+                Configure as permissões específicas por usuário e módulo
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={fetchData} variant="outline" size="sm">
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Atualizar
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Legend */}
+          <div className="flex flex-wrap items-center gap-3 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <Info className="h-4 w-4" />
+              Legenda:
+            </div>
+            {PERMISSION_LEGEND.map(({ key, label, shortLabel, description }) => (
+              <TooltipProvider key={key}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="cursor-help">
+                      {shortLabel} = {label}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>{description}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+          </div>
+
           {!selectedUserId && (
             <div className="flex items-center gap-4">
               <div className="flex-1">
@@ -358,15 +410,11 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button onClick={fetchData} variant="outline" size="sm">
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Atualizar
-              </Button>
             </div>
           )}
 
           <div className="flex gap-2 flex-wrap">
-            <Button onClick={savePermissions} disabled={saving}>
+            <Button onClick={savePermissions} disabled={saving || !hasUnsavedChanges}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
               Salvar Alterações
             </Button>
@@ -383,115 +431,117 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
 
           <div className="border rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="text-left p-3 font-medium min-w-[200px]">Usuário</th>
-                    <th className="text-left p-3 font-medium min-w-[100px]">Role</th>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[200px] sticky left-0 bg-background z-10">Usuário</TableHead>
+                    <TableHead className="min-w-[100px]">Perfil</TableHead>
                     {modules.map(module => (
-                      <th key={module.id} className="text-center p-3 font-medium min-w-[120px]">
-                        <div className="flex flex-col items-center gap-1">
-                          <span className="text-xs">{module.display_name}</span>
-                          <div className="flex gap-1 text-xs text-muted-foreground">
-                            <span title="Acessar">A</span>
-                            <span title="Criar">C</span>
-                            <span title="Ler">L</span>
-                            <span title="Editar">E</span>
-                            <span title="Deletar">D</span>
-                          </div>
-                        </div>
-                      </th>
+                      <TableHead key={module.id} className="text-center min-w-[140px]">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex flex-col items-center gap-1 cursor-help">
+                                <span className="text-xs font-medium">{module.display_name}</span>
+                                <div className="flex gap-1 text-xs text-muted-foreground">
+                                  {PERMISSION_LEGEND.map(p => (
+                                    <span key={p.key} title={p.label}>{p.shortLabel}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>{module.description || module.name}</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableHead>
                     ))}
-                    <th className="text-center p-3 font-medium min-w-[100px]">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map(user => (
-                    <tr key={user.id} className="border-t hover:bg-muted/25">
-                      <td className="p-3">
-                        <div>
-                          <div className="font-medium">{user.nome}</div>
-                          <div className="text-sm text-muted-foreground">{user.email}</div>
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs">
-                          {getRoleLabel(user.role)}
-                        </Badge>
-                      </td>
-                      {modules.map(module => {
-                        const permission = getPermission(user.id, module.id);
-                        return (
-                          <td key={module.id} className="p-3">
-                            <div className="flex gap-1 justify-center">
-                              <Checkbox
-                                checked={permission.can_access}
-                                onCheckedChange={(checked) => 
-                                  updatePermission(user.id, module.id, 'can_access', !!checked)
-                                }
-                                title="Acessar"
-                                className="h-3 w-3"
-                              />
-                              <Checkbox
-                                checked={permission.can_create}
-                                onCheckedChange={(checked) => 
-                                  updatePermission(user.id, module.id, 'can_create', !!checked)
-                                }
-                                title="Criar"
-                                className="h-3 w-3"
-                              />
-                              <Checkbox
-                                checked={permission.can_read}
-                                onCheckedChange={(checked) => 
-                                  updatePermission(user.id, module.id, 'can_read', !!checked)
-                                }
-                                title="Ler"
-                                className="h-3 w-3"
-                              />
-                              <Checkbox
-                                checked={permission.can_update}
-                                onCheckedChange={(checked) => 
-                                  updatePermission(user.id, module.id, 'can_update', !!checked)
-                                }
-                                title="Editar"
-                                className="h-3 w-3"
-                              />
-                              <Checkbox
-                                checked={permission.can_delete}
-                                onCheckedChange={(checked) => 
-                                  updatePermission(user.id, module.id, 'can_delete', !!checked)
-                                }
-                                title="Deletar"
-                                className="h-3 w-3"
-                              />
-                            </div>
-                          </td>
-                        );
-                      })}
-                      <td className="p-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => applyDefaultPermissions(user.id)}
-                          className="text-xs"
+                    <TableHead className="text-center min-w-[100px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={modules.length + 3} className="text-center text-muted-foreground py-8">
+                        Nenhum usuário encontrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredUsers.map(user => {
+                      const isModified = modifiedUsers.has(user.id);
+                      return (
+                        <TableRow 
+                          key={user.id} 
+                          className={isModified ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}
                         >
-                          Padrão
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          <TableCell className="font-medium sticky left-0 bg-background z-10">
+                            <div>
+                              <div className="font-medium">{user.nome}</div>
+                              <div className="text-sm text-muted-foreground">{user.email}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs whitespace-nowrap">
+                              {getRoleLabel(user.role)}
+                            </Badge>
+                          </TableCell>
+                          {modules.map(module => {
+                            const permission = getPermission(user.id, module.id);
+                            return (
+                              <TableCell key={module.id} className="text-center">
+                                <div className="flex gap-1 justify-center">
+                                  {PERMISSION_LEGEND.map(({ key, label }) => (
+                                    <TooltipProvider key={key}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="flex items-center justify-center">
+                                            <Checkbox
+                                              checked={permission[key]}
+                                              onCheckedChange={(checked) => 
+                                                updatePermission(user.id, module.id, key, !!checked)
+                                              }
+                                              className="h-4 w-4"
+                                            />
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          {label} - {module.display_name}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  ))}
+                                </div>
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell className="text-center">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => applyDefaultPermissions(user.id)}
+                                    className="text-xs"
+                                  >
+                                    Padrão
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Aplicar permissões padrão para este usuário</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </div>
-
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              Nenhum usuário encontrado
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
   );
 };
+
+export default PermissionMatrix;

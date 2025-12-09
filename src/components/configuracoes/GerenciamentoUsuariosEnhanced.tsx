@@ -2,22 +2,24 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Search, Edit, Trash2, UserCheck, UserX, Key, User, Send, Clock, MoreHorizontal, Shield, Mail } from 'lucide-react';
+import { Plus, Edit, Trash2, UserCheck, User, Clock, MoreHorizontal, Shield, Mail, Users, ShieldCheck } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PermissionMatrix } from './PermissionMatrix';
+import { DataTable, Column, Filter } from '@/components/ui/data-table';
+import { StatCard } from '@/components/ui/stat-card';
+import { formatDateOnly } from '@/lib/date-utils';
 
 const usuarioSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -74,12 +76,13 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [usuarioToDelete, setUsuarioToDelete] = useState<Usuario | null>(null);
   const [usersAccessInfo, setUsersAccessInfo] = useState<Map<string, UserAccessInfo>>(new Map());
-  const [accessInfoLoading, setAccessInfoLoading] = useState(false);
   const [showPermissionMatrix, setShowPermissionMatrix] = useState(false);
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<string | undefined>();
   const [restoringPermissions, setRestoringPermissions] = useState(false);
   const [creating, setCreating] = useState(false);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [sortField, setSortField] = useState<string>('nome');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const form = useForm<UsuarioForm>({
     resolver: zodResolver(usuarioSchema),
@@ -105,9 +108,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         `)
         .order('nome');
 
-      // Super admin pode ver usuários de todas as empresas
       if (!isSuperAdmin) {
-        // Admin e outros usuários só veem usuários da mesma empresa
         const { data: profile } = await supabase
           .from('profiles')
           .select('empresa_id')
@@ -149,7 +150,6 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     }
 
     try {
-      setAccessInfoLoading(true);
       const { data, error } = await supabase.functions.invoke('get-user-access-info', {
         body: { user_ids: userIds }
       });
@@ -157,7 +157,6 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       if (error) throw error;
       
       const accessMap = new Map<string, UserAccessInfo>();
-      // A função retorna um objeto com uma propriedade 'users' que contém o array
       const users = data?.users || [];
       users.forEach((info: UserAccessInfo) => {
         accessMap.set(info.user_id, info);
@@ -165,8 +164,6 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       setUsersAccessInfo(accessMap);
     } catch (error) {
       console.error('Erro ao buscar informações de acesso:', error);
-    } finally {
-      setAccessInfoLoading(false);
     }
   };
 
@@ -196,7 +193,6 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     loadData();
   }, []);
 
-  // Load access info after usuarios are loaded
   useEffect(() => {
     if (usuarios.length > 0) {
       const userIds = usuarios.map(u => u.user_id);
@@ -213,12 +209,25 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     return matchesSearch && matchesEmpresa && matchesRole;
   });
 
+  // Stats
+  const stats = {
+    total: usuarios.length,
+    active: usuarios.filter(u => {
+      const info = usersAccessInfo.get(u.user_id);
+      return info?.last_sign_in_at;
+    }).length,
+    pending: usuarios.filter(u => {
+      const info = usersAccessInfo.get(u.user_id);
+      return info?.first_access_pending;
+    }).length,
+    admins: usuarios.filter(u => u.role === 'admin' || u.role === 'super_admin').length,
+  };
+
   const handleSubmit = async (data: UsuarioForm) => {
     try {
       setCreating(true);
       
       if (editingUsuario) {
-        // Editar usuário existente
         const { error } = await supabase
           .from('profiles')
           .update({
@@ -232,7 +241,6 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         if (error) throw error;
         toast.success('Usuário atualizado com sucesso');
       } else {
-        // Criar novo usuário
         const { error } = await supabase.functions.invoke('create-user', {
           body: {
             email: data.email,
@@ -243,19 +251,9 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         });
 
         if (error) {
-          // Tratar erro específico de usuário duplicado
           if (error.message?.includes('DUPLICATE_USER')) {
-            const errorData = typeof error === 'object' && 'details' in error ? error as any : null;
-            const suggestions = errorData?.suggestions || [];
-            
-            toast.error(
-              `Usuário já existe: ${data.email}`, 
-              {
-                description: suggestions.length > 0 ? suggestions.join(' • ') : 'Use as opções de gerenciamento para este usuário.',
-                duration: 6000
-              }
-            );
-            return; // Não fechar o dialog para permitir correção
+            toast.error(`Usuário já existe: ${data.email}`);
+            return;
           }
           throw error;
         }
@@ -263,7 +261,6 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       }
 
       await fetchUsuarios();
-      // fetchUsersAccessInfo será chamado automaticamente pelo useEffect quando usuarios mudar
       setDialogOpen(false);
       form.reset();
       setEditingUsuario(null);
@@ -295,19 +292,10 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       
       const { data, error } = await supabase.functions.invoke('apply-default-permissions-all-users');
       
-      if (error) {
-        throw error;
-      }
-      
-      if (data?.error) {
-        throw new Error(data.error);
-      }
+      if (error) throw error;
       
       toast.success(`Permissões restauradas para ${data?.successful || 0} usuários`);
-      
-      // Atualizar a lista de usuários para refletir as mudanças
       await fetchUsuarios();
-      
     } catch (error: any) {
       console.error('Erro ao restaurar permissões:', error);
       toast.error(error.message || "Erro ao restaurar permissões");
@@ -324,97 +312,31 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
   const handleDelete = async () => {
     if (!usuarioToDelete) return;
     
-    console.log('Iniciando exclusão completa do usuário:', usuarioToDelete);
-    
     try {
-      // 1. Verificar se o usuário está autenticado
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
-        console.error('Usuário não autenticado:', userError);
-        throw new Error('Usuário não autenticado. Faça login novamente.');
-      }
-      
-      console.log('Usuário autenticado:', user.id);
-      
-      // 2. Verificar contexto detalhado do usuário
-      const { data: debugData, error: debugError } = await supabase
-        .rpc('debug_user_context');
-      
-      console.log('Debug - Contexto do usuário logado:', debugData);
-      if (debugError) {
-        console.error('Erro no debug:', debugError);
-        throw new Error('Erro ao verificar permissões do usuário');
-      }
-      
-      // 3. Verificar dados do usuário alvo
-      const { data: targetUser, error: targetError } = await supabase
-        .from('profiles')
-        .select('id, nome, role, empresa_id, user_id')
-        .eq('id', usuarioToDelete.id)
-        .single();
-      
-      if (targetError || !targetUser) {
-        console.error('Erro ao buscar usuário alvo:', targetError);
-        throw new Error('Usuário não encontrado');
-      }
-      
-      console.log('Debug - Usuário alvo:', targetUser);
-      
-      // 4. Verificar se pode deletar baseado nas regras de negócio
-      const debugInfo = debugData as any;
-      const currentUserRole = debugInfo?.user_role;
-      const currentUserEmpresa = debugInfo?.user_empresa_id;
-      
-      if (currentUserRole === 'super_admin') {
-        console.log('Super admin pode deletar qualquer usuário');
-      } else if (currentUserRole === 'admin') {
-        if (targetUser.empresa_id !== currentUserEmpresa) {
-          throw new Error('Você só pode excluir usuários da sua empresa');
-        }
-        if (['admin', 'super_admin'].includes(targetUser.role)) {
-          throw new Error('Você não pode excluir outros administradores');
-        }
-        console.log('Admin pode deletar este usuário');
-      } else {
-        throw new Error('Você não tem permissão para excluir usuários');
-      }
-      
-      // 5. Chamar edge function para exclusão completa (profiles + auth.users)
-      console.log('Chamando edge function para exclusão completa...');
       const { error: deleteError } = await supabase.functions.invoke('delete-user-complete', {
         body: {
-          user_id: targetUser.user_id,
+          user_id: usuarioToDelete.user_id,
           profile_id: usuarioToDelete.id
         }
       });
 
       if (deleteError) {
-        console.error('Erro na edge function de exclusão:', deleteError);
-        
-        // Fallback: tentar exclusão apenas do profile
-        console.log('Tentando fallback - exclusão apenas do profile...');
         const { error: profileDeleteError } = await supabase
           .from('profiles')
           .delete()
           .eq('id', usuarioToDelete.id);
 
-        if (profileDeleteError) {
-          console.error('Erro na exclusão do profile:', profileDeleteError);
-          throw new Error('Erro ao excluir usuário. Entre em contato com o suporte.');
-        }
-        
-        toast.success('Usuário removido do sistema (profile excluído)');
+        if (profileDeleteError) throw profileDeleteError;
+        toast.success('Usuário removido do sistema');
       } else {
-        toast.success('Usuário excluído completamente do sistema');
+        toast.success('Usuário excluído completamente');
       }
       
-      console.log('Exclusão concluída');
       await fetchUsuarios();
       setDeleteDialogOpen(false);
       setUsuarioToDelete(null);
     } catch (error: any) {
-      console.error('Erro completo ao excluir usuário:', error);
+      console.error('Erro ao excluir usuário:', error);
       toast.error(error.message || 'Erro ao excluir usuário');
     }
   };
@@ -432,16 +354,12 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         body: { userId: usuario.user_id }
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast.success(`Convite reenviado para ${usuario.nome}`);
       
-      // Atualizar informações de acesso
       const userIds = usuarios.map(u => u.user_id);
       await fetchUsersAccessInfo(userIds);
-      
     } catch (error: any) {
       console.error('Erro ao reenviar convite:', error);
       toast.error(error.message || 'Erro ao reenviar convite');
@@ -472,6 +390,15 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     );
   };
 
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
   if (showPermissionMatrix) {
     return (
       <div className="space-y-6">
@@ -494,331 +421,360 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const columns: Column<Usuario>[] = [
+    {
+      key: 'nome',
+      label: 'Usuário',
+      sortable: true,
+      render: (_, usuario) => (
+        <div className="flex items-center space-x-3">
+          {usuario.foto_url ? (
+            <img 
+              src={usuario.foto_url} 
+              alt={usuario.nome}
+              className="w-8 h-8 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+              <User className="h-4 w-4 text-primary" />
+            </div>
+          )}
+          <div>
+            <div className="font-medium">{usuario.nome}</div>
+            <div className="text-sm text-muted-foreground">{usuario.email}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'role',
+      label: 'Perfil',
+      sortable: true,
+      render: (value) => getRoleBadge(value),
+    },
+    {
+      key: 'empresa',
+      label: 'Empresa',
+      sortable: false,
+      render: (_, usuario) => usuario.empresas?.nome || '-',
+    },
+    {
+      key: 'ativo',
+      label: 'Status',
+      sortable: true,
+      render: (value) => (
+        <Badge variant={value ? 'default' : 'secondary'}>
+          {value ? 'Ativo' : 'Inativo'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'acesso',
+      label: 'Acesso',
+      sortable: false,
+      render: (_, usuario) => {
+        const accessInfo = usersAccessInfo.get(usuario.user_id);
+        
+        if (accessInfo?.last_sign_in_at) {
+          return (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 text-green-600">
+                    <UserCheck className="h-4 w-4" />
+                    <span className="text-sm">Último acesso</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {format(new Date(accessInfo.last_sign_in_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        }
+        
+        if (accessInfo?.first_access_pending) {
+          return (
+            <Badge variant="outline" className="text-amber-600 whitespace-nowrap">
+              <Clock className="h-3 w-3 mr-1" />
+              Primeiro acesso pendente
+            </Badge>
+          );
+        }
+        
+        return (
+          <Badge variant="secondary">Nunca acessou</Badge>
+        );
+      },
+    },
+    {
+      key: 'created_at',
+      label: 'Criado em',
+      sortable: true,
+      render: (value) => formatDateOnly(value),
+    },
+  ];
+
+  const filters: Filter[] = [
+    ...(isSuperAdmin ? [{
+      key: 'empresa',
+      label: 'Empresa',
+      options: [
+        { value: 'all', label: 'Todas as empresas' },
+        ...empresas.map(e => ({ value: e.id, label: e.nome }))
+      ],
+      value: filterEmpresa,
+      onChange: setFilterEmpresa,
+    }] : []),
+    {
+      key: 'role',
+      label: 'Perfil',
+      options: [
+        { value: 'all', label: 'Todos os perfis' },
+        { value: 'super_admin', label: 'Super Admin' },
+        { value: 'admin', label: 'Administrador' },
+        { value: 'user', label: 'Usuário' },
+        { value: 'readonly', label: 'Somente Leitura' },
+      ],
+      value: filterRole,
+      onChange: setFilterRole,
+    },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex flex-col sm:flex-row gap-3 flex-1">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Buscar usuários..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <div className="flex gap-3">
-              {isSuperAdmin && (
-                <Select value={filterEmpresa} onValueChange={setFilterEmpresa}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filtrar por empresa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as empresas</SelectItem>
-                    {empresas.map((empresa) => (
-                      <SelectItem key={empresa.id} value={empresa.id}>
-                        {empresa.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              
-              <Select value={filterRole} onValueChange={setFilterRole}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filtrar por perfil" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os perfis</SelectItem>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="user">Usuário</SelectItem>
-                  <SelectItem value="readonly">Somente Leitura</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              onClick={handleRestoreAllPermissions}
-              disabled={restoringPermissions}
-            >
-              {restoringPermissions ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                  Restaurando...
-                </>
-              ) : (
-                <>
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <StatCard
+          title="Total de Usuários"
+          value={stats.total}
+          icon={Users}
+          variant="default"
+        />
+        <StatCard
+          title="Usuários Ativos"
+          value={stats.active}
+          icon={UserCheck}
+          variant="default"
+          description="Com pelo menos um acesso"
+        />
+        <StatCard
+          title="Pendentes"
+          value={stats.pending}
+          icon={Clock}
+          variant={stats.pending > 0 ? 'warning' : 'default'}
+          description="Primeiro acesso pendente"
+        />
+        <StatCard
+          title="Administradores"
+          value={stats.admins}
+          icon={ShieldCheck}
+          variant="default"
+        />
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-wrap gap-3 justify-end">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                onClick={handleRestoreAllPermissions}
+                disabled={restoringPermissions}
+              >
+                {restoringPermissions ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                ) : (
                   <Shield className="h-4 w-4 mr-2" />
-                  Restaurar Permissões
-                </>
-              )}
+                )}
+                Restaurar Permissões
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Aplica permissões padrão para todos os usuários
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Button variant="outline" onClick={() => handleManagePermissions()}>
+          <Shield className="h-4 w-4 mr-2" />
+          Gerenciar Permissões
+        </Button>
+        
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Usuário
             </Button>
-            
-            <Button variant="outline" onClick={() => handleManagePermissions()}>
-              <Shield className="h-4 w-4 mr-2" />
-              Gerenciar Permissões
-            </Button>
-            
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Usuário
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingUsuario ? 'Editar Usuário' : 'Novo Usuário'}
-                  </DialogTitle>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="nome"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome</FormLabel>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {editingUsuario ? 'Editar Usuário' : 'Novo Usuário'}
+              </DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="nome"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="email" disabled={!!editingUsuario} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Perfil</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o perfil" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {isSuperAdmin && (
+                            <SelectItem value="super_admin">Super Admin</SelectItem>
+                          )}
+                          <SelectItem value="admin">Administrador</SelectItem>
+                          <SelectItem value="user">Usuário</SelectItem>
+                          <SelectItem value="readonly">Somente Leitura</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {isSuperAdmin && (
+                  <FormField
+                    control={form.control}
+                    name="empresa_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Empresa</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(value === 'none' ? '' : value)} value={field.value || 'none'}>
                           <FormControl>
-                            <Input {...field} />
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a empresa" />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="email" disabled={!!editingUsuario} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="role"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Perfil</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o perfil" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {isSuperAdmin && (
-                                <SelectItem value="super_admin">Super Admin</SelectItem>
-                              )}
-                              <SelectItem value="admin">Administrador</SelectItem>
-                              <SelectItem value="user">Usuário</SelectItem>
-                              <SelectItem value="readonly">Somente Leitura</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {isSuperAdmin && (
-                      <FormField
-                        control={form.control}
-                        name="empresa_id"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Empresa</FormLabel>
-                            <Select onValueChange={(value) => field.onChange(value === 'none' ? '' : value)} value={field.value || 'none'}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione a empresa" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="none">Nenhuma empresa</SelectItem>
-                                {empresas.map((empresa) => (
-                                  <SelectItem key={empresa.id} value={empresa.id}>
-                                    {empresa.nome}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                          <SelectContent>
+                            <SelectItem value="none">Nenhuma empresa</SelectItem>
+                            {empresas.map((empresa) => (
+                              <SelectItem key={empresa.id} value={empresa.id}>
+                                {empresa.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                    
-                    <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button type="submit" disabled={creating}>
-                        {creating ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                            {editingUsuario ? 'Atualizando...' : 'Criando...'}
-                          </>
-                        ) : (
-                          editingUsuario ? 'Atualizar' : 'Criar'
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
+                  />
+                )}
+                
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={creating}>
+                    {creating ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                    ) : null}
+                    {editingUsuario ? 'Atualizar' : 'Criar'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Usuário</TableHead>
-              <TableHead>Perfil</TableHead>
-              <TableHead>Empresa</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Acesso</TableHead>
-              <TableHead className="text-center">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredUsuarios.map((usuario) => {
-              const accessInfo = usersAccessInfo.get(usuario.user_id);
-              
-              return (
-                <TableRow key={usuario.user_id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      {usuario.foto_url ? (
-                        <img 
-                          src={usuario.foto_url} 
-                          alt={usuario.nome}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                          <User className="h-4 w-4 text-primary" />
-                        </div>
-                      )}
-                      <div>
-                        <div className="font-medium">{usuario.nome}</div>
-                        <div className="text-sm text-muted-foreground">{usuario.email}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{getRoleBadge(usuario.role)}</TableCell>
-                  <TableCell>{usuario.empresas?.nome || '-'}</TableCell>
-                  <TableCell>
-                    <Badge variant={usuario.ativo ? 'default' : 'secondary'}>
-                      {usuario.ativo ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {accessInfo?.last_sign_in_at ? (
-                        <div>
-                          <div className="text-green-600 font-medium">Último acesso</div>
-                          <div className="text-muted-foreground">
-                            {format(new Date(accessInfo.last_sign_in_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                          </div>
-                        </div>
-                      ) : accessInfo?.first_access_pending ? (
-                        <Badge variant="outline" className="text-amber-600">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Primeiro acesso pendente
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          Nunca acessou
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(usuario)}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleManagePermissions(usuario.user_id)}>
-                          <Shield className="h-4 w-4 mr-2" />
-                          Gerenciar Permissões
-                        </DropdownMenuItem>
-                        {shouldShowResendButton(usuario) && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DropdownMenuItem 
-                                  onClick={() => resendWelcomeEmail(usuario)}
-                                  disabled={actionLoading[`resend-${usuario.id}`]}
-                                >
-                                  {actionLoading[`resend-${usuario.id}`] ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                                  ) : (
-                                    <Mail className="h-4 w-4 mr-2" />
-                                  )}
-                                  Reenviar Convite
-                                </DropdownMenuItem>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Reenviar email de boas-vindas com nova senha temporária</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                        <DropdownMenuSeparator />
-                         <DropdownMenuItem 
-                           className="text-destructive"
-                           onClick={() => openDeleteDialog(usuario)}
-                         >
-                           <Trash2 className="h-4 w-4 mr-2" />
-                           Excluir
-                         </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-
-      {filteredUsuarios.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          Nenhum usuário encontrado
-        </div>
-      )}
+      {/* Users Table */}
+      <DataTable
+        data={filteredUsuarios}
+        columns={columns}
+        loading={loading}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Buscar por nome ou email..."
+        filters={filters}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={handleSort}
+        onRefresh={fetchUsuarios}
+        actions={(usuario) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleEdit(usuario)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleManagePermissions(usuario.user_id)}>
+                <Shield className="h-4 w-4 mr-2" />
+                Gerenciar Permissões
+              </DropdownMenuItem>
+              {shouldShowResendButton(usuario) && (
+                <DropdownMenuItem 
+                  onClick={() => resendWelcomeEmail(usuario)}
+                  disabled={actionLoading[`resend-${usuario.id}`]}
+                >
+                  {actionLoading[`resend-${usuario.id}`] ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                  ) : (
+                    <Mail className="h-4 w-4 mr-2" />
+                  )}
+                  Reenviar Convite
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="text-destructive"
+                onClick={() => openDeleteDialog(usuario)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        emptyState={{
+          icon: Users,
+          title: 'Nenhum usuário encontrado',
+          description: searchTerm ? 'Tente ajustar os filtros' : 'Crie um novo usuário para começar',
+        }}
+      />
 
       <ConfirmDialog
         open={deleteDialogOpen}

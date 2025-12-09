@@ -1,22 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Search, Edit, Trash2, Building2, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, Building2, Upload } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { PlanBadge } from '@/components/PlanBadge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { DataTable, Column, Filter } from '@/components/ui/data-table';
+import { formatDateOnly } from '@/lib/date-utils';
 
 const empresaSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -64,12 +66,16 @@ const GerenciamentoEmpresas = () => {
   const [planos, setPlanos] = useState<Plano[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [licencaFilter, setLicencaFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmpresa, setEditingEmpresa] = useState<Empresa | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [empresaToDelete, setEmpresaToDelete] = useState<Empresa | null>(null);
   const [selectedPlanoId, setSelectedPlanoId] = useState<string>('');
+  const [sortField, setSortField] = useState<string>('nome');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const form = useForm<EmpresaForm>({
     resolver: zodResolver(empresaSchema),
@@ -115,7 +121,6 @@ const GerenciamentoEmpresas = () => {
 
       if (error) throw error;
       
-      // Cast para o tipo correto
       const empresasFormatadas = (data || []).map(emp => ({
         ...emp,
         status_licenca: (emp.status_licenca || 'em_operacao') as 'trial' | 'em_operacao',
@@ -135,14 +140,19 @@ const GerenciamentoEmpresas = () => {
     fetchPlanos();
   }, []);
 
-  const filteredEmpresas = empresas.filter(empresa =>
-    empresa.nome.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEmpresas = empresas.filter(empresa => {
+    const matchesSearch = empresa.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      empresa.cnpj?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'ativo' && empresa.ativo) || 
+      (statusFilter === 'inativo' && !empresa.ativo);
+    const matchesLicenca = licencaFilter === 'all' || empresa.status_licenca === licencaFilter;
+    return matchesSearch && matchesStatus && matchesLicenca;
+  });
 
   const handleSubmit = async (data: EmpresaForm) => {
     try {
       if (editingEmpresa) {
-        // Preparar dados de atualização
         const updateData: any = {
           nome: data.nome,
           cnpj: data.cnpj,
@@ -151,7 +161,6 @@ const GerenciamentoEmpresas = () => {
           plano_id: data.plano_id || null,
         };
 
-        // Se mudou para trial e não tinha data de início, definir agora
         if (data.status_licenca === 'trial' && !editingEmpresa.data_inicio_trial) {
           updateData.data_inicio_trial = new Date().toISOString();
         }
@@ -164,7 +173,6 @@ const GerenciamentoEmpresas = () => {
         if (error) throw error;
         toast.success('Empresa atualizada com sucesso');
       } else {
-        // Ao criar nova empresa, se for trial, definir data de início
         const insertData: any = {
           nome: data.nome,
           cnpj: data.cnpj,
@@ -217,30 +225,19 @@ const GerenciamentoEmpresas = () => {
     if (!empresaToDelete) return;
     
     try {
-      // Se a empresa tem logo, deletar do storage primeiro
       if (empresaToDelete.logo_url) {
         try {
-          // Extrair o nome do arquivo da URL do logo
           const urlParts = empresaToDelete.logo_url.split('/');
           const fileName = urlParts[urlParts.length - 1];
           
           if (fileName) {
-            const { error: storageError } = await supabase.storage
-              .from('empresa-logos')
-              .remove([fileName]);
-
-            if (storageError) {
-              console.warn('Erro ao deletar logo do storage:', storageError);
-              // Continuar com a exclusão da empresa mesmo se falhar ao deletar o logo
-            }
+            await supabase.storage.from('empresa-logos').remove([fileName]);
           }
         } catch (storageError) {
           console.warn('Erro ao processar exclusão do logo:', storageError);
-          // Continuar com a exclusão da empresa
         }
       }
 
-      // Deletar a empresa do banco de dados
       const { error } = await supabase
         .from('empresas')
         .delete()
@@ -298,31 +295,155 @@ const GerenciamentoEmpresas = () => {
     setDialogOpen(true);
   };
 
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
   const selectedPlano = planos.find(p => p.id === selectedPlanoId);
   const creditoConsumido = editingEmpresa?.creditos_consumidos || 0;
   const creditoFranquia = selectedPlano?.creditos_franquia || editingEmpresa?.plano?.creditos_franquia || 0;
   const percentualCredito = creditoFranquia > 0 ? (creditoConsumido / creditoFranquia) * 100 : 0;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const columns: Column<Empresa>[] = [
+    {
+      key: 'logo_url',
+      label: 'Logo',
+      sortable: false,
+      render: (_, empresa) => (
+        <div className="flex items-center gap-2">
+          {empresa.logo_url ? (
+            <img
+              src={empresa.logo_url}
+              alt={empresa.nome}
+              className="h-8 w-8 object-contain rounded"
+            />
+          ) : (
+            <div className="h-8 w-8 bg-muted rounded flex items-center justify-center">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleLogoUpload(empresa.id, file);
+                    }}
+                    disabled={uploading}
+                  />
+                  <Upload className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                </label>
+              </TooltipTrigger>
+              <TooltipContent>Upload de logo</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      ),
+    },
+    {
+      key: 'nome',
+      label: 'Nome',
+      sortable: true,
+    },
+    {
+      key: 'cnpj',
+      label: 'CNPJ',
+      sortable: true,
+      render: (value) => value || '-',
+    },
+    {
+      key: 'contato',
+      label: 'Contato',
+      sortable: false,
+      render: (value) => value || '-',
+    },
+    {
+      key: 'plano',
+      label: 'Plano',
+      sortable: false,
+      render: (_, empresa) => empresa.plano ? (
+        <PlanBadge 
+          planCode={empresa.plano.codigo as any}
+          planName={empresa.plano.nome}
+          size="sm"
+          showName={false}
+        />
+      ) : (
+        <span className="text-xs text-muted-foreground">Sem plano</span>
+      ),
+    },
+    {
+      key: 'status_licenca',
+      label: 'Licença',
+      sortable: true,
+      render: (value, empresa) => value === 'trial' ? (
+        <Badge variant="outline" className="bg-warning/10 text-warning border-warning whitespace-nowrap">
+          🟡 Trial {empresa.data_inicio_trial && 
+            `(${Math.max(0, 14 - differenceInDays(new Date(), new Date(empresa.data_inicio_trial)))}d)`
+          }
+        </Badge>
+      ) : (
+        <Badge variant="outline" className="bg-primary/10 text-primary border-primary whitespace-nowrap">
+          🟢 Em Operação
+        </Badge>
+      ),
+    },
+    {
+      key: 'ativo',
+      label: 'Status',
+      sortable: true,
+      render: (value) => (
+        <Badge variant={value ? 'default' : 'secondary'}>
+          {value ? 'Ativo' : 'Inativo'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'created_at',
+      label: 'Criado em',
+      sortable: true,
+      render: (value) => formatDateOnly(value),
+    },
+  ];
+
+  const filters: Filter[] = [
+    {
+      key: 'status',
+      label: 'Status',
+      options: [
+        { value: 'all', label: 'Todos' },
+        { value: 'ativo', label: 'Ativos' },
+        { value: 'inativo', label: 'Inativos' },
+      ],
+      value: statusFilter,
+      onChange: setStatusFilter,
+    },
+    {
+      key: 'licenca',
+      label: 'Licença',
+      options: [
+        { value: 'all', label: 'Todas' },
+        { value: 'trial', label: 'Trial' },
+        { value: 'em_operacao', label: 'Em Operação' },
+      ],
+      value: licencaFilter,
+      onChange: setLicencaFilter,
+    },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Buscar empresas..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+      <div className="flex justify-end">
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={openCreateDialog} className="flex items-center gap-2">
@@ -484,113 +605,56 @@ const GerenciamentoEmpresas = () => {
         </Dialog>
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Logo</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead>CNPJ</TableHead>
-              <TableHead>Contato</TableHead>
-              <TableHead>Plano</TableHead>
-              <TableHead>Licença</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredEmpresas.map((empresa) => (
-              <TableRow key={empresa.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {empresa.logo_url ? (
-                      <img
-                        src={empresa.logo_url}
-                        alt={empresa.nome}
-                        className="h-8 w-8 object-contain rounded"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 bg-muted rounded flex items-center justify-center">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    )}
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleLogoUpload(empresa.id, file);
-                        }}
-                        disabled={uploading}
-                      />
-                      <Upload className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                    </label>
-                  </div>
-                </TableCell>
-                <TableCell className="font-medium">{empresa.nome}</TableCell>
-                <TableCell>{empresa.cnpj || '-'}</TableCell>
-                <TableCell>{empresa.contato || '-'}</TableCell>
-                <TableCell>
-                  {empresa.plano ? (
-                    <PlanBadge 
-                      planCode={empresa.plano.codigo as any}
-                      planName={empresa.plano.nome}
-                      size="sm"
-                      showName={false}
-                    />
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Sem plano</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {empresa.status_licenca === 'trial' ? (
-                    <Badge variant="outline" className="bg-warning/10 text-warning border-warning">
-                      🟡 Trial {empresa.data_inicio_trial && 
-                        `(${Math.max(0, 14 - differenceInDays(new Date(), new Date(empresa.data_inicio_trial)))}d)`
-                      }
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary">
-                      🟢 Em Operação
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={empresa.ativo ? 'default' : 'secondary'}>
-                    {empresa.ativo ? 'Ativo' : 'Inativo'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(empresa)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openDeleteDialog(empresa)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {filteredEmpresas.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          {searchTerm ? 'Nenhuma empresa encontrada' : 'Nenhuma empresa cadastrada'}
-        </div>
-      )}
+      <DataTable
+        data={filteredEmpresas}
+        columns={columns}
+        loading={loading}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Buscar por nome ou CNPJ..."
+        filters={filters}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={handleSort}
+        onRefresh={fetchEmpresas}
+        actions={(empresa) => (
+          <div className="flex items-center gap-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEdit(empresa)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Editar empresa</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openDeleteDialog(empresa)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Excluir empresa</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
+        emptyState={{
+          icon: Building2,
+          title: 'Nenhuma empresa encontrada',
+          description: searchTerm ? 'Tente ajustar os filtros' : 'Crie uma nova empresa para começar',
+        }}
+      />
 
       <ConfirmDialog
         open={deleteDialogOpen}
