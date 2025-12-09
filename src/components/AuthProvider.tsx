@@ -227,14 +227,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         hasData: !!data 
       });
       
-      // Verificar se a senha temporária não expirou
+      // Se is_temporary = true, o usuário DEVE trocar a senha
+      // Mesmo que expires_at tenha passado, a obrigatoriedade da troca permanece
       if (data.expires_at) {
         const expirationDate = new Date(data.expires_at);
         const now = new Date();
         if (now > expirationDate) {
-          logger.info('Temporary password expired', { userId: user.id });
-          setHasTemporaryPassword(false);
-          return;
+          logger.info('Temporary password expired but still requires change', { 
+            userId: user.id,
+            expiredAt: expirationDate.toISOString()
+          });
+          // Continua para forçar a troca de senha mesmo com expiração
         }
       }
 

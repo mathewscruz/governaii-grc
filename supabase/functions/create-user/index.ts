@@ -243,6 +243,25 @@ Deno.serve(async (req) => {
       // Não falhar a criação do usuário por causa das permissões
     }
 
+    // Buscar informações da empresa para o email de boas-vindas
+    let companyName = 'GovernAII';
+    let companyLogoUrl = 'https://governaii.com.br/governaii-logo.png';
+    
+    try {
+      const { data: empresaData } = await supabaseAdmin
+        .from('empresas')
+        .select('nome, logo_url')
+        .eq('id', finalEmpresaId)
+        .single();
+      
+      if (empresaData) {
+        companyName = empresaData.nome || companyName;
+        companyLogoUrl = empresaData.logo_url || companyLogoUrl;
+      }
+    } catch (empresaError) {
+      console.log('Não foi possível buscar dados da empresa, usando padrões:', empresaError);
+    }
+
     // Enviar e-mail de boas-vindas
     let emailSent = false;
     try {
@@ -252,6 +271,9 @@ Deno.serve(async (req) => {
           userName: nome,
           userEmail: email,
           temporaryPassword: tempPassword,
+          loginUrl: 'https://governaii.com.br/auth',
+          companyName: companyName,
+          companyLogoUrl: companyLogoUrl
         }
       })
 
