@@ -5,6 +5,163 @@
 
 /* GovernAII Design System - Professional GRC Platform */
 
+/* Landing Page Animations */
+@keyframes grid-move {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(50px); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px hsl(217 91% 60% / 0.3), 0 0 40px hsl(217 91% 60% / 0.1); }
+  50% { box-shadow: 0 0 30px hsl(217 91% 60% / 0.5), 0 0 60px hsl(217 91% 60% / 0.2); }
+}
+
+@keyframes border-glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Landing Page Utility Classes */
+.landing-grid-bg {
+  background-image: 
+    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: grid-move 20s linear infinite;
+}
+
+.landing-gradient-text {
+  background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 50%, #3B82F6 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.landing-glass {
+  background: rgba(15, 35, 64, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.landing-glass-light {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.landing-glow-btn {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.landing-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.landing-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+.landing-fade-in-left {
+  animation: fade-in-left 0.8s ease-out forwards;
+}
+
+.landing-fade-in-right {
+  animation: fade-in-right 0.8s ease-out forwards;
+}
+
+.landing-stagger-1 { animation-delay: 0.1s; opacity: 0; }
+.landing-stagger-2 { animation-delay: 0.2s; opacity: 0; }
+.landing-stagger-3 { animation-delay: 0.3s; opacity: 0; }
+.landing-stagger-4 { animation-delay: 0.4s; opacity: 0; }
+.landing-stagger-5 { animation-delay: 0.5s; opacity: 0; }
+.landing-stagger-6 { animation-delay: 0.6s; opacity: 0; }
+
+.landing-card-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-card-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.landing-card-glow:hover::before {
+  left: 100%;
+}
+
+.landing-border-gradient {
+  position: relative;
+}
+
+.landing-border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.5), rgba(6, 182, 212, 0.5), rgba(59, 130, 246, 0.5));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-glow 3s ease-in-out infinite;
+}
+
 @layer base {
   :root {
     /* Base colors - Professional blue theme */
