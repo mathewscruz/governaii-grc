@@ -579,11 +579,18 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {[1, 2, 3, 4, 5].map((value) => (
-                              <SelectItem key={value} value={value.toString()}>
-                                {value}
-                              </SelectItem>
-                            ))}
+                            {(selectedMatriz?.configuracao as any)?.escala_probabilidade?.length > 0 
+                              ? ((selectedMatriz?.configuracao as any)?.escala_probabilidade || []).map((item: any) => (
+                                  <SelectItem key={item.valor} value={item.valor.toString()}>
+                                    {item.valor} - {item.descricao}
+                                  </SelectItem>
+                                ))
+                              : [1, 2, 3, 4, 5].map((value) => (
+                                  <SelectItem key={value} value={value.toString()}>
+                                    {value}
+                                  </SelectItem>
+                                ))
+                            }
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -604,11 +611,18 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {[1, 2, 3, 4, 5].map((value) => (
-                              <SelectItem key={value} value={value.toString()}>
-                                {value}
-                              </SelectItem>
-                            ))}
+                            {(selectedMatriz?.configuracao as any)?.escala_impacto?.length > 0 
+                              ? ((selectedMatriz?.configuracao as any)?.escala_impacto || []).map((item: any) => (
+                                  <SelectItem key={item.valor} value={item.valor.toString()}>
+                                    {item.valor} - {item.descricao}
+                                  </SelectItem>
+                                ))
+                              : [1, 2, 3, 4, 5].map((value) => (
+                                  <SelectItem key={value} value={value.toString()}>
+                                    {value}
+                                  </SelectItem>
+                                ))
+                            }
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -808,11 +822,18 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {[1, 2, 3, 4, 5].map((value) => (
-                              <SelectItem key={value} value={value.toString()}>
-                                {value}
-                              </SelectItem>
-                            ))}
+                            {(selectedMatriz?.configuracao as any)?.escala_probabilidade?.length > 0 
+                              ? ((selectedMatriz?.configuracao as any)?.escala_probabilidade || []).map((item: any) => (
+                                  <SelectItem key={item.valor} value={item.valor.toString()}>
+                                    {item.valor} - {item.descricao}
+                                  </SelectItem>
+                                ))
+                              : [1, 2, 3, 4, 5].map((value) => (
+                                  <SelectItem key={value} value={value.toString()}>
+                                    {value}
+                                  </SelectItem>
+                                ))
+                            }
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -833,11 +854,18 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {[1, 2, 3, 4, 5].map((value) => (
-                              <SelectItem key={value} value={value.toString()}>
-                                {value}
-                              </SelectItem>
-                            ))}
+                            {(selectedMatriz?.configuracao as any)?.escala_impacto?.length > 0 
+                              ? ((selectedMatriz?.configuracao as any)?.escala_impacto || []).map((item: any) => (
+                                  <SelectItem key={item.valor} value={item.valor.toString()}>
+                                    {item.valor} - {item.descricao}
+                                  </SelectItem>
+                                ))
+                              : [1, 2, 3, 4, 5].map((value) => (
+                                  <SelectItem key={value} value={value.toString()}>
+                                    {value}
+                                  </SelectItem>
+                                ))
+                            }
                           </SelectContent>
                         </Select>
                         <FormMessage />

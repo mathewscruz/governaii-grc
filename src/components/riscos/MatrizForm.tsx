@@ -385,13 +385,7 @@ export function MatrizForm({ onSuccess }: Props) {
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="matrizes" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="matrizes">Matrizes de Risco</TabsTrigger>
-          <TabsTrigger value="categorias">Categorias</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="matrizes" className="space-y-6">
+      <div className="space-y-6">
           {/* Formulário para nova/editar matriz */}
           <Card>
             <CardHeader>
@@ -656,110 +650,7 @@ export function MatrizForm({ onSuccess }: Props) {
               </CardContent>
             </Card>
           )}
-        </TabsContent>
-
-        <TabsContent value="categorias" className="space-y-6">
-          {/* Formulário para nova categoria */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Nova Categoria de Risco</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Form {...categoriaForm}>
-                <form onSubmit={categoriaForm.handleSubmit(onSubmitCategoria)} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={categoriaForm.control}
-                      name="nome"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome da Categoria</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={categoriaForm.control}
-                      name="cor"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cor</FormLabel>
-                          <FormControl>
-                            <Input type="color" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={categoriaForm.control}
-                    name="descricao"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Descrição</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={loading}>
-                      {loading ? 'Criando...' : 'Criar Categoria'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-
-          {/* Lista de categorias existentes */}
-          {categorias.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Categorias Existentes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {categorias.map((categoria) => (
-                    <div key={categoria.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        {categoria.cor && (
-                          <div 
-                            className="w-4 h-4 rounded-full" 
-                            style={{ backgroundColor: categoria.cor }}
-                          />
-                        )}
-                        <div>
-                          <h4 className="font-medium">{categoria.nome}</h4>
-                          {categoria.descricao && (
-                            <p className="text-sm text-muted-foreground">{categoria.descricao}</p>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => excluirCategoria(categoria.id)}
-                      >
-                        Excluir
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+      </div>
 
       <DialogFooter className="gap-2">
         <Button type="button" variant="outline" onClick={onSuccess}>

@@ -52,6 +52,7 @@ interface Risco {
   categoria?: { nome: string; cor?: string };
   matriz?: { nome: string };
   created_at: string;
+  tratamentos_count?: number;
 }
 
 
@@ -82,6 +83,8 @@ export function Riscos() {
   const [matrizConfig, setMatrizConfig] = useState<MatrizConfig | null>(null);
   const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [sortField, setSortField] = useState<string>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const fetchRiscos = async () => {
     try {
@@ -114,13 +117,30 @@ export function Riscos() {
 
       if (error) throw error;
       
+      // Buscar contagem de tratamentos para cada risco
+      const riscoIds = data?.map(r => r.id) || [];
+      let tratamentosCount: Record<string, number> = {};
+      
+      if (riscoIds.length > 0) {
+        const { data: tratamentos } = await supabase
+          .from('riscos_tratamentos')
+          .select('risco_id')
+          .in('risco_id', riscoIds);
+        
+        tratamentosCount = (tratamentos || []).reduce((acc, t) => {
+          acc[t.risco_id] = (acc[t.risco_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+      }
+      
       // Normalizar categoria (pode vir como array do Supabase)
       if (data && data.length > 0) {
         const normalizedData = data.map(risco => ({
           ...risco,
           categoria: Array.isArray(risco.categoria) && risco.categoria.length > 0 
             ? risco.categoria[0] 
-            : risco.categoria
+            : risco.categoria,
+          tratamentos_count: tratamentosCount[risco.id] || 0
         }));
 
         // Buscar nomes dos responsáveis
@@ -355,13 +375,40 @@ export function Riscos() {
   };
 
   const handleSort = (field: string) => {
-    // TODO: Implement sorting logic if needed
-    console.log('Sort by:', field);
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
   };
 
+  const sortedRiscos = [...filteredRiscos].sort((a, b) => {
+    let aValue: any = a[sortField as keyof Risco];
+    let bValue: any = b[sortField as keyof Risco];
+    
+    // Handle nested values
+    if (sortField === 'categoria') {
+      aValue = a.categoria?.nome || '';
+      bValue = b.categoria?.nome || '';
+    }
+    
+    if (aValue === null || aValue === undefined) aValue = '';
+    if (bValue === null || bValue === undefined) bValue = '';
+    
+    if (typeof aValue === 'string') {
+      const comparison = aValue.localeCompare(bValue, 'pt-BR', { sensitivity: 'base' });
+      return sortDirection === 'asc' ? comparison : -comparison;
+    }
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
   const getSortIcon = (field: string) => {
-    // TODO: Implement sort icon logic if needed
-    return null;
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? '↑' : '↓';
   };
 
 
@@ -378,13 +425,19 @@ export function Riscos() {
     );
   }
 
-  const riscoColumns = [
+  const riscoColumns: Array<{
+    key: string;
+    label: string;
+    sortable?: boolean;
+    className?: string;
+    render?: (value: any, risco: Risco) => React.ReactNode;
+  }> = [
     {
       key: 'nome',
       label: 'Nome',
       sortable: true,
       className: undefined,
-      render: (value: string) => <span className="font-medium">{value}</span>
+      render: (value: any) => <span className="font-medium">{value}</span>
     },
     {
       key: 'categoria',
@@ -439,6 +492,25 @@ export function Riscos() {
           </Badge>
         );
       }
+    },
+    {
+      key: 'tratamentos_count',
+      label: 'Tratamentos',
+      className: 'text-center',
+      render: (value: number, risco: Risco) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex items-center gap-1"
+          onClick={() => openTratamentosDialog(risco)}
+          title="Ver tratamentos"
+        >
+          <Shield className="h-4 w-4" />
+          <Badge variant={value > 0 ? "default" : "outline"} className="ml-1">
+            {value || 0}
+          </Badge>
+        </Button>
+      )
     },
     {
       key: 'responsavel',
@@ -518,7 +590,6 @@ export function Riscos() {
         { value: 'all', label: 'Todos' },
         { value: 'identificado', label: 'Identificado' },
         { value: 'analisado', label: 'Analisado' },
-        { value: 'em_tratamento', label: 'Em Tratamento' },
         { value: 'tratado', label: 'Tratado' },
         { value: 'monitorado', label: 'Monitorado' },
         { value: 'aceito', label: 'Aceito' }
@@ -722,7 +793,7 @@ export function Riscos() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredRiscos.map((item, index) => (
+                    sortedRiscos.map((item, index) => (
                       <TableRow key={item.id || index} className="hover:bg-muted/50 transition-colors">
                         {riscoColumns.map((column) => (
                           <TableCell
@@ -730,7 +801,7 @@ export function Riscos() {
                             className={column.className}
                           >
                             {column.render
-                              ? column.render(String(item[column.key as keyof typeof item] || ''), item)
+                              ? column.render(item[column.key as keyof typeof item] as any, item)
                               : String(item[column.key as keyof typeof item] || '-')
                             }
                           </TableCell>
