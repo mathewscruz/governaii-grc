@@ -15,12 +15,24 @@ import {
   User,
   ChevronDown,
   Plus,
-  Shield
+  Shield,
+  ClipboardCheck
 } from "lucide-react";
 import { capitalizeText } from "@/lib/text-utils";
 
 interface AuditoriaCardAccordionProps {
   auditoria: any;
+  counts: { trabalhos: number; achados: number; recomendacoes: number; controles?: number; itens?: number };
+  onEdit: () => void;
+  onDelete: () => void;
+  onOpenTrabalhos: () => void;
+  onOpenAchados: () => void;
+  onOpenRecomendacoes: () => void;
+  onOpenEvidencias: () => void;
+  onOpenControles: () => void;
+  onOpenItens: () => void;
+  auditorNome?: string;
+}
   counts: { trabalhos: number; achados: number; recomendacoes: number; controles?: number };
   onEdit: () => void;
   onDelete: () => void;
@@ -144,6 +156,15 @@ export function AuditoriaCardAccordion({
             >
               <Shield className="h-3 w-3 mr-1" />
               {counts.controles || 0}
+            </Badge>
+            <Badge 
+              variant="default" 
+              className="cursor-pointer hover:bg-primary/80 text-[11px] py-0 h-5 px-2"
+              onClick={onOpenItens}
+              title="Itens de Verificação"
+            >
+              <ClipboardCheck className="h-3 w-3 mr-1" />
+              {counts.itens || 0}
             </Badge>
 
             {/* Data e Auditor */}
