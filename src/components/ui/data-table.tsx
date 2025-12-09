@@ -83,110 +83,112 @@ export function DataTable<T extends Record<string, any>>({
 
   if (loading) {
     return (
-      <div className={cn("space-y-4", className)}>
-        {/* Header skeleton */}
-        <div className="flex items-center justify-between gap-4">
-          <Skeleton className="h-10 w-80" />
-          <div className="flex gap-2">
-            <Skeleton className="h-10 w-24" />
-            <Skeleton className="h-10 w-24" />
+      <div className={cn("", className)}>
+        {/* Header skeleton with padding */}
+        <div className="p-6 pb-4 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <Skeleton className="h-10 w-80" />
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-24" />
+            </div>
           </div>
         </div>
 
         {/* Table skeleton */}
-        <div className="rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.map((column, index) => (
-                  <TableHead key={index}>
-                    <Skeleton className="h-4 w-20" />
-                  </TableHead>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {columns.map((column, index) => (
+                <TableHead key={index}>
+                  <Skeleton className="h-4 w-20" />
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <TableRow key={index}>
+                {columns.map((_, cellIndex) => (
+                  <TableCell key={cellIndex}>
+                    <Skeleton className="h-4 w-full" />
+                  </TableCell>
                 ))}
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={index}>
-                  {columns.map((_, cellIndex) => (
-                    <TableCell key={cellIndex}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     )
   }
 
   // Always render the table structure to show headers
   return (
-    <div className={cn("space-y-4", className)}>
-      {/* Header with search and filters */}
-      <div className="flex items-center justify-between gap-4">
-        {searchable && (
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder={searchPlaceholder}
-              value={searchValue}
-              onChange={(e) => onSearchChange?.(e.target.value)}
-              className="pl-10"
-            />
+    <div className={cn("", className)}>
+      {/* Header with search and filters - with padding like Riscos module */}
+      <div className="p-6 pb-4 space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          {searchable && (
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder={searchPlaceholder}
+                value={searchValue}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          )}
+          
+          <div className="flex gap-2">
+            {filters.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtros
+              </Button>
+            )}
+            {onRefresh && (
+              <Button variant="outline" size="sm" onClick={onRefresh}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Atualizar
+              </Button>
+            )}
+            {onExport && (
+              <Button variant="outline" size="sm" onClick={onExport}>
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Filters row */}
+        {showFilters && filters.length > 0 && (
+          <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg">
+            {filters.map((filter) => (
+              <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder={filter.label} />
+                </SelectTrigger>
+                <SelectContent>
+                  {filter.options.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ))}
           </div>
         )}
-        
-        <div className="flex gap-2">
-          {filters.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Filtros
-            </Button>
-          )}
-          {onRefresh && (
-            <Button variant="outline" size="sm" onClick={onRefresh}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Atualizar
-            </Button>
-          )}
-          {onExport && (
-            <Button variant="outline" size="sm" onClick={onExport}>
-              <Download className="h-4 w-4 mr-2" />
-              Exportar
-            </Button>
-          )}
-        </div>
       </div>
 
-      {/* Filters row */}
-      {showFilters && filters.length > 0 && (
-        <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg">
-          {filters.map((filter) => (
-            <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder={filter.label} />
-              </SelectTrigger>
-              <SelectContent>
-                {filter.options.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ))}
-        </div>
-      )}
-
-      {/* Table - Always show headers */}
-      <div className="rounded-lg border overflow-hidden">
+      {/* Table - without border since Card wrapper provides it */}
+      <div className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
