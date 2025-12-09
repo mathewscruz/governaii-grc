@@ -93,14 +93,14 @@ export function AreaSistemaSelect({
 
   return (
     <div className="space-y-2">
-      <Select value={value || ""} onValueChange={onValueChange}>
+      <Select value={value || "_none"} onValueChange={(v) => onValueChange(v === "_none" ? "" : v)}>
         <SelectTrigger className="w-full">
           <SelectValue placeholder={placeholder}>
             {value && areas.find((a) => a.id === value)?.nome}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">
+          <SelectItem value="_none">
             <span className="text-muted-foreground">Nenhum</span>
           </SelectItem>
           {loading ? (

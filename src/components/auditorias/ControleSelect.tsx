@@ -58,19 +58,20 @@ export function ControleSelect({
   };
 
   const handleChange = (newValue: string) => {
-    const controle = controles.find((c) => c.id === newValue);
-    onValueChange(newValue, controle);
+    const actualValue = newValue === "_none" ? "" : newValue;
+    const controle = controles.find((c) => c.id === actualValue);
+    onValueChange(actualValue, controle);
   };
 
   return (
-    <Select value={value || ""} onValueChange={handleChange}>
+    <Select value={value || "_none"} onValueChange={handleChange}>
       <SelectTrigger className="w-full">
         <SelectValue placeholder={placeholder}>
           {value && controles.find((c) => c.id === value)?.nome}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="">
+        <SelectItem value="_none">
           <span className="text-muted-foreground">Nenhum</span>
         </SelectItem>
         {loading ? (
