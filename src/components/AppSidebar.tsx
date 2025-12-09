@@ -75,10 +75,10 @@ const menuItems = [
     ],
   },
   {
-    title: 'Controles Internos',
+    title: 'Governança',
     icon: FileCheck,
     subItems: [
-      { title: 'Governança', url: '/governanca', icon: Shield, moduleName: 'controles' },
+      { title: 'Controles Internos', url: '/governanca', icon: Shield, moduleName: 'controles' },
       { title: 'Contratos', url: '/contratos', icon: Handshake, moduleName: 'contratos' },
       { title: 'Documentos', url: '/documentos', icon: FileText, moduleName: 'documentos' },
     ],
