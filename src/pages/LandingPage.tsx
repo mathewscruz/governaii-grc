@@ -1,10 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Shield,
   FileCheck,
@@ -46,6 +52,9 @@ const LandingPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [selectedFeature, setSelectedFeature] = useState<number | null>(null);
+  const [showExitPopup, setShowExitPopup] = useState(false);
+  const exitIntentShown = useRef(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,6 +62,19 @@ const LandingPage = () => {
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Exit-intent detection
+  useEffect(() => {
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (e.clientY <= 0 && !exitIntentShown.current && !sessionStorage.getItem('exitPopupShown')) {
+        exitIntentShown.current = true;
+        sessionStorage.setItem('exitPopupShown', 'true');
+        setShowExitPopup(true);
+      }
+    };
+    document.addEventListener('mouseleave', handleMouseLeave);
+    return () => document.removeEventListener('mouseleave', handleMouseLeave);
   }, []);
 
   const handleInputChange = (
@@ -86,48 +108,56 @@ const LandingPage = () => {
       icon: AlertTriangle,
       title: "Gestão de Riscos",
       description: "Matriz de calor interativa, sugestões de tratamento com IA, workflow de aprovação e monitoramento contínuo de riscos críticos.",
+      details: "Com o módulo de Gestão de Riscos você pode:\n\n• Criar matriz de calor personalizada com categorias próprias\n• Receber sugestões inteligentes de tratamento via IA\n• Configurar workflows de aprovação multinível\n• Monitorar riscos em tempo real com alertas\n• Gerar relatórios executivos automáticos\n• Vincular riscos a controles e frameworks",
       color: "from-orange-500 to-red-500",
     },
     {
       icon: Shield,
       title: "Gap Analysis",
       description: "Avalie aderência a mais de 20 frameworks (NIST CSF 2.0, ISO 27001, LGPD, GDPR, PCI DSS, COBIT) com scoring automático e dashboards.",
+      details: "Com o módulo de Gap Analysis você pode:\n\n• Avaliar aderência a +20 frameworks globais\n• NIST CSF 2.0, ISO 27001, LGPD, GDPR, SOC 2, PCI DSS\n• Dashboards interativos com gráficos radar\n• Planos de ação com prazos e responsáveis\n• Histórico de evolução de score\n• Exportação de relatórios PDF executivos",
       color: "from-blue-500 to-cyan-500",
     },
     {
       icon: FileCheck,
       title: "Controles Internos",
       description: "Auditorias, evidências, testes de controles e trilha completa. Atribuição de responsáveis, prazos e notificações automáticas.",
+      details: "Com o módulo de Controles Internos você pode:\n\n• Categorizar controles por área e criticidade\n• Atribuir responsáveis e backups\n• Definir frequência de avaliação automática\n• Vincular controles a auditorias e riscos\n• Acompanhar testes de efetividade\n• Anexar evidências e documentação",
       color: "from-green-500 to-emerald-500",
     },
     {
       icon: Users,
       title: "Contas Privilegiadas",
       description: "Gestão de acessos críticos com revisão periódica automática, workflow de aprovação e histórico completo de auditoria.",
+      details: "Com o módulo de Contas Privilegiadas você pode:\n\n• Gerenciar acessos privilegiados por sistema\n• Workflows de aprovação multinível\n• Revisões periódicas de acesso\n• Alertas de expiração automáticos\n• Trilha de auditoria completa\n• Integração com revisão de acessos",
       color: "from-purple-500 to-pink-500",
     },
     {
       icon: Database,
       title: "Proteção de Dados",
       description: "Inventário ROPA, mapeamento de tratamento de dados pessoais e portal de atendimento a solicitações de titulares (LGPD).",
+      details: "Com o módulo de Proteção de Dados você pode:\n\n• Mapear dados pessoais por processo\n• Gerar ROPA automatizado\n• Visualizar fluxos de dados entre sistemas\n• Gerenciar solicitações de titulares\n• Controlar bases legais e finalidades\n• Conformidade LGPD e GDPR integrada",
       color: "from-cyan-500 to-blue-500",
     },
     {
       icon: FileText,
       title: "Documentos",
       description: "Repositório centralizado com versionamento automático, workflow de aprovação, controle de validade e distribuição controlada.",
+      details: "Com o módulo de Documentos você pode:\n\n• Controle completo de versões\n• Workflow de aprovação configurável\n• Alertas de renovação automáticos\n• Geração de documentos com IA (DocGen)\n• Categorização e busca avançada\n• Vinculação a controles e auditorias",
       color: "from-indigo-500 to-purple-500",
     },
     {
       icon: Lock,
       title: "Canal de Denúncia",
       description: "Formulário externo anônimo, gestão de denúncias, categorização automática e comunicação segura com denunciantes.",
+      details: "Com o Canal de Denúncia você pode:\n\n• Formulário externo anônimo para denunciantes\n• Gestão completa do ciclo de vida\n• Categorização por tipo e gravidade\n• Comunicação segura com denunciantes\n• Relatórios de acompanhamento\n• Conformidade com legislação anticorrupção",
       color: "from-amber-500 to-yellow-500",
     },
     {
       icon: Target,
       title: "Due Diligence",
       description: "Avaliação de fornecedores com questionários personalizados, scoring de risco, integração com contratos e relatórios.",
+      details: "Com o módulo de Due Diligence você pode:\n\n• Avaliar fornecedores com questionários personalizados\n• Score de risco automático\n• Templates reutilizáveis\n• Integração com contratos\n• Relatórios de avaliação\n• Monitoramento contínuo de terceiros",
       color: "from-teal-500 to-cyan-500",
     },
   ];
@@ -143,7 +173,7 @@ const LandingPage = () => {
   // Indicadores diferentes para Benefits section
   const benefitStats = [
     { value: "99.9%", label: "Uptime Garantido", icon: TrendingUp },
-    { value: "24h", label: "Suporte Especializado", icon: Headphones },
+    { value: "8/5", label: "Suporte Especializado", icon: Headphones },
     { value: "48h", label: "Implantação Rápida", icon: Rocket },
     { value: "100%", label: "Treinamento Incluído", icon: GraduationCap },
   ];
@@ -232,6 +262,7 @@ const LandingPage = () => {
       element.scrollIntoView({ behavior: "smooth" });
     }
     setIsMenuOpen(false);
+    setShowExitPopup(false);
   };
 
   return (
@@ -456,6 +487,9 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Transition Line */}
+      <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+
       {/* Frameworks Carousel */}
       <section className="relative py-8 border-y border-white/5 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -498,7 +532,10 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Esqueça as Planilhas Section - NEW */}
+      {/* Transition Line */}
+      <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+
+      {/* Esqueça as Planilhas Section */}
       <section className="relative py-20 bg-gradient-to-b from-[#0A1628] via-[#0F2340] to-[#0A1628]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -615,6 +652,9 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Transition Line */}
+      <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+
       {/* How It Works Section */}
       <section id="como-funciona" className="relative py-20 bg-[#0F2340]/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -672,6 +712,9 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Transition Line */}
+      <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+
       {/* Features Section */}
       <section id="modulos" className="relative py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -697,14 +740,56 @@ const LandingPage = () => {
                 </div>
                 <h3 className="text-lg font-semibold mb-2 text-white">{feature.title}</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>
-                <div className="mt-4 flex items-center text-blue-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={() => setSelectedFeature(index)}
+                  className="mt-4 flex items-center text-blue-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity hover:text-blue-300"
+                >
                   Saiba mais <ChevronRight className="h-4 w-4 ml-1" />
-                </div>
+                </button>
               </div>
             ))}
           </div>
         </div>
       </section>
+
+      {/* Feature Detail Dialog */}
+      <Dialog open={selectedFeature !== null} onOpenChange={() => setSelectedFeature(null)}>
+        <DialogContent className="bg-[#0F2340] border-white/10 text-white max-w-lg">
+          {selectedFeature !== null && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3 text-xl">
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${features[selectedFeature].color} flex items-center justify-center`}>
+                    {(() => {
+                      const IconComponent = features[selectedFeature].icon;
+                      return <IconComponent className="h-5 w-5 text-white" />;
+                    })()}
+                  </div>
+                  {features[selectedFeature].title}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-gray-300">{features[selectedFeature].description}</p>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                  <p className="text-sm text-gray-300 whitespace-pre-line leading-relaxed">
+                    {features[selectedFeature].details}
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => { setSelectedFeature(null); scrollToSection("contato"); }}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  Solicitar Demonstração
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Transition Line */}
+      <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
       {/* Benefits Section */}
       <section id="beneficios" className="relative py-20 bg-[#0F2340]/30">
@@ -755,9 +840,12 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Transition Line */}
+      <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+
       {/* Contact Section */}
       <section id="contato" className="relative py-20 bg-[#0F2340]/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid lg:grid-cols-2 gap-16">
             <div className="space-y-8">
               <h2 className="text-3xl sm:text-4xl font-bold">
@@ -791,7 +879,7 @@ const LandingPage = () => {
               </div>
             </div>
 
-            <div className="landing-glass rounded-2xl p-8 landing-border-gradient">
+            <div className="relative z-20 landing-glass rounded-2xl p-8 landing-border-gradient">
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
@@ -804,7 +892,7 @@ const LandingPage = () => {
                       onChange={handleInputChange}
                       required
                       placeholder="Seu nome"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -818,7 +906,7 @@ const LandingPage = () => {
                       onChange={handleInputChange}
                       required
                       placeholder="seu@email.com"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -833,7 +921,7 @@ const LandingPage = () => {
                       value={formData.company}
                       onChange={handleInputChange}
                       placeholder="Nome da empresa"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -845,7 +933,7 @@ const LandingPage = () => {
                       value={formData.phone}
                       onChange={handleInputChange}
                       placeholder="(00) 00000-0000"
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -861,7 +949,7 @@ const LandingPage = () => {
                     required
                     placeholder="Como podemos ajudar sua empresa?"
                     rows={4}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-blue-500 resize-none"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500 resize-none"
                   />
                 </div>
 
@@ -964,6 +1052,44 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
+
+      {/* Exit Intent Popup */}
+      <Dialog open={showExitPopup} onOpenChange={setShowExitPopup}>
+        <DialogContent className="bg-[#0A1628] border-blue-500/30 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-center flex items-center justify-center gap-2">
+              <Target className="h-6 w-6 text-blue-400" />
+              Espere!
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center space-y-4 py-4">
+            <p className="text-gray-300">
+              Não vá embora sem conhecer como o GovernAII pode{" "}
+              <span className="text-blue-400 font-semibold">transformar a governança</span> da sua empresa!
+            </p>
+            <p className="text-sm text-gray-400">
+              Agende uma demonstração gratuita e veja na prática como 
+              automatizar compliance, riscos e auditorias.
+            </p>
+            <div className="flex flex-col gap-3 pt-4">
+              <Button 
+                onClick={() => { setShowExitPopup(false); scrollToSection("contato"); }}
+                className="bg-blue-600 hover:bg-blue-700 py-6"
+              >
+                <Rocket className="mr-2 h-4 w-4" />
+                Quero conhecer mais!
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowExitPopup(false)}
+                className="text-gray-400 hover:text-white hover:bg-white/10"
+              >
+                Não, obrigado
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* CSS for carousel animation */}
       <style>{`
