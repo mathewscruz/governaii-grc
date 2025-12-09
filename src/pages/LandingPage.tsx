@@ -77,38 +77,50 @@ const LandingPage = () => {
     {
       icon: AlertTriangle,
       title: "Gestão de Riscos",
-      description: "Identifique, avalie e mitigue riscos com matriz de calor e planos de tratamento inteligentes.",
+      description: "Matriz de calor interativa, sugestões de tratamento com IA, workflow de aprovação e monitoramento contínuo de riscos críticos.",
       color: "from-orange-500 to-red-500",
     },
     {
       icon: Shield,
       title: "Gap Analysis",
-      description: "Avalie conformidade com NIST, ISO 27001, LGPD e outros frameworks com scoring automático.",
+      description: "Avalie aderência a mais de 20 frameworks (NIST CSF 2.0, ISO 27001, LGPD, GDPR, PCI DSS, COBIT) com scoring automático e dashboards.",
       color: "from-blue-500 to-cyan-500",
     },
     {
       icon: FileCheck,
       title: "Controles Internos",
-      description: "Gerencie controles, auditorias e evidências em um único lugar com fluxos automatizados.",
+      description: "Auditorias, evidências, testes de controles e trilha completa. Atribuição de responsáveis, prazos e notificações automáticas.",
       color: "from-green-500 to-emerald-500",
     },
     {
       icon: Users,
       title: "Contas Privilegiadas",
-      description: "Controle acessos críticos com workflow de aprovação e revisão periódica de acessos.",
+      description: "Gestão de acessos críticos com revisão periódica automática, workflow de aprovação e histórico completo de auditoria.",
       color: "from-purple-500 to-pink-500",
     },
     {
       icon: Database,
       title: "Proteção de Dados",
-      description: "Mapeie dados pessoais, gerencie ROPA e atenda solicitações de titulares com agilidade.",
+      description: "Inventário ROPA, mapeamento de tratamento de dados pessoais e portal de atendimento a solicitações de titulares (LGPD).",
       color: "from-cyan-500 to-blue-500",
     },
     {
       icon: FileText,
       title: "Documentos",
-      description: "Centralize políticas e procedimentos com versionamento, aprovação e distribuição.",
+      description: "Repositório centralizado com versionamento automático, workflow de aprovação, controle de validade e distribuição controlada.",
       color: "from-indigo-500 to-purple-500",
+    },
+    {
+      icon: Lock,
+      title: "Canal de Denúncia",
+      description: "Formulário externo anônimo, gestão de denúncias, categorização automática e comunicação segura com denunciantes.",
+      color: "from-amber-500 to-yellow-500",
+    },
+    {
+      icon: Target,
+      title: "Due Diligence",
+      description: "Avaliação de fornecedores com questionários personalizados, scoring de risco, integração com contratos e relatórios.",
+      color: "from-teal-500 to-cyan-500",
     },
   ];
 
@@ -169,13 +181,12 @@ const LandingPage = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center">
               <img
-                src="/governaii-logo.png"
+                src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/empresa-logos/Governiaa%20(500%20x%20200%20px).png"
                 alt="GovernAII"
-                className="h-10 w-auto"
+                className="h-14 w-auto"
               />
-              <span className="text-xl font-bold tracking-tight">GovernAII</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -205,12 +216,9 @@ const LandingPage = () => {
                 Contato
               </button>
               <Link to="/auth">
-                <Button
-                  variant="outline"
-                  className="border-blue-500/50 text-white hover:bg-blue-500/10 hover:border-blue-400"
-                >
+                <button className="h-10 px-4 rounded-md text-sm font-medium border border-blue-400/60 bg-transparent text-blue-400 hover:bg-blue-500/20 hover:text-white transition-all">
                   Fazer Login
-                </Button>
+                </button>
               </Link>
             </nav>
 
@@ -251,9 +259,9 @@ const LandingPage = () => {
                 Contato
               </button>
               <Link to="/auth" className="block">
-                <Button variant="outline" className="w-full border-blue-500/50 text-white">
+                <button className="w-full h-10 px-4 rounded-md text-sm font-medium border border-blue-400/60 bg-transparent text-blue-400 hover:bg-blue-500/20 hover:text-white transition-all">
                   Fazer Login
-                </Button>
+                </button>
               </Link>
             </nav>
           )}
@@ -266,12 +274,6 @@ const LandingPage = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
             <div className="space-y-8">
-              <div className="landing-fade-in-up landing-stagger-1">
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium">
-                  <Sparkles className="h-4 w-4" />
-                  Plataforma GRC Completa
-                </span>
-              </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight landing-fade-in-up landing-stagger-2">
                 Transforme sua{" "}
@@ -295,13 +297,11 @@ const LandingPage = () => {
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <Link to="/auth">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-white/20 text-white hover:bg-white/5 w-full sm:w-auto"
+                  <button
+                    className="h-11 px-8 rounded-md text-base font-medium border-2 border-blue-400 bg-transparent text-blue-400 hover:bg-blue-500/20 hover:text-white transition-all w-full sm:w-auto"
                   >
                     Acessar Plataforma
-                  </Button>
+                  </button>
                 </Link>
               </div>
 
@@ -664,13 +664,12 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center mb-4">
                 <img
-                  src="/governaii-logo.png"
+                  src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/empresa-logos/Governiaa%20(500%20x%20200%20px).png"
                   alt="GovernAII"
-                  className="h-8 w-auto"
+                  className="h-12 w-auto"
                 />
-                <span className="text-lg font-bold">GovernAII</span>
               </div>
               <p className="text-gray-400 text-sm max-w-sm">
                 Plataforma completa para gestão de governança, riscos e conformidade.
