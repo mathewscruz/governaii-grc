@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DataTable } from '@/components/ui/data-table';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatDateOnly } from '@/lib/date-utils';
+import { getDenunciaStatusColor, getCriticidadeColor, formatStatus } from '@/lib/text-utils';
 
 interface Denuncia {
   id: string;
@@ -29,20 +30,6 @@ interface Denuncia {
   } | null;
 }
 
-const statusMap = {
-  nova: { label: 'Nova', color: 'bg-blue-500' },
-  em_analise: { label: 'Em Análise', color: 'bg-yellow-500' },
-  em_investigacao: { label: 'Em Investigação', color: 'bg-orange-500' },
-  resolvida: { label: 'Resolvida', color: 'bg-green-500' },
-  arquivada: { label: 'Arquivada', color: 'bg-gray-500' }
-};
-
-const gravidadeMap = {
-  baixa: { label: 'Baixa', color: 'bg-green-100 text-green-800' },
-  media: { label: 'Média', color: 'bg-yellow-100 text-yellow-800' },
-  alta: { label: 'Alta', color: 'bg-orange-100 text-orange-800' },
-  critica: { label: 'Crítica', color: 'bg-red-100 text-red-800' }
-};
 
 export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | null }) {
   const [denuncias, setDenuncias] = useState<Denuncia[]>([]);
@@ -162,11 +149,8 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
       label: 'Status',
       sortable: true,
       render: (_: any, denuncia: Denuncia) => (
-        <Badge 
-          variant="secondary"
-          className={statusMap[denuncia.status as keyof typeof statusMap]?.color + " text-white"}
-        >
-          {statusMap[denuncia.status as keyof typeof statusMap]?.label}
+        <Badge className={`${getDenunciaStatusColor(denuncia.status)} border whitespace-nowrap`}>
+          {formatStatus(denuncia.status)}
         </Badge>
       )
     },
@@ -175,11 +159,8 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
       label: 'Gravidade',
       sortable: true,
       render: (_: any, denuncia: Denuncia) => (
-        <Badge 
-          variant="secondary"
-          className={gravidadeMap[denuncia.gravidade as keyof typeof gravidadeMap]?.color}
-        >
-          {gravidadeMap[denuncia.gravidade as keyof typeof gravidadeMap]?.label}
+        <Badge className={`${getCriticidadeColor(denuncia.gravidade)} border whitespace-nowrap`}>
+          {formatStatus(denuncia.gravidade)}
         </Badge>
       )
     },

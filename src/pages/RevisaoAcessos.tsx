@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ReviewDialog } from "@/components/revisao-acessos/ReviewDialog";
 import { ReviewItemsDialog } from "@/components/revisao-acessos/ReviewItemsDialog";
 import { formatDateOnly } from "@/lib/date-utils";
-import { formatStatus } from "@/lib/text-utils";
+import { formatStatus, getWorkflowStatusColor } from "@/lib/text-utils";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -119,14 +119,8 @@ export default function RevisaoAcessos() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      rascunho: "outline",
-      em_andamento: "default",
-      concluida: "secondary",
-      cancelada: "destructive",
-    };
     return (
-      <Badge variant={variants[status] || "default"} className="whitespace-nowrap">
+      <Badge className={`${getWorkflowStatusColor(status)} border whitespace-nowrap`}>
         {formatStatus(status)}
       </Badge>
     );

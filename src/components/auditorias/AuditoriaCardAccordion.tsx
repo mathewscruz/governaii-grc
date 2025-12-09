@@ -10,7 +10,7 @@ import {
   User,
   ClipboardList
 } from "lucide-react";
-import { formatStatus } from "@/lib/text-utils";
+import { formatStatus, getAuditoriaStatusColor, getAuditoriaPrioridadeColor } from "@/lib/text-utils";
 import { formatDateOnly } from "@/lib/date-utils";
 
 interface AuditoriaCardAccordionProps {
@@ -22,38 +22,6 @@ interface AuditoriaCardAccordionProps {
   auditorNome?: string;
 }
 
-const getStatusBadgeVariant = (status: string): "default" | "destructive" | "secondary" | "outline" => {
-  switch (status) {
-    case 'planejamento': return 'outline';
-    case 'em_andamento': return 'default';
-    case 'concluida': return 'secondary';
-    case 'cancelada': return 'destructive';
-    default: return 'secondary';
-  }
-};
-
-const getStatusCustomClass = (status: string) => {
-  if (status === 'concluida') return 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200';
-  return '';
-};
-
-const getPrioridadeBadgeVariant = (prioridade: string): "default" | "destructive" | "secondary" | "outline" => {
-  switch (prioridade) {
-    case 'critica': return 'destructive';
-    case 'alta': return 'default';
-    case 'media': return 'secondary';
-    case 'baixa': return 'outline';
-    default: return 'secondary';
-  }
-};
-
-const getPrioridadeCustomClass = (prioridade: string) => {
-  switch (prioridade) {
-    case 'critica': return 'bg-red-600 text-white border-red-700 hover:bg-red-700';
-    case 'alta': return 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200';
-    default: return '';
-  }
-};
 
 export function AuditoriaCardAccordion({
   auditoria,
@@ -82,14 +50,12 @@ export function AuditoriaCardAccordion({
               {formatStatus(auditoria.tipo)}
             </Badge>
             <Badge 
-              variant={getStatusBadgeVariant(auditoria.status)}
-              className={`text-[11px] py-0 h-5 px-2 whitespace-nowrap ${getStatusCustomClass(auditoria.status)}`}
+              className={`text-[11px] py-0 h-5 px-2 whitespace-nowrap border ${getAuditoriaStatusColor(auditoria.status)}`}
             >
               {formatStatus(auditoria.status)}
             </Badge>
             <Badge 
-              variant={getPrioridadeBadgeVariant(auditoria.prioridade)}
-              className={`text-[11px] py-0 h-5 px-2 whitespace-nowrap ${getPrioridadeCustomClass(auditoria.prioridade)}`}
+              className={`text-[11px] py-0 h-5 px-2 whitespace-nowrap border ${getAuditoriaPrioridadeColor(auditoria.prioridade)}`}
             >
               {formatStatus(auditoria.prioridade)}
             </Badge>

@@ -20,6 +20,7 @@ import { AssessmentResponsesViewer } from './AssessmentResponsesViewer';
 import { ReportsSidebar } from './ReportsSidebar';
 import { IntegrationSuggestions } from './IntegrationSuggestions';
 import { formatDateOnly } from '@/lib/date-utils';
+import { getDueDiligenceStatusColor, formatStatus } from '@/lib/text-utils';
 
 interface Assessment {
   id: string;
@@ -356,16 +357,7 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
   }, [searchTerm, statusFilter, categoriaFilter]);
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      'pendente': { variant: 'outline' as const, text: 'Pendente' },
-      'ativo': { variant: 'secondary' as const, text: 'Ativo' },
-      'em_andamento': { variant: 'secondary' as const, text: 'Em Andamento' },
-      'concluido': { variant: 'default' as const, text: 'Concluído' },
-      'expirado': { variant: 'destructive' as const, text: 'Expirado' }
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['pendente'];
-    return <Badge variant={config.variant} className="whitespace-nowrap">{config.text}</Badge>;
+    return <Badge className={`${getDueDiligenceStatusColor(status)} border whitespace-nowrap`}>{formatStatus(status)}</Badge>;
   };
 
   const getScoreColor = (score?: number) => {

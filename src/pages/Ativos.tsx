@@ -25,6 +25,7 @@ import TrilhaAuditoriaAtivos from '@/components/ativos/TrilhaAuditoriaAtivos';
 import ImportacaoAtivos from '@/components/ativos/ImportacaoAtivos';
 import { UserSelect } from '@/components/riscos/UserSelect';
 import { formatDateOnly } from '@/lib/date-utils';
+import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/text-utils';
 
 interface Ativo {
   id: string;
@@ -443,15 +444,6 @@ const Ativos = () => {
     return tipo?.label || value;
   };
 
-  const getCriticidadeColor = (criticidade: string) => {
-    const crit = criticidades.find(c => c.value === criticidade);
-    return crit?.color || 'default';
-  };
-
-  const getStatusColor = (status: string) => {
-    const stat = statusOptions.find(s => s.value === status);
-    return stat?.color || 'default';
-  };
 
   // Filter and sort data
   const filteredAndSortedAtivos = useMemo(() => {
@@ -535,7 +527,7 @@ const Ativos = () => {
       label: 'Criticidade',
       sortable: true,
       render: (_: any, ativo: Ativo) => (
-        <Badge variant={getCriticidadeColor(ativo.criticidade) as any}>
+        <Badge className={`${getCriticidadeColor(ativo.criticidade)} border whitespace-nowrap`}>
           {criticidades.find(c => c.value === ativo.criticidade)?.label || ativo.criticidade}
         </Badge>
       )
@@ -545,8 +537,8 @@ const Ativos = () => {
       label: 'Status',
       sortable: true,
       render: (_: any, ativo: Ativo) => (
-        <Badge variant={getStatusColor(ativo.status) as any}>
-          {statusOptions.find(s => s.value === ativo.status)?.label || ativo.status}
+        <Badge className={`${getItemStatusColor(ativo.status)} border whitespace-nowrap`}>
+          {formatStatus(ativo.status)}
         </Badge>
       )
     },

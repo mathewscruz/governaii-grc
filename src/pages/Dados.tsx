@@ -20,7 +20,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
-import { formatStatus } from '@/lib/text-utils';
+import { formatStatus, getSensibilidadeColor, getItemStatusColor, getWorkflowStatusColor } from '@/lib/text-utils';
 
 export default function Dados() {
   const [activeTab, setActiveTab] = useState("catalogo");
@@ -105,23 +105,21 @@ export default function Dados() {
   };
 
   const getSensibilidadeBadge = (tipo: string, sensibilidade: string) => {
-    if (tipo === 'sensivel' || sensibilidade === 'muito_sensivel') {
-      return <Badge variant="destructive" className="whitespace-nowrap">Sensível</Badge>;
-    }
-    if (sensibilidade === 'sensivel') {
-      return <Badge variant="secondary" className="whitespace-nowrap">Moderado</Badge>;
-    }
-    return <Badge variant="outline" className="whitespace-nowrap">Comum</Badge>;
+    const colorClass = getSensibilidadeColor(tipo, sensibilidade);
+    const label = (tipo === 'sensivel' || sensibilidade === 'muito_sensivel') 
+      ? 'Sensível' 
+      : sensibilidade === 'sensivel' 
+        ? 'Moderado' 
+        : 'Comum';
+    return <Badge className={`${colorClass} border whitespace-nowrap`}>{label}</Badge>;
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      ativo: "default",
-      pendente: "secondary",
-      atendida: "outline",
-      rejeitada: "destructive"
-    };
-    return <Badge variant={variants[status] || "outline"} className="whitespace-nowrap">{formatStatus(status)}</Badge>;
+    // Para status de itens (ativo/inativo) usa getItemStatusColor
+    // Para status de workflow (pendente/atendida) usa getWorkflowStatusColor
+    const isWorkflow = ['pendente', 'em_analise', 'atendida', 'rejeitada'].includes(status);
+    const colorClass = isWorkflow ? getWorkflowStatusColor(status) : getItemStatusColor(status);
+    return <Badge className={`${colorClass} border whitespace-nowrap`}>{formatStatus(status)}</Badge>;
   };
 
   // ROPA DataTable columns

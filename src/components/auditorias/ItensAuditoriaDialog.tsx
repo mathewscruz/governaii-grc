@@ -33,6 +33,7 @@ import { ItemAuditoriaDetalheDialog } from "./ItemAuditoriaDetalheDialog";
 import { ImportarControlesDialog } from "./ImportarControlesDialog";
 import { useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
 import { formatDateOnly } from "@/lib/date-utils";
+import { getWorkflowStatusColor, getCriticidadeColor, formatStatus } from "@/lib/text-utils";
 
 interface ItensAuditoriaDialogProps {
   open: boolean;
@@ -41,30 +42,11 @@ interface ItensAuditoriaDialogProps {
   auditoriaNome: string;
 }
 
-const statusLabels: Record<string, string> = {
-  pendente: "Pendente",
-  em_andamento: "Em Andamento",
-  concluido: "Concluído",
-  nao_aplicavel: "Não Aplicável",
-};
-
 const statusOptions = [
-  { value: "pendente", label: "Pendente", color: "bg-gray-100 text-gray-800" },
-  { value: "em_andamento", label: "Em Andamento", color: "bg-blue-100 text-blue-800" },
-  { value: "concluido", label: "Concluído", color: "bg-green-100 text-green-800" },
-  { value: "nao_aplicavel", label: "Não Aplicável", color: "bg-slate-100 text-slate-600" },
-];
-
-const prioridadeLabels: Record<string, string> = {
-  alta: "Alta",
-  media: "Média",
-  baixa: "Baixa",
-};
-
-const prioridadeOptions = [
-  { value: "alta", label: "Alta", color: "bg-red-100 text-red-800" },
-  { value: "media", label: "Média", color: "bg-yellow-100 text-yellow-800" },
-  { value: "baixa", label: "Baixa", color: "bg-green-100 text-green-800" },
+  { value: "pendente", label: "Pendente" },
+  { value: "em_andamento", label: "Em Andamento" },
+  { value: "concluido", label: "Concluído" },
+  { value: "nao_aplicavel", label: "Não Aplicável" },
 ];
 
 export function ItensAuditoriaDialog({
@@ -230,19 +212,17 @@ export function ItensAuditoriaDialog({
   };
 
   const getStatusBadge = (status: string) => {
-    const option = statusOptions.find((o) => o.value === status);
     return (
-      <Badge className={`${option?.color || ""} border-0 whitespace-nowrap`}>
-        {statusLabels[status] || status}
+      <Badge className={`${getWorkflowStatusColor(status)} border whitespace-nowrap`}>
+        {formatStatus(status)}
       </Badge>
     );
   };
 
   const getPrioridadeBadge = (prioridade: string) => {
-    const option = prioridadeOptions.find((o) => o.value === prioridade);
     return (
-      <Badge variant="outline" className={`${option?.color || ""} whitespace-nowrap`}>
-        {prioridadeLabels[prioridade] || prioridade}
+      <Badge className={`${getCriticidadeColor(prioridade)} border whitespace-nowrap`}>
+        {formatStatus(prioridade)}
       </Badge>
     );
   };

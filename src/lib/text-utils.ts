@@ -262,3 +262,82 @@ export const getAuditoriaPrioridadeColor = (prioridade: string): string => {
       return 'bg-gray-100 text-gray-800 border-gray-200';
   }
 };
+
+/**
+ * Cores para status de denúncias (Nova, Em Análise, Em Investigação, Resolvida, Arquivada)
+ * Usado em: Denúncias
+ */
+export const getDenunciaStatusColor = (status: string): string => {
+  const value = status?.toLowerCase() || '';
+  switch (value) {
+    case 'nova':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'em_analise':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'em_investigacao':
+      return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'resolvida':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'arquivada':
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+/**
+ * Cores para sensibilidade de dados (Sensível, Moderado, Comum)
+ * Usado em: Dados Pessoais, ROPA
+ */
+export const getSensibilidadeColor = (tipo: string, sensibilidade: string): string => {
+  if (tipo === 'sensivel' || sensibilidade === 'muito_sensivel') {
+    return 'bg-red-100 text-red-800 border-red-200';
+  }
+  if (sensibilidade === 'sensivel') {
+    return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+  }
+  return 'bg-gray-100 text-gray-800 border-gray-200';
+};
+
+/**
+ * Cores para status de riscos (Identificado, Analisado, Tratado, Monitorado, Aceito)
+ * Usado em: Riscos
+ */
+export const getRiscoStatusColor = (status: string): string => {
+  const value = status?.toLowerCase() || '';
+  switch (value) {
+    case 'identificado':
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'analisado':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'tratado':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'monitorado':
+      return 'bg-teal-100 text-teal-800 border-teal-200';
+    case 'aceito':
+      return 'bg-amber-100 text-amber-800 border-amber-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+/**
+ * Cores para status de Due Diligence (Pendente, Ativo, Em Andamento, Concluído, Expirado)
+ * Usado em: Due Diligence Assessments
+ */
+export const getDueDiligenceStatusColor = (status: string): string => {
+  const value = status?.toLowerCase() || '';
+  switch (value) {
+    case 'pendente':
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'ativo':
+    case 'em_andamento':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'concluido':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'expirado':
+      return 'bg-red-100 text-red-800 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { capitalizeText, formatStatus } from '@/lib/text-utils';
+import { capitalizeText, formatStatus, getRiscoStatusColor } from '@/lib/text-utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
@@ -357,22 +357,6 @@ export function Riscos() {
     return {};
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'identificado':
-        return 'secondary';
-      case 'analisado':
-        return 'outline';
-      case 'tratado':
-        return 'default';
-      case 'monitorado':
-        return 'secondary';
-      case 'aceito':
-        return 'destructive';
-      default:
-        return 'secondary';
-    }
-  };
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -487,7 +471,7 @@ export function Riscos() {
       className: undefined,
       render: (value: string) => {
         return (
-          <Badge variant={getStatusBadgeVariant(value)} className="whitespace-nowrap">
+          <Badge className={`${getRiscoStatusColor(value)} border whitespace-nowrap`}>
             {formatStatus(value)}
           </Badge>
         );
