@@ -120,3 +120,6 @@ verify_jwt = true
 
 [functions.integration-webhook-dispatcher]
 verify_jwt = false
+
+[functions.azure-integration]
+verify_jwt = true

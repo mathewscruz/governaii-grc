@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { UserSelect } from './UserSelect';
 import { RiscoAnexosUpload } from './RiscoAnexosUpload';
 import { cn } from '@/lib/utils';
+import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
 
 const riscoSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -70,6 +71,7 @@ interface Props {
 
 export function RiscoFormWizard({ risco, onSuccess }: Props) {
   const { profile } = useAuth();
+  const { notify } = useIntegrationNotify();
   const [loading, setLoading] = useState(false);
   const [matrizes, setMatrizes] = useState<Matriz[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -357,6 +359,22 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
 
         if (error) throw error;
         riscoId = newRisco.id;
+        
+        // Notificar integrações sobre novo risco
+        const nivelGravidadeMap: Record<string, 'baixa' | 'media' | 'alta' | 'critica'> = {
+          'baixo': 'baixa',
+          'medio': 'media',
+          'alto': 'alta',
+          'critico': 'critica'
+        };
+        
+        await notify('risco_identificado', {
+          titulo: `Novo Risco: ${data.nome}`,
+          descricao: data.descricao || `Risco identificado com nível ${nivelInicial}`,
+          link: `${window.location.origin}/riscos`,
+          gravidade: nivelGravidadeMap[nivelInicial?.toLowerCase()] || 'media',
+          dados: { nivel: nivelInicial, status: data.status }
+        });
         
         for (const anexo of anexosAceite) {
           if (!anexo.id && riscoId) {

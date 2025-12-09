@@ -10,7 +10,8 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
-  Info
+  Info,
+  Cloud
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
@@ -19,6 +20,7 @@ import { SlackConfigDialog } from './integrations/SlackConfigDialog';
 import { TeamsConfigDialog } from './integrations/TeamsConfigDialog';
 import { WebhooksConfigDialog } from './integrations/WebhooksConfigDialog';
 import { JiraConfigDialog } from './integrations/JiraConfigDialog';
+import { AzureConfigDialog } from './integrations/AzureConfigDialog';
 
 interface Integration {
   id: string;
@@ -110,6 +112,7 @@ const INTEGRACOES_DISPONIVEIS: Integration[] = [
     disponivel: false,
     documentacaoUrl: 'https://zapier.com/developer'
   },
+  // ITSM
   {
     id: 'jira',
     tipo: 'jira',
@@ -121,6 +124,19 @@ const INTEGRACOES_DISPONIVEIS: Integration[] = [
     cor: '#0052CC',
     disponivel: true,
     documentacaoUrl: 'https://developer.atlassian.com/cloud/jira/platform/'
+  },
+  // Identidade
+  {
+    id: 'azure',
+    tipo: 'azure',
+    nome: 'Microsoft Azure / Intune',
+    descricao: 'Sincronize dispositivos do Intune e Azure AD com o módulo de Ativos.',
+    categoria: 'identidade',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Microsoft_Azure.svg',
+    icon: Cloud,
+    cor: '#0078D4',
+    disponivel: true,
+    documentacaoUrl: 'https://learn.microsoft.com/en-us/graph/api/resources/intune-devices-manageddevice'
   }
 ];
 
@@ -143,6 +159,7 @@ export function IntegrationHub() {
   const [teamsDialogOpen, setTeamsDialogOpen] = useState(false);
   const [webhooksDialogOpen, setWebhooksDialogOpen] = useState(false);
   const [jiraDialogOpen, setJiraDialogOpen] = useState(false);
+  const [azureDialogOpen, setAzureDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchIntegrations();
@@ -203,6 +220,9 @@ export function IntegrationHub() {
         break;
       case 'jira':
         setJiraDialogOpen(true);
+        break;
+      case 'azure':
+        setAzureDialogOpen(true);
         break;
     }
   };
@@ -347,6 +367,13 @@ export function IntegrationHub() {
             onOpenChange={setJiraDialogOpen}
             empresaId={empresaId}
             existingConfig={getExistingConfig('jira') as any}
+            onSaved={fetchIntegrations}
+          />
+          <AzureConfigDialog
+            open={azureDialogOpen}
+            onOpenChange={setAzureDialogOpen}
+            empresaId={empresaId}
+            existingConfig={getExistingConfig('azure') as any}
             onSaved={fetchIntegrations}
           />
         </>

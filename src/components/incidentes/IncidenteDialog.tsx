@@ -37,6 +37,7 @@ import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
 
 const incidenteSchema = z.object({
   titulo: z.string().min(1, 'Título é obrigatório'),
@@ -69,6 +70,7 @@ export function IncidenteDialog({ incidente, onSuccess, trigger }: IncidenteDial
   const [ativos, setAtivos] = useState<any[]>([]);
   const [riscos, setRiscos] = useState<any[]>([]);
   const { toast } = useToast();
+  const { notify } = useIntegrationNotify();
 
   const form = useForm<IncidenteFormData>({
     resolver: zodResolver(incidenteSchema),
@@ -170,6 +172,26 @@ export function IncidenteDialog({ incidente, onSuccess, trigger }: IncidenteDial
           .insert([incidenteData]);
 
         if (error) throw error;
+        
+        // Notificar integrações
+        const gravidadeMap: Record<string, 'baixa' | 'media' | 'alta' | 'critica'> = {
+          'baixa': 'baixa',
+          'media': 'media',
+          'alta': 'alta',
+          'critica': 'critica'
+        };
+        
+        await notify(
+          data.criticidade === 'critica' ? 'incidente_critico' : 'incidente_criado',
+          {
+            titulo: `Novo Incidente: ${data.titulo}`,
+            descricao: data.descricao || `Incidente de ${data.tipo_incidente} registrado`,
+            link: `${window.location.origin}/incidentes`,
+            gravidade: gravidadeMap[data.criticidade] || 'media',
+            dados: { tipo: data.tipo_incidente, criticidade: data.criticidade }
+          }
+        );
+        
         toast({ title: 'Incidente registrado com sucesso!' });
       }
 
