@@ -26,10 +26,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, FileText, MessageSquare, Paperclip, User, Calendar, ChevronRight } from "lucide-react";
+import { Plus, Search, FileText, MessageSquare, Paperclip, User, Calendar, ChevronRight, Download, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { ItemAuditoriaFormDialog } from "./ItemAuditoriaFormDialog";
 import { ItemAuditoriaDetalheDialog } from "./ItemAuditoriaDetalheDialog";
+import { ImportarControlesDialog } from "./ImportarControlesDialog";
 import { useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
 import { formatDateOnly } from "@/lib/date-utils";
 
@@ -67,6 +68,7 @@ export function ItensAuditoriaDialog({
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isDetalheOpen, setIsDetalheOpen] = useState(false);
   const [detalheItem, setDetalheItem] = useState<any>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const { data: usuarios } = useUsuariosEmpresa();
 
@@ -249,6 +251,10 @@ export function ItensAuditoriaDialog({
                 ))}
               </SelectContent>
             </Select>
+            <Button variant="outline" onClick={() => setIsImportOpen(true)}>
+              <Download className="h-4 w-4 mr-2" />
+              Importar Controles
+            </Button>
             <Button onClick={handleAddItem}>
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Item
@@ -359,6 +365,14 @@ export function ItensAuditoriaDialog({
           setIsDetalheOpen(false);
           handleEditItem(detalheItem);
         }}
+      />
+
+      <ImportarControlesDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        auditoriaId={auditoriaId}
+        auditoriaNome={auditoriaNome}
+        onSuccess={handleFormSuccess}
       />
     </>
   );

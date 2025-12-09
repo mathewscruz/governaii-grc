@@ -20,6 +20,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import {
   Select,
@@ -32,6 +33,8 @@ import { toast } from "sonner";
 import { useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
 import { Loader2 } from "lucide-react";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
+import { ControleSelect } from "./ControleSelect";
+import { AreaSistemaSelect } from "./AreaSistemaSelect";
 
 const formSchema = z.object({
   codigo: z.string().min(1, "Código é obrigatório"),
@@ -42,6 +45,8 @@ const formSchema = z.object({
   prioridade: z.string().default("media"),
   status: z.string().default("pendente"),
   observacoes: z.string().optional(),
+  controle_vinculado_id: z.string().optional(),
+  area_sistema_id: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -77,6 +82,8 @@ export function ItemAuditoriaFormDialog({
       prioridade: "media",
       status: "pendente",
       observacoes: "",
+      controle_vinculado_id: "",
+      area_sistema_id: "",
     },
   });
 
@@ -91,6 +98,8 @@ export function ItemAuditoriaFormDialog({
         prioridade: item.prioridade || "media",
         status: item.status || "pendente",
         observacoes: item.observacoes || "",
+        controle_vinculado_id: item.controle_vinculado_id || "",
+        area_sistema_id: item.area_sistema_id || "",
       });
     } else {
       form.reset({
@@ -102,9 +111,22 @@ export function ItemAuditoriaFormDialog({
         prioridade: "media",
         status: "pendente",
         observacoes: "",
+        controle_vinculado_id: "",
+        area_sistema_id: "",
       });
     }
   }, [item, open]);
+
+  const handleControleChange = (value: string, controle?: any) => {
+    form.setValue("controle_vinculado_id", value);
+    // Auto-preencher campos se controle selecionado e campos estão vazios
+    if (controle && !form.getValues("titulo")) {
+      form.setValue("titulo", controle.nome);
+    }
+    if (controle && !form.getValues("descricao") && controle.descricao) {
+      form.setValue("descricao", controle.descricao);
+    }
+  };
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -122,6 +144,8 @@ export function ItemAuditoriaFormDialog({
         prioridade: data.prioridade,
         status: data.status,
         observacoes: data.observacoes || null,
+        controle_vinculado_id: data.controle_vinculado_id || null,
+        area_sistema_id: data.area_sistema_id || null,
         created_by: item ? undefined : userId,
       };
 
@@ -160,7 +184,6 @@ export function ItemAuditoriaFormDialog({
           });
         } catch (notifError) {
           console.error("Erro ao enviar notificação:", notifError);
-          // Não falha a operação principal se a notificação falhar
         }
       }
 
@@ -176,7 +199,7 @@ export function ItemAuditoriaFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {item ? "Editar Item de Verificação" : "Adicionar Item de Verificação"}
@@ -185,6 +208,28 @@ export function ItemAuditoriaFormDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Vinculação a Controle Existente */}
+            <FormField
+              control={form.control}
+              name="controle_vinculado_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Vincular a Controle Existente (opcional)</FormLabel>
+                  <FormControl>
+                    <ControleSelect
+                      value={field.value}
+                      onValueChange={handleControleChange}
+                      placeholder="Selecionar controle..."
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Ao vincular, o título e descrição serão preenchidos automaticamente
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -297,6 +342,25 @@ export function ItemAuditoriaFormDialog({
                 )}
               />
             </div>
+
+            {/* Área/Sistema Auditado */}
+            <FormField
+              control={form.control}
+              name="area_sistema_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Área/Sistema Auditado (opcional)</FormLabel>
+                  <FormControl>
+                    <AreaSistemaSelect
+                      auditoriaId={auditoriaId}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

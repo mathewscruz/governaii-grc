@@ -26,9 +26,12 @@
     --secondary: 214 32% 91%;
     --secondary-foreground: 215 28% 17%;
 
-    /* Muted - Subtle grays */
-    --muted: 210 40% 96%;
+    /* Muted - Neutral grays (not blue-tinted) */
+    --muted: 220 14% 96%;
     --muted-foreground: 215 16% 47%;
+    
+    /* Table hover - Very light neutral gray */
+    --table-row-hover: 220 10% 97%;
 
     /* Accent - Vibrant blue */
     --accent: 221 83% 53%;
