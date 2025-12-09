@@ -308,14 +308,14 @@ export function ItemAuditoriaFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Responsável</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <Select onValueChange={(v) => field.onChange(v === "_none" ? "" : v)} value={field.value || "_none"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o responsável" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Nenhum</SelectItem>
+                        <SelectItem value="_none">Nenhum</SelectItem>
                         {usuarios?.map((u) => (
                           <SelectItem key={u.user_id} value={u.user_id}>
                             {u.nome}
