@@ -54,7 +54,7 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
       }
 
       // SEMPRE mostrar mensagem de sucesso (proteção contra enumeração de emails)
-      toast.success('Se o e-mail estiver cadastrado, você receberá as instruções de recuperação.');
+      toast.success('Se o e-mail estiver cadastrado, você receberá as instruções de recuperação. Verifique também a pasta de spam/lixo eletrônico.', { duration: 8000 });
       setEmail('');
       onOpenChange(false);
     } catch (error: any) {

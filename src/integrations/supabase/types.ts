@@ -5262,6 +5262,7 @@ export type Database = {
           created_at: string | null
           criticidade: string
           empresa_id: string
+          icone: string | null
           id: string
           nome_sistema: string
           observacoes: string | null
@@ -5276,6 +5277,7 @@ export type Database = {
           created_at?: string | null
           criticidade?: string
           empresa_id: string
+          icone?: string | null
           id?: string
           nome_sistema: string
           observacoes?: string | null
@@ -5290,6 +5292,7 @@ export type Database = {
           created_at?: string | null
           criticidade?: string
           empresa_id?: string
+          icone?: string | null
           id?: string
           nome_sistema?: string
           observacoes?: string | null
