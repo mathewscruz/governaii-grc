@@ -1734,6 +1734,7 @@ export type Database = {
         Row: {
           area: string | null
           categoria_id: string | null
+          codigo: string | null
           created_at: string
           criticidade: string
           data_implementacao: string | null
@@ -1753,6 +1754,7 @@ export type Database = {
         Insert: {
           area?: string | null
           categoria_id?: string | null
+          codigo?: string | null
           created_at?: string
           criticidade?: string
           data_implementacao?: string | null
@@ -1772,6 +1774,7 @@ export type Database = {
         Update: {
           area?: string | null
           categoria_id?: string | null
+          codigo?: string | null
           created_at?: string
           criticidade?: string
           data_implementacao?: string | null

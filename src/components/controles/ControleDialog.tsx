@@ -29,6 +29,7 @@ const formatDateForInput = (dateString: string | null): string => {
 
 interface Controle {
   id: string;
+  codigo?: string;
   nome: string;
   descricao?: string;
   tipo: string;
@@ -57,6 +58,7 @@ interface ControleDialogProps {
 
 export default function ControleDialog({ open, onOpenChange, controle, categorias }: ControleDialogProps) {
   const [formData, setFormData] = useState({
+    codigo: "",
     nome: "",
     descricao: "",
     tipo: "preventivo",
@@ -102,6 +104,7 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
       Promise.all([fetchRiscoVinculado(), fetchAuditoriasVinculadas()]).then(
         ([riscoId, auditoriasIds]) => {
           setFormData({
+            codigo: controle.codigo || "",
             nome: controle.nome || "",
             descricao: controle.descricao || "",
             tipo: controle.tipo || "preventivo",
@@ -120,6 +123,7 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
       );
     } else {
       setFormData({
+        codigo: "",
         nome: "",
         descricao: "",
         tipo: "preventivo",
@@ -150,6 +154,7 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
       }
 
       const controleData = {
+        codigo: data.codigo?.trim() || null,
         nome: data.nome,
         descricao: data.descricao,
         tipo: data.tipo,
@@ -302,8 +307,18 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-3 gap-4">
             <div>
+              <Label htmlFor="codigo">Código</Label>
+              <Input
+                id="codigo"
+                value={formData.codigo}
+                onChange={(e) => setFormData(prev => ({ ...prev, codigo: e.target.value }))}
+                placeholder="Ex: CTRL-001"
+              />
+            </div>
+
+            <div className="col-span-2">
               <Label htmlFor="nome">Nome *</Label>
               <Input
                 id="nome"
@@ -313,7 +328,9 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
                 required
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="tipo">Tipo</Label>
               <Select value={formData.tipo} onValueChange={(value) => setFormData(prev => ({ ...prev, tipo: value }))}>
@@ -324,6 +341,23 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
                   <SelectItem value="preventivo">Preventivo</SelectItem>
                   <SelectItem value="detectivo">Detectivo</SelectItem>
                   <SelectItem value="corretivo">Corretivo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="categoria">Categoria</Label>
+              <Select value={formData.categoria_id || "sem_categoria"} onValueChange={(value) => setFormData(prev => ({ ...prev, categoria_id: value === "sem_categoria" ? "" : value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sem_categoria">Sem categoria</SelectItem>
+                  {categorias.map((categoria) => (
+                    <SelectItem key={categoria.id} value={categoria.id}>
+                      {categoria.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -341,32 +375,13 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="categoria">Categoria</Label>
-              <Select value={formData.categoria_id || "sem_categoria"} onValueChange={(value) => setFormData(prev => ({ ...prev, categoria_id: value === "sem_categoria" ? "" : value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sem_categoria">Sem categoria</SelectItem>
-                  {categorias.map((categoria) => (
-                    <SelectItem key={categoria.id} value={categoria.id}>
-                      {categoria.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="risco">Risco Relacionado</Label>
-              <RiscoSelect
-                value={formData.risco_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, risco_id: value }))}
-                placeholder="Nenhum risco"
-              />
-            </div>
+          <div>
+            <Label htmlFor="risco">Risco Relacionado</Label>
+            <RiscoSelect
+              value={formData.risco_id}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, risco_id: value }))}
+              placeholder="Nenhum risco"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
