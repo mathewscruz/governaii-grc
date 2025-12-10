@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 import { DocumentoDialog } from '@/components/documentos/DocumentoDialog';
 import { CategoriasDialog } from '@/components/documentos/CategoriasDialog';
 import { VinculacoesDialog } from '@/components/documentos/VinculacoesDialog';
@@ -619,16 +620,20 @@ export default function Documentos() {
               <TableBody>
                 {paginatedDocumentos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      <div className="flex flex-col items-center gap-2">
-                        <FileText className="h-8 w-8 text-muted-foreground" />
-                        <span className="text-muted-foreground">
-                          {filtrosAvancados || searchTerm || selectedCategoria !== 'all' || selectedStatus !== 'all' || selectedTipo !== 'all' 
-                            ? 'Nenhum documento encontrado com os filtros aplicados.'
-                            : 'Nenhum documento cadastrado.'
-                          }
-                        </span>
-                      </div>
+                    <TableCell colSpan={7} className="p-0">
+                      <EmptyState
+                        icon={<FileText className="h-8 w-8" />}
+                        title={filtrosAvancados || searchTerm || selectedCategoria !== 'all' || selectedStatus !== 'all' || selectedTipo !== 'all' 
+                          ? 'Nenhum documento encontrado'
+                          : 'Nenhum documento cadastrado'}
+                        description={filtrosAvancados || searchTerm || selectedCategoria !== 'all' || selectedStatus !== 'all' || selectedTipo !== 'all' 
+                          ? 'Tente ajustar os filtros para encontrar o que procura.'
+                          : 'Comece criando documentos para gerenciar suas políticas e procedimentos.'}
+                        action={!filtrosAvancados && !searchTerm && selectedCategoria === 'all' && selectedStatus === 'all' && selectedTipo === 'all' ? {
+                          label: 'Novo Documento',
+                          onClick: () => setDocumentoDialog({ open: true })
+                        } : undefined}
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (

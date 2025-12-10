@@ -14,7 +14,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Plus, Search, FileText, DollarSign, Users, AlertCircle, Edit, TrendingUp, Trash2, Building2, FileStack, Milestone, FilePlus2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ContratoDialog } from '@/components/contratos/ContratoDialog';
+import { ContratoDialogWizard } from '@/components/contratos/ContratoDialogWizard';
 import { FornecedorDialog } from '@/components/contratos/FornecedorDialog';
 import { MarcosDialog } from '@/components/contratos/MarcosDialog';
 import { DocumentosDialog } from '@/components/contratos/DocumentosDialog';
@@ -809,7 +809,7 @@ export default function Contratos() {
         </Tabs>
 
         {/* Dialogs */}
-        <ContratoDialog
+        <ContratoDialogWizard
           contrato={selectedContrato}
           open={dialogOpen}
           onOpenChange={setDialogOpen}

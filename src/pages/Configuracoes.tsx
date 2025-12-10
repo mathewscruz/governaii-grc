@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
 import { Users, Building2, Settings, Shield, Plug } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
@@ -54,13 +55,11 @@ const Configuracoes = () => {
   const isAdmin = userRole === 'admin' || isSuperAdmin;
 
   return (
-    <div className="py-6 px-4">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Configurações</h1>
-        <p className="text-muted-foreground">
-          Gerencie empresas, usuários e configurações do sistema
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Configurações"
+        description="Gerencie empresas, usuários e configurações do sistema"
+      />
 
       <Tabs defaultValue="usuarios" className="space-y-6">
         <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-5' : isAdmin ? 'grid-cols-4' : 'grid-cols-2'}`}>
