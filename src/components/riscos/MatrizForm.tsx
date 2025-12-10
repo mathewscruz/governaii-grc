@@ -8,13 +8,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2, Edit } from 'lucide-react';
+import { Plus, Trash2, Edit, Grid3X3, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DialogFooter } from '@/components/ui/dialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const matrizSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -71,6 +73,14 @@ export function MatrizForm({ onSuccess }: Props) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [editingMatriz, setEditingMatriz] = useState<Matriz | null>(null);
   
+  // Estado para ConfirmDialog de exclusão
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [matrizToDelete, setMatrizToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  
+  // Estado para erros de validação de faixas
+  const [faixasError, setFaixasError] = useState<string | null>(null);
+  
   // Escalas para configuração da matriz
   const [escalaProbabilidade, setEscalaProbabilidade] = useState<EscalaItem[]>([
     { valor: '1', descricao: 'Muito Raro' },
@@ -117,6 +127,12 @@ export function MatrizForm({ onSuccess }: Props) {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Validar faixas sempre que niveisRisco mudar
+  useEffect(() => {
+    const error = validarFaixasNiveisRisco();
+    setFaixasError(error);
+  }, [niveisRisco]);
 
   const fetchData = async () => {
     try {
@@ -195,11 +211,53 @@ export function MatrizForm({ onSuccess }: Props) {
       { min: 17, max: 25, nivel: 'Crítico', cor: '#dc2626' }
     ]);
     setMetodoCalculo('multiplicacao');
+    setFaixasError(null);
+  };
+
+  // Validação de sobreposição e gaps nas faixas de níveis de risco
+  const validarFaixasNiveisRisco = (): string | null => {
+    if (niveisRisco.length === 0) return null;
+    
+    // Ordenar por min
+    const niveisOrdenados = [...niveisRisco].sort((a, b) => a.min - b.min);
+    
+    for (let i = 0; i < niveisOrdenados.length; i++) {
+      const nivel = niveisOrdenados[i];
+      
+      // Validar que min <= max
+      if (nivel.min > nivel.max) {
+        return `O nível "${nivel.nivel || `#${i + 1}`}" tem valor mínimo maior que o máximo`;
+      }
+      
+      // Validar sobreposição com próximo nível
+      if (i < niveisOrdenados.length - 1) {
+        const proximoNivel = niveisOrdenados[i + 1];
+        
+        // Sobreposição
+        if (nivel.max >= proximoNivel.min) {
+          return `Sobreposição detectada entre "${nivel.nivel || `#${i + 1}`}" (max: ${nivel.max}) e "${proximoNivel.nivel || `#${i + 2}`}" (min: ${proximoNivel.min})`;
+        }
+        
+        // Gap (valores não cobertos)
+        if (nivel.max + 1 < proximoNivel.min) {
+          return `Gap detectado: valores ${nivel.max + 1} a ${proximoNivel.min - 1} não estão cobertos por nenhum nível`;
+        }
+      }
+    }
+    
+    return null;
   };
 
   const onSubmitMatriz = async (data: MatrizForm) => {
     if (!profile?.empresa_id) {
       toast.error('Erro: Empresa não identificada');
+      return;
+    }
+
+    // Validar faixas antes de salvar
+    const faixasValidation = validarFaixasNiveisRisco();
+    if (faixasValidation) {
+      toast.error(faixasValidation);
       return;
     }
 
@@ -321,12 +379,20 @@ export function MatrizForm({ onSuccess }: Props) {
     setNiveisRisco(novosNiveis);
   };
 
-  const excluirMatriz = async (id: string) => {
+  const handleDeleteClick = (id: string) => {
+    setMatrizToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const excluirMatriz = async () => {
+    if (!matrizToDelete) return;
+    
+    setDeleting(true);
     try {
       const { error } = await supabase
         .from('riscos_matrizes')
         .delete()
-        .eq('id', id);
+        .eq('id', matrizToDelete);
 
       if (error) throw error;
 
@@ -334,6 +400,10 @@ export function MatrizForm({ onSuccess }: Props) {
       fetchData();
     } catch (error: any) {
       toast.error('Erro ao excluir matriz: ' + error.message);
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setMatrizToDelete(null);
     }
   };
 
@@ -388,7 +458,7 @@ export function MatrizForm({ onSuccess }: Props) {
       <div className="space-y-6">
           {/* Formulário para nova/editar matriz */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>
                 {editingMatriz ? 'Editar Matriz de Risco' : 'Nova Matriz de Risco'}
               </CardTitle>
@@ -407,9 +477,11 @@ export function MatrizForm({ onSuccess }: Props) {
                       name="nome"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nome da Matriz</FormLabel>
+                          <FormLabel>
+                            Nome da Matriz <span className="text-destructive">*</span>
+                          </FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} placeholder="Ex: Matriz de Risco Corporativa" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -424,7 +496,7 @@ export function MatrizForm({ onSuccess }: Props) {
                       <FormItem>
                         <FormLabel>Descrição</FormLabel>
                         <FormControl>
-                          <Textarea {...field} />
+                          <Textarea {...field} placeholder="Descreva o propósito desta matriz de risco" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -557,12 +629,21 @@ export function MatrizForm({ onSuccess }: Props) {
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
+                    
+                    {/* Alerta de validação de faixas */}
+                    {faixasError && (
+                      <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>{faixasError}</AlertDescription>
+                      </Alert>
+                    )}
+                    
                     {niveisRisco.map((nivel, index) => (
                       <div key={index} className="flex gap-2 items-center">
                         <Input
                           type="number"
                           value={nivel.min}
-                          onChange={(e) => atualizarNivelRisco(index, 'min', parseInt(e.target.value))}
+                          onChange={(e) => atualizarNivelRisco(index, 'min', parseInt(e.target.value) || 0)}
                           placeholder="Min"
                           className="w-20"
                         />
@@ -570,7 +651,7 @@ export function MatrizForm({ onSuccess }: Props) {
                         <Input
                           type="number"
                           value={nivel.max}
-                          onChange={(e) => atualizarNivelRisco(index, 'max', parseInt(e.target.value))}
+                          onChange={(e) => atualizarNivelRisco(index, 'max', parseInt(e.target.value) || 0)}
                           placeholder="Max"
                           className="w-20"
                         />
@@ -601,7 +682,7 @@ export function MatrizForm({ onSuccess }: Props) {
                   </div>
 
                   <div className="flex justify-end">
-                    <Button type="submit" disabled={loading}>
+                    <Button type="submit" disabled={loading || !!faixasError}>
                       {loading ? 'Salvando...' : editingMatriz ? 'Atualizar Matriz' : 'Criar Matriz'}
                     </Button>
                   </div>
@@ -611,12 +692,18 @@ export function MatrizForm({ onSuccess }: Props) {
           </Card>
 
           {/* Lista de matrizes existentes */}
-          {matrizes.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Matrizes Existentes</CardTitle>
-              </CardHeader>
-              <CardContent>
+          <Card>
+            <CardHeader>
+              <CardTitle>Matrizes Existentes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {matrizes.length === 0 ? (
+                <EmptyState
+                  icon={<Grid3X3 className="h-10 w-10" />}
+                  title="Nenhuma matriz cadastrada"
+                  description="Crie sua primeira matriz de risco usando o formulário acima para começar a avaliar seus riscos de forma estruturada."
+                />
+              ) : (
                 <div className="space-y-4">
                   {matrizes.map((matriz) => (
                     <div key={matriz.id} className="flex items-center justify-between p-4 border rounded-lg">
@@ -638,7 +725,7 @@ export function MatrizForm({ onSuccess }: Props) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => excluirMatriz(matriz.id)}
+                          onClick={() => handleDeleteClick(matriz.id)}
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
                           Excluir
@@ -647,19 +734,29 @@ export function MatrizForm({ onSuccess }: Props) {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
       </div>
 
-      <DialogFooter className="gap-2">
+      <DialogFooter>
         <Button type="button" variant="outline" onClick={onSuccess}>
-          Cancelar
-        </Button>
-        <Button onClick={onSuccess}>
-          Concluir
+          Fechar
         </Button>
       </DialogFooter>
+
+      {/* ConfirmDialog para exclusão de matriz */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Excluir Matriz de Risco"
+        description="Tem certeza que deseja excluir esta matriz? Esta ação não pode ser desfeita e pode afetar riscos que utilizam esta matriz."
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        onConfirm={excluirMatriz}
+        loading={deleting}
+        variant="destructive"
+      />
     </div>
   );
 }
