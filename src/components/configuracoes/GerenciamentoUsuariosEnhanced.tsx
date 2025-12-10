@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, UserCheck, User, Clock, MoreHorizontal, Shield, Mail, Users, ShieldCheck } from 'lucide-react';
+import { Plus, Edit, Trash2, UserCheck, User, Clock, MoreHorizontal, Shield, Mail, Users, ShieldCheck, Key } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -368,6 +368,28 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     }
   };
 
+  const resetPassword = async (usuario: Usuario) => {
+    try {
+      setActionLoading(prev => ({ ...prev, [`reset-${usuario.id}`]: true }));
+      
+      const { error } = await supabase.functions.invoke('send-password-reset', {
+        body: { userId: usuario.user_id }
+      });
+
+      if (error) throw error;
+
+      toast.success(`Nova senha temporária enviada para ${usuario.email}`);
+      
+      const userIds = usuarios.map(u => u.user_id);
+      await fetchUsersAccessInfo(userIds);
+    } catch (error: any) {
+      console.error('Erro ao resetar senha:', error);
+      toast.error(error.message || 'Erro ao resetar senha');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`reset-${usuario.id}`]: false }));
+    }
+  };
+
   const getRoleBadge = (role: string) => {
     const variants = {
       super_admin: 'default',
@@ -482,11 +504,11 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1 text-green-600">
                     <UserCheck className="h-4 w-4" />
-                    <span className="text-sm">Último acesso</span>
+                    <span className="text-sm">{format(new Date(accessInfo.last_sign_in_at), 'dd/MM/yy HH:mm', { locale: ptBR })}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {format(new Date(accessInfo.last_sign_in_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                  Último acesso: {format(new Date(accessInfo.last_sign_in_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -532,6 +554,17 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
             <DropdownMenuItem onClick={() => handleManagePermissions(usuario.user_id)}>
               <Shield className="h-4 w-4 mr-2" />
               Gerenciar Permissões
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => resetPassword(usuario)}
+              disabled={actionLoading[`reset-${usuario.id}`]}
+            >
+              {actionLoading[`reset-${usuario.id}`] ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+              ) : (
+                <Key className="h-4 w-4 mr-2" />
+              )}
+              Resetar Senha
             </DropdownMenuItem>
             {shouldShowResendButton(usuario) && (
               <DropdownMenuItem 
