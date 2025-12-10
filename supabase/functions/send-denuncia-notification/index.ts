@@ -112,168 +112,104 @@ const handler = async (req: Request): Promise<Response> => {
     const companyName = denuncia.empresa?.nome || 'GovernAII';
 
     const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body {
-              font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-              line-height: 1.6;
-              color: #3c4149;
-              background-color: #f6f9fc;
-              margin: 0;
-              padding: 0;
-            }
-            .container {
-              max-width: 600px;
-              margin: 0 auto;
-              background-color: #ffffff;
-            }
-            .logo-section {
-              padding: 32px 32px 24px;
-              text-align: center;
-              border-bottom: 1px solid #e6ebf1;
-            }
-            .logo {
-              max-height: 60px;
-              max-width: 200px;
-            }
-            .logo-text {
-              font-size: 24px;
-              font-weight: 700;
-              color: #2563eb;
-              margin: 0;
-            }
-            .header {
-              padding: 32px 32px 16px;
-            }
-            .header h1 {
-              color: #1a1a1a;
-              font-size: 24px;
-              font-weight: 600;
-              margin: 0;
-            }
-            .content {
-              padding: 0 32px;
-              background-color: #ffffff;
-              border: 1px solid #e6ebf1;
-              border-radius: 8px;
-              margin: 0 32px;
-            }
-            .field {
-              margin-bottom: 15px;
-              padding: 12px 0;
-              border-bottom: 1px solid #f6f9fc;
-            }
-            .field:last-child {
-              border-bottom: none;
-            }
-            .label {
-              font-weight: 600;
-              color: #1a1a1a;
-              margin-bottom: 4px;
-            }
-            .value {
-              margin-top: 4px;
-              color: #3c4149;
-            }
-            .alert {
-              background-color: #fff8e6;
-              border: 1px solid #ffd666;
-              border-left: 4px solid #faad14;
-              padding: 16px;
-              border-radius: 6px;
-              margin: 24px 32px;
-            }
-            .badge {
-              display: inline-block;
-              padding: 4px 12px;
-              border-radius: 4px;
-              font-size: 12px;
-              font-weight: 600;
-            }
-            .badge-alta { background-color: #fff8e6; color: #d46b08; border: 1px solid #ffd666; }
-            .badge-critica { background-color: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; }
-            .badge-media { background-color: #fff8e6; color: #d46b08; border: 1px solid #ffd666; }
-            .badge-baixa { background-color: #e6f7ff; color: #0050b3; border: 1px solid #91d5ff; }
-            .footer {
-              border-top: 1px solid #e6ebf1;
-              margin: 32px 32px 0;
-              padding: 24px 0;
-              text-align: center;
-            }
-            .footer p {
-              color: #8898aa;
-              font-size: 12px;
-              margin: 8px 0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="logo-section">
-              <img src="${logoUrl}" alt="${companyName}" class="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-              <p class="logo-text" style="display: none;">${companyName}</p>
-            </div>
-            
-            <div class="header">
-              <h1>Nova Denúncia Recebida</h1>
-            </div>
-            
-            <div class="content">
-              <div class="field">
-                <div class="label">Protocolo:</div>
-                <div class="value"><strong>${denuncia.protocolo}</strong></div>
-              </div>
-              
-              <div class="field">
-                <div class="label">Título:</div>
-                <div class="value">${denuncia.titulo}</div>
-              </div>
-              
-              <div class="field">
-                <div class="label">Gravidade:</div>
-                <div class="value">
-                  <span class="badge badge-${denuncia.gravidade}">${gravidadeMap[denuncia.gravidade] || denuncia.gravidade}</span>
-                </div>
-              </div>
-              
-              ${denuncia.categoria ? `
-              <div class="field">
-                <div class="label">Categoria:</div>
-                <div class="value">${denuncia.categoria.nome}</div>
-              </div>
-              ` : ''}
-              
-              <div class="field">
-                <div class="label">Tipo:</div>
-                <div class="value">${denuncia.anonima ? 'Denúncia Anônima' : 'Denúncia Identificada'}</div>
-              </div>
-              
-              <div class="field">
-                <div class="label">Data/Hora:</div>
-                <div class="value">${new Date(denuncia.created_at).toLocaleString('pt-BR')}</div>
-              </div>
-              
-              <div class="field">
-                <div class="label">Descrição:</div>
-                <div class="value" style="background-color: #f6f9fc; padding: 12px; border-radius: 4px; white-space: pre-wrap; margin-top: 8px;">${denuncia.descricao}</div>
-              </div>
-            </div>
-            
-            <div class="alert">
-              <strong>Ação Necessária:</strong> Uma nova denúncia foi registrada e requer sua atenção. 
-              Acesse o sistema para revisar e iniciar o processo de tratamento adequado.
-            </div>
-            
-            <div class="footer">
-              <p>Este é um e-mail automático de <strong>${companyName}</strong>.</p>
-              <p>Trate esta informação com confidencialidade.</p>
-            </div>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1e3a5f; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f7fa;">
+  <div style="background-color: #ffffff; border-radius: 12px; padding: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden;">
+    
+    <!-- Alert Banner -->
+    <div style="background-color: ${denuncia.gravidade === 'critica' ? '#dc2626' : denuncia.gravidade === 'alta' ? '#f97316' : '#f59e0b'}; padding: 16px 32px; text-align: center;">
+      <span style="color: #ffffff; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+        🚨 Nova Denúncia - ${gravidadeMap[denuncia.gravidade] || denuncia.gravidade}
+      </span>
+    </div>
+
+    <!-- Logo -->
+    <div style="text-align: center; padding: 24px 32px 16px;">
+      <img src="${logoUrl}" alt="${companyName}" style="max-height: 50px; max-width: 200px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <p style="display: none; font-size: 20px; font-weight: 600; color: #1e3a5f; margin: 0;">${companyName}</p>
+    </div>
+
+    <div style="padding: 0 32px 32px;">
+      <!-- Title -->
+      <h1 style="font-size: 22px; color: #1e3a5f; margin: 0 0 24px; font-weight: 600;">
+        Nova Denúncia Recebida
+      </h1>
+
+      <!-- Denuncia Info Box -->
+      <div style="background-color: #f1f5f9; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+        <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+          <p style="font-size: 12px; color: #64748b; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.5px;">Protocolo</p>
+          <p style="font-size: 18px; color: #1e3a5f; margin: 0; font-weight: 700; font-family: Monaco, Consolas, monospace;">${denuncia.protocolo}</p>
+        </div>
+        
+        <div style="margin-bottom: 12px;">
+          <p style="font-size: 12px; color: #64748b; margin: 0 0 4px;">Título</p>
+          <p style="font-size: 15px; color: #1e3a5f; margin: 0; font-weight: 600;">${denuncia.titulo}</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <p style="font-size: 12px; color: #64748b; margin: 0 0 4px;">Gravidade</p>
+            <span style="display: inline-block; padding: 4px 12px; background-color: ${denuncia.gravidade === 'critica' ? '#fee2e2' : denuncia.gravidade === 'alta' ? '#ffedd5' : '#fef3c7'}; color: ${denuncia.gravidade === 'critica' ? '#991b1b' : denuncia.gravidade === 'alta' ? '#9a3412' : '#92400e'}; border-radius: 4px; font-size: 12px; font-weight: 600;">
+              ${gravidadeMap[denuncia.gravidade] || denuncia.gravidade}
+            </span>
           </div>
-        </body>
-      </html>
+          <div>
+            <p style="font-size: 12px; color: #64748b; margin: 0 0 4px;">Tipo</p>
+            <p style="font-size: 14px; color: #1e3a5f; margin: 0;">${denuncia.anonima ? 'Anônima' : 'Identificada'}</p>
+          </div>
+        </div>
+        
+        ${denuncia.categoria ? `
+        <div style="margin-bottom: 12px;">
+          <p style="font-size: 12px; color: #64748b; margin: 0 0 4px;">Categoria</p>
+          <p style="font-size: 14px; color: #1e3a5f; margin: 0;">${denuncia.categoria.nome}</p>
+        </div>
+        ` : ''}
+        
+        <div>
+          <p style="font-size: 12px; color: #64748b; margin: 0 0 4px;">Data/Hora</p>
+          <p style="font-size: 14px; color: #1e3a5f; margin: 0;">${new Date(denuncia.created_at).toLocaleString('pt-BR')}</p>
+        </div>
+      </div>
+
+      <!-- Descricao -->
+      <div style="background-color: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+        <p style="font-size: 12px; color: #64748b; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.5px;">Descrição</p>
+        <p style="font-size: 14px; color: #475569; margin: 0; white-space: pre-wrap;">${denuncia.descricao}</p>
+      </div>
+
+      <!-- Warning -->
+      <div style="background-color: #fffbeb; border-radius: 8px; padding: 16px; border-left: 4px solid #f59e0b; margin-bottom: 24px;">
+        <p style="font-size: 13px; color: #92400e; margin: 0;">
+          <strong>Ação Necessária:</strong> Uma nova denúncia foi registrada e requer sua atenção. Acesse o sistema para revisar e iniciar o processo de tratamento adequado.
+        </p>
+      </div>
+
+      <!-- CTA Button -->
+      <div style="text-align: center;">
+        <a href="https://governaii.com.br/denuncia" 
+           style="display: inline-block; background-color: #0D9488; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+          Acessar Canal de Denúncias
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="border-top: 1px solid #e2e8f0; padding: 20px 32px; text-align: center;">
+      <p style="font-size: 12px; color: #94a3b8; margin: 0;">
+        Esta é uma mensagem automática do sistema ${companyName}.<br>
+        Trate esta informação com confidencialidade.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
     `;
 
     // Enviar e-mails

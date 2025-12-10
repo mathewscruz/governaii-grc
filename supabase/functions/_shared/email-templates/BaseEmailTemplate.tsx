@@ -24,6 +24,24 @@ interface BaseEmailTemplateProps {
 // Logo fallback - quando a empresa não tem logo configurado, usa texto estilizado
 const GOVERNAII_LOGO_URL = 'https://governaii.com.br/governaii-logo.png';
 
+// Paleta de cores corporativa - Teal/Emerald
+const COLORS = {
+  primary: '#0D9488',        // Teal principal
+  primaryDark: '#0F766E',    // Teal escuro (hover)
+  secondary: '#1e3a5f',      // Azul marinho (textos)
+  text: '#3c4149',           // Texto normal
+  textLight: '#64748b',      // Texto secundário
+  textMuted: '#8898aa',      // Texto muted
+  background: '#f5f7fa',     // Fundo geral
+  surface: '#ffffff',        // Superfícies
+  border: '#e2e8f0',         // Bordas
+  borderLight: '#f1f5f9',    // Bordas leves
+  success: '#16a34a',        // Verde sucesso
+  warning: '#f59e0b',        // Amarelo warning
+  error: '#dc2626',          // Vermelho erro
+  info: '#0D9488',           // Info (teal)
+};
+
 export const BaseEmailTemplate = ({
   previewText,
   title,
@@ -34,7 +52,6 @@ export const BaseEmailTemplate = ({
 }: BaseEmailTemplateProps) => {
   // Prioriza logo da empresa, depois o logo padrão do GovernAII
   const logoUrl = companyLogoUrl || GOVERNAII_LOGO_URL;
-  const hasCustomLogo = Boolean(companyLogoUrl);
   
   return (
     <Html>
@@ -42,7 +59,7 @@ export const BaseEmailTemplate = ({
       <Preview>{previewText}</Preview>
       <Body style={main}>
         <Container style={container}>
-          {/* Logo Section com fallback para texto */}
+          {/* Logo Section */}
           <Section style={logoSection}>
             {logoUrl ? (
               <Img
@@ -54,7 +71,7 @@ export const BaseEmailTemplate = ({
             ) : null}
             {/* Fallback text sempre visível caso a imagem não carregue */}
             <Text style={logoTextFallback}>
-              <span style={{ color: '#2563eb', fontWeight: '700' }}>{companyName}</span>
+              <span style={{ color: COLORS.primary, fontWeight: '700' }}>{companyName}</span>
             </Text>
           </Section>
 
@@ -92,22 +109,24 @@ export default BaseEmailTemplate;
 
 // Styles
 const main = {
-  backgroundColor: '#f6f9fc',
-  fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+  backgroundColor: COLORS.background,
+  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 };
 
 const container = {
-  backgroundColor: '#ffffff',
+  backgroundColor: COLORS.surface,
   margin: '0 auto',
-  padding: '20px 0 48px',
+  padding: '0',
   marginBottom: '64px',
   maxWidth: '600px',
+  borderRadius: '12px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
 };
 
 const logoSection = {
   padding: '32px 32px 24px',
   textAlign: 'center' as const,
-  borderBottom: '1px solid #e6ebf1',
+  borderBottom: `1px solid ${COLORS.border}`,
 };
 
 const logo = {
@@ -124,57 +143,88 @@ const logoTextFallback = {
 };
 
 const h1 = {
-  color: '#1a1a1a',
-  fontSize: '24px',
+  color: COLORS.secondary,
+  fontSize: '22px',
   fontWeight: '600',
-  lineHeight: '32px',
+  lineHeight: '28px',
   margin: '32px 32px 16px',
   padding: '0',
 };
 
 const content = {
-  padding: '0 32px',
+  padding: '0 32px 32px',
 };
 
 const footer = {
-  borderTop: '1px solid #e6ebf1',
-  margin: '32px 32px 0',
-  padding: '24px 0 0',
+  borderTop: `1px solid ${COLORS.border}`,
+  margin: '0 32px',
+  padding: '24px 0',
 };
 
 const footerText = {
-  color: '#8898aa',
+  color: COLORS.textMuted,
   fontSize: '12px',
-  lineHeight: '16px',
+  lineHeight: '18px',
   margin: '8px 0',
   textAlign: 'center' as const,
 };
 
 const link = {
-  color: '#2563eb',
+  color: COLORS.primary,
   textDecoration: 'none',
 };
 
-// Reusable component styles
+// Reusable component styles exportados para uso em outros templates
 export const emailStyles = {
+  // Cores para acesso direto
+  colors: COLORS,
+  
+  // Textos
   text: {
-    color: '#3c4149',
-    fontSize: '14px',
+    color: COLORS.text,
+    fontSize: '15px',
     lineHeight: '24px',
     margin: '0 0 16px',
+  },
+  textSmall: {
+    color: COLORS.textLight,
+    fontSize: '13px',
+    lineHeight: '20px',
+    margin: '0 0 12px',
   },
   textBold: {
     fontWeight: '600',
   },
+  greeting: {
+    color: COLORS.text,
+    fontSize: '15px',
+    lineHeight: '24px',
+    margin: '0 0 20px',
+  },
+  
+  // Botões
   button: {
-    backgroundColor: '#2563eb',
-    borderRadius: '6px',
+    backgroundColor: COLORS.primary,
+    borderRadius: '8px',
     color: '#ffffff',
     display: 'inline-block',
     fontSize: '14px',
     fontWeight: '600',
     lineHeight: '24px',
-    padding: '12px 24px',
+    padding: '14px 32px',
+    textDecoration: 'none',
+    textAlign: 'center' as const,
+  },
+  buttonSecondary: {
+    backgroundColor: 'transparent',
+    border: `2px solid ${COLORS.primary}`,
+    borderRadius: '8px',
+    color: COLORS.primary,
+    display: 'inline-block',
+    fontSize: '14px',
+    fontWeight: '600',
+    lineHeight: '24px',
+    padding: '12px 30px',
     textDecoration: 'none',
     textAlign: 'center' as const,
   },
@@ -182,43 +232,129 @@ export const emailStyles = {
     margin: '24px 0',
     textAlign: 'center' as const,
   },
+  
+  // Boxes informativos
   infoBox: {
-    backgroundColor: '#f6f9fc',
-    border: '1px solid #e6ebf1',
-    borderRadius: '6px',
-    padding: '16px',
-    margin: '16px 0',
+    backgroundColor: '#f0f9f8',
+    border: `1px solid ${COLORS.primary}20`,
+    borderLeft: `4px solid ${COLORS.primary}`,
+    borderRadius: '8px',
+    padding: '20px',
+    margin: '20px 0',
   },
   warningBox: {
-    backgroundColor: '#fff8e6',
-    border: '1px solid #ffd666',
-    borderLeft: '4px solid #faad14',
-    borderRadius: '6px',
-    padding: '16px',
-    margin: '16px 0',
+    backgroundColor: '#fffbeb',
+    border: '1px solid #fcd34d',
+    borderLeft: '4px solid #f59e0b',
+    borderRadius: '8px',
+    padding: '20px',
+    margin: '20px 0',
   },
   successBox: {
     backgroundColor: '#f0fdf4',
     border: '1px solid #86efac',
     borderLeft: '4px solid #16a34a',
-    borderRadius: '6px',
+    borderRadius: '8px',
+    padding: '20px',
+    margin: '20px 0',
+  },
+  errorBox: {
+    backgroundColor: '#fef2f2',
+    border: '1px solid #fecaca',
+    borderLeft: '4px solid #dc2626',
+    borderRadius: '8px',
+    padding: '20px',
+    margin: '20px 0',
+  },
+  neutralBox: {
+    backgroundColor: COLORS.borderLight,
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: '8px',
     padding: '16px',
     margin: '16px 0',
   },
-  code: {
-    backgroundColor: '#f6f9fc',
-    border: '1px solid #e6ebf1',
-    borderRadius: '4px',
-    color: '#1a1a1a',
-    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
-    fontSize: '14px',
-    fontWeight: '600',
-    padding: '12px 16px',
-    display: 'inline-block',
-    letterSpacing: '0.5px',
+  
+  // Campos
+  field: {
+    marginBottom: '12px',
   },
+  fieldLabel: {
+    fontSize: '13px',
+    color: COLORS.textLight,
+    fontWeight: '600',
+    margin: '0 0 4px',
+  },
+  fieldValue: {
+    fontSize: '15px',
+    color: COLORS.secondary,
+    margin: '0',
+  },
+  
+  // Código/Senha
+  code: {
+    backgroundColor: COLORS.borderLight,
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: '6px',
+    color: COLORS.secondary,
+    fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+    fontSize: '16px',
+    fontWeight: '600',
+    padding: '14px 20px',
+    display: 'inline-block',
+    letterSpacing: '1px',
+    textAlign: 'center' as const,
+  },
+  
+  // Badges
+  badge: {
+    display: 'inline-block',
+    padding: '4px 12px',
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontWeight: '600',
+  },
+  badgePrimary: {
+    backgroundColor: `${COLORS.primary}15`,
+    color: COLORS.primary,
+  },
+  badgeSuccess: {
+    backgroundColor: '#dcfce7',
+    color: '#166534',
+  },
+  badgeWarning: {
+    backgroundColor: '#fef3c7',
+    color: '#92400e',
+  },
+  badgeError: {
+    backgroundColor: '#fee2e2',
+    color: '#991b1b',
+  },
+  
+  // Dividers
   divider: {
-    borderTop: '1px solid #e6ebf1',
+    borderTop: `1px solid ${COLORS.border}`,
     margin: '24px 0',
+  },
+  
+  // Links
+  link: {
+    color: COLORS.primary,
+    textDecoration: 'underline',
+  },
+  linkMuted: {
+    color: COLORS.textMuted,
+    textDecoration: 'underline',
+  },
+  
+  // Listas
+  list: {
+    paddingLeft: '20px',
+    margin: '16px 0',
+  },
+  listItem: {
+    color: COLORS.text,
+    fontSize: '14px',
+    lineHeight: '24px',
+    margin: '0 0 8px',
   },
 };
