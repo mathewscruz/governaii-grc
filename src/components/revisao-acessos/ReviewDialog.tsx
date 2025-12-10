@@ -79,7 +79,7 @@ export function ReviewDialog({ open, onClose, review, onSuccess }: ReviewDialogP
         .select("id, nome_sistema")
         .eq("empresa_id", empresaId)
         .eq("ativo", true)
-        .order("nome");
+        .order("nome_sistema");
 
       return { data: data || [], error };
     },
