@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatCard } from "@/components/ui/stat-card";
+import { PageHeader } from "@/components/ui/page-header";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { useReviewStats } from "@/hooks/useReviewStats";
 import { useReviewData } from "@/hooks/useReviewData";
@@ -305,13 +306,11 @@ export default function RevisaoAcessos() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold">Revisão de Acessos</h1>
-        <p className="text-muted-foreground">
-          Gerencie revisões periódicas de acessos privilegiados
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Revisão de Acessos"
+        description="Gerencie revisões periódicas de acessos privilegiados"
+      />
 
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard

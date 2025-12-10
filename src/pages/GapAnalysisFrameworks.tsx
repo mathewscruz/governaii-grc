@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { FrameworkCard } from '@/components/gap-analysis/FrameworkCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { useGapAnalysisStats } from '@/hooks/useGapAnalysisStats';
-import { ClipboardList, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
+import { ClipboardList, Activity, TrendingUp, AlertTriangle, Shield } from 'lucide-react';
 
 interface Framework {
   id: string;
@@ -197,11 +198,11 @@ export default function GapAnalysisFrameworks() {
         </div>
 
         {frameworks.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              Nenhum framework disponível. Entre em contato com o administrador.
-            </p>
-          </div>
+          <EmptyState
+            icon={<Shield className="h-8 w-8" />}
+            title="Nenhum framework disponível"
+            description="Entre em contato com o administrador para habilitar frameworks de conformidade."
+          />
         )}
       </div>
     </ErrorBoundary>

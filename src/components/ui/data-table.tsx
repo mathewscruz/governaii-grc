@@ -2,11 +2,11 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { Search, Filter, Download, RefreshCw, ChevronDown, ChevronUp } from "lucide-react"
 
 export interface Column<T> {
@@ -49,6 +49,10 @@ interface DataTableProps<T> {
   sortDirection?: 'asc' | 'desc'
   onSort?: (field: string) => void
   className?: string
+  // Pagination props
+  paginated?: boolean
+  pageSize?: number
+  pageSizeOptions?: number[]
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -66,9 +70,25 @@ export function DataTable<T extends Record<string, any>>({
   sortField,
   sortDirection,
   onSort,
-  className
+  className,
+  paginated = false,
+  pageSize: initialPageSize = 10,
+  pageSizeOptions = [10, 20, 50, 100]
 }: DataTableProps<T>) {
   const [showFilters, setShowFilters] = React.useState(false)
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const [pageSize, setPageSize] = React.useState(initialPageSize)
+
+  // Reset page when data changes
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [data.length, pageSize])
+
+  // Calculate pagination
+  const totalPages = Math.ceil(data.length / pageSize)
+  const paginatedData = paginated 
+    ? data.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+    : data
 
   const handleSort = (field: string) => {
     if (onSort) {
@@ -224,7 +244,7 @@ export function DataTable<T extends Record<string, any>>({
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((item, index) => (
+              paginatedData.map((item, index) => (
                 <TableRow key={item.id || index} className="hover:bg-muted/50 transition-colors">
                   {columns.map((column) => (
                     <TableCell
@@ -243,8 +263,67 @@ export function DataTable<T extends Record<string, any>>({
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {paginated && totalPages > 1 && (
+        <div className="flex items-center justify-between p-4 border-t">
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">
+              Mostrando {((currentPage - 1) * pageSize) + 1} a {Math.min(currentPage * pageSize, data.length)} de {data.length}
+            </span>
+            <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+              <SelectTrigger className="w-[80px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {pageSizeOptions.map((size) => (
+                  <SelectItem key={size} value={String(size)}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let page = i + 1;
+                if (totalPages > 5) {
+                  if (currentPage > 3) {
+                    page = currentPage - 2 + i;
+                  }
+                  if (page > totalPages) {
+                    page = totalPages - 4 + i;
+                  }
+                }
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(page)}
+                      isActive={currentPage === page}
+                      className="cursor-pointer"
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
     </div>
   )
-
-  // This code path is now removed as we always show the table structure above
 }

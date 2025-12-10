@@ -34,9 +34,10 @@ export default function Governanca() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Controles Internos"
-        description="Gerencie controles internos e auditorias"
-        actions={undefined}
+        title={activeTab === 'controles' ? 'Controles Internos' : 'Auditorias'}
+        description={activeTab === 'controles' 
+          ? 'Gerencie os controles internos da organização'
+          : 'Gerencie auditorias e acompanhe evidências'}
       />
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
