@@ -37,6 +37,7 @@ import { formatDateOnly } from '@/lib/date-utils';
 
 interface Controle {
   id: string;
+  codigo?: string;
   nome: string;
   descricao?: string;
   tipo: string;
@@ -354,12 +355,12 @@ export default function ControlesContent() {
 
   const controlesColumns = [
     {
-      key: 'id' as keyof Controle,
-      label: 'ID',
+      key: 'codigo' as keyof Controle,
+      label: 'Código',
       sortable: true,
       render: (value: any, controle: Controle) => (
         <span className="font-mono text-xs text-muted-foreground">
-          CTRL-{controle.id.slice(0, 6).toUpperCase()}
+          {controle.codigo || '-'}
         </span>
       )
     },
