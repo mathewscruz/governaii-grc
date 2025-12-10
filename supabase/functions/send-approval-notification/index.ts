@@ -103,127 +103,70 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: `${companyName} <noreply@governaii.com.br>`,
       to: [aprovador.email],
-      subject: `Solicitação de Aprovação de Documento - ${document.nome}`,
+      subject: `[${companyName}] Solicitação de Aprovação: ${document.nome}`,
       html: `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <style>
-              body {
-                font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-                line-height: 1.6;
-                color: #3c4149;
-                background-color: #f6f9fc;
-                margin: 0;
-                padding: 0;
-              }
-              .container {
-                max-width: 600px;
-                margin: 0 auto;
-                background-color: #ffffff;
-              }
-              .logo-section {
-                padding: 32px 32px 24px;
-                text-align: center;
-                border-bottom: 1px solid #e6ebf1;
-              }
-              .logo {
-                max-height: 60px;
-                max-width: 200px;
-              }
-              .logo-text {
-                font-size: 24px;
-                font-weight: 700;
-                color: #2563eb;
-                margin: 0;
-              }
-              .header {
-                padding: 32px 32px 16px;
-              }
-              .header h1 {
-                color: #1a1a1a;
-                font-size: 24px;
-                font-weight: 600;
-                margin: 0;
-              }
-              .content {
-                padding: 0 32px;
-              }
-              .content p {
-                margin: 0 0 16px;
-              }
-              .info-box {
-                background-color: #f6f9fc;
-                border: 1px solid #e6ebf1;
-                border-radius: 6px;
-                padding: 16px;
-                margin: 16px 0;
-              }
-              .button {
-                display: inline-block;
-                padding: 12px 24px;
-                background-color: #2563eb;
-                color: #ffffff;
-                text-decoration: none;
-                border-radius: 6px;
-                font-weight: 600;
-                margin: 24px 0;
-              }
-              .button-section {
-                text-align: center;
-                margin: 24px 0;
-              }
-              .footer {
-                border-top: 1px solid #e6ebf1;
-                margin: 32px 32px 0;
-                padding: 24px 0;
-                text-align: center;
-              }
-              .footer p {
-                color: #8898aa;
-                font-size: 12px;
-                margin: 8px 0;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="logo-section">
-                <img src="${logoUrl}" alt="${companyName}" class="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-                <p class="logo-text" style="display: none;">${companyName}</p>
-              </div>
-              
-              <div class="header">
-                <h1>Solicitação de Aprovação</h1>
-              </div>
-              
-              <div class="content">
-                <p>Olá <strong>${aprovador.nome}</strong>,</p>
-                
-                <p><strong>${solicitanteNome}</strong> solicitou sua aprovação para o seguinte documento:</p>
-                
-                <div class="info-box">
-                  <p style="margin: 0 0 8px;"><strong>Documento:</strong> ${document.nome}</p>
-                  <p style="margin: 0;"><strong>Empresa:</strong> ${companyName}</p>
-                </div>
-                
-                <div class="button-section">
-                  <a href="https://governaii.com.br/documentos?aprovar=${documento_id}" class="button">
-                    Aprovar Documento
-                  </a>
-                </div>
-                
-                <p>Por favor, acesse o sistema para revisar e aprovar o documento.</p>
-              </div>
-              
-              <div class="footer">
-                <p>Este é um e-mail automático de <strong>${companyName}</strong>.</p>
-                <p>Em caso de dúvidas, entre em contato conosco.</p>
-              </div>
-            </div>
-          </body>
-        </html>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1e3a5f; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f7fa;">
+  <div style="background-color: #ffffff; border-radius: 12px; padding: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden;">
+    
+    <!-- Logo -->
+    <div style="text-align: center; padding: 32px 32px 16px; border-bottom: 1px solid #e2e8f0;">
+      <img src="${logoUrl}" alt="${companyName}" style="max-height: 50px; max-width: 200px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <p style="display: none; font-size: 20px; font-weight: 600; color: #1e3a5f; margin: 0;">${companyName}</p>
+    </div>
+
+    <div style="padding: 32px;">
+      <!-- Title -->
+      <h1 style="font-size: 22px; color: #1e3a5f; margin: 0 0 24px; font-weight: 600;">
+        📄 Solicitação de Aprovação
+      </h1>
+
+      <p style="font-size: 15px; color: #3c4149; margin: 0 0 20px;">
+        Olá <strong>${aprovador.nome}</strong>,
+      </p>
+
+      <p style="font-size: 15px; color: #3c4149; margin: 0 0 24px;">
+        <strong>${solicitanteNome}</strong> solicitou sua aprovação para o seguinte documento:
+      </p>
+
+      <!-- Document Info Box -->
+      <div style="background-color: #f0f9f8; border-radius: 8px; padding: 20px; margin-bottom: 24px; border-left: 4px solid #0D9488;">
+        <h2 style="font-size: 16px; color: #1e3a5f; margin: 0 0 8px; font-weight: 600;">
+          ${document.nome}
+        </h2>
+        <p style="font-size: 14px; color: #64748b; margin: 0;">
+          Empresa: ${companyName}
+        </p>
+      </div>
+
+      <!-- CTA Button -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <a href="https://governaii.com.br/documentos?aprovar=${documento_id}" 
+           style="display: inline-block; background-color: #0D9488; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+          Revisar e Aprovar
+        </a>
+      </div>
+
+      <p style="font-size: 14px; color: #64748b; text-align: center;">
+        Acesse o sistema para revisar o documento e tomar sua decisão.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="border-top: 1px solid #e2e8f0; padding: 20px 32px; text-align: center;">
+      <p style="font-size: 12px; color: #94a3b8; margin: 0;">
+        Esta é uma mensagem automática do sistema ${companyName}.<br>
+        Por favor, não responda a este e-mail.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
       `,
     });
 

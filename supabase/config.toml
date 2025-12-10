@@ -123,3 +123,12 @@ verify_jwt = false
 
 [functions.azure-integration]
 verify_jwt = true
+
+[functions.send-incidente-notification]
+verify_jwt = false
+
+[functions.send-contrato-vencimento-notification]
+verify_jwt = false
+
+[functions.send-risco-notification]
+verify_jwt = true
