@@ -5300,6 +5300,81 @@ export type Database = {
         }
         Relationships: []
       }
+      sistemas_usuarios: {
+        Row: {
+          ativo: boolean | null
+          cargo: string | null
+          created_at: string | null
+          created_by: string | null
+          data_concessao: string | null
+          data_expiracao: string | null
+          departamento: string | null
+          email_usuario: string | null
+          empresa_id: string
+          id: string
+          justificativa: string | null
+          nivel_privilegio: string | null
+          nome_usuario: string
+          observacoes: string | null
+          sistema_id: string
+          tipo_acesso: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          cargo?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data_concessao?: string | null
+          data_expiracao?: string | null
+          departamento?: string | null
+          email_usuario?: string | null
+          empresa_id: string
+          id?: string
+          justificativa?: string | null
+          nivel_privilegio?: string | null
+          nome_usuario: string
+          observacoes?: string | null
+          sistema_id: string
+          tipo_acesso?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          cargo?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data_concessao?: string | null
+          data_expiracao?: string | null
+          departamento?: string | null
+          email_usuario?: string | null
+          empresa_id?: string
+          id?: string
+          justificativa?: string | null
+          nivel_privilegio?: string | null
+          nome_usuario?: string
+          observacoes?: string | null
+          sistema_id?: string
+          tipo_acesso?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sistemas_usuarios_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sistemas_usuarios_sistema_id_fkey"
+            columns: ["sistema_id"]
+            isOneToOne: false
+            referencedRelation: "sistemas_privilegiados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_modules: {
         Row: {
           created_at: string

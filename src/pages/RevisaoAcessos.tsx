@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { ReviewDialog } from "@/components/revisao-acessos/ReviewDialog";
 import { ReviewItemsDialog } from "@/components/revisao-acessos/ReviewItemsDialog";
+import { SistemaUsuariosList } from "@/components/revisao-acessos/SistemaUsuariosList";
 import { formatDateOnly } from "@/lib/date-utils";
 import { formatStatus, getWorkflowStatusColor } from "@/lib/text-utils";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -340,6 +341,7 @@ export default function RevisaoAcessos() {
         <TabsList>
           <TabsTrigger value="ativas">Revisões Ativas</TabsTrigger>
           <TabsTrigger value="historico">Histórico</TabsTrigger>
+          <TabsTrigger value="usuarios">Usuários dos Sistemas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="ativas" className="space-y-4 mt-4">
@@ -406,6 +408,14 @@ export default function RevisaoAcessos() {
                   description: "As revisões finalizadas aparecerão aqui."
                 }}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="usuarios" className="space-y-4 mt-4">
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-6">
+              <SistemaUsuariosList />
             </CardContent>
           </Card>
         </TabsContent>

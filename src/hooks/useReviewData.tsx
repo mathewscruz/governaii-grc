@@ -27,26 +27,26 @@ export const useReviewData = () => {
 
       if (error) throw error;
 
-      // Buscar contas do sistema e criar itens
-      const { data: contas, error: contasError } = await supabase
-        .from("contas_privilegiadas")
+      // Buscar usuários do sistema (nova tabela sistemas_usuarios)
+      const { data: usuarios, error: usuariosError } = await supabase
+        .from("sistemas_usuarios")
         .select("*")
         .eq("sistema_id", data.sistema_id)
-        .eq("status", "ativo");
+        .eq("ativo", true);
 
-      if (contasError) throw contasError;
+      if (usuariosError) throw usuariosError;
 
-      if (contas && contas.length > 0) {
-        const items = contas.map((conta) => ({
+      if (usuarios && usuarios.length > 0) {
+        const items = usuarios.map((usuario) => ({
           review_id: review.id,
-          conta_id: conta.id,
-          usuario_beneficiario: conta.usuario_beneficiario,
-          email_beneficiario: conta.email_beneficiario,
-          tipo_acesso: conta.tipo_acesso,
-          nivel_privilegio: conta.nivel_privilegio,
-          data_concessao: conta.data_concessao,
-          data_expiracao: conta.data_expiracao,
-          justificativa_original: conta.justificativa_negocio,
+          conta_id: usuario.id,
+          usuario_beneficiario: usuario.nome_usuario,
+          email_beneficiario: usuario.email_usuario,
+          tipo_acesso: usuario.tipo_acesso,
+          nivel_privilegio: usuario.nivel_privilegio,
+          data_concessao: usuario.data_concessao,
+          data_expiracao: usuario.data_expiracao,
+          justificativa_original: usuario.justificativa,
         }));
 
         const { error: itemsError } = await supabase
@@ -58,7 +58,7 @@ export const useReviewData = () => {
         // Atualizar total de contas
         await supabase
           .from("access_reviews")
-          .update({ total_contas: contas.length })
+          .update({ total_contas: usuarios.length })
           .eq("id", review.id);
       }
 
