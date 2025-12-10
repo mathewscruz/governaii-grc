@@ -13,6 +13,29 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { UserSelect } from '@/components/riscos/UserSelect';
+import { Server, Database, Cloud, Shield, Lock, Monitor, Globe, Key, HardDrive, Wifi, Eye, Box, Cpu, Settings, FileText, Folder, BarChart3 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// Lista de ícones disponíveis
+const availableIcons = [
+  { value: 'server', label: 'Servidor', icon: Server },
+  { value: 'database', label: 'Banco de Dados', icon: Database },
+  { value: 'cloud', label: 'Nuvem', icon: Cloud },
+  { value: 'shield', label: 'Segurança', icon: Shield },
+  { value: 'lock', label: 'Cadeado', icon: Lock },
+  { value: 'monitor', label: 'Monitor', icon: Monitor },
+  { value: 'globe', label: 'Web', icon: Globe },
+  { value: 'key', label: 'Chave', icon: Key },
+  { value: 'harddrive', label: 'Armazenamento', icon: HardDrive },
+  { value: 'wifi', label: 'Rede', icon: Wifi },
+  { value: 'eye', label: 'Monitoramento', icon: Eye },
+  { value: 'box', label: 'Container', icon: Box },
+  { value: 'cpu', label: 'Processador', icon: Cpu },
+  { value: 'settings', label: 'Configuração', icon: Settings },
+  { value: 'filetext', label: 'Documento', icon: FileText },
+  { value: 'folder', label: 'Diretório', icon: Folder },
+  { value: 'barchart', label: 'Analytics', icon: BarChart3 },
+];
 
 const sistemaSchema = z.object({
   nome_sistema: z.string().min(1, 'Nome do sistema é obrigatório'),
@@ -23,6 +46,7 @@ const sistemaSchema = z.object({
   categoria: z.string().optional(),
   observacoes: z.string().optional(),
   ativo: z.boolean().default(true),
+  icone: z.string().default('server'),
 });
 
 type SistemaFormData = z.infer<typeof sistemaSchema>;
@@ -48,8 +72,11 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
       categoria: sistema?.categoria || '',
       observacoes: sistema?.observacoes || '',
       ativo: sistema?.ativo ?? true,
+      icone: sistema?.icone || 'server',
     },
   });
+
+  const selectedIcon = form.watch('icone');
 
   const onSubmit = async (data: SistemaFormData) => {
     try {
@@ -64,6 +91,7 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
         url_sistema: data.url_sistema || null,
         categoria: data.categoria || null,
         observacoes: data.observacoes || null,
+        icone: data.icone || 'server',
       };
 
       if (sistema?.id) {
@@ -103,21 +131,55 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {sistema ? 'Editar Sistema' : 'Novo Sistema'}
           </DialogTitle>
           <DialogDescription>
             {sistema 
-              ? 'Edite as informações do sistema privilegiado'
-              : 'Registre um novo sistema que terá contas privilegiadas'
+              ? 'Edite as informações do sistema'
+              : 'Registre um novo sistema na organização'
             }
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            {/* Seletor de Ícone */}
+            <FormField
+              control={form.control}
+              name="icone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ícone do Sistema</FormLabel>
+                  <div className="grid grid-cols-6 sm:grid-cols-9 gap-2">
+                    {availableIcons.map((iconItem) => {
+                      const IconComponent = iconItem.icon;
+                      const isSelected = field.value === iconItem.value;
+                      return (
+                        <button
+                          key={iconItem.value}
+                          type="button"
+                          onClick={() => field.onChange(iconItem.value)}
+                          className={cn(
+                            "flex items-center justify-center w-10 h-10 rounded-lg border-2 transition-all",
+                            isSelected 
+                              ? "border-primary bg-primary/10 text-primary" 
+                              : "border-border hover:border-primary/50 hover:bg-muted text-muted-foreground hover:text-foreground"
+                          )}
+                          title={iconItem.label}
+                        >
+                          <IconComponent className="h-5 w-5" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-2 gap-5">
               <FormField
                 control={form.control}
