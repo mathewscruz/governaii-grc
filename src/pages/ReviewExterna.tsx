@@ -28,7 +28,7 @@ export default function ReviewExterna() {
           .from("access_reviews")
           .select(`
             *,
-            sistema:sistemas_privilegiados(nome)
+            sistema:sistemas_privilegiados(nome_sistema)
           `)
           .eq("link_token", token)
           .single();
@@ -122,7 +122,7 @@ export default function ReviewExterna() {
               <h1 className="text-2xl font-bold">Revisão de Acessos</h1>
             </div>
             <p className="text-muted-foreground">
-              Sistema: <strong>{review?.sistema?.nome}</strong>
+              Sistema: <strong>{review?.sistema?.nome_sistema}</strong>
             </p>
             <p className="text-muted-foreground">
               Prazo: <strong>{new Date(review?.data_limite).toLocaleDateString("pt-BR")}</strong>

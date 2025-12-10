@@ -32,7 +32,7 @@ export const useReviewData = () => {
         .from("contas_privilegiadas")
         .select("*")
         .eq("sistema_id", data.sistema_id)
-        .eq("status", "ativa");
+        .eq("status", "ativo");
 
       if (contasError) throw contasError;
 
