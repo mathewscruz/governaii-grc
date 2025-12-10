@@ -168,7 +168,6 @@ const handler = async (req: Request): Promise<Response> => {
               <img src="${logoUrl}" alt="${companyName}" class="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
               <p class="logo-text" style="display: none;">${companyName}</p>
             </div>
-            </div>
             
             <div class="header">
               <h1>Bem-vindo, Usuário de Teste!</h1>

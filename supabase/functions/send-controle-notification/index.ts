@@ -125,7 +125,7 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     // Build direct link to the control
-    const controleLink = `https://lnlkahtugwmkznasapfd.lovableproject.com/governanca?tab=controles&controle=${controle_id}`;
+    const controleLink = `https://governaii.com.br/governanca?tab=controles&controle=${controle_id}`;
 
     // Build HTML email
     const htmlContent = `
@@ -193,7 +193,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email
     console.log("Sending email to:", responsavelData.email);
     const emailResponse = await resend.emails.send({
-      from: `${companyName} <onboarding@resend.dev>`,
+      from: `${companyName} <noreply@governaii.com.br>`,
       to: [responsavelData.email],
       subject: `[${companyName}] Você foi designado como responsável: ${controle_nome}`,
       html: htmlContent,
