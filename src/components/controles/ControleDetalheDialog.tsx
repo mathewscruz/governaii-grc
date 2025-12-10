@@ -25,6 +25,9 @@ import {
   Activity,
   Link2,
   FileText,
+  Paperclip,
+  Upload,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateOnly } from "@/lib/date-utils";
@@ -97,7 +100,8 @@ export function ControleDetalheDialog({
   const queryClient = useQueryClient();
   const [novoComentario, setNovoComentario] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string } | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ type: "evidencia" | "comentario"; id: string } | null>(null);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
@@ -160,6 +164,22 @@ export function ControleDetalheDialog({
           auditoria:auditorias(id, nome, status)
         `)
         .eq("controle_id", controle.id);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open && !!controle?.id,
+  });
+
+  // Buscar evidências
+  const { data: evidencias, refetch: refetchEvidencias } = useQuery({
+    queryKey: ["controle-evidencias", controle?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("controles_evidencias")
+        .select("*")
+        .eq("controle_id", controle.id)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
@@ -284,6 +304,105 @@ export function ControleDetalheDialog({
     setDeleteTarget(null);
   };
 
+  // Upload de evidência
+  const handleUploadEvidencia = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Tipo de arquivo não permitido. Use PDF, DOC, DOCX, XLS, XLSX, PNG ou JPG.");
+      return;
+    }
+
+    // Validar tamanho (máx 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Máximo 10MB.");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const fileName = `${controle.id}/${Date.now()}_${file.name}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("controles-evidencias")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("controles-evidencias")
+        .getPublicUrl(fileName);
+
+      const { error: insertError } = await supabase.from("controles_evidencias").insert({
+        controle_id: controle.id,
+        nome: file.name,
+        arquivo_url: urlData.publicUrl,
+        arquivo_nome: file.name,
+        arquivo_tamanho: file.size,
+        arquivo_tipo: file.type,
+        created_by: userData.user?.id,
+      });
+
+      if (insertError) throw insertError;
+
+      refetchEvidencias();
+      toast.success("Evidência anexada com sucesso");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao fazer upload");
+    } finally {
+      setIsUploading(false);
+      event.target.value = "";
+    }
+  };
+
+  // Deletar evidência
+  const handleDeleteEvidencia = async (evidenciaId: string) => {
+    try {
+      const { error } = await supabase
+        .from("controles_evidencias")
+        .delete()
+        .eq("id", evidenciaId);
+
+      if (error) throw error;
+
+      refetchEvidencias();
+      toast.success("Evidência removida");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao remover evidência");
+    }
+    setDeleteTarget(null);
+  };
+
+  // Download de evidência
+  const handleDownload = async (evidencia: any) => {
+    if (evidencia.arquivo_url) {
+      window.open(evidencia.arquivo_url, "_blank");
+    }
+  };
+
+  // Formatar tamanho do arquivo
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
   // Renderizar comentário com menções destacadas
   const renderCommentWithMentions = (text: string) => {
     const parts = text.split(/(@\w+(?:\s+\w+)?)/g);
@@ -322,7 +441,7 @@ export function ControleDetalheDialog({
                 </div>
                 <DialogTitle className="text-xl">{controle.nome}</DialogTitle>
               </div>
-              <Button variant="outline" size="sm" onClick={onEdit}>
+              <Button variant="outline" size="sm" onClick={onEdit} className="mr-10">
                 <Edit className="h-4 w-4 mr-2" />
                 Editar
               </Button>
@@ -381,9 +500,13 @@ export function ControleDetalheDialog({
                 <MessageSquare className="h-4 w-4" />
                 Comentários ({comentarios?.length || 0})
               </TabsTrigger>
+              <TabsTrigger value="evidencias" className="flex items-center gap-2">
+                <Paperclip className="h-4 w-4" />
+                Evidências ({evidencias?.length || 0})
+              </TabsTrigger>
               <TabsTrigger value="auditorias" className="flex items-center gap-2">
                 <Link2 className="h-4 w-4" />
-                Auditorias Vinculadas ({auditoriasVinculadas?.length || 0})
+                Auditorias ({auditoriasVinculadas?.length || 0})
               </TabsTrigger>
             </TabsList>
 
@@ -468,7 +591,7 @@ export function ControleDetalheDialog({
                               variant="ghost"
                               size="sm"
                               className="h-6 w-6 p-0"
-                              onClick={() => setDeleteTarget({ id: c.id })}
+                              onClick={() => setDeleteTarget({ type: "comentario", id: c.id })}
                             >
                               <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
                             </Button>
@@ -477,6 +600,79 @@ export function ControleDetalheDialog({
                         <p className="text-sm whitespace-pre-wrap">
                           {renderCommentWithMentions(c.comentario)}
                         </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="evidencias" className="flex-1 overflow-hidden flex flex-col mt-4">
+              {/* Upload de evidência */}
+              <div className="flex-shrink-0 mb-4">
+                <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={handleUploadEvidencia}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                    disabled={isUploading}
+                  />
+                  {isUploading ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <span className="text-sm text-muted-foreground">
+                    {isUploading ? "Enviando..." : "Clique para anexar evidência (PDF, DOC, XLS, PNG, JPG)"}
+                  </span>
+                </label>
+              </div>
+
+              {/* Lista de evidências */}
+              <ScrollArea className="flex-1">
+                <div className="space-y-2 pr-4">
+                  {evidencias?.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      Nenhuma evidência anexada
+                    </p>
+                  ) : (
+                    evidencias?.map((ev) => (
+                      <div
+                        key={ev.id}
+                        className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <FileText className="h-5 w-5 text-primary flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{ev.nome}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>{formatFileSize(ev.arquivo_tamanho || 0)}</span>
+                              <span>•</span>
+                              <span>{new Date(ev.created_at).toLocaleDateString("pt-BR")}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleDownload(ev)}
+                            title="Baixar"
+                          >
+                            <Download className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => setDeleteTarget({ type: "evidencia", id: ev.id })}
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     ))
                   )}
@@ -517,12 +713,21 @@ export function ControleDetalheDialog({
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Excluir Comentário"
-        description="Tem certeza que deseja excluir este comentário? Esta ação não pode ser desfeita."
+        title={deleteTarget?.type === "evidencia" ? "Excluir Evidência" : "Excluir Comentário"}
+        description={deleteTarget?.type === "evidencia" 
+          ? "Tem certeza que deseja excluir esta evidência? Esta ação não pode ser desfeita."
+          : "Tem certeza que deseja excluir este comentário? Esta ação não pode ser desfeita."
+        }
         confirmText="Excluir"
         cancelText="Cancelar"
         variant="destructive"
-        onConfirm={() => deleteTarget && handleDeleteComentario(deleteTarget.id)}
+        onConfirm={() => {
+          if (deleteTarget?.type === "evidencia") {
+            handleDeleteEvidencia(deleteTarget.id);
+          } else if (deleteTarget) {
+            handleDeleteComentario(deleteTarget.id);
+          }
+        }}
       />
     </>
   );

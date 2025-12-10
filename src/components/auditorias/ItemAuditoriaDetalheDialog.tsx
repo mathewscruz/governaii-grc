@@ -392,7 +392,7 @@ export function ItemAuditoriaDetalheDialog({
                 </div>
                 <DialogTitle className="text-xl">{item.titulo}</DialogTitle>
               </div>
-              <Button variant="outline" size="sm" onClick={onEdit}>
+              <Button variant="outline" size="sm" onClick={onEdit} className="mr-10">
                 <Edit className="h-4 w-4 mr-2" />
                 Editar
               </Button>
