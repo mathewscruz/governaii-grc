@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,29 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { UserSelect } from '@/components/riscos/UserSelect';
-import { Server, Database, Cloud, Shield, Lock, Monitor, Globe, Key, HardDrive, Wifi, Eye, Box, Cpu, Settings, FileText, Folder, BarChart3 } from 'lucide-react';
+import { Server, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// Lista de ícones disponíveis
-const availableIcons = [
-  { value: 'server', label: 'Servidor', icon: Server },
-  { value: 'database', label: 'Banco de Dados', icon: Database },
-  { value: 'cloud', label: 'Nuvem', icon: Cloud },
-  { value: 'shield', label: 'Segurança', icon: Shield },
-  { value: 'lock', label: 'Cadeado', icon: Lock },
-  { value: 'monitor', label: 'Monitor', icon: Monitor },
-  { value: 'globe', label: 'Web', icon: Globe },
-  { value: 'key', label: 'Chave', icon: Key },
-  { value: 'harddrive', label: 'Armazenamento', icon: HardDrive },
-  { value: 'wifi', label: 'Rede', icon: Wifi },
-  { value: 'eye', label: 'Monitoramento', icon: Eye },
-  { value: 'box', label: 'Container', icon: Box },
-  { value: 'cpu', label: 'Processador', icon: Cpu },
-  { value: 'settings', label: 'Configuração', icon: Settings },
-  { value: 'filetext', label: 'Documento', icon: FileText },
-  { value: 'folder', label: 'Diretório', icon: Folder },
-  { value: 'barchart', label: 'Analytics', icon: BarChart3 },
-];
 
 const sistemaSchema = z.object({
   nome_sistema: z.string().min(1, 'Nome do sistema é obrigatório'),
@@ -46,7 +25,6 @@ const sistemaSchema = z.object({
   categoria: z.string().optional(),
   observacoes: z.string().optional(),
   ativo: z.boolean().default(true),
-  icone: z.string().default('server'),
 });
 
 type SistemaFormData = z.infer<typeof sistemaSchema>;
@@ -60,6 +38,10 @@ interface SistemaDialogProps {
 export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogProps) {
   const { toast } = useToast();
   const { empresaId, loading: loadingEmpresa } = useEmpresaId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(sistema?.imagem_url || null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   
   const form = useForm<SistemaFormData>({
     resolver: zodResolver(sistemaSchema),
@@ -72,11 +54,95 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
       categoria: sistema?.categoria || '',
       observacoes: sistema?.observacoes || '',
       ativo: sistema?.ativo ?? true,
-      icone: sistema?.icone || 'server',
     },
   });
 
-  const selectedIcon = form.watch('icone');
+  // Reset image preview when dialog opens/closes
+  React.useEffect(() => {
+    if (open) {
+      setImagePreview(sistema?.imagem_url || null);
+      setImageFile(null);
+    }
+  }, [open, sistema]);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Arquivo inválido',
+        description: 'Por favor, selecione uma imagem (PNG, JPG, etc.)',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validar tamanho (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: 'Arquivo muito grande',
+        description: 'A imagem deve ter no máximo 2MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadImage = async (sistemaId: string): Promise<string | null> => {
+    if (!imageFile) return imagePreview; // Return existing URL if no new file
+
+    setUploadingImage(true);
+    try {
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${sistemaId}.${fileExt}`;
+      const filePath = `${empresaId}/${fileName}`;
+
+      // Delete old image if exists
+      if (sistema?.imagem_url) {
+        const oldPath = sistema.imagem_url.split('/').slice(-2).join('/');
+        await supabase.storage.from('sistema-logos').remove([oldPath]);
+      }
+
+      const { error: uploadError } = await supabase.storage
+        .from('sistema-logos')
+        .upload(filePath, imageFile, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('sistema-logos')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error: any) {
+      console.error('Erro no upload:', error);
+      toast({
+        title: 'Erro no upload',
+        description: error.message || 'Não foi possível fazer upload da imagem',
+        variant: 'destructive',
+      });
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const onSubmit = async (data: SistemaFormData) => {
     try {
@@ -84,20 +150,63 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
         throw new Error('Empresa não encontrada');
       }
 
-      const payload = {
-        ...data,
-        empresa_id: empresaId,
-        responsavel_sistema: data.responsavel_sistema || null,
-        url_sistema: data.url_sistema || null,
-        categoria: data.categoria || null,
-        observacoes: data.observacoes || null,
-        icone: data.icone || 'server',
-      };
+      let sistemaId = sistema?.id;
+      let imagemUrl = imagePreview;
 
-      if (sistema?.id) {
+      // Se não temos um sistema existente, precisamos criar primeiro para ter o ID
+      if (!sistemaId) {
+        const { data: newSistema, error: insertError } = await supabase
+          .from('sistemas_privilegiados')
+          .insert({
+            nome_sistema: data.nome_sistema,
+            tipo_sistema: data.tipo_sistema,
+            criticidade: data.criticidade,
+            empresa_id: empresaId,
+            responsavel_sistema: data.responsavel_sistema || null,
+            url_sistema: data.url_sistema || null,
+            categoria: data.categoria || null,
+            observacoes: data.observacoes || null,
+            ativo: data.ativo,
+          } as any)
+          .select('id')
+          .single();
+
+        if (insertError) throw insertError;
+        sistemaId = (newSistema as any).id;
+
+        // Upload da imagem se houver
+        if (imageFile) {
+          imagemUrl = await uploadImage(sistemaId);
+          if (imagemUrl) {
+            await supabase
+              .from('sistemas_privilegiados')
+              .update({ imagem_url: imagemUrl } as any)
+              .eq('id', sistemaId);
+          }
+        }
+
+        toast({
+          title: 'Sucesso',
+          description: 'Sistema criado com sucesso',
+        });
+      } else {
+        // Upload da imagem se houver nova
+        if (imageFile) {
+          imagemUrl = await uploadImage(sistemaId);
+        }
+
+        const payload = {
+          ...data,
+          responsavel_sistema: data.responsavel_sistema || null,
+          url_sistema: data.url_sistema || null,
+          categoria: data.categoria || null,
+          observacoes: data.observacoes || null,
+          imagem_url: imagemUrl,
+        };
+
         const { error } = await supabase
-          .from('sistemas_privilegiados' as any)
-          .update(payload)
+          .from('sistemas_privilegiados')
+          .update(payload as any)
           .eq('id', sistema.id);
 
         if (error) throw error;
@@ -105,17 +214,6 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
         toast({
           title: 'Sucesso',
           description: 'Sistema atualizado com sucesso',
-        });
-      } else {
-        const { error } = await supabase
-          .from('sistemas_privilegiados' as any)
-          .insert(payload);
-
-        if (error) throw error;
-
-        toast({
-          title: 'Sucesso',
-          description: 'Sistema criado com sucesso',
         });
       }
 
@@ -146,39 +244,64 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            {/* Seletor de Ícone */}
-            <FormField
-              control={form.control}
-              name="icone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ícone do Sistema</FormLabel>
-                  <div className="grid grid-cols-6 sm:grid-cols-9 gap-2">
-                    {availableIcons.map((iconItem) => {
-                      const IconComponent = iconItem.icon;
-                      const isSelected = field.value === iconItem.value;
-                      return (
-                        <button
-                          key={iconItem.value}
-                          type="button"
-                          onClick={() => field.onChange(iconItem.value)}
-                          className={cn(
-                            "flex items-center justify-center w-10 h-10 rounded-lg border-2 transition-all",
-                            isSelected 
-                              ? "border-primary bg-primary/10 text-primary" 
-                              : "border-border hover:border-primary/50 hover:bg-muted text-muted-foreground hover:text-foreground"
-                          )}
-                          title={iconItem.label}
-                        >
-                          <IconComponent className="h-5 w-5" />
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Upload de Imagem */}
+            <FormItem>
+              <FormLabel>Imagem do Sistema</FormLabel>
+              <div className="flex items-start gap-4">
+                {/* Preview */}
+                <div 
+                  className={cn(
+                    "relative flex items-center justify-center w-24 h-24 rounded-lg border-2 border-dashed transition-all",
+                    imagePreview 
+                      ? "border-primary bg-primary/5" 
+                      : "border-border bg-muted/50"
+                  )}
+                >
+                  {imagePreview ? (
+                    <>
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="w-full h-full object-contain rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <Server className="h-10 w-10 text-muted-foreground" />
+                  )}
+                </div>
+
+                {/* Upload Button */}
+                <div className="flex flex-col gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingImage}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {imagePreview ? 'Alterar Imagem' : 'Upload de Imagem'}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    PNG, JPG até 2MB. Recomendado: 200x200px
+                  </p>
+                </div>
+              </div>
+            </FormItem>
 
             <div className="grid grid-cols-2 gap-5">
               <FormField
@@ -362,8 +485,8 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit">
-                {sistema ? 'Atualizar' : 'Criar'} Sistema
+              <Button type="submit" disabled={uploadingImage}>
+                {uploadingImage ? 'Enviando...' : sistema ? 'Atualizar' : 'Criar'} Sistema
               </Button>
             </div>
           </form>

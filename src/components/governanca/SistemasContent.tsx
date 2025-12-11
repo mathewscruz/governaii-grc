@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Edit, Trash2, Server, Database, Cloud, Shield, Lock, Monitor, Globe, Key, HardDrive, Wifi, Eye, Box, Cpu, Settings, FileText, Folder, BarChart3 } from 'lucide-react';
+import { Plus, Edit, Trash2, Server, Shield, Lock, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,32 +18,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// Mapeamento de nomes de ícones para componentes
-const iconMap: Record<string, React.ComponentType<any>> = {
-  server: Server,
-  database: Database,
-  cloud: Cloud,
-  shield: Shield,
-  lock: Lock,
-  monitor: Monitor,
-  globe: Globe,
-  key: Key,
-  harddrive: HardDrive,
-  wifi: Wifi,
-  eye: Eye,
-  box: Box,
-  cpu: Cpu,
-  settings: Settings,
-  filetext: FileText,
-  folder: Folder,
-  barchart: BarChart3,
-};
-
-export function DynamicIcon({ name, className }: { name?: string; className?: string }) {
-  const IconComponent = iconMap[name || 'server'] || Server;
-  return <IconComponent className={className} />;
-}
-
 interface SistemaPrivilegiado {
   id: string;
   nome_sistema: string;
@@ -54,6 +28,7 @@ interface SistemaPrivilegiado {
   categoria?: string;
   ativo: boolean;
   icone?: string;
+  imagem_url?: string;
 }
 
 export default function SistemasContent() {
@@ -192,8 +167,16 @@ export default function SistemasContent() {
       sortable: true,
       render: (_: any, sistema: SistemaPrivilegiado) => (
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10">
-            <DynamicIcon name={sistema.icone} className="h-5 w-5 text-primary" />
+          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 overflow-hidden">
+            {sistema.imagem_url ? (
+              <img 
+                src={sistema.imagem_url} 
+                alt={sistema.nome_sistema}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <Server className="h-5 w-5 text-primary" />
+            )}
           </div>
           <div className="font-medium">{sistema.nome_sistema}</div>
         </div>

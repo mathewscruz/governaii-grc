@@ -5264,6 +5264,7 @@ export type Database = {
           empresa_id: string
           icone: string | null
           id: string
+          imagem_url: string | null
           nome_sistema: string
           observacoes: string | null
           responsavel_sistema: string | null
@@ -5279,6 +5280,7 @@ export type Database = {
           empresa_id: string
           icone?: string | null
           id?: string
+          imagem_url?: string | null
           nome_sistema: string
           observacoes?: string | null
           responsavel_sistema?: string | null
@@ -5294,6 +5296,7 @@ export type Database = {
           empresa_id?: string
           icone?: string | null
           id?: string
+          imagem_url?: string | null
           nome_sistema?: string
           observacoes?: string | null
           responsavel_sistema?: string | null
