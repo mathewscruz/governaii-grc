@@ -15,7 +15,7 @@ import { MapeamentoDialog } from "@/components/dados/MapeamentoDialog";
 import { RopaWizard } from "@/components/dados/RopaWizard";
 import { RopaDialog } from "@/components/dados/RopaDialog";
 import { SolicitacaoTitularDialog } from "@/components/dados/SolicitacaoTitularDialog";
-import { UrlScannerDialog } from "@/components/dados/UrlScannerDialog";
+import { DescoberDadosTab } from "@/components/dados/DescoberDadosTab";
 import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -46,7 +46,7 @@ export default function Privacidade() {
   const [selectedSolicitacao, setSelectedSolicitacao] = useState<any>(null);
   const [showDadoSheet, setShowDadoSheet] = useState(false);
   const [preSelectedDadoId, setPreSelectedDadoId] = useState<string | undefined>();
-  const [showUrlScanner, setShowUrlScanner] = useState(false);
+  
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; type: string }>({
     open: false,
     id: '',
@@ -382,10 +382,11 @@ export default function Privacidade() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="catalogo">Catálogo & Mapeamento</TabsTrigger>
           <TabsTrigger value="ropa">ROPA</TabsTrigger>
           <TabsTrigger value="solicitacoes">Solicitações</TabsTrigger>
+          <TabsTrigger value="descobertas">Descobertas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="catalogo" className="space-y-4">
@@ -399,14 +400,6 @@ export default function Privacidade() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowUrlScanner(true)}
-                  >
-                    <Globe className="mr-2 h-4 w-4" />
-                    Descobrir Dados
-                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -562,6 +555,10 @@ export default function Privacidade() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="descobertas" className="space-y-4">
+          <DescoberDadosTab onRefresh={loadData} />
+        </TabsContent>
       </Tabs>
 
       <DadosPessoaisDialog
@@ -600,33 +597,6 @@ export default function Privacidade() {
         solicitacao={selectedSolicitacao}
       />
       
-      <UrlScannerDialog
-        isOpen={showUrlScanner}
-        onClose={() => setShowUrlScanner(false)}
-        onImport={async (fields) => {
-          let created = 0;
-          for (const field of fields) {
-            const nome = field.label || field.name || field.id || `Campo ${field.dataType}`;
-            const { error } = await supabase.from('dados_pessoais').insert({
-              nome: nome,
-              descricao: `Detectado via scanner - Campo: ${field.name || field.id}${field.placeholder ? `, Placeholder: ${field.placeholder}` : ''}`,
-              categoria_dados: field.lgpdCategory || 'outros',
-              tipo_dados: field.sensitivity === 'critico' ? 'sensivel' : 'comum',
-              sensibilidade: field.sensitivity === 'critico' ? 'muito_sensivel' : field.sensitivity === 'sensivel' ? 'sensivel' : 'comum',
-              origem_coleta: 'formulario_web',
-              forma_coleta: 'automatica',
-              finalidade_tratamento: 'A definir',
-              base_legal: 'consentimento'
-            } as any);
-            if (!error) created++;
-          }
-          toast({
-            title: "Importação concluída",
-            description: `${created} dado(s) pessoal(is) adicionado(s) ao catálogo`,
-          });
-          loadData();
-        }}
-      />
       <Sheet open={showDadoSheet} onOpenChange={setShowDadoSheet}>
         <SheetContent className="w-[600px] overflow-y-auto">
           <SheetHeader>

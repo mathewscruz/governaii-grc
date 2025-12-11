@@ -2141,6 +2141,62 @@ export type Database = {
           },
         ]
       }
+      dados_descobertas: {
+        Row: {
+          campos_criticos: number | null
+          campos_importados: number | null
+          campos_sensiveis: number | null
+          created_at: string
+          created_by: string | null
+          empresa_id: string
+          id: string
+          resultado_scan: Json | null
+          status: string | null
+          titulo_pagina: string | null
+          total_campos: number | null
+          total_formularios: number | null
+          url: string
+        }
+        Insert: {
+          campos_criticos?: number | null
+          campos_importados?: number | null
+          campos_sensiveis?: number | null
+          created_at?: string
+          created_by?: string | null
+          empresa_id: string
+          id?: string
+          resultado_scan?: Json | null
+          status?: string | null
+          titulo_pagina?: string | null
+          total_campos?: number | null
+          total_formularios?: number | null
+          url: string
+        }
+        Update: {
+          campos_criticos?: number | null
+          campos_importados?: number | null
+          campos_sensiveis?: number | null
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string
+          id?: string
+          resultado_scan?: Json | null
+          status?: string | null
+          titulo_pagina?: string | null
+          total_campos?: number | null
+          total_formularios?: number | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dados_descobertas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dados_fluxos: {
         Row: {
           aprovacao_necessaria: boolean | null

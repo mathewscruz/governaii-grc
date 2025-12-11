@@ -44,7 +44,7 @@ interface ScanResult {
 interface UrlScannerDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (fields: FormField[]) => void;
+  onImport: (fields: FormField[], scanResult?: ScanResult) => void;
 }
 
 const getSensitivityBadge = (sensitivity: string) => {
@@ -191,7 +191,7 @@ export const UrlScannerDialog = ({ isOpen, onClose, onImport }: UrlScannerDialog
       });
     });
 
-    onImport(fieldsToImport);
+    onImport(fieldsToImport, scanResult);
     handleClose();
   };
 
