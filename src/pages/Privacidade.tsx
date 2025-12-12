@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import { Plus, Database, Users, FileText, AlertTriangle, Filter, Eye, Edit, Trash2, Globe } from "lucide-react";
+import { Plus, Database, Users, AlertTriangle, Edit, Trash2, Link2, FileText, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +9,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DadosPessoaisDialog } from "@/components/dados/DadosPessoaisDialog";
-import { DadosPessoaisCard } from "@/components/dados/DadosPessoaisCard";
 import { MapeamentoDialog } from "@/components/dados/MapeamentoDialog";
 import { RopaWizard } from "@/components/dados/RopaWizard";
 import { RopaDialog } from "@/components/dados/RopaDialog";
@@ -18,10 +16,10 @@ import { SolicitacaoTitularDialog } from "@/components/dados/SolicitacaoTitularD
 import { DescoberDadosTab } from "@/components/dados/DescoberDadosTab";
 import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/ui/page-header";
-import { EmptyState } from "@/components/ui/empty-state";
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
 import { formatStatus, getSensibilidadeColor, getItemStatusColor, getWorkflowStatusColor } from '@/lib/text-utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function Privacidade() {
   const [activeTab, setActiveTab] = useState("catalogo");
@@ -52,8 +50,12 @@ export default function Privacidade() {
     id: '',
     type: ''
   });
-  const [showFilters, setShowFilters] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  
+  // States for Catálogo tab DataTable
+  const [catalogoSortField, setCatalogoSortField] = useState<string>("");
+  const [catalogoSortDirection, setCatalogoSortDirection] = useState<"asc" | "desc">("asc");
+  const [categoriaFilter, setCategoriaFilter] = useState("todos");
+  const [sensibilidadeFilter, setSensibilidadeFilter] = useState("todos");
   
   // States for ROPA tab DataTable
   const [searchRopaTerm, setSearchRopaTerm] = useState("");
@@ -77,27 +79,47 @@ export default function Privacidade() {
 
   const loadData = async () => {
     try {
-      const [dadosRes, mapeamentosRes, ropaRes, solicitacoesRes] = await Promise.all([
+      // Query with aggregated counts for catalog
+      const [dadosRes, mapeamentosRes, ropaRes, solicitacoesRes, ropaDadosRes] = await Promise.all([
         supabase.from('dados_pessoais').select('*').order('nome'),
-        supabase.from('dados_mapeamento').select('id, dados_pessoais_id').order('created_at', { ascending: false }),
+        supabase.from('dados_mapeamento').select('id, dados_pessoais_id'),
         supabase.from('ropa_registros').select('*').order('nome_tratamento'),
-        supabase.from('dados_solicitacoes_titular').select('*, dados_pessoais(nome)').order('data_solicitacao', { ascending: false })
+        supabase.from('dados_solicitacoes_titular').select('*, dados_pessoais(nome)').order('data_solicitacao', { ascending: false }),
+        supabase.from('ropa_dados_vinculados').select('id, dados_pessoais_id')
       ]);
 
-      setDadosPessoais(dadosRes.data || []);
+      // Aggregate counts per dados_pessoais_id
+      const mapeamentosCounts: Record<string, number> = {};
+      (mapeamentosRes.data || []).forEach((m: any) => {
+        mapeamentosCounts[m.dados_pessoais_id] = (mapeamentosCounts[m.dados_pessoais_id] || 0) + 1;
+      });
+      
+      const ropasCounts: Record<string, number> = {};
+      (ropaDadosRes.data || []).forEach((r: any) => {
+        ropasCounts[r.dados_pessoais_id] = (ropasCounts[r.dados_pessoais_id] || 0) + 1;
+      });
+
+      // Enrich dados with counts
+      const dadosEnriquecidos = (dadosRes.data || []).map((dado: any) => ({
+        ...dado,
+        mapeamentos_count: mapeamentosCounts[dado.id] || 0,
+        ropas_count: ropasCounts[dado.id] || 0
+      }));
+
+      setDadosPessoais(dadosEnriquecidos);
       setRopaRegistros(ropaRes.data || []);
       setSolicitacoes(solicitacoesRes.data || []);
 
       // Calcular estatísticas
       const dados = dadosRes.data || [];
-      const sensiveis = dados.filter(d => d.tipo_dados === 'sensivel' || d.sensibilidade === 'muito_sensivel').length;
-      const pendentes = (solicitacoesRes.data || []).filter(s => s.status === 'pendente').length;
+      const sensiveis = dados.filter((d: any) => d.tipo_dados === 'sensivel' || d.sensibilidade === 'muito_sensivel').length;
+      const pendentes = (solicitacoesRes.data || []).filter((s: any) => s.status === 'pendente').length;
       
       setStats({
         totalDados: dados.length,
         dadosSensiveis: sensiveis,
         mapeamentos: (mapeamentosRes.data || []).length,
-        ropaAtivos: (ropaRes.data || []).filter(r => r.status === 'ativo').length,
+        ropaAtivos: (ropaRes.data || []).filter((r: any) => r.status === 'ativo').length,
         solicitacoesPendentes: pendentes
       });
     } catch (error) {
@@ -117,12 +139,172 @@ export default function Privacidade() {
   };
 
   const getStatusBadge = (status: string) => {
-    // Para status de itens (ativo/inativo) usa getItemStatusColor
-    // Para status de workflow (pendente/atendida) usa getWorkflowStatusColor
     const isWorkflow = ['pendente', 'em_analise', 'atendida', 'rejeitada'].includes(status);
     const colorClass = isWorkflow ? getWorkflowStatusColor(status) : getItemStatusColor(status);
     return <Badge className={`${colorClass} border whitespace-nowrap`}>{formatStatus(status)}</Badge>;
   };
+
+  const getCategoriaLabel = (categoria: string) => {
+    const labels: Record<string, string> = {
+      identificacao: 'Identificação',
+      contato: 'Contato',
+      localizacao: 'Localização',
+      financeiro: 'Financeiro',
+      saude: 'Saúde',
+      biometrico: 'Biométrico',
+      comportamental: 'Comportamental',
+      outros: 'Outros'
+    };
+    return labels[categoria] || formatStatus(categoria);
+  };
+
+  // Catálogo DataTable columns
+  const catalogoColumns = [
+    {
+      key: 'nome',
+      label: 'Nome',
+      sortable: true,
+      render: (value: string, row: any) => (
+        <div>
+          <span className="font-medium cursor-pointer hover:text-primary" onClick={() => {
+            setSelectedDado(row);
+            setShowDadoSheet(true);
+          }}>{value}</span>
+          {row.descricao && (
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{row.descricao}</p>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'categoria_dados',
+      label: 'Categoria',
+      sortable: true,
+      render: (value: string) => <Badge variant="outline">{getCategoriaLabel(value)}</Badge>
+    },
+    {
+      key: 'sensibilidade',
+      label: 'Sensibilidade',
+      sortable: true,
+      render: (value: string, row: any) => getSensibilidadeBadge(row.tipo_dados, value)
+    },
+    {
+      key: 'base_legal',
+      label: 'Base Legal',
+      sortable: true,
+      render: (value: string) => value ? <Badge variant="secondary">{formatStatus(value)}</Badge> : <span className="text-muted-foreground">-</span>
+    },
+    {
+      key: 'mapeamentos_count',
+      label: 'Mapeamentos',
+      sortable: true,
+      render: (value: number) => value > 0 ? (
+        <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30">{value}</Badge>
+      ) : <span className="text-muted-foreground">0</span>
+    },
+    {
+      key: 'ropas_count',
+      label: 'ROPAs',
+      sortable: true,
+      render: (value: number) => value > 0 ? (
+        <Badge className="bg-green-500/20 text-green-600 border-green-500/30">{value}</Badge>
+      ) : <span className="text-muted-foreground">0</span>
+    },
+    {
+      key: 'actions',
+      label: 'Ações',
+      render: (_: any, row: any) => (
+        <TooltipProvider>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setSelectedDado(row);
+                  setShowDadoSheet(true);
+                }}>
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Ver Detalhes</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setSelectedDado(row);
+                  setShowDadosDialog(true);
+                }}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Editar</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setSelectedDado(row);
+                  setShowMapeamentoDialog(true);
+                }}>
+                  <Link2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Mapear</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setPreSelectedDadoId(row.id);
+                  setShowRopaWizard(true);
+                }}>
+                  <FileText className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Criar ROPA</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" onClick={() => handleDelete(row.id, 'dados')} className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Excluir</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
+      )
+    }
+  ];
+
+  const catalogoFilters = [
+    {
+      key: 'categoria_dados',
+      label: 'Categoria',
+      type: 'select' as const,
+      options: [
+        { value: 'identificacao', label: 'Identificação' },
+        { value: 'contato', label: 'Contato' },
+        { value: 'localizacao', label: 'Localização' },
+        { value: 'financeiro', label: 'Financeiro' },
+        { value: 'saude', label: 'Saúde' },
+        { value: 'biometrico', label: 'Biométrico' },
+        { value: 'comportamental', label: 'Comportamental' },
+        { value: 'outros', label: 'Outros' }
+      ],
+      value: categoriaFilter,
+      onChange: setCategoriaFilter
+    },
+    {
+      key: 'sensibilidade',
+      label: 'Sensibilidade',
+      type: 'select' as const,
+      options: [
+        { value: 'comum', label: 'Comum' },
+        { value: 'sensivel', label: 'Moderado' },
+        { value: 'muito_sensivel', label: 'Sensível' }
+      ],
+      value: sensibilidadeFilter,
+      onChange: setSensibilidadeFilter
+    }
+  ];
 
   // ROPA DataTable columns
   const ropaColumns = [
@@ -390,82 +572,43 @@ export default function Privacidade() {
         </TabsList>
 
         <TabsContent value="catalogo" className="space-y-4">
-          <Card className="rounded-lg border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between gap-4 mb-6">
-                <Input
-                  placeholder="Buscar dados pessoais..."
-                  className="max-w-sm"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowFilters(!showFilters)}
-                  >
-                    <Filter className="mr-2 h-4 w-4" />
-                    Filtros
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowMapeamentoDialog(true)}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Mapear Dado
-                  </Button>
-                  <Button size="sm" onClick={() => setShowDadosDialog(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Novo Dado
-                  </Button>
-                </div>
-              </div>
-
-              {dadosPessoais.length === 0 ? (
-                <EmptyState
-                  icon={<Database className="h-8 w-8" />}
-                  title="Nenhum dado catalogado"
-                  description="Ainda não há dados pessoais catalogados. Comece criando o primeiro registro."
-                  action={{
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowMapeamentoDialog(true)}>
+              <Link2 className="mr-2 h-4 w-4" />
+              Mapear Dado
+            </Button>
+            <Button size="sm" onClick={() => setShowDadosDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Dado
+            </Button>
+          </div>
+          <Card className="rounded-lg border overflow-hidden">
+            <CardContent className="p-0">
+              <DataTable
+                data={dadosPessoais}
+                columns={catalogoColumns}
+                searchPlaceholder="Buscar dados pessoais..."
+                filters={catalogoFilters}
+                sortField={catalogoSortField}
+                sortDirection={catalogoSortDirection}
+                onSort={(field) => {
+                  if (field === catalogoSortField) {
+                    setCatalogoSortDirection(catalogoSortDirection === 'asc' ? 'desc' : 'asc');
+                  } else {
+                    setCatalogoSortField(field);
+                    setCatalogoSortDirection('asc');
+                  }
+                }}
+                emptyState={{
+                  icon: <Database className="h-8 w-8" />,
+                  title: "Nenhum dado catalogado",
+                  description: "Ainda não há dados pessoais catalogados. Comece criando o primeiro registro.",
+                  action: {
                     label: "Novo Dado",
                     onClick: () => setShowDadosDialog(true)
-                  }}
-                />
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {dadosPessoais
-                    .filter(dado => 
-                      !searchTerm || 
-                      dado.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      dado.categoria_dados.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((dado) => (
-                      <DadosPessoaisCard
-                        key={dado.id}
-                        dado={dado}
-                        onEdit={() => {
-                          setSelectedDado(dado);
-                          setShowDadosDialog(true);
-                        }}
-                        onDelete={() => handleDelete(dado.id, 'dados')}
-                        onMapear={() => {
-                          setSelectedDado(dado);
-                          setShowMapeamentoDialog(true);
-                        }}
-                        onCriarRopa={() => {
-                          setPreSelectedDadoId(dado.id);
-                          setShowRopaWizard(true);
-                        }}
-                        onViewDetalhes={() => {
-                          setSelectedDado(dado);
-                          setShowDadoSheet(true);
-                        }}
-                      />
-                    ))}
-                </div>
-              )}
+                  }
+                }}
+              />
             </CardContent>
           </Card>
         </TabsContent>

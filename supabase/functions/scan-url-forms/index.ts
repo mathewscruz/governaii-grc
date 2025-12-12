@@ -104,6 +104,13 @@ interface DetectedForm {
   fields: FormField[];
 }
 
+interface PageResult {
+  url: string;
+  title: string;
+  forms: DetectedForm[];
+  totalFields: number;
+}
+
 interface ScanResult {
   url: string;
   title: string;
@@ -111,6 +118,10 @@ interface ScanResult {
   totalFields: number;
   sensitiveFieldsCount: number;
   criticalFieldsCount: number;
+  mode?: 'single' | 'domain';
+  pagesScanned?: number;
+  pagesWithForms?: number;
+  pages?: PageResult[];
 }
 
 function classifyField(name: string, id: string, placeholder: string, label: string, inputType: string): { dataType: string; lgpdCategory: string; sensitivity: string } {
@@ -130,7 +141,6 @@ function classifyField(name: string, id: string, placeholder: string, label: str
     return { dataType: 'arquivo', lgpdCategory: 'documentos', sensitivity: 'comum' };
   }
   if (inputType === 'date') {
-    // Verificar se é data de nascimento
     if (/nasc|birth|age|idade/i.test(textToAnalyze)) {
       return { dataType: 'data_nascimento', lgpdCategory: 'identificacao', sensitivity: 'sensivel' };
     }
@@ -156,7 +166,6 @@ function classifyField(name: string, id: string, placeholder: string, label: str
 function parseFormsFromHtml(html: string): DetectedForm[] {
   const forms: DetectedForm[] = [];
   
-  // Regex para encontrar forms
   const formRegex = /<form[^>]*>([\s\S]*?)<\/form>/gi;
   const formMatches = html.matchAll(formRegex);
   
@@ -166,7 +175,6 @@ function parseFormsFromHtml(html: string): DetectedForm[] {
     const formHtml = formMatch[0];
     const formContent = formMatch[1];
     
-    // Extrair atributos do form
     const idMatch = formHtml.match(/id\s*=\s*["']([^"']*)["']/i);
     const nameMatch = formHtml.match(/name\s*=\s*["']([^"']*)["']/i);
     const actionMatch = formHtml.match(/action\s*=\s*["']([^"']*)["']/i);
@@ -180,10 +188,8 @@ function parseFormsFromHtml(html: string): DetectedForm[] {
     
     for (const inputMatch of inputMatches) {
       const inputHtml = inputMatch[0];
-      
       const inputType = inputHtml.match(/type\s*=\s*["']([^"']*)["']/i)?.[1] || 'text';
       
-      // Ignorar inputs hidden, submit, button
       if (['hidden', 'submit', 'button', 'reset', 'image'].includes(inputType.toLowerCase())) {
         continue;
       }
@@ -193,7 +199,6 @@ function parseFormsFromHtml(html: string): DetectedForm[] {
       const inputPlaceholder = inputHtml.match(/placeholder\s*=\s*["']([^"']*)["']/i)?.[1] || '';
       const required = /required/i.test(inputHtml);
       
-      // Tentar encontrar label associada
       let label = '';
       if (inputId) {
         const labelRegex = new RegExp(`<label[^>]*for\\s*=\\s*["']${inputId}["'][^>]*>([^<]*)<\\/label>`, 'i');
@@ -222,7 +227,6 @@ function parseFormsFromHtml(html: string): DetectedForm[] {
     
     for (const textareaMatch of textareaMatches) {
       const textareaHtml = textareaMatch[0];
-      
       const textareaName = textareaHtml.match(/name\s*=\s*["']([^"']*)["']/i)?.[1] || '';
       const textareaId = textareaHtml.match(/id\s*=\s*["']([^"']*)["']/i)?.[1] || '';
       const textareaPlaceholder = textareaHtml.match(/placeholder\s*=\s*["']([^"']*)["']/i)?.[1] || '';
@@ -256,7 +260,6 @@ function parseFormsFromHtml(html: string): DetectedForm[] {
     
     for (const selectMatch of selectMatches) {
       const selectHtml = selectMatch[0];
-      
       const selectName = selectHtml.match(/name\s*=\s*["']([^"']*)["']/i)?.[1] || '';
       const selectId = selectHtml.match(/id\s*=\s*["']([^"']*)["']/i)?.[1] || '';
       const required = /required/i.test(selectHtml);
@@ -283,7 +286,6 @@ function parseFormsFromHtml(html: string): DetectedForm[] {
       });
     }
     
-    // Só adicionar form se tiver campos
     if (fields.length > 0) {
       forms.push({
         formId: idMatch?.[1] || `form_${formIndex}`,
@@ -298,13 +300,77 @@ function parseFormsFromHtml(html: string): DetectedForm[] {
   return forms;
 }
 
+async function scrapePage(url: string, apiKey: string): Promise<{ html: string; title: string } | null> {
+  try {
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url,
+        formats: ['html', 'rawHtml'],
+        onlyMainContent: false,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to scrape ${url}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return {
+      html: data.data?.rawHtml || data.data?.html || '',
+      title: data.data?.metadata?.title || url
+    };
+  } catch (error) {
+    console.error(`Error scraping ${url}:`, error);
+    return null;
+  }
+}
+
+async function mapDomain(url: string, apiKey: string, limit: number, includeSubdomains: boolean): Promise<string[]> {
+  try {
+    console.log(`Mapping domain: ${url}, limit: ${limit}, subdomains: ${includeSubdomains}`);
+    
+    const response = await fetch('https://api.firecrawl.dev/v1/map', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url,
+        limit,
+        includeSubdomains,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Map API error:', errorData);
+      throw new Error(errorData.error || `Map failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log(`Map found ${data.links?.length || 0} URLs`);
+    
+    return data.links || [];
+  } catch (error) {
+    console.error('Error mapping domain:', error);
+    throw error;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { url } = await req.json();
+    const { url, mode = 'single', limit = 50, includeSubdomains = false } = await req.json();
 
     if (!url) {
       return new Response(
@@ -321,75 +387,146 @@ serve(async (req) => {
       );
     }
 
-    // Formatar URL
+    // Format URL
     let formattedUrl = url.trim();
     if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
       formattedUrl = `https://${formattedUrl}`;
     }
 
-    console.log('Scanning URL for forms:', formattedUrl);
+    console.log(`Scanning URL: ${formattedUrl}, mode: ${mode}`);
 
-    // Chamar Firecrawl para obter HTML
-    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    if (mode === 'domain') {
+      // Domain mode - discover all URLs and scan each
+      const discoveredUrls = await mapDomain(formattedUrl, apiKey, limit, includeSubdomains);
+      
+      if (discoveredUrls.length === 0) {
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            data: {
+              url: formattedUrl,
+              title: '',
+              forms: [],
+              totalFields: 0,
+              sensitiveFieldsCount: 0,
+              criticalFieldsCount: 0,
+              mode: 'domain',
+              pagesScanned: 0,
+              pagesWithForms: 0,
+              pages: []
+            }
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Filter URLs that might have forms (exclude static assets)
+      const relevantUrls = discoveredUrls.filter((u: string) => {
+        const lower = u.toLowerCase();
+        return !lower.match(/\.(jpg|jpeg|png|gif|svg|webp|css|js|ico|pdf|doc|docx|xls|xlsx|zip|rar)$/);
+      }).slice(0, Math.min(limit, 100)); // Limit to avoid timeout
+
+      console.log(`Scanning ${relevantUrls.length} relevant URLs`);
+
+      const pages: PageResult[] = [];
+      let totalSensitive = 0;
+      let totalCritical = 0;
+
+      // Scrape pages in batches of 5
+      const batchSize = 5;
+      for (let i = 0; i < relevantUrls.length; i += batchSize) {
+        const batch = relevantUrls.slice(i, i + batchSize);
+        const results = await Promise.all(batch.map((pageUrl: string) => scrapePage(pageUrl, apiKey)));
+        
+        for (let j = 0; j < results.length; j++) {
+          const result = results[j];
+          if (result && result.html) {
+            const forms = parseFormsFromHtml(result.html);
+            if (forms.length > 0) {
+              let pageFields = 0;
+              for (const form of forms) {
+                for (const field of form.fields) {
+                  pageFields++;
+                  if (field.sensitivity === 'sensivel') totalSensitive++;
+                  if (field.sensitivity === 'critico') totalCritical++;
+                }
+              }
+              
+              pages.push({
+                url: batch[j],
+                title: result.title,
+                forms,
+                totalFields: pageFields
+              });
+            }
+          }
+        }
+      }
+
+      const totalFields = pages.reduce((sum, p) => sum + p.totalFields, 0);
+
+      const result: ScanResult = {
         url: formattedUrl,
-        formats: ['html', 'rawHtml'],
-        onlyMainContent: false,
-      }),
-    });
+        title: '',
+        forms: [],
+        totalFields,
+        sensitiveFieldsCount: totalSensitive,
+        criticalFieldsCount: totalCritical,
+        mode: 'domain',
+        pagesScanned: relevantUrls.length,
+        pagesWithForms: pages.length,
+        pages
+      };
 
-    const data = await response.json();
+      console.log(`Domain scan completed: ${pages.length} pages with forms, ${totalFields} total fields`);
 
-    if (!response.ok) {
-      console.error('Firecrawl API error:', data);
       return new Response(
-        JSON.stringify({ success: false, error: data.error || `Erro ao acessar a página: ${response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: true, data: result }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
+    } else {
+      // Single page mode
+      const pageResult = await scrapePage(formattedUrl, apiKey);
+      
+      if (!pageResult) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Não foi possível acessar a página' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const forms = parseFormsFromHtml(pageResult.html);
+
+      let totalFields = 0;
+      let sensitiveFieldsCount = 0;
+      let criticalFieldsCount = 0;
+
+      for (const form of forms) {
+        for (const field of form.fields) {
+          totalFields++;
+          if (field.sensitivity === 'sensivel') sensitiveFieldsCount++;
+          if (field.sensitivity === 'critico') criticalFieldsCount++;
+        }
+      }
+
+      const result: ScanResult = {
+        url: formattedUrl,
+        title: pageResult.title,
+        forms,
+        totalFields,
+        sensitiveFieldsCount,
+        criticalFieldsCount,
+        mode: 'single'
+      };
+
+      console.log(`Single page scan completed: ${forms.length} forms, ${totalFields} fields found`);
+
+      return new Response(
+        JSON.stringify({ success: true, data: result }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Usar rawHtml para análise mais precisa
-    const html = data.data?.rawHtml || data.data?.html || '';
-    const title = data.data?.metadata?.title || formattedUrl;
-
-    console.log('HTML length:', html.length);
-
-    // Parsear formulários
-    const forms = parseFormsFromHtml(html);
-
-    // Calcular estatísticas
-    let totalFields = 0;
-    let sensitiveFieldsCount = 0;
-    let criticalFieldsCount = 0;
-
-    for (const form of forms) {
-      for (const field of form.fields) {
-        totalFields++;
-        if (field.sensitivity === 'sensivel') sensitiveFieldsCount++;
-        if (field.sensitivity === 'critico') criticalFieldsCount++;
-      }
-    }
-
-    const result: ScanResult = {
-      url: formattedUrl,
-      title,
-      forms,
-      totalFields,
-      sensitiveFieldsCount,
-      criticalFieldsCount
-    };
-
-    console.log(`Scan completed: ${forms.length} forms, ${totalFields} fields found`);
-
-    return new Response(
-      JSON.stringify({ success: true, data: result }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
 
   } catch (error) {
     console.error('Error scanning URL:', error);
