@@ -38,6 +38,7 @@ import { formatDateOnly } from '@/lib/date-utils';
 
 interface Controle {
   id: string;
+  codigo?: string;
   nome: string;
   descricao?: string;
   tipo: string;
@@ -85,7 +86,7 @@ export default function Controles() {
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
   const [criticidadeFilter, setCriticidadeFilter] = useState<string>("todos");
   const [searchValue, setSearchValue] = useState<string>("");
-  const [sortField, setSortField] = useState<string>("nome");
+  const [sortField, setSortField] = useState<string>("codigo");
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -120,7 +121,7 @@ export default function Controles() {
           *,
           categoria:controles_categorias(nome, cor)
         `)
-        .order('created_at', { ascending: false });
+        .order('codigo', { ascending: true });
       
       if (error) throw error;
       
@@ -247,6 +248,17 @@ export default function Controles() {
     return filtered.sort((a, b) => {
       let aVal: any = a[sortField as keyof Controle];
       let bVal: any = b[sortField as keyof Controle];
+      
+      // Tratamento especial para código (ordenação natural alfanumérica)
+      if (sortField === 'codigo') {
+        const extractNumber = (val: string | null | undefined) => {
+          if (!val) return 0;
+          const match = val.match(/\d+/);
+          return match ? parseInt(match[0], 10) : 0;
+        };
+        aVal = extractNumber(a.codigo);
+        bVal = extractNumber(b.codigo);
+      }
       
       // Tratamento especial para datas
       if (sortField === 'proxima_avaliacao' || sortField === 'data_implementacao') {
