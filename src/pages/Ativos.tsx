@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Edit, Trash2, Server, Activity, AlertTriangle, TrendingUp, Wrench, History, Upload, Download, Shield, CloudCog, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Server, Activity, AlertTriangle, TrendingUp, Upload, Download, Shield, CloudCog, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -20,8 +20,6 @@ import { useToast } from '@/hooks/use-toast';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useAtivosStats } from '@/hooks/useAtivosStats';
 import LocalizacaoSelect from '@/components/ativos/LocalizacaoSelect';
-import ManutencaoDialog from '@/components/ativos/ManutencaoDialog';
-import TrilhaAuditoriaAtivos from '@/components/ativos/TrilhaAuditoriaAtivos';
 import ImportacaoAtivos from '@/components/ativos/ImportacaoAtivos';
 import { UserSelect } from '@/components/riscos/UserSelect';
 import { formatDateOnly } from '@/lib/date-utils';
@@ -47,7 +45,6 @@ interface Ativo {
   cliente: string | null;
   quantidade: number | null;
   created_at: string;
-  manutencoes_count?: number;
 }
 
 const tiposAtivo = [
@@ -136,8 +133,6 @@ const Ativos = () => {
   const [valorNegocioFilter, setValorNegocioFilter] = useState('todos');
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [manutencaoDialog, setManutencaoDialog] = useState<{open: boolean, ativoId: string, ativoNome: string}>({open: false, ativoId: '', ativoNome: ''});
-  const [auditDialog, setAuditDialog] = useState<{open: boolean, ativoId?: string}>({open: false});
   const [importDialog, setImportDialog] = useState(false);
   const [azureSyncing, setAzureSyncing] = useState(false);
 
@@ -239,26 +234,11 @@ const Ativos = () => {
 
       if (error) throw error;
       
-      // Fetch user names for proprietarios and maintenance counts
+      // Fetch user names for proprietarios
       if (data && data.length > 0) {
         const proprietarioIds = data
           .map(a => a.proprietario)
           .filter(p => p && p.trim() !== '');
-        
-        const ativoIds = data.map(a => a.id);
-        
-        // Fetch maintenance counts
-        const { data: manutencoesCounts, error: manutencoesError } = await supabase
-          .from('ativos_manutencoes')
-          .select('ativo_id')
-          .in('ativo_id', ativoIds);
-        
-        const countMap = new Map<string, number>();
-        if (!manutencoesError && manutencoesCounts) {
-          manutencoesCounts.forEach(m => {
-            countMap.set(m.ativo_id, (countMap.get(m.ativo_id) || 0) + 1);
-          });
-        }
         
         if (proprietarioIds.length > 0) {
           const { data: profiles, error: profilesError } = await supabase
@@ -266,10 +246,7 @@ const Ativos = () => {
 
           if (profilesError) {
             console.error('Erro ao buscar profiles:', profilesError);
-            setAtivos(data.map(ativo => ({
-              ...ativo,
-              manutencoes_count: countMap.get(ativo.id) || 0
-            })));
+            setAtivos(data);
           } else {
             const profileMap = new Map(
               profiles?.map((p: any) => [p.user_id.toString(), { nome: p.nome, foto_url: p.foto_url }]) || []
@@ -283,18 +260,14 @@ const Ativos = () => {
               return {
                 ...ativo,
                 proprietario_nome: profileData?.nome || null,
-                proprietario_avatar: profileData?.foto_url || null,
-                manutencoes_count: countMap.get(ativo.id) || 0
+                proprietario_avatar: profileData?.foto_url || null
               };
             });
             
             setAtivos(mappedData);
           }
         } else {
-          setAtivos(data.map(ativo => ({
-            ...ativo,
-            manutencoes_count: countMap.get(ativo.id) || 0
-          })));
+          setAtivos(data);
         }
       } else {
         setAtivos(data || []);
@@ -575,30 +548,6 @@ const Ativos = () => {
       }
     },
     {
-      key: 'manutencoes_count',
-      label: 'Manutenções',
-      sortable: true,
-      render: (_: any, ativo: Ativo) => (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge 
-                variant="outline" 
-                className="cursor-pointer hover:bg-muted flex items-center gap-1"
-                onClick={() => setManutencaoDialog({open: true, ativoId: ativo.id, ativoNome: ativo.nome})}
-              >
-                <Wrench className="h-3 w-3" />
-                {ativo.manutencoes_count || 0}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Clique para ver manutenções</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )
-    },
-    {
       key: 'localizacao',
       label: 'Localização',
       sortable: true,
@@ -622,22 +571,6 @@ const Ativos = () => {
               </TooltipTrigger>
               <TooltipContent>
                 <p>Editar ativo</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setManutencaoDialog({open: true, ativoId: ativo.id, ativoNome: ativo.nome})}
-                >
-                  <Wrench className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Manutenções</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -982,10 +915,6 @@ const Ativos = () => {
           <Upload className="h-4 w-4 mr-2" />
           Importar
         </Button>
-        <Button onClick={() => setAuditDialog({open: true})} variant="outline" size="sm">
-          <History className="h-4 w-4 mr-2" />
-          Auditoria
-        </Button>
         <Button size="sm" onClick={() => {
           setEditingAtivo(null);
           resetForm();
@@ -1019,7 +948,6 @@ const Ativos = () => {
               }
             }}
             onExport={exportData}
-            onRefresh={fetchAtivos}
             emptyState={{
               icon: <Server className="h-8 w-8" />,
               title: searchTerm ? "Nenhum ativo encontrado" : "Nenhum ativo cadastrado",
@@ -1041,19 +969,6 @@ const Ativos = () => {
         onConfirm={confirmDelete}
         title="Excluir Ativo"
         description="Tem certeza que deseja excluir este ativo? Esta ação não pode ser desfeita."
-      />
-
-      <ManutencaoDialog
-        ativoId={manutencaoDialog.ativoId}
-        ativoNome={manutencaoDialog.ativoNome}
-        open={manutencaoDialog.open}
-        onOpenChange={(open) => setManutencaoDialog({...manutencaoDialog, open})}
-      />
-
-      <TrilhaAuditoriaAtivos
-        ativoId={auditDialog.ativoId}
-        open={auditDialog.open}
-        onOpenChange={(open) => setAuditDialog({...auditDialog, open})}
       />
 
       <ImportacaoAtivos

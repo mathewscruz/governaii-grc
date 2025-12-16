@@ -191,7 +191,7 @@ export function DataTable<T extends Record<string, any>>({
           <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg">
             {filters.map((filter) => (
               <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-auto min-w-[160px]">
                   <SelectValue placeholder={filter.label} />
                 </SelectTrigger>
                 <SelectContent>
