@@ -208,7 +208,7 @@ const NotificationCenter: React.FC = () => {
             message: `O controle "${controle.nome}" precisa ser avaliado em ${diasParaAvaliacao} dias`,
             type: 'warning',
             read: false,
-            link_to: '/controles',
+            link_to: `/controles?detalhe=${controle.id}`,
             created_at: new Date().toISOString(),
             isAutomatic: true
           });
@@ -223,7 +223,7 @@ const NotificationCenter: React.FC = () => {
           message: `O incidente "${incidente.titulo}" está ${incidente.status} e requer atenção imediata`,
           type: 'error',
           read: false,
-          link_to: '/incidentes',
+          link_to: `/incidentes?detalhe=${incidente.id}`,
           created_at: new Date().toISOString(),
           isAutomatic: true
         });
@@ -342,7 +342,7 @@ const NotificationCenter: React.FC = () => {
            message: `${solicitanteNome} solicitou sua aprovação para o documento "${documentoNome}"`,
            type: 'info',
            read: false,
-           link_to: '/documentos',
+           link_to: `/documentos?aprovar=${aprovacao.documento_id}`,
            created_at: aprovacao.created_at,
            isAutomatic: true
          });

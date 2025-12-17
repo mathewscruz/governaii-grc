@@ -6,7 +6,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle, XCircle, Clock, User, Plus, MessageSquare } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { CheckCircle, XCircle, Clock, User, Plus, MessageSquare, FileText, Eye, Loader2, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -19,6 +21,9 @@ interface Documento {
   data_aprovacao?: string;
   aprovado_por?: string;
   created_by?: string;
+  arquivo_url?: string;
+  arquivo_nome?: string;
+  arquivo_tipo?: string;
 }
 
 interface Aprovacao {
@@ -51,6 +56,8 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
   const [formData, setFormData] = useState({
     aprovador_id: '',
     status: 'pendente',
@@ -64,6 +71,69 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
   const [actionComment, setActionComment] = useState('');
   const { toast } = useToast();
   const { notify } = useIntegrationNotify();
+
+  // Carregar preview do documento
+  useEffect(() => {
+    const loadPreview = async () => {
+      if (!open || !documento?.arquivo_url) {
+        setPreviewUrl(null);
+        return;
+      }
+
+      setLoadingPreview(true);
+      try {
+        // Se for URL do Supabase Storage, gerar signed URL
+        if (documento.arquivo_url.includes('supabase')) {
+          const path = documento.arquivo_url.split('/documentos/')[1];
+          if (path) {
+            const { data, error } = await supabase.storage
+              .from('documentos')
+              .createSignedUrl(path, 3600); // 1 hora de validade
+
+            if (!error && data?.signedUrl) {
+              setPreviewUrl(data.signedUrl);
+            } else {
+              setPreviewUrl(documento.arquivo_url);
+            }
+          } else {
+            setPreviewUrl(documento.arquivo_url);
+          }
+        } else {
+          setPreviewUrl(documento.arquivo_url);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar preview:', error);
+        setPreviewUrl(documento.arquivo_url);
+      } finally {
+        setLoadingPreview(false);
+      }
+    };
+
+    loadPreview();
+  }, [open, documento?.arquivo_url]);
+
+  // Verificar se o arquivo pode ser visualizado
+  const canPreview = () => {
+    if (!documento?.arquivo_tipo && !documento?.arquivo_nome) return false;
+    const tipo = documento.arquivo_tipo?.toLowerCase() || '';
+    const nome = documento.arquivo_nome?.toLowerCase() || '';
+    return tipo.includes('pdf') || tipo.includes('image') || 
+           nome.endsWith('.pdf') || nome.endsWith('.png') || 
+           nome.endsWith('.jpg') || nome.endsWith('.jpeg');
+  };
+
+  const isPdf = () => {
+    const tipo = documento?.arquivo_tipo?.toLowerCase() || '';
+    const nome = documento?.arquivo_nome?.toLowerCase() || '';
+    return tipo.includes('pdf') || nome.endsWith('.pdf');
+  };
+
+  const isImage = () => {
+    const tipo = documento?.arquivo_tipo?.toLowerCase() || '';
+    const nome = documento?.arquivo_nome?.toLowerCase() || '';
+    return tipo.includes('image') || nome.endsWith('.png') || 
+           nome.endsWith('.jpg') || nome.endsWith('.jpeg');
+  };
 
   // Obter ID do usuário atual
   useEffect(() => {
@@ -432,8 +502,8 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5" />
             Aprovação do Documento
@@ -443,31 +513,95 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Status geral */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Status do Documento</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {statusAprovacao === 'aprovado' && 'Documento aprovado'}
-                    {statusAprovacao === 'rejeitado' && 'Documento rejeitado'}
-                    {statusAprovacao === 'pendente' && 'Aguardando aprovação'}
-                    {statusAprovacao === 'sem_aprovacao' && 'Nenhuma aprovação solicitada'}
-                  </p>
+        <Tabs defaultValue="aprovacao" className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="flex-shrink-0 grid w-full grid-cols-2">
+            <TabsTrigger value="documento" className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              Visualizar Documento
+            </TabsTrigger>
+            <TabsTrigger value="aprovacao" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Aprovação
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Aba de Visualização do Documento */}
+          <TabsContent value="documento" className="flex-1 overflow-hidden mt-4">
+            <div className="h-full border rounded-lg overflow-hidden bg-muted/30">
+              {loadingPreview ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-                <div className="flex items-center gap-2">
-                  {statusAprovacao !== 'sem_aprovacao' && getStatusBadge(statusAprovacao)}
-                  {documento.data_aprovacao && (
-                    <span className="text-sm text-muted-foreground">
-                      em {format(new Date(documento.data_aprovacao), 'dd/MM/yyyy', { locale: ptBR })}
-                    </span>
-                  )}
+              ) : !documento?.arquivo_url ? (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <FileText className="h-16 w-16 mb-4" />
+                  <p className="text-lg font-medium">Documento sem arquivo anexado</p>
+                  <p className="text-sm">Este documento não possui um arquivo para visualização.</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              ) : !canPreview() ? (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <FileText className="h-16 w-16 mb-4" />
+                  <p className="text-lg font-medium">Visualização não disponível</p>
+                  <p className="text-sm mb-4">Este tipo de arquivo não pode ser visualizado no navegador.</p>
+                  <Button variant="outline" onClick={() => previewUrl && window.open(previewUrl, '_blank')}>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Baixar Documento
+                  </Button>
+                </div>
+              ) : isPdf() ? (
+                <iframe 
+                  src={previewUrl || ''} 
+                  className="w-full h-full min-h-[500px]"
+                  title="Preview do documento"
+                />
+              ) : isImage() ? (
+                <div className="flex items-center justify-center h-full p-4">
+                  <img 
+                    src={previewUrl || ''} 
+                    alt={documento.nome}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <FileText className="h-16 w-16 mb-4" />
+                  <p className="text-sm mb-4">Não foi possível carregar a visualização.</p>
+                  <Button variant="outline" onClick={() => previewUrl && window.open(previewUrl, '_blank')}>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Abrir em Nova Aba
+                  </Button>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Aba de Aprovação */}
+          <TabsContent value="aprovacao" className="flex-1 overflow-y-auto mt-4">
+            <div className="space-y-6">
+              {/* Status geral */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">Status do Documento</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {statusAprovacao === 'aprovado' && 'Documento aprovado'}
+                        {statusAprovacao === 'rejeitado' && 'Documento rejeitado'}
+                        {statusAprovacao === 'pendente' && 'Aguardando aprovação'}
+                        {statusAprovacao === 'sem_aprovacao' && 'Nenhuma aprovação solicitada'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {statusAprovacao !== 'sem_aprovacao' && getStatusBadge(statusAprovacao)}
+                      {documento.data_aprovacao && (
+                        <span className="text-sm text-muted-foreground">
+                          em {format(new Date(documento.data_aprovacao), 'dd/MM/yyyy', { locale: ptBR })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
           {!showForm ? (
               <div className="space-y-4">
@@ -650,9 +784,11 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess }: Ap
               </div>
             </form>
           )}
-        </div>
+            </div>
+          </TabsContent>
+        </Tabs>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>

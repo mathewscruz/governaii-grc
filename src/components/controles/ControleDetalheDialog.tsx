@@ -264,16 +264,32 @@ export function ControleDetalheDialog({
 
       if (error) throw error;
 
-      // Notificar usuários mencionados
+      // Notificar usuários mencionados (in-app + e-mail)
       if (mencoes.length > 0) {
         for (const userId of mencoes) {
+          // Notificação in-app
           await supabase.from("notifications").insert({
             user_id: userId,
             title: "Você foi mencionado",
             message: `Você foi mencionado em um comentário no controle "${controle.nome}"`,
             type: "info",
-            link_to: "/controles",
+            link_to: `/controles?detalhe=${controle.id}`,
           });
+
+          // Enviar e-mail de notificação
+          try {
+            await supabase.functions.invoke('send-controle-mention-notification', {
+              body: {
+                user_id: userId,
+                controle_id: controle.id,
+                controle_nome: controle.nome,
+                mencionado_por: userData.user?.id,
+                comentario: novoComentario.trim()
+              }
+            });
+          } catch (emailError) {
+            console.error("Erro ao enviar e-mail de menção:", emailError);
+          }
         }
       }
 
@@ -423,7 +439,7 @@ export function ControleDetalheDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader className="flex-shrink-0">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -478,18 +494,20 @@ export function ControleDetalheDialog({
             )}
           </div>
 
-          {/* Descrição separada com suporte a quebras de linha */}
+          {/* Descrição separada com suporte a quebras de linha e scroll */}
           {controle.descricao && (
-            <div className="flex-shrink-0 mt-4">
+            <div className="mt-4">
               <h4 className="text-sm font-medium mb-2 text-foreground flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Descrição
               </h4>
-              <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                  {controle.descricao}
-                </p>
-              </div>
+              <ScrollArea className="max-h-[200px]">
+                <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {controle.descricao}
+                  </p>
+                </div>
+              </ScrollArea>
             </div>
           )}
 

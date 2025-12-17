@@ -135,3 +135,6 @@ verify_jwt = true
 
 [functions.scan-url-forms]
 verify_jwt = true
+
+[functions.send-controle-mention-notification]
+verify_jwt = true
