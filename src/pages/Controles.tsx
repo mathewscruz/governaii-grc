@@ -86,6 +86,7 @@ export default function Controles() {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
   const [criticidadeFilter, setCriticidadeFilter] = useState<string>("todos");
+  const [responsavelFilter, setResponsavelFilter] = useState<string>("todos");
   const [searchValue, setSearchValue] = useState<string>("");
   const [sortField, setSortField] = useState<string>("codigo");
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -97,7 +98,7 @@ export default function Controles() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, tipoFilter, criticidadeFilter, searchValue]);
+  }, [statusFilter, tipoFilter, criticidadeFilter, responsavelFilter, searchValue]);
 
   // Handle sorting
   const handleSort = (field: string) => {
@@ -248,17 +249,29 @@ export default function Controles() {
     setDeleteConfirm({ open: false, controleId: '' });
   };
 
+  // Extrair responsáveis únicos dos controles
+  const responsaveisUnicos = useMemo(() => {
+    const map = new Map<string, string>();
+    controles.forEach(c => {
+      if (c.responsavel_id && c.responsavel_nome) {
+        map.set(c.responsavel_id, c.responsavel_nome);
+      }
+    });
+    return Array.from(map.entries()).map(([id, nome]) => ({ id, nome }));
+  }, [controles]);
+
   // Filter and sort data
   const sortedControles = useMemo(() => {
     const filtered = controles.filter(controle => {
       const matchStatus = statusFilter === "todos" || controle.status === statusFilter;
       const matchTipo = tipoFilter === "todos" || controle.tipo === tipoFilter;
       const matchCriticidade = criticidadeFilter === "todos" || controle.criticidade === criticidadeFilter;
+      const matchResponsavel = responsavelFilter === "todos" || controle.responsavel_id === responsavelFilter;
       const matchSearch = !searchValue || 
         controle.nome.toLowerCase().includes(searchValue.toLowerCase()) ||
         controle.descricao?.toLowerCase().includes(searchValue.toLowerCase());
       
-      return matchStatus && matchTipo && matchCriticidade && matchSearch;
+      return matchStatus && matchTipo && matchCriticidade && matchResponsavel && matchSearch;
     });
 
     return filtered.sort((a, b) => {
@@ -301,7 +314,7 @@ export default function Controles() {
       const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [controles, sortField, sortDirection, statusFilter, tipoFilter, criticidadeFilter, searchValue]);
+  }, [controles, sortField, sortDirection, statusFilter, tipoFilter, criticidadeFilter, responsavelFilter, searchValue]);
 
   const getStatusBadgeVariant = (status: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (status) {
@@ -676,6 +689,16 @@ export default function Controles() {
             ],
             value: criticidadeFilter,
             onChange: setCriticidadeFilter,
+          },
+          {
+            key: 'responsavel',
+            label: 'Responsável',
+            options: [
+              { value: 'todos', label: 'Todos os Responsáveis' },
+              ...responsaveisUnicos.map(r => ({ value: r.id, label: r.nome }))
+            ],
+            value: responsavelFilter,
+            onChange: setResponsavelFilter,
           },
         ]}
         emptyState={{

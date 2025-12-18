@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Edit,
   MessageSquare,
@@ -530,46 +531,47 @@ export function ControleDetalheDialog({
 
             <TabsContent value="comentarios" className="flex-1 overflow-hidden flex flex-col mt-4">
               {/* Input de novo comentário com menções */}
-              <div className="flex gap-2 mb-4 flex-shrink-0 relative">
-                <div className="flex-1 relative">
-                  <Textarea
-                    ref={textareaRef}
-                    placeholder="Adicione um comentário... Use @ para mencionar alguém"
-                    value={novoComentario}
-                    onChange={handleCommentChange}
-                    rows={2}
-                    className="w-full pr-10"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-2 top-2 h-6 w-6 p-0"
-                    onClick={() => {
-                      setNovoComentario(prev => prev + "@");
-                      setShowMentions(true);
-                      textareaRef.current?.focus();
-                    }}
-                    title="Mencionar usuário"
-                  >
-                    <AtSign className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                  
-                  {/* Popover de menções */}
-                  {showMentions && filteredUsers && filteredUsers.length > 0 && (
-                    <div className="absolute left-0 top-full mt-1 w-64 bg-popover border rounded-md shadow-lg z-50">
-                      {filteredUsers.map((user) => (
-                        <button
-                          key={user.user_id}
-                          className="w-full px-3 py-2 text-left hover:bg-muted flex items-center gap-2 text-sm"
-                          onClick={() => insertMention(user)}
-                        >
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span>{user.nome}</span>
-                        </button>
-                      ))}
+              <div className="flex gap-2 mb-4 flex-shrink-0">
+                <Popover open={showMentions && filteredUsers && filteredUsers.length > 0} onOpenChange={setShowMentions}>
+                  <PopoverTrigger asChild>
+                    <div className="flex-1 relative">
+                      <Textarea
+                        ref={textareaRef}
+                        placeholder="Adicione um comentário... Use @ para mencionar alguém"
+                        value={novoComentario}
+                        onChange={handleCommentChange}
+                        rows={2}
+                        className="w-full pr-10"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-2 top-2 h-6 w-6 p-0"
+                        onClick={() => {
+                          setNovoComentario(prev => prev + "@");
+                          setMentionSearch("");
+                          setShowMentions(true);
+                          textareaRef.current?.focus();
+                        }}
+                        title="Mencionar usuário"
+                      >
+                        <AtSign className="h-4 w-4 text-muted-foreground" />
+                      </Button>
                     </div>
-                  )}
-                </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-0" align="start" side="bottom">
+                    {filteredUsers?.map((user) => (
+                      <button
+                        key={user.user_id}
+                        className="w-full px-3 py-2 text-left hover:bg-muted flex items-center gap-2 text-sm first:rounded-t-md last:rounded-b-md"
+                        onClick={() => insertMention(user)}
+                      >
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span>{user.nome}</span>
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
                 <Button
                   onClick={handleAddComentario}
                   disabled={!novoComentario.trim() || isSubmittingComment}
