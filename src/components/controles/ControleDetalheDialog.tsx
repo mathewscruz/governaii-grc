@@ -514,7 +514,7 @@ export function ControleDetalheDialog({
           )}
 
           {/* Tabs */}
-          <Tabs defaultValue="comentarios" className="flex-1 flex flex-col overflow-hidden">
+          <Tabs defaultValue="comentarios" className="mt-4">
             <TabsList className="flex-shrink-0">
               <TabsTrigger value="comentarios" className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
@@ -530,7 +530,7 @@ export function ControleDetalheDialog({
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="comentarios" className="flex-1 overflow-hidden flex flex-col mt-4">
+            <TabsContent value="comentarios" className="flex flex-col mt-4 space-y-4">
               {/* Input de novo comentário com menções */}
               <div className="flex gap-2 mb-4 flex-shrink-0">
                 <div className="flex-1 relative">
@@ -595,7 +595,7 @@ export function ControleDetalheDialog({
               </div>
 
               {/* Lista de comentários */}
-              <ScrollArea className="flex-1">
+              <ScrollArea className="min-h-[150px] max-h-[300px]">
                 <div className="space-y-3 pr-4">
                   {comentarios?.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">
