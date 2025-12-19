@@ -295,7 +295,8 @@ export function ControleDetalheDialog({
       }
 
       setNovoComentario("");
-      refetchComentarios();
+      await refetchComentarios();
+      queryClient.invalidateQueries({ queryKey: ["controle-comentarios", controle.id] });
       toast.success("Comentário adicionado");
     } catch (error: any) {
       toast.error(error.message || "Erro ao adicionar comentário");

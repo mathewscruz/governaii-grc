@@ -91,8 +91,7 @@ serve(async (req) => {
           <!-- Header -->
           <tr>
             <td style="padding: 32px; text-align: center; border-bottom: 1px solid #e4e4e7;">
-              <img src="${companyLogo}" alt="${companyName}" style="max-height: 50px; max-width: 200px;" onerror="this.style.display='none'">
-              <h2 style="color: #1e3a5f; margin: 16px 0 0 0; font-size: 20px;">${companyName}</h2>
+              <img src="${companyLogo}" alt="${companyName}" style="max-height: 60px; max-width: 250px;" onerror="this.style.display='none'">
             </td>
           </tr>
           
