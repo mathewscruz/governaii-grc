@@ -791,7 +791,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                                 htmlFor={ativo.id}
                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                               >
-                                {ativo.nome} ({ativo.tipo})
+                                {ativo.nome}
                               </label>
                             </div>
                           ))
