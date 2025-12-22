@@ -162,14 +162,25 @@ export function DataTable<T extends Record<string, any>>({
           
           <div className="flex gap-2">
             {filters.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-              </Button>
+              (() => {
+                const activeFiltersCount = filters.filter(f => f.value !== 'todos' && f.value !== '').length;
+                return (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="relative"
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filtros
+                    {activeFiltersCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                        {activeFiltersCount}
+                      </span>
+                    )}
+                  </Button>
+                );
+              })()
             )}
             {onRefresh && (
               <Button variant="outline" size="sm" onClick={onRefresh}>
