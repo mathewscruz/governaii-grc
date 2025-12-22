@@ -268,7 +268,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!isSubscribed) return;
 
         logger.info('Auth state changed', { 
@@ -280,11 +280,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Verificar senha temporária PRIMEIRO e de forma síncrona
-          await checkTemporaryPassword();
-          // Depois fazer outras operações
+          // Usar setTimeout para evitar deadlock no callback
+          // Verificar senha temporária IMEDIATAMENTE após login
           setTimeout(async () => {
             if (isSubscribed) {
+              logger.debug('Iniciando verificação pós-login', { userId: session.user.id });
+              
+              // Verificar senha temporária PRIMEIRO
+              await checkTemporaryPasswordForUser(session.user.id);
+              
+              // Depois fazer outras operações
               await fetchProfile(session.user.id);
               await initializeUserPermissions();
             }
@@ -299,6 +304,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
+    // Função auxiliar para verificar senha temporária por userId
+    const checkTemporaryPasswordForUser = async (userId: string) => {
+      try {
+        logger.debug('Verificando senha temporária para usuário', { userId });
+        
+        const { data, error } = await supabase
+          .from('temporary_passwords')
+          .select('is_temporary, created_at, expires_at')
+          .eq('user_id', userId)
+          .eq('is_temporary', true)
+          .maybeSingle();
+
+        if (error) {
+          logger.error('Erro ao verificar senha temporária', { 
+            error: error.message, 
+            userId 
+          });
+          setHasTemporaryPassword(false);
+          return;
+        }
+
+        if (!data) {
+          logger.debug('Nenhum registro de senha temporária encontrado', { userId });
+          setHasTemporaryPassword(false);
+          return;
+        }
+
+        logger.info('Senha temporária encontrada', { 
+          userId, 
+          isTemporary: data.is_temporary,
+          expiresAt: data.expires_at 
+        });
+        
+        setHasTemporaryPassword(true);
+      } catch (error) {
+        logger.error('Erro ao verificar senha temporária', { 
+          error: error instanceof Error ? error.message : String(error),
+          userId 
+        });
+        setHasTemporaryPassword(false);
+      }
+    };
+
     // Check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!isSubscribed) return;
@@ -311,8 +359,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Verificar senha temporária PRIMEIRO e de forma síncrona
-        await checkTemporaryPassword();
+        // Verificar senha temporária PRIMEIRO
+        await checkTemporaryPasswordForUser(session.user.id);
+        
+        // Depois fazer outras operações
         setTimeout(async () => {
           if (isSubscribed) {
             await fetchProfile(session.user.id);

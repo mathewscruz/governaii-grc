@@ -35,21 +35,52 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
     setIsLoading(true);
 
     try {
+      logger.info('Iniciando processo de recuperação de senha', { email: email.trim(), module: 'Auth', action: 'password-reset' });
+      
       // Buscar o usuário pelo email (sem revelar se existe ou não)
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('user_id, nome, email')
         .eq('email', email.trim())
         .single();
 
+      if (profileError) {
+        logger.warn('Perfil não encontrado ou erro na busca', { 
+          email: email.trim(), 
+          error: profileError.message, 
+          module: 'Auth', 
+          action: 'password-reset' 
+        });
+      }
+
       // Se o perfil existir, enviar o reset
       if (profile) {
-        const { error } = await supabase.functions.invoke('send-password-reset', {
+        logger.info('Perfil encontrado, enviando reset de senha', { 
+          userId: profile.user_id, 
+          module: 'Auth', 
+          action: 'password-reset' 
+        });
+        
+        const { data, error } = await supabase.functions.invoke('send-password-reset', {
           body: { userId: profile.user_id }
         });
 
         if (error) {
-          logger.error('Erro ao enviar reset de senha', { module: 'Auth', action: 'password-reset' });
+          logger.error('Erro ao invocar send-password-reset', { 
+            userId: profile.user_id, 
+            error: error.message,
+            errorDetails: JSON.stringify(error),
+            module: 'Auth', 
+            action: 'password-reset' 
+          });
+          console.error('Detalhes do erro send-password-reset:', error);
+        } else {
+          logger.info('Reset de senha enviado com sucesso', { 
+            userId: profile.user_id, 
+            response: JSON.stringify(data),
+            module: 'Auth', 
+            action: 'password-reset' 
+          });
         }
       }
 
@@ -58,7 +89,13 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
       setEmail('');
       onOpenChange(false);
     } catch (error: any) {
-      logger.error('Erro no processo de recuperação de senha', { module: 'Auth', action: 'password-reset' });
+      logger.error('Erro no processo de recuperação de senha', { 
+        error: error.message,
+        stack: error.stack,
+        module: 'Auth', 
+        action: 'password-reset' 
+      });
+      console.error('Erro completo no processo de recuperação:', error);
       // Mesmo em caso de erro, mostrar mensagem genérica
       toast.success('Se o e-mail estiver cadastrado, você receberá as instruções de recuperação.');
       setEmail('');

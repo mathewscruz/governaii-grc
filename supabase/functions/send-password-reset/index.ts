@@ -34,9 +34,20 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Recebendo requisição para reset de senha')
+    console.log('=== INÍCIO: send-password-reset ===')
+    console.log('Timestamp:', new Date().toISOString())
     
-    const { userId, companyLogoUrl }: PasswordResetRequest = await req.json()
+    const body = await req.json()
+    console.log('Body recebido:', JSON.stringify(body))
+    
+    const { userId, companyLogoUrl }: PasswordResetRequest = body
+    
+    if (!userId) {
+      console.error('userId não fornecido no body')
+      throw new Error('userId é obrigatório')
+    }
+    
+    console.log('Buscando perfil para userId:', userId)
     
     // Buscar dados do usuário e empresa
     const { data: profile, error: profileError } = await supabase
@@ -45,32 +56,51 @@ Deno.serve(async (req) => {
       .eq('user_id', userId)
       .single()
     
-    if (profileError || !profile) {
-      console.error('Erro ao buscar perfil:', profileError)
+    if (profileError) {
+      console.error('Erro ao buscar perfil:', JSON.stringify(profileError))
+      throw new Error(`Erro ao buscar perfil: ${profileError.message}`)
+    }
+    
+    if (!profile) {
+      console.error('Perfil não encontrado para userId:', userId)
       throw new Error('Usuário não encontrado')
     }
     
+    console.log('Perfil encontrado:', { nome: profile.nome, email: profile.email })
+    
     // Gerar nova senha temporária
+    console.log('Gerando senha temporária...')
     const { data: tempPassword, error: passwordError } = await supabase
       .rpc('generate_temp_password')
     
-    if (passwordError || !tempPassword) {
-      console.error('Erro ao gerar senha:', passwordError)
-      throw new Error('Erro ao gerar senha temporária')
+    if (passwordError) {
+      console.error('Erro ao gerar senha:', JSON.stringify(passwordError))
+      throw new Error(`Erro ao gerar senha temporária: ${passwordError.message}`)
     }
     
+    if (!tempPassword) {
+      console.error('Senha temporária retornou null')
+      throw new Error('Senha temporária não foi gerada')
+    }
+    
+    console.log('Senha temporária gerada com sucesso (length:', tempPassword.length, ')')
+    
     // Atualizar senha do usuário no Auth
+    console.log('Atualizando senha no Auth para userId:', userId)
     const { error: updateError } = await supabase.auth.admin.updateUserById(
       userId,
       { password: tempPassword }
     )
     
     if (updateError) {
-      console.error('Erro ao atualizar senha:', updateError)
-      throw new Error('Erro ao atualizar senha')
+      console.error('Erro ao atualizar senha no Auth:', JSON.stringify(updateError))
+      throw new Error(`Erro ao atualizar senha: ${updateError.message}`)
     }
     
+    console.log('Senha atualizada no Auth com sucesso')
+    
     // Registrar senha temporária na tabela
+    console.log('Registrando senha temporária na tabela...')
     const { error: tempPasswordError } = await supabase
       .from('temporary_passwords')
       .upsert({
@@ -81,10 +111,13 @@ Deno.serve(async (req) => {
       })
     
     if (tempPasswordError) {
-      console.error('Erro ao registrar senha temporária:', tempPasswordError)
+      console.error('Erro ao registrar senha temporária na tabela:', JSON.stringify(tempPasswordError))
+      // Não lançamos erro aqui, apenas logamos
+    } else {
+      console.log('Senha temporária registrada na tabela com sucesso')
     }
     
-    console.log(`Enviando e-mail de reset para: ${profile.email}`)
+    console.log('Preparando envio de e-mail para:', profile.email)
     
     const loginUrl = 'https://governaii.com.br'
     
@@ -99,6 +132,10 @@ Deno.serve(async (req) => {
       })
     )
 
+    console.log('Enviando e-mail via Resend...')
+    console.log('From:', `${profile.empresa?.nome || 'GovernAII'} <noreply@governaii.com.br>`)
+    console.log('To:', profile.email)
+    
     const { data, error } = await resend.emails.send({
       from: `${profile.empresa?.nome || 'GovernAII'} <noreply@governaii.com.br>`,
       to: [profile.email],
@@ -107,11 +144,13 @@ Deno.serve(async (req) => {
     })
 
     if (error) {
-      console.error('Erro ao enviar e-mail:', error)
-      throw error
+      console.error('Erro ao enviar e-mail via Resend:', JSON.stringify(error))
+      throw new Error(`Erro ao enviar e-mail: ${JSON.stringify(error)}`)
     }
 
-    console.log('E-mail de reset enviado com sucesso:', data)
+    console.log('E-mail enviado com sucesso!')
+    console.log('Response do Resend:', JSON.stringify(data))
+    console.log('=== FIM: send-password-reset (sucesso) ===')
 
     return new Response(JSON.stringify({ success: true, data }), {
       status: 200,
@@ -121,11 +160,16 @@ Deno.serve(async (req) => {
       },
     })
   } catch (error: any) {
-    console.error('Erro na função send-password-reset:', error)
+    console.error('=== ERRO na função send-password-reset ===')
+    console.error('Mensagem:', error.message)
+    console.error('Stack:', error.stack)
+    console.error('Erro completo:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
+    
     return new Response(
       JSON.stringify({
         error: error.message,
-        details: 'Falha ao enviar e-mail de reset de senha'
+        details: 'Falha ao enviar e-mail de reset de senha',
+        timestamp: new Date().toISOString()
       }),
       {
         status: 500,
