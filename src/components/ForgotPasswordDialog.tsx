@@ -37,51 +37,28 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
     try {
       logger.info('Iniciando processo de recuperação de senha', { email: email.trim(), module: 'Auth', action: 'password-reset' });
       
-      // Buscar o usuário pelo email (sem revelar se existe ou não)
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id, nome, email')
-        .eq('email', email.trim())
-        .single();
+      // Enviar diretamente para a edge function com o email
+      // A edge function faz a busca com SERVICE_ROLE_KEY (sem restrições de RLS)
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email: email.trim() }
+      });
 
-      if (profileError) {
-        logger.warn('Perfil não encontrado ou erro na busca', { 
+      if (error) {
+        logger.error('Erro ao invocar send-password-reset', { 
           email: email.trim(), 
-          error: profileError.message, 
+          error: error.message,
+          errorDetails: JSON.stringify(error),
           module: 'Auth', 
           action: 'password-reset' 
         });
-      }
-
-      // Se o perfil existir, enviar o reset
-      if (profile) {
-        logger.info('Perfil encontrado, enviando reset de senha', { 
-          userId: profile.user_id, 
+        console.error('Detalhes do erro send-password-reset:', error);
+      } else {
+        logger.info('Reset de senha processado', { 
+          email: email.trim(),
+          response: JSON.stringify(data),
           module: 'Auth', 
           action: 'password-reset' 
         });
-        
-        const { data, error } = await supabase.functions.invoke('send-password-reset', {
-          body: { userId: profile.user_id }
-        });
-
-        if (error) {
-          logger.error('Erro ao invocar send-password-reset', { 
-            userId: profile.user_id, 
-            error: error.message,
-            errorDetails: JSON.stringify(error),
-            module: 'Auth', 
-            action: 'password-reset' 
-          });
-          console.error('Detalhes do erro send-password-reset:', error);
-        } else {
-          logger.info('Reset de senha enviado com sucesso', { 
-            userId: profile.user_id, 
-            response: JSON.stringify(data),
-            module: 'Auth', 
-            action: 'password-reset' 
-          });
-        }
       }
 
       // SEMPRE mostrar mensagem de sucesso (proteção contra enumeração de emails)

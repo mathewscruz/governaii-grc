@@ -16,7 +16,8 @@ const corsHeaders = {
 }
 
 interface PasswordResetRequest {
-  userId: string
+  email?: string
+  userId?: string
   companyLogoUrl?: string
 }
 
@@ -40,33 +41,74 @@ Deno.serve(async (req) => {
     const body = await req.json()
     console.log('Body recebido:', JSON.stringify(body))
     
-    const { userId, companyLogoUrl }: PasswordResetRequest = body
+    const { email, userId, companyLogoUrl }: PasswordResetRequest = body
     
-    if (!userId) {
-      console.error('userId não fornecido no body')
-      throw new Error('userId é obrigatório')
+    // Validar que pelo menos email ou userId foi fornecido
+    if (!email && !userId) {
+      console.error('Nem email nem userId foram fornecidos')
+      throw new Error('email ou userId é obrigatório')
     }
     
-    console.log('Buscando perfil para userId:', userId)
+    let profile: any = null
+    let targetUserId: string = userId || ''
     
-    // Buscar dados do usuário e empresa
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('nome, email, empresa:empresas(nome, logo_url)')
-      .eq('user_id', userId)
-      .single()
-    
-    if (profileError) {
-      console.error('Erro ao buscar perfil:', JSON.stringify(profileError))
-      throw new Error(`Erro ao buscar perfil: ${profileError.message}`)
+    // Se email foi fornecido, buscar pelo email primeiro
+    if (email) {
+      console.log('Buscando perfil para email:', email)
+      
+      const { data: profileByEmail, error: emailError } = await supabase
+        .from('profiles')
+        .select('user_id, nome, email, empresa:empresas(nome, logo_url)')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle()
+      
+      if (emailError) {
+        console.error('Erro ao buscar perfil por email:', JSON.stringify(emailError))
+        // Retornar sucesso silencioso para proteção contra enumeração de emails
+        console.log('Retornando sucesso silencioso (email não encontrado)')
+        return new Response(JSON.stringify({ success: true, message: 'Se o email existir, uma senha será enviada' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        })
+      }
+      
+      if (!profileByEmail) {
+        console.log('Perfil não encontrado para email:', email)
+        // Retornar sucesso silencioso para proteção contra enumeração de emails
+        return new Response(JSON.stringify({ success: true, message: 'Se o email existir, uma senha será enviada' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        })
+      }
+      
+      profile = profileByEmail
+      targetUserId = profileByEmail.user_id
+      console.log('Perfil encontrado por email:', { nome: profile.nome, userId: targetUserId })
+    } else {
+      // Buscar pelo userId
+      console.log('Buscando perfil para userId:', userId)
+      
+      const { data: profileByUserId, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, nome, email, empresa:empresas(nome, logo_url)')
+        .eq('user_id', userId)
+        .single()
+      
+      if (profileError) {
+        console.error('Erro ao buscar perfil:', JSON.stringify(profileError))
+        throw new Error(`Erro ao buscar perfil: ${profileError.message}`)
+      }
+      
+      if (!profileByUserId) {
+        console.error('Perfil não encontrado para userId:', userId)
+        throw new Error('Usuário não encontrado')
+      }
+      
+      profile = profileByUserId
+      targetUserId = profileByUserId.user_id
     }
     
-    if (!profile) {
-      console.error('Perfil não encontrado para userId:', userId)
-      throw new Error('Usuário não encontrado')
-    }
-    
-    console.log('Perfil encontrado:', { nome: profile.nome, email: profile.email })
+    console.log('Perfil a processar:', { nome: profile.nome, email: profile.email })
     
     // Gerar nova senha temporária
     console.log('Gerando senha temporária...')
@@ -86,9 +128,9 @@ Deno.serve(async (req) => {
     console.log('Senha temporária gerada com sucesso (length:', tempPassword.length, ')')
     
     // Atualizar senha do usuário no Auth
-    console.log('Atualizando senha no Auth para userId:', userId)
+    console.log('Atualizando senha no Auth para userId:', targetUserId)
     const { error: updateError } = await supabase.auth.admin.updateUserById(
-      userId,
+      targetUserId,
       { password: tempPassword }
     )
     
@@ -103,12 +145,19 @@ Deno.serve(async (req) => {
     console.log('Registrando senha temporária na tabela...')
     const { error: tempPasswordError } = await supabase
       .from('temporary_passwords')
-      .upsert({
-        user_id: userId,
-        is_temporary: true,
-        created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-      })
+      .upsert(
+        {
+          user_id: targetUserId,
+          is_temporary: true,
+          created_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        { 
+          onConflict: 'user_id',
+          ignoreDuplicates: false 
+        }
+      )
     
     if (tempPasswordError) {
       console.error('Erro ao registrar senha temporária na tabela:', JSON.stringify(tempPasswordError))
