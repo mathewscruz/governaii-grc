@@ -1,0 +1,315 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { Key, Plus, Copy, Trash2, Eye, EyeOff, Loader2, RotateCcw } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import ConfirmDialog from '@/components/ConfirmDialog';
+
+interface ApiKey {
+  id: string;
+  nome: string;
+  api_key: string;
+  prefixo: string;
+  permissoes: string[];
+  rate_limit_por_minuto: number;
+  ativo: boolean;
+  ultimo_uso: string | null;
+  total_requisicoes: number;
+  created_at: string;
+  expires_at: string | null;
+}
+
+const PERMISSOES_DISPONIVEIS = [
+  { value: 'riscos:read', label: 'Riscos (Leitura)' },
+  { value: 'riscos:write', label: 'Riscos (Escrita)' },
+  { value: 'controles:read', label: 'Controles (Leitura)' },
+  { value: 'controles:write', label: 'Controles (Escrita)' },
+  { value: 'incidentes:read', label: 'Incidentes (Leitura)' },
+  { value: 'incidentes:write', label: 'Incidentes (Escrita)' },
+  { value: 'auditorias:read', label: 'Auditorias (Leitura)' },
+  { value: 'documentos:read', label: 'Documentos (Leitura)' },
+  { value: 'ativos:read', label: 'Ativos (Leitura)' },
+  { value: 'ativos:write', label: 'Ativos (Escrita)' },
+];
+
+function generateApiKey(): { key: string; prefix: string } {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let key = 'gai_';
+  for (let i = 0; i < 40; i++) {
+    key += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return { key, prefix: key.substring(0, 12) };
+}
+
+export function ApiKeysManager() {
+  const { toast } = useToast();
+  const { empresaId } = useEmpresaId();
+  const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [revealedKeys, setRevealedKeys] = useState<Set<string>>(new Set());
+  const [newKeyRevealed, setNewKeyRevealed] = useState<string | null>(null);
+
+  // Form state
+  const [nome, setNome] = useState('');
+  const [permissoes, setPermissoes] = useState<string[]>([]);
+  const [rateLimit, setRateLimit] = useState('60');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (empresaId) fetchKeys();
+  }, [empresaId]);
+
+  const fetchKeys = async () => {
+    if (!empresaId) return;
+    try {
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setKeys((data || []) as ApiKey[]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreate = async () => {
+    if (!empresaId || !nome.trim()) return;
+    setSaving(true);
+    try {
+      const { key, prefix } = generateApiKey();
+      const { data: userData } = await supabase.auth.getUser();
+
+      const { error } = await supabase.from('api_keys').insert({
+        empresa_id: empresaId,
+        nome: nome.trim(),
+        api_key: key,
+        prefixo: prefix,
+        permissoes,
+        rate_limit_por_minuto: parseInt(rateLimit) || 60,
+        created_by: userData.user?.id,
+      });
+
+      if (error) throw error;
+
+      setNewKeyRevealed(key);
+      toast({ title: 'API Key criada', description: 'Copie a chave agora — ela não será exibida novamente.' });
+      setDialogOpen(false);
+      setNome('');
+      setPermissoes([]);
+      setRateLimit('60');
+      fetchKeys();
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggle = async (id: string, ativo: boolean) => {
+    await supabase.from('api_keys').update({ ativo }).eq('id', id);
+    fetchKeys();
+  };
+
+  const handleDelete = async (id: string) => {
+    await supabase.from('api_keys').delete().eq('id', id);
+    setDeleteConfirm(null);
+    fetchKeys();
+    toast({ title: 'API Key removida' });
+  };
+
+  const copyKey = (key: string) => {
+    navigator.clipboard.writeText(key);
+    toast({ title: 'Chave copiada!' });
+  };
+
+  const togglePermissao = (perm: string) => {
+    setPermissoes(prev => prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]);
+  };
+
+  const maskKey = (key: string) => key.substring(0, 12) + '••••••••••••••••••••';
+
+  return (
+    <div className="space-y-6">
+      {/* New key revealed banner */}
+      {newKeyRevealed && (
+        <Card className="border-warning/50 bg-warning/5">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium">🔑 Nova API Key gerada — copie agora!</p>
+                <code className="text-xs bg-muted p-1 rounded mt-1 block break-all">{newKeyRevealed}</code>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <Button size="sm" variant="outline" onClick={() => copyKey(newKeyRevealed)}>
+                  <Copy className="h-4 w-4 mr-1" /> Copiar
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setNewKeyRevealed(null)}>
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">API Keys</h3>
+          <p className="text-sm text-muted-foreground">Gerencie as chaves de acesso à API pública do GovernAII.</p>
+        </div>
+        <Button onClick={() => setDialogOpen(true)} className="gap-2">
+          <Plus className="h-4 w-4" /> Nova API Key
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+      ) : keys.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="py-10 text-center">
+            <Key className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+            <p className="text-sm text-muted-foreground">Nenhuma API Key criada.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Chave</TableHead>
+                <TableHead>Permissões</TableHead>
+                <TableHead>Rate Limit</TableHead>
+                <TableHead>Requisições</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-[100px]">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {keys.map(key => (
+                <TableRow key={key.id}>
+                  <TableCell className="font-medium">{key.nome}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                        {revealedKeys.has(key.id) ? key.api_key : maskKey(key.api_key)}
+                      </code>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                        setRevealedKeys(prev => {
+                          const next = new Set(prev);
+                          next.has(key.id) ? next.delete(key.id) : next.add(key.id);
+                          return next;
+                        });
+                      }}>
+                        {revealedKeys.has(key.id) ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyKey(key.api_key)}>
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {(key.permissoes || []).slice(0, 3).map(p => (
+                        <Badge key={p} variant="outline" className="text-[10px]">{p}</Badge>
+                      ))}
+                      {(key.permissoes || []).length > 3 && (
+                        <Badge variant="outline" className="text-[10px]">+{key.permissoes.length - 3}</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm">{key.rate_limit_por_minuto}/min</TableCell>
+                  <TableCell className="text-sm">{key.total_requisicoes?.toLocaleString()}</TableCell>
+                  <TableCell>
+                    <Switch checked={key.ativo} onCheckedChange={v => handleToggle(key.id, v)} />
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteConfirm(key.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Create Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nova API Key</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Nome</Label>
+              <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Integração SIEM" />
+            </div>
+            <div>
+              <Label>Rate Limit (req/min)</Label>
+              <Select value={rateLimit} onValueChange={setRateLimit}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10/min</SelectItem>
+                  <SelectItem value="30">30/min</SelectItem>
+                  <SelectItem value="60">60/min</SelectItem>
+                  <SelectItem value="120">120/min</SelectItem>
+                  <SelectItem value="300">300/min</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Permissões</Label>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {PERMISSOES_DISPONIVEIS.map(p => (
+                  <label key={p.value} className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded border hover:bg-muted/50">
+                    <input
+                      type="checkbox"
+                      checked={permissoes.includes(p.value)}
+                      onChange={() => togglePermissao(p.value)}
+                      className="rounded"
+                    />
+                    {p.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreate} disabled={!nome.trim() || saving}>
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Gerar API Key
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={() => setDeleteConfirm(null)}
+        title="Excluir API Key"
+        description="Esta ação é irreversível. Qualquer sistema que use esta chave perderá acesso."
+        onConfirm={() => deleteConfirm && handleDelete(deleteConfirm)}
+      />
+    </div>
+  );
+}

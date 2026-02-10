@@ -10,6 +10,7 @@ import { MultiDimensionalRadar } from '@/components/dashboard/MultiDimensionalRa
 import { RecentActivities } from '@/components/dashboard/RecentActivities';
 import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
 import AlertsDetailDialog from '@/components/dashboard/AlertsDetailDialog';
+import { ExecutiveSummaryAI } from '@/components/dashboard/ExecutiveSummaryAI';
 import { useAtivosStats } from '@/hooks/useAtivosStats';
 import { useControlesStats } from '@/hooks/useControlesStats';
 import { useIncidentesStats } from '@/hooks/useIncidentesStats';
@@ -260,6 +261,9 @@ export default function Dashboard() {
             </TooltipContent>
           </Tooltip>
         </div>
+
+        {/* Resumo Executivo com IA */}
+        <ExecutiveSummaryAI />
 
         {/* Matriz de Risco e Atividades Recentes */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6 w-full">

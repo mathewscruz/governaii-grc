@@ -138,3 +138,9 @@ verify_jwt = true
 
 [functions.send-controle-mention-notification]
 verify_jwt = true
+
+[functions.dashboard-ai-summary]
+verify_jwt = true
+
+[functions.api-inbound-webhook]
+verify_jwt = false

@@ -283,6 +283,184 @@ export type Database = {
           },
         ]
       }
+      api_inbound_webhooks: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          created_by: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          mapeamento_campos: Json | null
+          modulo_destino: string
+          nome: string
+          tipo_evento: string
+          total_recebidos: number | null
+          ultimo_recebimento: string | null
+          updated_at: string | null
+          webhook_token: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          mapeamento_campos?: Json | null
+          modulo_destino: string
+          nome: string
+          tipo_evento: string
+          total_recebidos?: number | null
+          ultimo_recebimento?: string | null
+          updated_at?: string | null
+          webhook_token: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          mapeamento_campos?: Json | null
+          modulo_destino?: string
+          nome?: string
+          tipo_evento?: string
+          total_recebidos?: number | null
+          ultimo_recebimento?: string | null
+          updated_at?: string | null
+          webhook_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_inbound_webhooks_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_keys: {
+        Row: {
+          api_key: string
+          ativo: boolean | null
+          created_at: string | null
+          created_by: string | null
+          empresa_id: string
+          expires_at: string | null
+          id: string
+          ip_whitelist: string[] | null
+          nome: string
+          permissoes: string[] | null
+          prefixo: string
+          rate_limit_por_minuto: number | null
+          total_requisicoes: number | null
+          ultimo_uso: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_key: string
+          ativo?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          empresa_id: string
+          expires_at?: string | null
+          id?: string
+          ip_whitelist?: string[] | null
+          nome: string
+          permissoes?: string[] | null
+          prefixo: string
+          rate_limit_por_minuto?: number | null
+          total_requisicoes?: number | null
+          ultimo_uso?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_key?: string
+          ativo?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          empresa_id?: string
+          expires_at?: string | null
+          id?: string
+          ip_whitelist?: string[] | null
+          nome?: string
+          permissoes?: string[] | null
+          prefixo?: string
+          rate_limit_por_minuto?: number | null
+          total_requisicoes?: number | null
+          ultimo_uso?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_request_logs: {
+        Row: {
+          api_key_id: string | null
+          created_at: string | null
+          empresa_id: string
+          endpoint: string
+          id: string
+          ip_address: unknown
+          metodo: string
+          request_body: Json | null
+          response_time_ms: number | null
+          status_code: number | null
+          user_agent: string | null
+        }
+        Insert: {
+          api_key_id?: string | null
+          created_at?: string | null
+          empresa_id: string
+          endpoint: string
+          id?: string
+          ip_address?: unknown
+          metodo: string
+          request_body?: Json | null
+          response_time_ms?: number | null
+          status_code?: number | null
+          user_agent?: string | null
+        }
+        Update: {
+          api_key_id?: string | null
+          created_at?: string | null
+          empresa_id?: string
+          endpoint?: string
+          id?: string
+          ip_address?: unknown
+          metodo?: string
+          request_body?: Json | null
+          response_time_ms?: number | null
+          status_code?: number | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_request_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_request_logs_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_agents: {
         Row: {
           agent_token: string
