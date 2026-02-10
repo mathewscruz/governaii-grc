@@ -123,14 +123,16 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess, riscoData }: Tr
           nome: riscoData.nome,
           descricao: riscoData.descricao,
           categoria: riscoData.categoria,
-          nivel_risco: riscoData.nivel_risco_inicial
+          nivel_risco: riscoData.nivel_risco_inicial,
+          empresa_id: profile?.empresa_id,
+          user_id: profile?.user_id
         }
       });
 
       if (error) throw error;
 
       // Verificar se créditos foram esgotados
-      if (data?.error === 'CREDITS_EXHAUSTED' || error?.message?.includes('CREDITS_EXHAUSTED')) {
+      if (data?.creditsExhausted || data?.error === 'CREDITS_EXHAUSTED' || error?.message?.includes('CREDITS_EXHAUSTED')) {
         setShowCreditsDialog(true);
         return;
       }

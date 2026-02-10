@@ -38,6 +38,25 @@ serve(async (req) => {
 
     const empresaId = profile.empresa_id;
 
+    // Consumir crédito de IA antes de prosseguir
+    const { data: creditResult, error: creditError } = await supabase
+      .rpc('consume_ai_credit', {
+        p_empresa_id: empresaId,
+        p_user_id: user.id,
+        p_funcionalidade: 'dashboard_ai_summary',
+        p_descricao: 'Geração de resumo executivo IA do dashboard'
+      });
+
+    if (creditError || creditResult === false) {
+      return new Response(JSON.stringify({ 
+        error: 'Créditos de IA esgotados. Entre em contato para adquirir mais créditos.',
+        creditsExhausted: true
+      }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     // Gather all data in parallel
     const [
       riscosRes, controlesRes, incidentesRes, denunciasRes,

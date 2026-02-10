@@ -28,6 +28,45 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Consumir crédito de IA antes de prosseguir
+    if (empresaId) {
+      // Get user from auth header
+      const authHeader = req.headers.get('Authorization');
+      let userId: string | null = null;
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        userId = user?.id || null;
+      }
+
+      const { data: creditResult, error: creditError } = await supabase
+        .rpc('consume_ai_credit', {
+          p_empresa_id: empresaId,
+          p_user_id: userId,
+          p_funcionalidade: 'analyze_document_adherence',
+          p_descricao: `Análise de aderência do documento para framework`
+        });
+
+      if (creditError || creditResult === false) {
+        // Update assessment status to error
+        await supabase
+          .from('gap_analysis_adherence_assessments')
+          .update({
+            status: 'erro',
+            metadados_analise: { erro: 'Créditos de IA esgotados' }
+          })
+          .eq('id', assessmentId);
+
+        return new Response(JSON.stringify({ 
+          error: 'Créditos de IA esgotados. Entre em contato para adquirir mais créditos.',
+          creditsExhausted: true
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     console.log('Starting adherence analysis:', { assessmentId, frameworkId, storageFileName });
 
     // 1. Buscar dados do framework e requisitos

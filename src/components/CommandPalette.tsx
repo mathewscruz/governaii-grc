@@ -7,8 +7,8 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from '@/components/ui/command';
+import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
   HardDrive,
@@ -26,9 +26,10 @@ import {
   Megaphone,
   ClipboardList,
   Key,
-  MonitorSmartphone,
   ScrollText,
+  Search,
 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const MODULES = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, keywords: ['inicio', 'home', 'painel'] },
@@ -53,29 +54,48 @@ const MODULES = [
   { name: 'Configurações', path: '/configuracoes', icon: Settings, keywords: ['config', 'empresa', 'usuario', 'integracao'] },
 ];
 
-export function CommandPalette() {
+export function CommandPaletteButton() {
   const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((o) => !o);
-      }
-    };
-    document.addEventListener('keydown', down);
-    return () => document.removeEventListener('keydown', down);
-  }, []);
-
-  const handleSelect = useCallback((path: string) => {
-    setOpen(false);
-    navigate(path);
-  }, [navigate]);
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Buscar módulos, páginas..." />
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        className="hidden sm:flex items-center gap-2 text-muted-foreground h-8 px-3 w-48 justify-start"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="h-3.5 w-3.5" />
+        <span className="text-xs">Buscar...</span>
+        <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+          ⌘K
+        </kbd>
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="sm:hidden h-8 w-8"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="h-4 w-4" />
+      </Button>
+      <CommandPaletteDialog open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
+function CommandPaletteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  const handleSelect = useCallback((path: string) => {
+    onOpenChange(false);
+    navigate(path);
+  }, [navigate, onOpenChange]);
+
+  return (
+    <CommandDialog open={open} onOpenChange={onOpenChange}>
+      <CommandInput placeholder={t('common.search') + '...'} />
       <CommandList>
         <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
         <CommandGroup heading="Módulos">
@@ -94,4 +114,21 @@ export function CommandPalette() {
       </CommandList>
     </CommandDialog>
   );
+}
+
+export function CommandPalette() {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((o) => !o);
+      }
+    };
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
+  }, []);
+
+  return <CommandPaletteDialog open={open} onOpenChange={setOpen} />;
 }

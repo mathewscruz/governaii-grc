@@ -104,10 +104,9 @@ export const MultiDimensionalRadar = () => {
   }
 
   return (
-    <Card className="hover:shadow-lg transition-shadow w-full">
+    <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-primary" />
+        <div className="flex items-center justify-between w-full">
           <CardTitle>{t('dashboard.maturity')}</CardTitle>
         </div>
         <CardDescription>

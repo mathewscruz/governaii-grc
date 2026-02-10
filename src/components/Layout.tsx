@@ -8,7 +8,7 @@ import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbP
 import UserProfile from '@/components/UserProfile';
 import NotificationCenter from '@/components/NotificationCenter';
 import PasswordChangeRequired from '@/components/PasswordChangeRequired';
-import { CommandPalette } from '@/components/CommandPalette';
+import { CommandPalette, CommandPaletteButton } from '@/components/CommandPalette';
 import { ChangelogPopover } from '@/components/ChangelogPopover';
 import PageTransition from '@/components/PageTransition';
 import TrialBanner from '@/components/TrialBanner';
@@ -179,6 +179,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <CommandPaletteButton />
               <LanguageSelector />
               <ChangelogPopover />
               <NotificationCenter />
