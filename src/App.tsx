@@ -39,6 +39,7 @@ import Configuracoes from '@/pages/Configuracoes';
 import NotFound from '@/pages/NotFound';
 import LandingPage from '@/pages/LandingPage';
 import PoliticaPrivacidade from '@/pages/PoliticaPrivacidade';
+import PlanosAcao from '@/pages/PlanosAcao';
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,13 @@ function App() {
               <Layout>
                 <ProtectedRoute moduleName="dashboard" fallbackToRoleCheck={false}>
                   <Dashboard />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/planos-acao" element={
+              <Layout>
+                <ProtectedRoute moduleName="planos-acao" fallbackToRoleCheck={false}>
+                  <PlanosAcao />
                 </ProtectedRoute>
               </Layout>
             } />
