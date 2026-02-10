@@ -4675,6 +4675,106 @@ export type Database = {
         }
         Relationships: []
       }
+      planos_acao: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_conclusao: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          modulo_origem: string | null
+          observacoes: string | null
+          prazo: string | null
+          prioridade: string
+          registro_origem_id: string | null
+          registro_origem_titulo: string | null
+          responsavel_id: string | null
+          status: string
+          tags: string[] | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_conclusao?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          modulo_origem?: string | null
+          observacoes?: string | null
+          prazo?: string | null
+          prioridade?: string
+          registro_origem_id?: string | null
+          registro_origem_titulo?: string | null
+          responsavel_id?: string | null
+          status?: string
+          tags?: string[] | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_conclusao?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          modulo_origem?: string | null
+          observacoes?: string | null
+          prazo?: string | null
+          prioridade?: string
+          registro_origem_id?: string | null
+          registro_origem_titulo?: string | null
+          responsavel_id?: string | null
+          status?: string
+          tags?: string[] | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planos_acao_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planos_acao_comentarios: {
+        Row: {
+          comentario: string
+          created_at: string
+          id: string
+          plano_id: string
+          user_id: string
+        }
+        Insert: {
+          comentario: string
+          created_at?: string
+          id?: string
+          plano_id: string
+          user_id: string
+        }
+        Update: {
+          comentario?: string
+          created_at?: string
+          id?: string
+          plano_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planos_acao_comentarios_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "planos_acao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ativo: boolean

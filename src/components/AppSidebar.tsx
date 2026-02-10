@@ -22,7 +22,8 @@ import {
   BarChart3,
   Server,
   FileKey,
-  KeyRound
+  KeyRound,
+  ListTodo
 } from 'lucide-react';
 import logoMini from '@/assets/governaii-logo-mini.png';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -50,6 +51,12 @@ const menuItems = [
     url: '/dashboard',
     icon: LayoutDashboard,
     moduleName: 'dashboard',
+  },
+  {
+    title: 'Planos de Ação',
+    url: '/planos-acao',
+    icon: ListTodo,
+    moduleName: 'planos-acao',
   },
   {
     title: 'Gestão de Ativos',
