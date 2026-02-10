@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from '@/lib/logger';
 
 interface DueDiligenceStats {
   totalTemplates: number;
@@ -24,7 +25,7 @@ export const useDueDiligenceStats = () => {
           .select('id, ativo');
 
         if (templatesError) {
-          console.error('Erro ao buscar templates:', templatesError);
+          logger.error('Erro ao buscar templates', { error: templatesError.message });
           throw templatesError;
         }
 
@@ -46,12 +47,12 @@ export const useDueDiligenceStats = () => {
           .eq('empresa_id', profile.empresa_id);
 
         if (error) {
-          console.error('Erro ao buscar assessments:', error);
+          logger.error('Erro ao buscar assessments', { error: error.message });
           throw error;
         }
 
-        console.log('Templates encontrados:', templates);
-        console.log('Assessments encontrados:', assessments);
+        logger.debug('Templates encontrados', { count: templates?.length || 0 });
+        logger.debug('Assessments encontrados', { count: assessments?.length || 0 });
 
         // Contar fornecedores únicos nos assessments
         const uniqueFornecedores = new Set(
@@ -66,7 +67,7 @@ export const useDueDiligenceStats = () => {
           return acc;
         }, {} as Record<string, number>) || {};
         
-        console.log('Status counts:', statusCounts);
+        logger.debug('Status counts', { statusCounts });
 
         // Usar diferentes variações de status
         const active = assessments?.filter(a => 
@@ -101,7 +102,7 @@ export const useDueDiligenceStats = () => {
           a.score_final > 0
         ) || [];
         
-        console.log('Assessments concluídos com score:', completedWithScores);
+        logger.debug('Assessments concluídos com score', { count: completedWithScores.length });
         
         const averageScore = completedWithScores.length > 0 
           ? (completedWithScores.reduce((sum, a) => sum + (a.score_final || 0), 0) / completedWithScores.length) * 10
@@ -119,10 +120,10 @@ export const useDueDiligenceStats = () => {
           averageScore
         };
 
-        console.log('Resultado final das estatísticas:', result);
+        logger.debug('Resultado final das estatísticas', { result });
         return result;
       } catch (error) {
-        console.error('Erro completo:', error);
+        logger.error('Erro ao buscar estatísticas de due diligence', { error: error instanceof Error ? error.message : String(error) });
         throw error;
       }
     },

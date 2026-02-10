@@ -1,5 +1,6 @@
 import { useOptimizedQuery } from './useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export const useGapAnalysisStats = () => {
   return useOptimizedQuery(
@@ -32,8 +33,7 @@ export const useGapAnalysisStats = () => {
           frameworkIds.has(e.framework_id)
         ) || [];
 
-        // Debug log para verificar avaliações
-        console.log('🔍 Stats Debug - Avaliações filtradas:', filteredEvaluations.length, filteredEvaluations);
+        logger.debug('Gap Analysis - Avaliações filtradas', { count: filteredEvaluations.length });
 
         // Conformidade média
         let averageCompliance = 0;
@@ -42,7 +42,7 @@ export const useGapAnalysisStats = () => {
             e.conformity_status && e.conformity_status !== 'nao_aplicavel' && e.conformity_status !== null
           );
           
-          console.log('📊 Stats Debug - Itens avaliados:', evaluatedItems.length, evaluatedItems);
+          logger.debug('Gap Analysis - Itens avaliados', { count: evaluatedItems.length });
           
           if (evaluatedItems.length > 0) {
             const totalScore = evaluatedItems.reduce((score, evaluation) => {
@@ -55,7 +55,7 @@ export const useGapAnalysisStats = () => {
             }, 0);
             
             averageCompliance = totalScore / evaluatedItems.length;
-            console.log('💯 Stats Debug - Score total:', totalScore, 'Média:', averageCompliance);
+            logger.debug('Gap Analysis - Score', { totalScore, averageCompliance });
           }
         }
 
@@ -84,7 +84,7 @@ export const useGapAnalysisStats = () => {
           error: null
         };
       } catch (error) {
-        console.error('Gap Analysis Stats Error:', error);
+        logger.error('Gap Analysis Stats Error', { error: error instanceof Error ? error.message : String(error) });
         return {
           data: {
             totalFrameworks: 0,
@@ -98,9 +98,9 @@ export const useGapAnalysisStats = () => {
     },
     [],
     {
-      staleTime: 0, // Sempre buscar dados frescos
+      staleTime: 5 * 60 * 1000, // 5 minutos de cache
       cacheKey: 'gap-analysis-stats',
-      cacheDuration: 0 // Sem cache persistente para atualização imediata
+      cacheDuration: 5 * 60 * 1000
     }
   );
 };

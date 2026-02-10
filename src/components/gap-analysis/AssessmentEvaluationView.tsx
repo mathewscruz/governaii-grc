@@ -280,17 +280,6 @@ export const AssessmentEvaluationView = ({
   const endIndex = startIndex + itemsPerPage;
   const currentRequirements = requirements?.slice(startIndex, endIndex) || [];
 
-  // Debug log
-  console.log('AssessmentEvaluationView Debug:', {
-    totalItems,
-    totalPages,
-    currentPage,
-    itemsPerPage,
-    startIndex,
-    endIndex,
-    currentRequirementsLength: currentRequirements.length,
-    frameworkId
-  });
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);

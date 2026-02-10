@@ -77,13 +77,13 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
   // Carregar avaliações existentes
   const { data: existingEvaluations, refetch: refetchEvaluations } = useOptimizedQuery(
     async () => {
-      console.log('🔍 Buscando avaliações para framework:', frameworkId);
+      
       const { data, error } = await supabase
         .from('gap_analysis_evaluations')
         .select('*')
         .eq('framework_id', frameworkId);
 
-      console.log('📊 Avaliações encontradas:', data?.length || 0, data);
+      
       if (error) throw error;
       return { data: data || [], error: null };
     },
@@ -128,7 +128,7 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
   const saveEvaluations = useCallback(async () => {
     setSaving(true);
     try {
-      console.log('💾 Salvando avaliações manualmente...');
+      
       
       // Filtrar apenas avaliações que têm pelo menos um campo preenchido
       const evaluationsToSave = Object.entries(evaluations)
@@ -157,7 +157,7 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
         return;
       }
 
-      console.log('📝 Salvando', evaluationsToSave.length, 'avaliações preenchidas');
+      
 
       const { error } = await supabase
         .from('gap_analysis_evaluations')
