@@ -1,21 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { Plus, Search, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, Edit, FileText, Trash2, Filter, X } from 'lucide-react';
+import { Plus, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, Edit, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
-import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { capitalizeText, formatStatus, getRiscoStatusColor, getNivelRiscoColor } from '@/lib/text-utils';
+import { formatStatus, getRiscoStatusColor, getNivelRiscoColor } from '@/lib/text-utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { useRiscosStats } from '@/hooks/useRiscosStats';
@@ -82,7 +80,7 @@ export function Riscos() {
   const [riscoToDelete, setRiscoToDelete] = useState<Risco | null>(null);
   const [matrizConfig, setMatrizConfig] = useState<MatrizConfig | null>(null);
   const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -201,7 +199,7 @@ export function Riscos() {
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar configuração da matriz:', error);
+      logger.error('Erro ao carregar configuração da matriz', { error: error instanceof Error ? error.message : String(error) });
     }
   };
 
@@ -352,11 +350,6 @@ export function Riscos() {
     return 0;
   });
 
-  const getSortIcon = (field: string) => {
-    if (sortField !== field) return null;
-    return sortDirection === 'asc' ? '↑' : '↓';
-  };
-
 
   if (loading) {
     return (
@@ -419,7 +412,7 @@ export function Riscos() {
         <Badge className={`${getNivelRiscoColor(value)} border whitespace-nowrap`}>
           {value}
         </Badge>
-      ) : <Badge className="bg-gray-100 text-gray-800 border-gray-200 border whitespace-nowrap">Não avaliado</Badge>
+      ) : <Badge className="bg-muted text-muted-foreground border whitespace-nowrap">Não avaliado</Badge>
     },
     {
       key: 'status',
@@ -489,33 +482,38 @@ export function Riscos() {
     {
       key: 'actions',
       label: 'Ações',
-      className: 'w-[120px]',
+      className: 'w-[100px]',
       render: (value: any, risco: Risco) => (
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => openTratamentosDialog(risco)}
-            title="Gerenciar Tratamentos"
-          >
-            <Shield className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEdit(risco)}
-            title="Editar Risco"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => openDeleteDialog(risco)}
-            title="Excluir Risco"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEdit(risco)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Editar risco</p></TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openDeleteDialog(risco)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Excluir risco</p></TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       )
     }
@@ -607,150 +605,68 @@ export function Riscos() {
           <RiskScoreCard stats={stats} loading={!stats} />
         </div>
 
+        {/* Action Buttons */}
+        <div className="flex justify-between items-center gap-2">
+          <div className="flex items-center gap-2">
+            {idsFilter.length > 0 && (
+              <Badge variant="secondary" className="flex items-center gap-1 whitespace-nowrap">
+                Filtro da Matriz ({idsFilter.length})
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0 hover:bg-transparent"
+                  onClick={clearIdsFilter}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)} className="whitespace-nowrap">
+              <Tag className="mr-2 h-4 w-4" />
+              Categorias
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)} className="whitespace-nowrap">
+              <Settings className="mr-2 h-4 w-4" />
+              Matriz
+            </Button>
+            <Button size="sm" onClick={openCreateDialog}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Risco
+            </Button>
+          </div>
+        </div>
+
+        {/* DataTable */}
         <Card className="rounded-lg border overflow-hidden">
           <CardContent className="p-0">
-            {/* Custom header with search and action buttons */}
-            <div className="p-6 pb-4">
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <div className="flex items-center gap-2 flex-1 max-w-lg">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      placeholder="Buscar riscos..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  {idsFilter.length > 0 && (
-                    <Badge variant="secondary" className="flex items-center gap-1 whitespace-nowrap">
-                      Filtro da Matriz ({idsFilter.length})
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0 hover:bg-transparent"
-                        onClick={clearIdsFilter}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  )}
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)} className="whitespace-nowrap">
-                    <Tag className="mr-2 h-4 w-4" />
-                    Categorias
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setMatrizDialogOpen(true)} className="whitespace-nowrap">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Matriz
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowFilters(!showFilters)}
-                  >
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filtros
-                  </Button>
-                  <Button size="sm" onClick={openCreateDialog}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Novo Risco
-                  </Button>
-                </div>
-              </div>
-
-              {/* Filters row */}
-              {showFilters && (
-                <div className="flex gap-4 items-center flex-wrap p-4 bg-muted/50 rounded-lg">
-                  {filters.map((filter) => (
-                    <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder={filter.label} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filter.options.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Table integrated directly */}
-            <Table>
-                <TableHeader>
-                  <TableRow>
-                    {riscoColumns.map((column) => (
-                      <TableHead
-                        key={String(column.key)}
-                        className={cn(
-                          column.className,
-                          column.sortable && "cursor-pointer hover:bg-muted/50 transition-colors"
-                        )}
-                        onClick={() => column.sortable && handleSort(String(column.key))}
-                      >
-                        <div className="flex items-center gap-2">
-                          {column.label}
-                          {column.sortable && getSortIcon(String(column.key))}
-                        </div>
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    Array.from({ length: 5 }).map((_, index) => (
-                      <TableRow key={index}>
-                        {riscoColumns.map((_, cellIndex) => (
-                          <TableCell key={cellIndex}>
-                            <Skeleton className="h-4 w-full" />
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  ) : filteredRiscos.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={riscoColumns.length} className="p-0">
-                        <EmptyState
-                          icon={<AlertTriangle className="h-8 w-8" />}
-                          title={searchTerm || statusFilter !== '' || nivelFilter !== '' || aceitoFilter !== ''
-                            ? 'Nenhum risco encontrado'
-                            : 'Nenhum risco cadastrado'}
-                          description={searchTerm || statusFilter !== '' || nivelFilter !== '' || aceitoFilter !== ''
-                            ? 'Tente ajustar os filtros para encontrar o que procura.'
-                            : 'Comece identificando e cadastrando os riscos da sua organização.'}
-                          action={!searchTerm && statusFilter === '' && nivelFilter === '' && aceitoFilter === '' ? {
-                            label: 'Cadastrar Primeiro Risco',
-                            onClick: openCreateDialog
-                          } : undefined}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    sortedRiscos.map((item, index) => (
-                      <TableRow key={item.id || index} className="hover:bg-muted/50 transition-colors">
-                        {riscoColumns.map((column) => (
-                          <TableCell
-                            key={String(column.key)}
-                            className={column.className}
-                          >
-                            {column.render
-                              ? column.render(item[column.key as keyof typeof item] as any, item)
-                              : String(item[column.key as keyof typeof item] || '-')
-                            }
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+            <DataTable
+              data={sortedRiscos}
+              columns={riscoColumns as Column<Risco>[]}
+              loading={loading}
+              searchable
+              searchPlaceholder="Buscar riscos..."
+              searchValue={searchTerm}
+              onSearchChange={setSearchTerm}
+              filters={filters}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+              emptyState={{
+                icon: <AlertTriangle className="h-8 w-8" />,
+                title: searchTerm || statusFilter !== '' || nivelFilter !== '' || aceitoFilter !== ''
+                  ? 'Nenhum risco encontrado'
+                  : 'Nenhum risco cadastrado',
+                description: searchTerm || statusFilter !== '' || nivelFilter !== '' || aceitoFilter !== ''
+                  ? 'Tente ajustar os filtros para encontrar o que procura.'
+                  : 'Comece identificando e cadastrando os riscos da sua organização.',
+                action: !searchTerm && statusFilter === '' && nivelFilter === '' && aceitoFilter === '' ? {
+                  label: 'Cadastrar Primeiro Risco',
+                  onClick: openCreateDialog
+                } : undefined
+              }}
+            />
           </CardContent>
         </Card>
         

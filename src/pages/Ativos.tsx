@@ -24,6 +24,7 @@ import ImportacaoAtivos from '@/components/ativos/ImportacaoAtivos';
 import { UserSelect } from '@/components/riscos/UserSelect';
 import { formatDateOnly } from '@/lib/date-utils';
 import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/text-utils';
+import { logger } from '@/lib/logger';
 
 interface Ativo {
   id: string;
@@ -159,7 +160,7 @@ const Ativos = () => {
           setAzureIntegration(result.data[0]);
         }
       } catch (e) {
-        console.error('Error fetching azure integration:', e);
+        logger.error('Error fetching azure integration', { error: e instanceof Error ? e.message : String(e) });
         setAzureIntegration(null);
       }
     };
@@ -188,7 +189,7 @@ const Ativos = () => {
       
       fetchAtivos();
     } catch (error: any) {
-      console.error('Azure sync error:', error);
+      logger.error('Azure sync error', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro na sincronização",
         description: error.message || "Falha ao sincronizar com Azure",
@@ -245,7 +246,7 @@ const Ativos = () => {
             .rpc('get_profiles_by_text_ids', { text_ids: proprietarioIds });
 
           if (profilesError) {
-            console.error('Erro ao buscar profiles:', profilesError);
+            logger.error('Erro ao buscar profiles', { error: profilesError.message });
             setAtivos(data);
           } else {
             const profileMap = new Map(
@@ -273,7 +274,7 @@ const Ativos = () => {
         setAtivos(data || []);
       }
     } catch (error) {
-      console.error('Error fetching ativos:', error);
+      logger.error('Error fetching ativos', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro",
         description: "Erro ao carregar ativos",
@@ -334,7 +335,7 @@ const Ativos = () => {
       resetForm();
       fetchAtivos();
     } catch (error: any) {
-      console.error('Error saving ativo:', error);
+      logger.error('Error saving ativo', { error: error?.message });
       toast({
         title: "Erro",
         description: error.message || "Erro ao salvar ativo",
@@ -383,7 +384,7 @@ const Ativos = () => {
       });
       fetchAtivos();
     } catch (error: any) {
-      console.error('Error deleting ativo:', error);
+      logger.error('Error deleting ativo', { error: error?.message });
       toast({
         title: "Erro",
         description: error.message || "Erro ao excluir ativo",
