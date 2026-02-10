@@ -144,3 +144,6 @@ verify_jwt = true
 
 [functions.api-inbound-webhook]
 verify_jwt = false
+
+[functions.ai-module-assistant]
+verify_jwt = true

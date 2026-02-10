@@ -10,7 +10,10 @@ import NotificationCenter from '@/components/NotificationCenter';
 import PasswordChangeRequired from '@/components/PasswordChangeRequired';
 import PageTransition from '@/components/PageTransition';
 import TrialBanner from '@/components/TrialBanner';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { differenceInDays, parseISO } from 'date-fns';
 import { AlertTriangle, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,6 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const breadcrumbs = useBreadcrumb();
+  const isMobile = useIsMobile();
   
   // Timeout de sessão por inatividade
   useInactivityTimeout();
@@ -177,12 +181,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </header>
 
-          <main className="flex-1 p-4 md:p-6 overflow-auto overflow-x-hidden w-full max-w-full">
+          <main className="flex-1 p-4 md:p-6 overflow-auto overflow-x-hidden w-full max-w-full pb-20 md:pb-6">
             <PageTransition routeKey={location.pathname}>
               {children}
             </PageTransition>
           </main>
         </div>
+        
+        {/* Onboarding Wizard */}
+        <OnboardingWizard />
+        
+        {/* Bottom Navigation Mobile */}
+        {isMobile && <MobileBottomNav />}
       </div>
     </SidebarProvider>
   );
