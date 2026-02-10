@@ -1,196 +1,156 @@
 
-# Auditoria Completa de Product Design (UX/UI)
-## GovernAII - Plataforma GRC
+# Analise Geral para Transformar o GovernAII em um SaaS de Sucesso
 
-Analisei todas as paginas, componentes, fluxos e padroes visuais do sistema sob a otica de um Product Designer senior. Abaixo, as descobertas organizadas por categoria com acoes concretas.
-
----
-
-## 1. Hierarquia Visual e Espacamento
-
-### Problema: Header do Dashboard sem hierarquia clara
-O greeting "Ola, Usuario! (emoji)" mistura tom informal com uma plataforma corporativa GRC. O emoji e o tom quebram a seriedade esperada por CISOs e gestores de compliance.
-
-**Acao:** Remover emoji. Trocar saudacao para formato mais profissional: "Dashboard Executivo" como titulo fixo, com subtitulo "Bem-vindo, [Nome]" em texto secundario. Manter timestamp de atualizacao.
-
-### Problema: Inconsistencia de padding entre modulos
-O Dashboard usa `space-y-6` e `gap-3 lg:gap-6`, Riscos usa `container mx-auto py-6 px-4 max-w-7xl`, Denuncia usa `space-y-6` sem container. Configuracoes tambem usa `space-y-6`. A falta de container padrao cria larguras diferentes entre paginas.
-
-**Acao:** Padronizar layout wrapper. O Layout.tsx ja aplica `p-4 md:p-6` no main, entao remover containers/paddings redundantes dos modulos individuais (ex: Riscos.tsx linha 356).
+Apos revisar todo o sistema (38 paginas, 100+ componentes, 30+ edge functions, landing page, autenticacao, navegacao, dashboard e todos os modulos), identifiquei oportunidades concretas divididas em 3 categorias: **o que falta**, **o que mudar** e **o que remover**.
 
 ---
 
-## 2. Sidebar e Navegacao
+## O QUE FALTA (Features que diferenciam SaaS de sucesso)
 
-### Problema: Animacoes excessivas no sidebar
-O sidebar tem `hover:scale-105`, `hover:shadow-sm`, `hover:translate-x-2`, `hover:rotate-12` no chevron, e `scale-110 rotate-3` nos icones ativos. Isso cria uma experiencia "saltitante" que distrai e parece amadora. Em plataformas SaaS enterprise, micro-animacoes devem ser sutis.
+### 1. Pagina de Precos na Landing Page
+A landing page nao tem secao de precos. O visitante precisa "solicitar demonstracao" sem saber quanto custa. SaaS de sucesso mostram planos e precos para converter visitantes em clientes imediatamente.
 
-**Acao:**
-- Remover `hover:scale-105` de todos os itens do sidebar
-- Remover `hover:translate-x-2` dos subitems
-- Remover `rotate-3` e `rotate-12` dos icones/chevrons
-- Manter apenas transicoes de cor e opacidade nos hovers (ja suficientes com `hover:bg-sidebar-accent/50`)
-- Reduzir `duration-300` para `duration-200`
+**Acao:** Adicionar secao de planos (Compliance Start, GRC Manager, GovernAII Enterprise) na landing page com os valores, creditos e CTA de "Iniciar Trial" ou "Falar com Vendas" para o Enterprise.
 
-### Problema: Placeholder invisivel para alinhamento
-Linha 369 do AppSidebar.tsx tem um `<div className="w-4 h-4 flex-shrink-0" />` como placeholder para alinhar itens sem chevron. Isso e uma solucao fragil.
+### 2. Self-Service Trial/Signup
+O sistema so permite login de usuarios criados manualmente pelo admin. Nao existe cadastro autonomo. Para um SaaS escalar, o visitante precisa clicar "Iniciar Trial Gratis" e comecar a usar sozinho.
 
-**Acao:** Remover o placeholder. O alinhamento natural com `justify-start` e suficiente.
+**Acao:** Criar fluxo de auto-registro na landing page que: cria empresa + usuario admin automaticamente, ativa trial de 14 dias e redireciona para o onboarding wizard ja existente.
 
----
+### 3. Central de Ajuda / Knowledge Base In-App
+Nao existe nenhum sistema de ajuda dentro da plataforma. Nenhum tooltip contextual explicando o que cada modulo faz, nenhum link para documentacao.
 
-## 3. Cards e KPIs do Dashboard
+**Acao:** Adicionar um botao "?" flutuante (ou no header) que abre um painel lateral com artigos de ajuda contextual baseados na pagina atual. Comecar com textos estaticos por modulo.
 
-### Problema: KPI Cards com informacao insuficiente
-Os 4 cards do dashboard mostram um numero grande e um badge unico. Falta contexto imediato -- o usuario nao sabe se "12 ativos" e bom ou ruim sem clicar.
+### 4. Busca Global (Command Palette)
+Com 14+ modulos, o usuario precisa navegar pelo sidebar para encontrar qualquer coisa. SaaS modernos tem busca global (Cmd+K) que permite encontrar registros, modulos e acoes rapidamente.
 
-**Acao:** Adicionar uma segunda linha com progresso ou comparativo inline (ex: "12 ativos | 3 criticos" ou uma mini barra de progresso mostrando % criticos vs total). Ja existe `TrendBadge` nos cards 2-4, estender para o card 1 (Ativos).
+**Acao:** Implementar Command Palette usando o componente `cmdk` (ja instalado como dependencia!) que busca modulos, registros recentes e acoes comuns.
 
-### Problema: Cards clicaveis sem affordance visual clara
-Os KPI cards sao clicaveis mas nao tem indicador visual alem do cursor pointer. O usuario pode nao perceber que sao interativos.
+### 5. Exportacao de Dados Consolidada
+Os modulos tem exportacao individual (CSV, PDF), mas nao existe exportacao consolidada para auditoria externa. Um auditor precisa de um pacote completo.
 
-**Acao:** Adicionar um icone discreto de `ChevronRight` ou `ExternalLink` (h-3 w-3) no canto inferior direito dos cards, com opacidade 0.5 que aumenta no hover.
+**Acao:** No modulo de Relatorios, adicionar opcao de "Pacote de Auditoria" que gera PDF consolidado com dados de todos os modulos relevantes (riscos, controles, frameworks, incidentes).
 
----
+### 6. Pagina de Changelog / Novidades
+Nenhum mecanismo para comunicar novas features aos usuarios. SaaS de sucesso tem changelog acessivel que mostra o que mudou e gera engajamento.
 
-## 4. Componente ExecutiveSummaryAI
-
-### Problema: Estado inicial vazio
-O componente de resumo IA mostra apenas um botao "Gerar Resumo Executivo" ate ser clicado. Isso desperdiça espaco valioso no dashboard e cria uma sensacao de "feature incompleta".
-
-**Acao:** Mostrar um estado inicial mais convidativo com skeleton/preview do que sera gerado (ex: 3 linhas de skeleton + texto "Clique para gerar uma analise executiva com IA"). Opcionalmente, gerar automaticamente no primeiro acesso do dia.
+**Acao:** Criar componente simples no header (icone de "megafone" ou badge "Novo") que mostra as ultimas atualizacoes da plataforma em um popover.
 
 ---
 
-## 5. Tabelas e Listas
+## O QUE MUDAR (Melhorias em features existentes)
 
-### Problema: Controles.tsx usa Table manual em vez de DataTable
-O modulo de Controles (837 linhas) usa `<Table>` manual com paginacao propria, enquanto Riscos, Incidentes e outros usam `DataTable`. Isso quebra a consistencia de UX (paginacao diferente, sorting diferente).
+### 7. Landing Page - Secao de Prova Social
+A landing page tem logos de "parceiros" fictivos e indicadores genericos como "99.9% Uptime" e "8/5 Suporte". Isso gera desconfianca.
 
-**Acao:** Migrar Controles.tsx para usar o componente `DataTable` padrao, eliminando a implementacao manual de paginacao.
+**Acao:** Remover os logos fictivos e os stats nao comprováveis. Substituir por depoimentos reais de clientes (mesmo que sejam poucos) ou remover a secao ate ter dados reais. Manter apenas os stats da plataforma que sao verdadeiros (20+ frameworks, 8 modulos, multi-tenant).
 
-### Problema: Documentos.tsx tambem usa Table manual
-Mesmo caso - 927 linhas com tabela manual.
+### 8. Relatorios - Templates Sem Dados Reais
+Os templates de relatorios (LGPD, ISO 27001, etc.) criam um registro no banco mas o PDF exportado e quase vazio -- apenas titulo e descricao. Nao puxa dados reais dos modulos.
 
-**Acao:** Migrar Documentos.tsx para DataTable.
+**Acao:** Conectar cada template aos dados reais do sistema. O template "LGPD para ANPD" deveria puxar dados de Privacidade (ROPA, solicitacoes), o "ISO 27001" deveria puxar scores do Gap Analysis, etc. Criar uma edge function `generate-report-data` que consolida dados por template.
 
-### Problema: Contratos.tsx usa Table manual
-857 linhas com tabela e paginacao manuais.
+### 9. Planos de Acao - Kanban sem Drag-and-Drop
+O kanban mostra cards estaticos. O usuario precisa abrir o dialog para mudar status. Kanban sem drag-and-drop nao e intuitivo.
 
-**Acao:** Migrar Contratos.tsx para DataTable.
+**Acao:** Implementar drag-and-drop no kanban (usar HTML5 Drag API ou lib leve) para permitir mover cards entre colunas e atualizar status automaticamente.
 
----
+### 10. Dashboard - KPIs Limitados a 4 Modulos
+O dashboard mostra apenas Ativos, Alertas, Controles e Incidentes. Faltam metricas de Contratos (vencendo), Documentos (expirados), Frameworks (score medio) e Privacidade (solicitacoes pendentes).
 
-## 6. Loading States
+**Acao:** Expandir para 6-8 KPIs com layout adaptavel (3 colunas no desktop, 2 no mobile). Adicionar pelo menos: Score medio de Frameworks e Contratos/Documentos vencendo.
 
-### Problema: Loading spinner identico em todos os modulos
-Todos os modulos mostram o mesmo spinner generico (circulo girando + "Carregando..."). Isso perde a oportunidade de manter contexto visual.
+### 11. Notificacoes - Sem Preferencias do Usuario
+O NotificationCenter mostra todas as notificacoes sem opcao de configurar quais alertas o usuario quer receber. Em SaaS B2B, cada usuario tem preferencias diferentes.
 
-**Acao:** Substituir o spinner generico por Skeleton layouts que espelham a estrutura real da pagina. O Dashboard ja faz isso parcialmente (skeleton nos cards), mas modulos como Riscos (linha 354-364) e Configuracoes mostram apenas spinner centralizado. Aplicar skeleton pattern em todos.
+**Acao:** Adicionar tela simples em Configuracoes > Geral onde o usuario escolhe quais tipos de notificacao quer receber (por modulo ou por severidade). Armazenar em tabela `user_notification_preferences`.
 
----
+### 12. Politicas - Sem Fluxo de Aceite pelo Colaborador
+O modulo de Politicas mostra aderencia por politica mas nao tem interface para o colaborador visualizar e aceitar as politicas publicadas. A contagem de aceites depende de insercao manual.
 
-## 7. Mobile Bottom Navigation
-
-### Problema: Contratos e Documentos nao estao no bottom nav
-Os modulos recentemente movidos para raiz do sidebar (Contratos, Documentos) nao foram adicionados ao menu "Mais" do MobileBottomNav. O item "Docs" no nav principal vai para `/documentos`, mas Contratos so aparece no "Mais" de forma indireta.
-
-**Acao:** Adicionar "Contratos" aos `moreNavItems` do MobileBottomNav.tsx (ja esta parcialmente la como parte de outro grupo). Verificar que todos os modulos raiz do sidebar estejam representados.
-
-### Problema: Icones repetidos
-`Shield` e usado para Privacidade e tambem para Controles no bottom nav. `HardDrive` e usado para Incidentes no bottom nav mas para Ativos no dashboard.
-
-**Acao:** Diferenciar icones: Privacidade pode usar `Eye` ou `UserCheck`, Incidentes pode usar `AlertCircle` (ja usado no desktop sidebar).
+**Acao:** Criar componente que aparece no dashboard (ou como dialog obrigatorio) mostrando politicas publicadas pendentes de aceite para o usuario logado, com botao "Li e Aceito".
 
 ---
 
-## 8. NotificationCenter
+## O QUE REMOVER
 
-### Problema: Limite de 20 notificacoes pode cortar alertas importantes
-O sistema combina notificacoes manuais + automaticas e faz `.slice(0, 20)`. Em cenarios reais com muitos contratos/documentos vencendo, alertas criticos podem ser cortados.
+### 13. DenunciaPublica.tsx e DenunciaExterna.tsx - Paginas Orfas
+`DenunciaPublica.tsx` existe no filesystem mas nao tem rota no App.tsx. `DenunciaExterna.tsx` tambem existe sem rota. Sao codigo morto.
 
-**Acao:** Separar notificacoes por prioridade: mostrar TODAS as de tipo "error" primeiro, depois "warning", depois "info". Adicionar um link "Ver todas" que abre uma pagina completa de notificacoes (ou dialog fullscreen) em vez de limitar a 20 no popover.
+**Acao:** Remover `src/pages/DenunciaPublica.tsx` e `src/pages/DenunciaExterna.tsx`.
 
-### Problema: Performance - queries pesadas no NotificationCenter
-O componente faz 8+ queries separadas (documentos, contratos, controles, incidentes, ativos, manutencoes, licencas, chaves, aprovacoes) toda vez que abre. Isso impacta performance.
+### 14. Auditorias.tsx e Controles.tsx - Paginas Duplicadas
+`src/pages/Auditorias.tsx` e `src/pages/Controles.tsx` existem como paginas separadas, mas ambas as rotas `/auditorias` e `/controles` no App.tsx redirecionam para `Governanca`. Essas paginas sao vestígios da arquitetura anterior.
 
-**Acao:** Consolidar em uma unica Edge Function `get-notifications-summary` que retorna todos os alertas de uma vez, com cache de 5 minutos server-side.
+**Acao:** Verificar se Auditorias.tsx e Controles.tsx estao sendo usados em algum lugar. Se apenas servem como redirect targets no App.tsx mas ja redirecionam para Governanca, podem ser removidos e as rotas ajustadas para usar Navigate diretamente.
 
----
+### 15. Componentes de Integracao Nao Funcionais
+Azure, Jira, Slack e Teams integracoes salvam configuracao mas nao tem conectividade real (exceto Azure que sincroniza Intune). Ter botoes de "Conectar" que nao fazem nada real pode frustrar usuarios.
 
-## 9. Empty States
-
-### Problema: EmptyState sem ilustracoes
-O componente EmptyState usa apenas um icone circular generico. Para uma plataforma premium, falta personalidade.
-
-**Acao:** Adicionar ilustracoes SVG simples (line-art no estilo do design system teal) para os empty states mais comuns: "Nenhum risco cadastrado", "Nenhum documento", etc. Usar um componente wrapper que aceita `illustration` como prop.
+**Acao:** Marcar claramente as integracoes como "Em Breve" (badge visual) exceto as que funcionam. Isso gerencia expectativas e nao quebra confianca.
 
 ---
 
-## 10. Formularios e Dialogs
+## PRIORIDADES PARA IMPLEMENTACAO
 
-### Problema: Dialogs sem indicacao de campos obrigatorios
-Os formularios nos dialogs (RiscoDialog, ControleDialog, etc.) nao marcam visualmente quais campos sao obrigatorios (asterisco vermelho) de forma consistente.
-
-**Acao:** Padronizar todos os Labels de campos obrigatorios com `*` vermelho apos o texto. Criar um componente `RequiredLabel` wrapper.
-
----
-
-## 11. Cores e Identidade
-
-### Problema: App.css com estilos legados
-O arquivo `src/App.css` contem estilos do template Vite original (`#root`, `.logo`, `.read-the-docs`, `.card`) que nao sao usados e poluem o projeto.
-
-**Acao:** Limpar App.css removendo todos os estilos legados do template.
-
----
-
-## 12. Micro-interacoes e Feedback
-
-### Problema: Botoes de acao sem feedback de carregamento
-Botoes como "Salvar", "Excluir" em dialogs nao mostram estado de loading durante operacoes assincronas de forma consistente.
-
-**Acao:** Padronizar todos os botoes de submit em dialogs para mostrar `<Loader2 className="animate-spin" />` durante requisicoes, desabilitando o botao.
-
----
-
-## Resumo de Impacto
-
-| Categoria | Itens | Prioridade |
-|-----------|-------|------------|
-| Remover animacoes excessivas sidebar | 1 arquivo | Alta |
-| Dashboard profissionalizar header | 1 arquivo | Alta |
-| Migrar tabelas manuais para DataTable | 3 arquivos | Alta |
-| Limpar App.css legado | 1 arquivo | Media |
-| Loading skeletons em todos modulos | 5+ arquivos | Media |
-| Empty states com ilustracoes | 1 componente + SVGs | Baixa |
-| NotificationCenter priorizar erros | 1 arquivo | Media |
-| Mobile nav icones e cobertura | 1 arquivo | Media |
-| Campos obrigatorios visuais | Multiplos dialogs | Baixa |
-| Botoes loading padrao | Multiplos dialogs | Baixa |
-| ExecutiveSummaryAI estado inicial | 1 arquivo | Baixa |
+| # | Item | Impacto | Esforco |
+|---|------|---------|---------|
+| 4 | Busca Global (Cmd+K) | Alto | Baixo |
+| 12 | Fluxo de Aceite de Politicas | Alto | Medio |
+| 2 | Self-Service Trial | Muito Alto | Alto |
+| 1 | Precos na Landing Page | Alto | Baixo |
+| 8 | Relatorios com Dados Reais | Alto | Alto |
+| 10 | Dashboard KPIs Expandidos | Medio | Baixo |
+| 9 | Kanban Drag-and-Drop | Medio | Medio |
+| 6 | Changelog/Novidades | Medio | Baixo |
+| 13-14 | Remover codigo morto | Baixo | Baixo |
+| 15 | Badge "Em Breve" integracoes | Medio | Baixo |
+| 3 | Central de Ajuda | Medio | Medio |
+| 5 | Pacote de Auditoria | Medio | Alto |
+| 7 | Remover prova social ficticia | Medio | Baixo |
+| 11 | Preferencias de Notificacao | Baixo | Medio |
 
 ---
 
 ## Detalhes Tecnicos
 
-### Arquivos que serao modificados:
-- `src/App.css` -- limpar estilos legados
-- `src/components/AppSidebar.tsx` -- remover animacoes excessivas
-- `src/pages/Dashboard.tsx` -- profissionalizar header, affordance nos cards
-- `src/pages/Controles.tsx` -- migrar para DataTable
-- `src/pages/Documentos.tsx` -- migrar para DataTable
-- `src/pages/Contratos.tsx` -- migrar para DataTable
-- `src/pages/Riscos.tsx` -- remover container wrapper redundante
-- `src/components/MobileBottomNav.tsx` -- corrigir icones e cobertura
-- `src/components/NotificationCenter.tsx` -- priorizar por severidade, link "ver todas"
-- `src/components/dashboard/ExecutiveSummaryAI.tsx` -- melhorar estado inicial
-- `src/pages/Incidentes.tsx` -- skeleton loading
-- `src/pages/Configuracoes.tsx` -- skeleton loading
+### Busca Global (Item 4)
+O pacote `cmdk` ja esta instalado. Implementacao envolve:
+- Criar `src/components/CommandPalette.tsx`
+- Registrar atalho `Cmd+K` / `Ctrl+K` no Layout.tsx
+- Listar modulos como acoes de navegacao
+- Opcionalmente buscar registros recentes (ultimos riscos, controles, etc.)
 
-### Principios aplicados:
-1. Menos e mais: remover animacoes que nao agregam valor
-2. Consistencia acima de tudo: mesmos componentes para mesmas funcoes
-3. Feedback imediato: o usuario sempre sabe o que esta acontecendo
-4. Hierarquia clara: titulos, subtitulos e acoes em posicoes previsiveis
-5. Tom profissional: linguagem e visual adequados ao publico-alvo (GRC)
+### Self-Service Trial (Item 2)
+- Criar edge function `self-signup` que usa `supabase.auth.admin.createUser()`
+- Criar registro em `empresas` com `status_licenca: 'trial'` e `data_inicio_trial: now()`
+- Criar `profiles` vinculado com `role: 'admin'`
+- Aplicar permissoes padrao via funcao existente `apply-default-permissions-all-users`
+- Adicionar formulario de registro na landing page ou pagina `/auth`
+
+### Aceite de Politicas (Item 12)
+- Componente `PendingPoliciesAlert` no Layout ou Dashboard
+- Query em `politicas` onde `status = 'publicada'` AND `requer_aceite = true`
+- Left join com `politica_aceites` para ver quais o usuario ja aceitou
+- Dialog com conteudo da politica + checkbox + botao aceitar
+- Insert em `politica_aceites`
+
+### Arquivos que serao criados:
+- `src/components/CommandPalette.tsx`
+- `src/components/PendingPoliciesAlert.tsx`
+- `src/components/ChangelogPopover.tsx`
+
+### Arquivos que serao modificados:
+- `src/pages/LandingPage.tsx` (secao de precos, remover stats fictícios)
+- `src/components/Layout.tsx` (Cmd+K, aceite de politicas)
+- `src/pages/Dashboard.tsx` (KPIs expandidos)
+- `src/pages/PlanosAcao.tsx` (drag-and-drop kanban)
+- `src/pages/Relatorios.tsx` (templates com dados reais)
+- `src/components/configuracoes/IntegrationHub.tsx` (badges "Em Breve")
+- `src/components/NotificationCenter.tsx` (preferencias)
+
+### Arquivos que serao removidos:
+- `src/pages/DenunciaPublica.tsx`
+- `src/pages/DenunciaExterna.tsx`
+- Potencialmente `src/pages/Auditorias.tsx` e `src/pages/Controles.tsx` (apos validacao)
