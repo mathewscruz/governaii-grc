@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -10,7 +11,9 @@ import {
   XCircle, 
   Info,
   Loader2,
-  History
+  History,
+  Key,
+  Webhook
 } from 'lucide-react';
 import { SlackConfigDialog } from './integrations/SlackConfigDialog';
 import { TeamsConfigDialog } from './integrations/TeamsConfigDialog';
@@ -18,6 +21,8 @@ import { WebhooksConfigDialog } from './integrations/WebhooksConfigDialog';
 import { JiraConfigDialog } from './integrations/JiraConfigDialog';
 import { AzureConfigDialog } from './integrations/AzureConfigDialog';
 import { IntegrationLogViewer } from './integrations/IntegrationLogViewer';
+import { ApiKeysManager } from './ApiKeysManager';
+import { InboundWebhooksManager } from './InboundWebhooksManager';
 
 // Logos inline SVG
 const SlackLogo = () => (
@@ -383,33 +388,59 @@ export function IntegrationHub() {
   }, {} as Record<string, Integration[]>);
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border flex-1">
-          <Info className="h-5 w-5 text-primary shrink-0" />
-          <p className="text-sm text-muted-foreground">
-            Conecte o GovernAII com suas ferramentas favoritas para automatizar processos e receber notificações em tempo real.
-          </p>
-        </div>
-        <Button variant="outline" className="ml-4" onClick={() => setLogViewerOpen(true)}>
-          <History className="h-4 w-4 mr-2" />
-          Ver Logs
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <Tabs defaultValue="conectores" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="conectores" className="gap-2">
+            <Plug className="h-4 w-4" /> Conectores
+          </TabsTrigger>
+          <TabsTrigger value="api-keys" className="gap-2">
+            <Key className="h-4 w-4" /> API Keys
+          </TabsTrigger>
+          <TabsTrigger value="inbound-webhooks" className="gap-2">
+            <Webhook className="h-4 w-4" /> Webhooks de Entrada
+          </TabsTrigger>
+        </TabsList>
 
-      {Object.entries(integracoesPorCategoria).map(([categoria, integracoes]) => (
-        <div key={categoria} className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold">{CATEGORIAS[categoria as keyof typeof CATEGORIAS]?.nome}</h3>
-            <p className="text-sm text-muted-foreground">
-              {CATEGORIAS[categoria as keyof typeof CATEGORIAS]?.descricao}
-            </p>
+        <TabsContent value="conectores">
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border flex-1">
+                <Info className="h-5 w-5 text-primary shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  Conecte o GovernAII com suas ferramentas favoritas para automatizar processos e receber notificações em tempo real.
+                </p>
+              </div>
+              <Button variant="outline" className="ml-4" onClick={() => setLogViewerOpen(true)}>
+                <History className="h-4 w-4 mr-2" />
+                Ver Logs
+              </Button>
+            </div>
+
+            {Object.entries(integracoesPorCategoria).map(([categoria, integracoes]) => (
+              <div key={categoria} className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold">{CATEGORIAS[categoria as keyof typeof CATEGORIAS]?.nome}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {CATEGORIAS[categoria as keyof typeof CATEGORIAS]?.descricao}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {integracoes.map(renderIntegrationCard)}
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {integracoes.map(renderIntegrationCard)}
-          </div>
-        </div>
-      ))}
+        </TabsContent>
+
+        <TabsContent value="api-keys">
+          <ApiKeysManager />
+        </TabsContent>
+
+        <TabsContent value="inbound-webhooks">
+          <InboundWebhooksManager />
+        </TabsContent>
+      </Tabs>
 
       {empresaId && (
         <>
