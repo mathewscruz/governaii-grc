@@ -514,28 +514,40 @@ export default function ControlesContent() {
           >
             <Edit className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSelectedControleForTests(controle);
-              setTestesDialogOpen(true);
-            }}
-            title="Gerenciar Testes"
-          >
-            <TestTube className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSelectedControleForVinculacao(controle);
-              setVinculacaoDialogOpen(true);
-            }}
-            title="Gerenciar Vinculações"
-          >
-            <Link className="w-4 h-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedControleForTests(controle);
+                    setTestesDialogOpen(true);
+                  }}
+                >
+                  <TestTube className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Gerenciar Testes</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedControleForVinculacao(controle);
+                    setVinculacaoDialogOpen(true);
+                  }}
+                >
+                  <Link className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Gerenciar Vinculações</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button
             variant="ghost"
             size="sm"

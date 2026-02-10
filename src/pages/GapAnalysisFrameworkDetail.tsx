@@ -19,6 +19,7 @@ import { getFrameworkConfig } from '@/lib/framework-configs';
 import { useFrameworkScore } from '@/hooks/useFrameworkScore';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface Framework {
   id: string;
@@ -49,7 +50,7 @@ export default function GapAnalysisFrameworkDetail() {
         if (error) throw error;
         setFramework(data);
       } catch (error: any) {
-        console.error('Erro ao carregar framework:', error);
+        logger.error('Erro ao carregar framework', { error: error instanceof Error ? error.message : String(error) });
         toast.error('Framework não encontrado');
         navigate('/gap-analysis/frameworks');
       } finally {

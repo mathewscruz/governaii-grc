@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { useGapAnalysisStats } from '@/hooks/useGapAnalysisStats';
 import { ClipboardList, Activity, TrendingUp, AlertTriangle, Shield } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface Framework {
   id: string;
@@ -56,51 +57,64 @@ export default function GapAnalysisFrameworks() {
 
       setFrameworks(fws || []);
 
-      // Buscar contagem de requisitos e progresso para cada framework
+      // Buscar contagem de requisitos para TODOS os frameworks de uma vez
+      const frameworkIds = (fws || []).map(fw => fw.id);
       const counts: Record<string, number> = {};
       const progress: Record<string, FrameworkProgress> = {};
 
-      for (const fw of fws || []) {
-        // Contar requisitos
-        const { data: requirements, error: countError } = await supabase
+      if (frameworkIds.length > 0) {
+        const { data: allRequirements, error: reqError } = await supabase
           .from('gap_analysis_requirements')
-          .select('id')
-          .eq('framework_id', fw.id);
+          .select('id, framework_id')
+          .in('framework_id', frameworkIds);
 
-        if (!countError && requirements) {
-          counts[fw.id] = requirements.length;
+        if (!reqError && allRequirements) {
+          // Agrupar requisitos por framework
+          allRequirements.forEach(req => {
+            counts[req.framework_id] = (counts[req.framework_id] || 0) + 1;
+          });
 
-          // Buscar avaliações da empresa para este framework
+          // Buscar todas as avaliações da empresa de uma vez
           if (empresaId) {
-            const { data: evaluations, error: evalError } = await supabase
+            const { data: allEvaluations, error: evalError } = await supabase
               .from('gap_analysis_evaluations')
-              .select('conformity_status')
-              .eq('framework_id', fw.id)
+              .select('conformity_status, framework_id')
+              .in('framework_id', frameworkIds)
               .eq('empresa_id', empresaId);
 
-            if (!evalError && evaluations) {
-              const evaluated = evaluations.filter(e => 
-                e.conformity_status && e.conformity_status !== 'nao_avaliado'
-              );
-              const conforme = evaluations.filter(e => e.conformity_status === 'conforme').length;
-              
-              // Calcular score médio (0-100%)
-              let avgScore = 0;
-              if (evaluated.length > 0) {
-                const totalScore = evaluated.reduce((acc, e) => {
-                  if (e.conformity_status === 'conforme') return acc + 100;
-                  if (e.conformity_status === 'parcial') return acc + 50;
-                  return acc;
-                }, 0);
-                avgScore = Math.round(totalScore / evaluated.length);
-              }
+            if (!evalError && allEvaluations) {
+              // Agrupar avaliações por framework
+              const evalsByFramework = new Map<string, typeof allEvaluations>();
+              allEvaluations.forEach(ev => {
+                const existing = evalsByFramework.get(ev.framework_id) || [];
+                existing.push(ev);
+                evalsByFramework.set(ev.framework_id, existing);
+              });
 
-              progress[fw.id] = {
-                totalRequirements: requirements.length,
-                evaluatedRequirements: evaluated.length,
-                conformeCount: conforme,
-                averageScore: avgScore
-              };
+              frameworkIds.forEach(fwId => {
+                const evals = evalsByFramework.get(fwId) || [];
+                const evaluated = evals.filter(e => 
+                  e.conformity_status && e.conformity_status !== 'nao_avaliado'
+                );
+                const conforme = evals.filter(e => e.conformity_status === 'conforme').length;
+                
+                let avgScore = 0;
+                if (evaluated.length > 0) {
+                  const totalScore = evaluated.reduce((acc, e) => {
+                    if (e.conformity_status === 'conforme') return acc + 100;
+                    if (e.conformity_status === 'parcial') return acc + 50;
+                    return acc;
+                  }, 0);
+                  avgScore = Math.round(totalScore / evaluated.length);
+                }
+
+                progress[fwId] = {
+                  totalRequirements: counts[fwId] || 0,
+                  evaluatedRequirements: evaluated.length,
+                  conformeCount: conforme,
+                  averageScore: avgScore
+                };
+              });
             }
           }
         }
@@ -109,7 +123,7 @@ export default function GapAnalysisFrameworks() {
       setRequirementCounts(counts);
       setFrameworkProgress(progress);
     } catch (error) {
-      console.error('Erro ao carregar frameworks:', error);
+      logger.error('Erro ao carregar frameworks', { error: error instanceof Error ? error.message : String(error) });
     } finally {
       setLoading(false);
     }

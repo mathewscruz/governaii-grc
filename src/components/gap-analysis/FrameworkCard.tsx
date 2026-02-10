@@ -106,10 +106,10 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
           <div className="flex items-center justify-between text-xs pt-1 border-t border-border">
             <span className="text-muted-foreground">Conformidade</span>
             <span className={`font-semibold ${
-              progress.averageScore >= 80 ? 'text-green-600' :
-              progress.averageScore >= 60 ? 'text-blue-600' :
-              progress.averageScore >= 40 ? 'text-yellow-600' :
-              'text-red-600'
+              progress.averageScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
+              progress.averageScore >= 60 ? 'text-primary' :
+              progress.averageScore >= 40 ? 'text-amber-600 dark:text-amber-400' :
+              'text-destructive'
             }`}>
               {progress.averageScore}%
             </span>

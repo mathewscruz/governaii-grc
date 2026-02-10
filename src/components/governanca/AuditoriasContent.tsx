@@ -85,31 +85,32 @@ export default function AuditoriasContent() {
       if (!auditorias || auditorias.length === 0) return {};
       
       const counts: Record<string, { itens: number; itensConcluidos: number }> = {};
+      const auditoriaIds = auditorias.map(a => a.id);
       
-      for (const auditoria of auditorias) {
-        // Total de itens manuais
-        const itensRes = await supabase
+      // Buscar TODOS os itens de todas as auditorias de uma vez
+      const [itensRes, controlesRes] = await Promise.all([
+        supabase
           .from('auditoria_itens')
-          .select('id, status')
-          .eq('auditoria_id', auditoria.id);
-        
-        // Controles vinculados via controles_auditorias
-        const controlesRes = await supabase
+          .select('id, status, auditoria_id')
+          .in('auditoria_id', auditoriaIds),
+        supabase
           .from('controles_auditorias')
-          .select(`
-            controle_id,
-            controle:controles(id, status)
-          `)
-          .eq('auditoria_id', auditoria.id);
+          .select(`auditoria_id, controle_id, controle:controles(id, status)`)
+          .in('auditoria_id', auditoriaIds)
+      ]);
+      
+      // Agrupar por auditoria
+      for (const auditoria of auditorias) {
+        const itens = itensRes.data?.filter(i => i.auditoria_id === auditoria.id) || [];
+        const controles = controlesRes.data?.filter((c: any) => c.auditoria_id === auditoria.id) || [];
         
-        const itensTotal = (itensRes.data?.length || 0) + (controlesRes.data?.length || 0);
-        const itensManuaisConcluidos = itensRes.data?.filter(i => i.status === 'concluido').length || 0;
-        const controlesAtivos = controlesRes.data?.filter((c: any) => c.controle?.status === 'ativo').length || 0;
-        const itensConcluidos = itensManuaisConcluidos + controlesAtivos;
+        const itensTotal = itens.length + controles.length;
+        const itensManuaisConcluidos = itens.filter(i => i.status === 'concluido').length;
+        const controlesAtivos = controles.filter((c: any) => c.controle?.status === 'ativo').length;
         
         counts[auditoria.id] = {
           itens: itensTotal,
-          itensConcluidos,
+          itensConcluidos: itensManuaisConcluidos + controlesAtivos,
         };
       }
       
