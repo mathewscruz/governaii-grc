@@ -3,7 +3,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
-import { Users, Building2, Settings, Shield, Plug } from 'lucide-react';
+import { Users, Building2, Settings, Shield, Plug, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
 import GerenciamentoUsuariosEnhanced from '@/components/configuracoes/GerenciamentoUsuariosEnhanced';
@@ -11,6 +11,8 @@ import { PermissionMatrix } from '@/components/configuracoes/PermissionMatrix';
 import ConfiguracoesGerais from '@/components/configuracoes/ConfiguracoesGerais';
 import { ReminderSettings } from '@/components/configuracoes/ReminderSettings';
 import { IntegrationHub } from '@/components/configuracoes/IntegrationHub';
+import { ConfiguracoesDenuncia } from '@/components/denuncia/ConfiguracoesDenuncia';
+import { CategoriasDenuncia } from '@/components/denuncia/CategoriasDenuncia';
 
 const Configuracoes = () => {
   const { user } = useAuth();
@@ -62,7 +64,7 @@ const Configuracoes = () => {
       />
 
       <Tabs defaultValue="usuarios" className="space-y-6">
-        <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-5' : isAdmin ? 'grid-cols-4' : 'grid-cols-2'}`}>
+        <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-6' : isAdmin ? 'grid-cols-5' : 'grid-cols-3'}`}>
           {isSuperAdmin && (
             <TabsTrigger value="empresas" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
@@ -83,6 +85,12 @@ const Configuracoes = () => {
             <TabsTrigger value="integracoes" className="flex items-center gap-2">
               <Plug className="h-4 w-4" />
               <span className="hidden sm:inline">Integrações</span>
+            </TabsTrigger>
+          )}
+          {isAdmin && (
+            <TabsTrigger value="denuncia" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">Denúncia</span>
             </TabsTrigger>
           )}
           <TabsTrigger value="geral" className="flex items-center gap-2">
@@ -140,6 +148,15 @@ const Configuracoes = () => {
                 <IntegrationHub />
               </CardContent>
             </Card>
+          </TabsContent>
+        )}
+
+        {isAdmin && (
+          <TabsContent value="denuncia">
+            <div className="space-y-6">
+              <ConfiguracoesDenuncia />
+              <CategoriasDenuncia />
+            </div>
           </TabsContent>
         )}
 

@@ -86,12 +86,22 @@ const menuItems = [
   {
     title: 'Governança',
     icon: FileCheck,
-      subItems: [
-        { title: 'Controles Internos', url: '/governanca', icon: Shield, moduleName: 'controles' },
-        { title: 'Sistemas', url: '/sistemas', icon: Server, moduleName: 'controles' },
-        { title: 'Contratos', url: '/contratos', icon: Handshake, moduleName: 'contratos' },
-        { title: 'Documentos', url: '/documentos', icon: FileText, moduleName: 'documentos' },
+    subItems: [
+      { title: 'Controles Internos', url: '/governanca', icon: Shield, moduleName: 'controles' },
+      { title: 'Sistemas', url: '/sistemas', icon: Server, moduleName: 'controles' },
     ],
+  },
+  {
+    title: 'Contratos',
+    url: '/contratos',
+    icon: Handshake,
+    moduleName: 'contratos',
+  },
+  {
+    title: 'Documentos',
+    url: '/documentos',
+    icon: FileText,
+    moduleName: 'documentos',
   },
   {
     title: 'Segurança',
