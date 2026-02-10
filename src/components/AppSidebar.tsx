@@ -46,89 +46,90 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/AuthProvider';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-const menuItems = [
+const getMenuItems = (t: (key: string) => string) => [
   {
-    title: 'Dashboard',
+    title: t('sidebar.dashboard'),
     url: '/dashboard',
     icon: LayoutDashboard,
     moduleName: 'dashboard',
   },
   {
-    title: 'Planos de Ação',
+    title: t('sidebar.actionPlans'),
     url: '/planos-acao',
     icon: ListTodo,
     moduleName: 'planos-acao',
   },
   {
-    title: 'Gestão de Ativos',
+    title: t('sidebar.assetManagement'),
     icon: Database,
     subItems: [
-      { title: 'Ativos', url: '/ativos', icon: Server, moduleName: 'ativos' },
-      { title: 'Licenças', url: '/ativos/licencas', icon: FileKey, moduleName: 'ativos' },
-      { title: 'Chaves', url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
+      { title: t('sidebar.assets'), url: '/ativos', icon: Server, moduleName: 'ativos' },
+      { title: t('sidebar.licenses'), url: '/ativos/licencas', icon: FileKey, moduleName: 'ativos' },
+      { title: t('sidebar.keys'), url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
     ],
   },
   {
-    title: 'Gestão de Riscos',
+    title: t('sidebar.riskManagement'),
     url: '/riscos',
     icon: AlertTriangle,
     moduleName: 'riscos',
   },
   {
-    title: 'Gap Analysis',
+    title: t('sidebar.gapAnalysis'),
     icon: BarChart3,
     subItems: [
-      { title: 'Frameworks', url: '/gap-analysis/frameworks', icon: FileText, moduleName: 'gap-analysis' },
-      { title: 'Avaliação de Aderência', url: '/gap-analysis/avaliacao-aderencia', icon: Search, moduleName: 'gap-analysis' },
+      { title: t('sidebar.frameworks'), url: '/gap-analysis/frameworks', icon: FileText, moduleName: 'gap-analysis' },
+      { title: t('sidebar.adherenceAssessment'), url: '/gap-analysis/avaliacao-aderencia', icon: Search, moduleName: 'gap-analysis' },
     ],
   },
   {
-    title: 'Governança',
+    title: t('sidebar.governance'),
     icon: FileCheck,
     subItems: [
-      { title: 'Controles Internos', url: '/governanca', icon: Shield, moduleName: 'controles' },
-      { title: 'Sistemas', url: '/sistemas', icon: Server, moduleName: 'controles' },
+      { title: t('sidebar.internalControls'), url: '/governanca', icon: Shield, moduleName: 'controles' },
+      { title: t('sidebar.systems'), url: '/sistemas', icon: Server, moduleName: 'controles' },
     ],
   },
   {
-    title: 'Contratos',
+    title: t('sidebar.contracts'),
     url: '/contratos',
     icon: Handshake,
     moduleName: 'contratos',
   },
   {
-    title: 'Documentos',
+    title: t('sidebar.documents'),
     url: '/documentos',
     icon: FileText,
     moduleName: 'documentos',
   },
   {
-    title: 'Segurança',
+    title: t('sidebar.security'),
     icon: Lock,
     subItems: [
-      { title: 'Contas Privilegiadas', url: '/contas-privilegiadas', icon: Users, moduleName: 'contas-privilegiadas' },
-      { title: 'Revisão de Acessos', url: '/revisao-acessos', icon: CheckSquare, moduleName: 'contas-privilegiadas' },
-      { title: 'Incidentes', url: '/incidentes', icon: AlertCircle, moduleName: 'incidentes' },
+      { title: t('sidebar.privilegedAccounts'), url: '/contas-privilegiadas', icon: Users, moduleName: 'contas-privilegiadas' },
+      { title: t('sidebar.accessReview'), url: '/revisao-acessos', icon: CheckSquare, moduleName: 'contas-privilegiadas' },
+      { title: t('sidebar.incidents'), url: '/incidentes', icon: AlertCircle, moduleName: 'incidentes' },
     ],
   },
   {
-    title: 'Privacidade',
+    title: t('sidebar.privacy'),
     url: '/privacidade',
     icon: Shield,
     moduleName: 'dados',
   },
   {
-    title: 'Compliance',
+    title: t('sidebar.compliance'),
     icon: CheckSquare,
     subItems: [
-      { title: 'Due Diligence', url: '/due-diligence', icon: BookOpen, moduleName: 'due-diligence' },
-      { title: 'Canal de Denúncia', url: '/denuncia', icon: MessageSquare, moduleName: 'denuncia' },
-      { title: 'Políticas', url: '/politicas', icon: GraduationCap, moduleName: 'politicas' },
+      { title: t('sidebar.dueDiligence'), url: '/due-diligence', icon: BookOpen, moduleName: 'due-diligence' },
+      { title: t('sidebar.whistleblowing'), url: '/denuncia', icon: MessageSquare, moduleName: 'denuncia' },
+      { title: t('sidebar.policies'), url: '/politicas', icon: GraduationCap, moduleName: 'politicas' },
     ],
   },
   {
-    title: 'Relatórios',
+    title: t('sidebar.reports'),
     url: '/relatorios',
     icon: FileBarChart,
     moduleName: 'relatorios',
@@ -139,8 +140,10 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const { signOut, company, logoUpdateKey } = useAuth();
   const { canAccess } = usePermissions();
+  const { t } = useLanguage();
   const location = useLocation();
   const currentPath = location.pathname;
+  const menuItems = getMenuItems(t);
   
   // Function to get which group contains the active route
   const getActiveGroup = () => {
@@ -386,10 +389,10 @@ export function AppSidebar() {
                         isActive('/configuracoes') ? 'text-primary' : ''
                       }`} />
                       {!isCollapsed && (
-                        <span className={`text-sm font-medium transition-colors duration-200 truncate ${
-                          isActive('/configuracoes') ? 'text-primary font-semibold' : ''
-                        }`}>
-                          Configurações
+                         <span className={`text-sm font-medium transition-colors duration-200 truncate ${
+                           isActive('/configuracoes') ? 'text-primary font-semibold' : ''
+                         }`}>
+                           {t('sidebar.settings')}
                         </span>
                       )}
                     </NavLink>
@@ -414,7 +417,7 @@ export function AppSidebar() {
             <LogOut className={`h-4 w-4 flex-shrink-0 ${!isCollapsed ? 'mr-3' : ''}`} />
             {!isCollapsed && (
               <span className="text-sm font-medium truncate">
-                Sair
+                {t('sidebar.logout')}
               </span>
             )}
           </Button>
@@ -424,10 +427,10 @@ export function AppSidebar() {
       <ConfirmDialog
         open={showLogoutConfirm}
         onOpenChange={setShowLogoutConfirm}
-        title="Confirmar saída"
-        description="Tem certeza que deseja sair do sistema?"
-        confirmText="Sair"
-        cancelText="Cancelar"
+        title={t('sidebar.confirmLogout')}
+        description={t('sidebar.confirmLogoutDesc')}
+        confirmText={t('sidebar.logout')}
+        cancelText={t('common.cancel')}
         variant="destructive"
         onConfirm={confirmSignOut}
       />

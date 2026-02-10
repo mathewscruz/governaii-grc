@@ -1,5 +1,6 @@
 import { HealthScoreGauge } from './HealthScoreGauge';
 import { Shield, AlertTriangle, Target, TrendingUp } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface HeroScoreBannerProps {
   healthScore: number;
@@ -16,24 +17,25 @@ export function HeroScoreBanner({
   complianceScore,
   userName 
 }: HeroScoreBannerProps) {
+  const { t } = useLanguage();
   const metrics = [
     {
       icon: AlertTriangle,
-      label: 'Alertas Críticos',
+      label: t('dashboard.criticalAlerts'),
       value: criticalAlerts,
       color: criticalAlerts > 0 ? 'text-destructive' : 'text-success',
       bgColor: criticalAlerts > 0 ? 'bg-destructive/10' : 'bg-success/10',
     },
     {
       icon: Shield,
-      label: 'Controles Ativos',
+      label: t('dashboard.activeControls'),
       value: activeControls,
       color: 'text-primary',
       bgColor: 'bg-primary/10',
     },
     {
       icon: Target,
-      label: 'Conformidade',
+      label: t('dashboard.compliance'),
       value: `${complianceScore}%`,
       color: complianceScore >= 70 ? 'text-success' : complianceScore >= 50 ? 'text-warning' : 'text-destructive',
       bgColor: complianceScore >= 70 ? 'bg-success/10' : complianceScore >= 50 ? 'bg-warning/10' : 'bg-destructive/10',
@@ -55,9 +57,9 @@ export function HeroScoreBanner({
         {/* Content */}
         <div className="flex-1 text-center lg:text-left space-y-4">
           <div>
-            <p className="text-sm text-muted-foreground">Centro de Comando</p>
+            <p className="text-sm text-muted-foreground">{t('dashboard.commandCenter')}</p>
             <h2 className="text-xl lg:text-2xl font-bold text-foreground">
-              Olá, {userName}
+              {t('dashboard.hello')}, {userName}
             </h2>
           </div>
 

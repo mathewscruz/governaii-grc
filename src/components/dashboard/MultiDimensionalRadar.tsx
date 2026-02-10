@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const CustomDot = ({ cx, cy, payload, navigate }: any) => {
   const handleClick = (e: any) => {
@@ -86,6 +87,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 export const MultiDimensionalRadar = () => {
   const { data, isLoading } = useRadarChartData();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   if (isLoading) {
     return (
@@ -106,14 +108,14 @@ export const MultiDimensionalRadar = () => {
       <CardHeader>
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-primary" />
-          <CardTitle>Maturidade GRC</CardTitle>
+          <CardTitle>{t('dashboard.maturity')}</CardTitle>
         </div>
         <CardDescription>
-          Visão consolidada de todos os módulos de governança, risco e compliance
+          {t('dashboard.maturityDesc')}
         </CardDescription>
       </CardHeader>
       <CardContent className="w-full overflow-hidden">
-        <ResponsiveContainer width="100%" height={400}>
+        <ResponsiveContainer width="100%" height={280}>
           <RadarChart data={data}>
             <PolarGrid 
               strokeDasharray="3 3" 
@@ -180,19 +182,19 @@ export const MultiDimensionalRadar = () => {
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="flex items-center gap-1 text-xs">
             <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
-            <span className="text-muted-foreground">80-100%: Excelente</span>
+            <span className="text-muted-foreground">80-100%: {t('dashboard.excellent')}</span>
           </div>
           <div className="flex items-center gap-1 text-xs">
             <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></div>
-            <span className="text-muted-foreground">60-79%: Bom</span>
+            <span className="text-muted-foreground">60-79%: {t('dashboard.good')}</span>
           </div>
           <div className="flex items-center gap-1 text-xs">
             <div className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0"></div>
-            <span className="text-muted-foreground">40-59%: Atenção</span>
+            <span className="text-muted-foreground">40-59%: {t('dashboard.warning')}</span>
           </div>
           <div className="flex items-center gap-1 text-xs">
             <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
-            <span className="text-muted-foreground">0-39%: Crítico</span>
+            <span className="text-muted-foreground">0-39%: {t('dashboard.criticalStatus')}</span>
           </div>
         </div>
       </CardContent>

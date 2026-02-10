@@ -20,11 +20,13 @@ import { useContratosStats } from '@/hooks/useContratosStats';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
 import { useGapAnalysisStats } from '@/hooks/useGapAnalysisStats';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Dashboard() {
   const { profile } = useAuth();
+  const { t, locale } = useLanguage();
   const [alertsDialogOpen, setAlertsDialogOpen] = useState(false);
   
   const ativosStats = useAtivosStats();
@@ -64,11 +66,11 @@ export default function Dashboard() {
         {/* Header compacto */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard Executivo</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('dashboard.title')}</h1>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
-            <span>{dataUpdatedAt ? format(new Date(dataUpdatedAt), "HH:mm", { locale: ptBR }) : '--:--'}</span>
+            <span>{dataUpdatedAt ? format(new Date(dataUpdatedAt), "HH:mm", { locale: locale === 'pt' ? ptBR : enUS }) : '--:--'}</span>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => refetchDashboard()}>
               <RefreshCw className="h-3.5 w-3.5" />
             </Button>
@@ -104,17 +106,17 @@ export default function Dashboard() {
           onAlertsClick={() => setAlertsDialogOpen(true)}
         />
 
-        {/* Maturidade + Vencimentos */}
+        {/* Resumo IA + Vencimentos */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-5 w-full">
           <div className="xl:col-span-2">
-            <MultiDimensionalRadar />
+            <ExecutiveSummaryAI />
           </div>
           <UpcomingExpirations />
         </div>
 
-        {/* IA + Timeline + Atividades */}
+        {/* Maturidade + Timeline + Atividades */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-5 w-full">
-          <ExecutiveSummaryAI />
+          <MultiDimensionalRadar />
           <RiskScoreTimeline />
           <RecentActivities />
         </div>

@@ -10,6 +10,7 @@ import {
   ArrowRight, FileDown, Loader2, TrendingUp, TrendingDown, Minus
 } from 'lucide-react';
 import { HealthScoreGauge } from './HealthScoreGauge';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Recomendacao {
   prioridade: 'alta' | 'media' | 'baixa';
@@ -28,6 +29,7 @@ interface AISummary {
 
 export function ExecutiveSummaryAI() {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [summary, setSummary] = useState<AISummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,11 +44,11 @@ export function ExecutiveSummaryAI() {
       if (data?.error) throw new Error(data.error);
       
       setSummary(data);
-      toast({ title: 'Resumo gerado com sucesso', description: 'Análise executiva atualizada pela IA.' });
+      toast({ title: t('dashboard.summaryGenerated'), description: t('dashboard.summaryUpdated') });
     } catch (err: any) {
-      const msg = err?.message || 'Erro ao gerar resumo';
+      const msg = err?.message || t('dashboard.errorGenerating');
       setError(msg);
-      toast({ title: 'Erro', description: msg, variant: 'destructive' });
+      toast({ title: t('dashboard.error'), description: msg, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -61,7 +63,7 @@ export function ExecutiveSummaryAI() {
 
       doc.setFontSize(20);
       doc.setTextColor(13, 148, 136);
-      doc.text('GovernAII - Resumo Executivo', margin, y);
+      doc.text(`GovernAII - ${t('dashboard.summary')}`, margin, y);
       y += 10;
 
       doc.setFontSize(10);
@@ -78,7 +80,7 @@ export function ExecutiveSummaryAI() {
       // Resumo
       doc.setFontSize(12);
       doc.setTextColor(0);
-      doc.text('Resumo', margin, y);
+      doc.text(t('dashboard.summary'), margin, y);
       y += 7;
       doc.setFontSize(10);
       doc.setTextColor(60);
@@ -151,10 +153,10 @@ export function ExecutiveSummaryAI() {
           <div className="flex-1 space-y-3">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">Resumo Executivo com IA</h3>
+              <h3 className="text-lg font-semibold">{t('dashboard.summaryWithAI')}</h3>
             </div>
             <p className="text-sm text-muted-foreground max-w-lg">
-              Consolide riscos, controles, incidentes e compliance em uma análise executiva com recomendações priorizadas.
+              {t('dashboard.summaryDesc')}
             </p>
             {/* Preview skeleton */}
             <div className="space-y-2 pt-2">
@@ -165,7 +167,7 @@ export function ExecutiveSummaryAI() {
           </div>
           <Button onClick={generateSummary} className="gap-2 shrink-0">
             <Sparkles className="h-4 w-4" />
-            Gerar Análise
+            {t('dashboard.generateAnalysis')}
           </Button>
         </CardContent>
       </Card>
@@ -178,7 +180,7 @@ export function ExecutiveSummaryAI() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <CardTitle className="text-lg">Gerando análise executiva...</CardTitle>
+            <CardTitle className="text-lg">{t('dashboard.generatingAnalysis')}</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -200,7 +202,7 @@ export function ExecutiveSummaryAI() {
           <AlertTriangle className="h-8 w-8 text-destructive" />
           <p className="text-sm text-muted-foreground">{error}</p>
           <Button variant="outline" onClick={generateSummary} className="gap-2">
-            <RefreshCw className="h-4 w-4" /> Tentar novamente
+            <RefreshCw className="h-4 w-4" /> {t('dashboard.tryAgain')}
           </Button>
         </CardContent>
       </Card>
@@ -215,7 +217,7 @@ export function ExecutiveSummaryAI() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Resumo Executivo IA</CardTitle>
+            <CardTitle className="text-lg">{t('dashboard.summary')}</CardTitle>
             <Badge variant="soft" className="text-xs">
               {new Date(summary.generatedAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
             </Badge>
@@ -225,7 +227,7 @@ export function ExecutiveSummaryAI() {
               <FileDown className="h-4 w-4" /> PDF
             </Button>
             <Button variant="ghost" size="sm" onClick={generateSummary} className="gap-1">
-              <RefreshCw className="h-4 w-4" /> Atualizar
+              <RefreshCw className="h-4 w-4" /> {t('common.update')}
             </Button>
           </div>
         </div>
@@ -244,7 +246,7 @@ export function ExecutiveSummaryAI() {
           {summary.destaques.length > 0 && (
             <div className="p-4 rounded-lg border bg-success/5 border-success/20">
               <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-success" /> Destaques Positivos
+                <CheckCircle2 className="h-4 w-4 text-success" /> {t('dashboard.positiveHighlights')}
               </h4>
               <ul className="space-y-2">
                 {summary.destaques.map((d, i) => (
@@ -260,7 +262,7 @@ export function ExecutiveSummaryAI() {
           {summary.alertas.length > 0 && (
             <div className="p-4 rounded-lg border bg-warning/5 border-warning/20">
               <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-warning" /> Alertas
+                <AlertTriangle className="h-4 w-4 text-warning" /> {t('dashboard.alerts')}
               </h4>
               <ul className="space-y-2">
                 {summary.alertas.map((a, i) => (
@@ -278,7 +280,7 @@ export function ExecutiveSummaryAI() {
         {summary.recomendacoes.length > 0 && (
           <div>
             <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <ArrowRight className="h-4 w-4 text-primary" /> Recomendações Priorizadas
+              <ArrowRight className="h-4 w-4 text-primary" /> {t('dashboard.prioritizedRecommendations')}
             </h4>
             <div className="space-y-3">
               {summary.recomendacoes.map((rec, i) => {
@@ -288,7 +290,7 @@ export function ExecutiveSummaryAI() {
                   <div key={i} className="flex items-start gap-3 p-3 rounded-lg border bg-card/50">
                     <Badge variant={config.color} className="shrink-0 mt-0.5">
                       <Icon className="h-3 w-3 mr-1" />
-                      {rec.prioridade === 'alta' ? 'Alta' : rec.prioridade === 'media' ? 'Média' : 'Baixa'}
+                      {rec.prioridade === 'alta' ? t('dashboard.highPriority') : rec.prioridade === 'media' ? t('dashboard.mediumPriority') : t('dashboard.lowPriority')}
                     </Badge>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{rec.acao}</p>

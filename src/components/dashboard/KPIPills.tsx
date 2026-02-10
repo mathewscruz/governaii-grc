@@ -5,6 +5,7 @@ import {
   Scale, FileText, Target 
 } from 'lucide-react';
 import { TrendBadge } from './TrendIndicators';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface KPIPillData {
   icon: React.ElementType;
@@ -38,11 +39,12 @@ interface KPIPillsProps {
 
 export function KPIPills(props: KPIPillsProps) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const pills: KPIPillData[] = [
     {
       icon: HardDrive,
-      label: 'Ativos',
+      label: t('kpi.assets'),
       value: props.ativos,
       route: '/ativos',
       color: 'text-primary',
@@ -50,72 +52,72 @@ export function KPIPills(props: KPIPillsProps) {
     },
     {
       icon: Bell,
-      label: 'Alertas',
+      label: t('kpi.alerts'),
       value: props.criticalAlerts,
       route: '',
       color: props.criticalAlerts > 0 ? 'text-warning' : 'text-success',
       bgColor: props.criticalAlerts > 0 ? 'bg-warning/10' : 'bg-success/10',
       alertBadge: props.criticalAlerts > 0 
-        ? { label: 'Atenção', variant: 'warning' as const }
-        : { label: 'OK', variant: 'success' as const },
+        ? { label: t('common.attention'), variant: 'warning' as const }
+        : { label: t('common.ok'), variant: 'success' as const },
       onClick: props.onAlertsClick,
     },
     {
       icon: Shield,
-      label: 'Controles',
+      label: t('kpi.controls'),
       value: props.activeControls,
       route: '/governanca?tab=controles',
       color: 'text-success',
       bgColor: 'bg-success/10',
       alertBadge: props.controlsExpiring > 0 
-        ? { label: `${props.controlsExpiring} vencendo`, variant: 'warning' as const }
+        ? { label: `${props.controlsExpiring} ${t('kpi.expiring')}`, variant: 'warning' as const }
         : undefined,
     },
     {
       icon: AlertCircle,
-      label: 'Incidentes',
+      label: t('kpi.incidents'),
       value: props.activeIncidents,
       route: '/incidentes',
       color: props.activeIncidents > 0 ? 'text-destructive' : 'text-muted-foreground',
       bgColor: props.activeIncidents > 0 ? 'bg-destructive/10' : 'bg-muted/50',
       alertBadge: props.incidentsThisMonth > 0 
-        ? { label: `+${props.incidentsThisMonth} mês`, variant: 'info' as const }
+        ? { label: `+${props.incidentsThisMonth} ${t('kpi.month')}`, variant: 'info' as const }
         : undefined,
     },
     {
       icon: Scale,
-      label: 'Contratos',
+      label: t('kpi.contracts'),
       value: props.activeContracts,
       route: '/contratos',
       color: 'text-primary',
       bgColor: 'bg-primary/10',
       alertBadge: props.contractsExpired > 0 
-        ? { label: `${props.contractsExpired} vencidos`, variant: 'destructive' as const }
+        ? { label: `${props.contractsExpired} ${t('kpi.expired')}`, variant: 'destructive' as const }
         : props.contractsExpiring > 0 
-        ? { label: `${props.contractsExpiring} vencendo`, variant: 'warning' as const }
+        ? { label: `${props.contractsExpiring} ${t('kpi.expiring')}`, variant: 'warning' as const }
         : undefined,
     },
     {
       icon: FileText,
-      label: 'Documentos',
+      label: t('kpi.documents'),
       value: props.activeDocs,
       route: '/documentos',
       color: 'text-primary',
       bgColor: 'bg-primary/10',
       alertBadge: props.docsExpiring > 0 
-        ? { label: `${props.docsExpiring} vencendo`, variant: 'warning' as const }
+        ? { label: `${props.docsExpiring} ${t('kpi.expiring')}`, variant: 'warning' as const }
         : props.docsPending > 0
-        ? { label: `${props.docsPending} pendentes`, variant: 'info' as const }
+        ? { label: `${props.docsPending} ${t('kpi.pending')}`, variant: 'info' as const }
         : undefined,
     },
     {
       icon: Target,
-      label: 'Conformidade',
+      label: t('kpi.compliance'),
       value: `${props.complianceScore}%`,
       route: '/gap-analysis',
       color: 'text-primary',
       bgColor: 'bg-primary/10',
-      alertBadge: { label: `${props.totalFrameworks} frameworks`, variant: 'info' as const },
+      alertBadge: { label: `${props.totalFrameworks} ${t('kpi.frameworks')}`, variant: 'info' as const },
     },
   ];
 

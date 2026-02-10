@@ -7,6 +7,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { useQuery } from '@tanstack/react-query';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp, TrendingDown, AlertTriangle, Loader2 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RiskData {
   month: string;
@@ -21,6 +22,7 @@ type TimeRange = 'week' | 'month' | 'year';
 export function RiskScoreTimeline() {
   const { profile } = useAuth();
   const [timeRange, setTimeRange] = useState<TimeRange>('month');
+  const { t } = useLanguage();
 
   // Query única otimizada
   const { data: riscos, isLoading } = useQuery({
@@ -96,7 +98,7 @@ export function RiskScoreTimeline() {
     if (active && payload && payload.length) {
       return (
         <div className="bg-card border rounded-lg p-3 shadow-md">
-          <p className="font-medium mb-2">{`Período: ${label}`}</p>
+          <p className="font-medium mb-2">{`${t('dashboard.period')}: ${label}`}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">{`${entry.name}: ${entry.value}`}</p>
           ))}
@@ -109,7 +111,7 @@ export function RiskScoreTimeline() {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader><CardTitle>Evolução de Riscos por Criticidade</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('dashboard.riskEvolution')}</CardTitle></CardHeader>
         <CardContent>
           <div className="h-80 flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -123,12 +125,12 @@ export function RiskScoreTimeline() {
     <Card className="w-full">
       <CardHeader>
         <div className="flex items-center justify-between w-full">
-          <CardTitle>Evolução de Riscos por Criticidade</CardTitle>
+          <CardTitle>{t('dashboard.riskEvolution')}</CardTitle>
           <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
             <TabsList>
-              <TabsTrigger value="week">Semanal</TabsTrigger>
-              <TabsTrigger value="month">Mensal</TabsTrigger>
-              <TabsTrigger value="year">Anual</TabsTrigger>
+              <TabsTrigger value="week">{t('dashboard.weekly')}</TabsTrigger>
+              <TabsTrigger value="month">{t('dashboard.monthly')}</TabsTrigger>
+              <TabsTrigger value="year">{t('dashboard.yearly')}</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -138,7 +140,7 @@ export function RiskScoreTimeline() {
           {trend === 'down' && <TrendingDown className="h-5 w-5 text-green-600" />}
           {trend === 'stable' && <AlertTriangle className="h-5 w-5 text-warning" />}
           <Badge variant={totalCritical === 0 ? 'default' : 'destructive'}>
-            {totalCritical === 0 ? 'Sem Críticos' : 'Riscos Críticos'}
+            {totalCritical === 0 ? t('dashboard.noCritical') : t('dashboard.criticalRisks')}
           </Badge>
         </div>
       </CardHeader>
@@ -151,18 +153,18 @@ export function RiskScoreTimeline() {
               <YAxis axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip content={customTooltip} />
               <Legend />
-              <Line type="monotone" dataKey="criticos" stroke="hsl(var(--destructive))" strokeWidth={3} name="Críticos" dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="altos" stroke="hsl(var(--warning))" strokeWidth={2} name="Altos" dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="medios" stroke="hsl(var(--primary))" strokeWidth={2} name="Médios" dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="baixos" stroke="hsl(var(--muted-foreground))" strokeWidth={2} name="Baixos" dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="criticos" stroke="hsl(var(--destructive))" strokeWidth={3} name={t('dashboard.critical')} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="altos" stroke="hsl(var(--warning))" strokeWidth={2} name={t('dashboard.high')} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="medios" stroke="hsl(var(--primary))" strokeWidth={2} name={t('dashboard.medium')} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="baixos" stroke="hsl(var(--muted-foreground))" strokeWidth={2} name={t('dashboard.low')} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
         <div className="mt-4 grid grid-cols-4 gap-4 text-center border-t pt-4">
-          <div><p className="text-lg font-bold text-destructive">{chartData[chartData.length - 1]?.criticos || 0}</p><p className="text-xs text-muted-foreground">Críticos</p></div>
-          <div><p className="text-lg font-bold text-warning">{chartData[chartData.length - 1]?.altos || 0}</p><p className="text-xs text-muted-foreground">Altos</p></div>
-          <div><p className="text-lg font-bold text-primary">{chartData[chartData.length - 1]?.medios || 0}</p><p className="text-xs text-muted-foreground">Médios</p></div>
-          <div><p className="text-lg font-bold text-muted-foreground">{chartData[chartData.length - 1]?.baixos || 0}</p><p className="text-xs text-muted-foreground">Baixos</p></div>
+          <div><p className="text-lg font-bold text-destructive">{chartData[chartData.length - 1]?.criticos || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.critical')}</p></div>
+          <div><p className="text-lg font-bold text-warning">{chartData[chartData.length - 1]?.altos || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.high')}</p></div>
+          <div><p className="text-lg font-bold text-primary">{chartData[chartData.length - 1]?.medios || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.medium')}</p></div>
+          <div><p className="text-lg font-bold text-muted-foreground">{chartData[chartData.length - 1]?.baixos || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.low')}</p></div>
         </div>
       </CardContent>
     </Card>

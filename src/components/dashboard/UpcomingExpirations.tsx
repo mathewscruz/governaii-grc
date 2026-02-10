@@ -7,6 +7,7 @@ import { Calendar, FileKey, KeyRound, Handshake, Shield, Loader2 } from 'lucide-
 import { formatDateOnly } from '@/lib/date-utils';
 import { differenceInDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ExpirationItem {
   id: string;
@@ -19,6 +20,7 @@ interface ExpirationItem {
 export function UpcomingExpirations() {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const { data: items, isLoading } = useQuery({
     queryKey: ['upcoming-expirations', profile?.empresa_id],
@@ -77,10 +79,10 @@ export function UpcomingExpirations() {
   });
 
   const typeConfig = {
-    contrato: { icon: Handshake, label: 'Contrato', route: '/contratos' },
-    licenca: { icon: FileKey, label: 'Licença', route: '/ativos/licencas' },
-    chave: { icon: KeyRound, label: 'Chave', route: '/ativos/chaves' },
-    controle: { icon: Shield, label: 'Controle', route: '/governanca?tab=controles' },
+    contrato: { icon: Handshake, label: t('expirations.contract'), route: '/contratos' },
+    licenca: { icon: FileKey, label: t('expirations.license'), route: '/ativos/licencas' },
+    chave: { icon: KeyRound, label: t('expirations.key'), route: '/ativos/chaves' },
+    controle: { icon: Shield, label: t('expirations.control'), route: '/governanca?tab=controles' },
   };
 
   const getDaysVariant = (days: number) => {
@@ -92,7 +94,7 @@ export function UpcomingExpirations() {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Calendar className="h-4 w-4" /> Próximos Vencimentos</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Calendar className="h-4 w-4" /> {t('dashboard.upcomingExpirations')}</CardTitle></CardHeader>
         <CardContent className="flex items-center justify-center h-48"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></CardContent>
       </Card>
     );
@@ -102,12 +104,12 @@ export function UpcomingExpirations() {
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-warning" /> Próximos Vencimentos
+          <Calendar className="h-4 w-4 text-warning" /> {t('dashboard.upcomingExpirations')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {!items || items.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">Nenhum vencimento nos próximos 60 dias 🎉</p>
+          <p className="text-sm text-muted-foreground text-center py-6">{t('dashboard.noExpirations')}</p>
         ) : (
           <div className="space-y-3">
             {items.map(item => {

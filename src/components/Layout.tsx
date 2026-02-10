@@ -14,6 +14,7 @@ import PageTransition from '@/components/PageTransition';
 import TrialBanner from '@/components/TrialBanner';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { differenceInDays, parseISO } from 'date-fns';
@@ -178,6 +179,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <LanguageSelector />
               <ChangelogPopover />
               <NotificationCenter />
               <UserProfile />

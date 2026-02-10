@@ -6,7 +6,8 @@ import { useAuth } from '@/components/AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import { FileText, AlertTriangle, Shield, Users, Calendar, Building, MessageSquareWarning } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Activity {
   id: string;
@@ -22,6 +23,7 @@ interface Activity {
 export function RecentActivities() {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { t, locale } = useLanguage();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -235,7 +237,7 @@ export function RecentActivities() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Atividades Recentes</CardTitle>
+        <CardTitle>{t('dashboard.recentActivities')}</CardTitle>
       </CardHeader>
       <CardContent className="max-h-[500px] overflow-y-auto">
         {loading ? (
@@ -279,7 +281,7 @@ export function RecentActivities() {
                   <p className="text-xs text-muted-foreground/70 mt-1">
                     {formatDistanceToNow(new Date(activity.created_at), {
                       addSuffix: true,
-                      locale: ptBR
+                      locale: locale === 'pt' ? ptBR : enUS
                     })}
                   </p>
                 </div>
@@ -292,7 +294,7 @@ export function RecentActivities() {
               <Calendar className="h-12 w-12" />
             </div>
             <p className="text-muted-foreground">
-              Nenhuma atividade recente encontrada
+              {t('dashboard.noActivities')}
             </p>
           </div>
         )}
