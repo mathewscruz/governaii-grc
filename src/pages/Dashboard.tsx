@@ -11,6 +11,8 @@ import { RecentActivities } from '@/components/dashboard/RecentActivities';
 import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
 import AlertsDetailDialog from '@/components/dashboard/AlertsDetailDialog';
 import { ExecutiveSummaryAI } from '@/components/dashboard/ExecutiveSummaryAI';
+import { UpcomingExpirations } from '@/components/dashboard/UpcomingExpirations';
+import { TrendBadge, useTrendData } from '@/components/dashboard/TrendIndicators';
 import { useAtivosStats } from '@/hooks/useAtivosStats';
 import { useControlesStats } from '@/hooks/useControlesStats';
 import { useIncidentesStats } from '@/hooks/useIncidentesStats';
@@ -28,6 +30,7 @@ export default function Dashboard() {
   const controlesStats = useControlesStats();
   const incidentesStats = useIncidentesStats();
   const { data: dashboardData, isLoading: dashboardLoading, refetch: refetchDashboard, dataUpdatedAt } = useDashboardStats();
+  const { data: trends } = useTrendData();
 
   const isLoading = ativosStats.isLoading || controlesStats.isLoading || incidentesStats.isLoading || dashboardLoading;
 
@@ -38,7 +41,6 @@ export default function Dashboard() {
           <Skeleton className="h-8 w-64 mb-2" />
           <Skeleton className="h-4 w-96" />
         </div>
-        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="animate-fade-in">
@@ -53,12 +55,10 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Skeleton className="h-96 rounded-lg" />
           <Skeleton className="h-96 rounded-lg" />
         </div>
-        <Skeleton className="h-80 rounded-lg" />
       </div>
     );
   }
@@ -69,10 +69,10 @@ export default function Dashboard() {
         {/* Saudação personalizada com timestamp */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
               Olá, {profile?.nome || 'Usuário'}! 👋
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-base sm:text-lg">
               Aqui está um resumo da sua situação de segurança e conformidade
             </p>
           </div>
@@ -92,8 +92,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* KPIs Principais com nova identidade visual */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 w-full">
+        {/* KPIs Principais */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 w-full">
           {/* Card 1: Gestão de Ativos */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -107,34 +107,29 @@ export default function Dashboard() {
                 onKeyDown={(e) => e.key === 'Enter' && navigate('/ativos')}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors pl-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors pl-2">
                     Gestão de Ativos
                   </CardTitle>
-                  <div className="p-2.5 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-                    <HardDrive className="h-4 w-4" />
+                  <div className="p-2 sm:p-2.5 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+                    <HardDrive className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </div>
                 </CardHeader>
-                <CardContent className="pl-7">
-                  <div className="text-3xl font-bold mb-2 tracking-tight">{ativosStats.data?.total || 0}</div>
-                  <div className="flex items-center gap-2 flex-wrap">
+                <CardContent className="pl-4 sm:pl-7">
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-2xl sm:text-3xl font-bold tracking-tight">{ativosStats.data?.total || 0}</div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap mt-1">
                     <Badge 
                       variant={ativosStats.data?.criticos > 0 ? "destructive" : "soft"}
                       icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}
                     >
                       {ativosStats.data?.ativos || 0} ativos
                     </Badge>
-                    {ativosStats.data?.criticos > 0 && (
-                      <Badge variant="destructive" size="sm">
-                        {ativosStats.data.criticos} críticos
-                      </Badge>
-                    )}
                   </div>
                 </CardContent>
               </Card>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>Total de ativos cadastrados e sua criticidade</p>
-            </TooltipContent>
+            <TooltipContent><p>Total de ativos cadastrados e sua criticidade</p></TooltipContent>
           </Tooltip>
 
           {/* Card 2: Alertas Críticos */}
@@ -150,29 +145,30 @@ export default function Dashboard() {
                 onKeyDown={(e) => e.key === 'Enter' && setAlertsDialogOpen(true)}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors pl-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors pl-2">
                     Alertas Críticos
                   </CardTitle>
-                  <div className="p-2.5 rounded-lg bg-warning/10 text-warning group-hover:bg-warning/20 transition-colors">
-                    <Bell className="h-4 w-4" />
+                  <div className="p-2 sm:p-2.5 rounded-lg bg-warning/10 text-warning group-hover:bg-warning/20 transition-colors">
+                    <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </div>
                 </CardHeader>
-                <CardContent className="pl-7">
-                  <div className="text-3xl font-bold mb-2 tracking-tight">{dashboardData?.criticalAlerts || 0}</div>
-                  <div className="flex items-center">
+                <CardContent className="pl-4 sm:pl-7">
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-2xl sm:text-3xl font-bold tracking-tight">{dashboardData?.criticalAlerts || 0}</div>
+                    {trends && <TrendBadge value={trends.riscosChange + trends.incidentesChange} inverted />}
+                  </div>
+                  <div className="flex items-center mt-1">
                     <Badge 
                       variant={(dashboardData?.criticalAlerts || 0) > 5 ? "destructive" : (dashboardData?.criticalAlerts || 0) > 0 ? "warning" : "success"}
                       icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}
                     >
-                      {(dashboardData?.criticalAlerts || 0) > 0 ? 'Clique para detalhes' : 'Tudo ok'}
+                      {(dashboardData?.criticalAlerts || 0) > 0 ? 'Detalhes' : 'Tudo ok'}
                     </Badge>
                   </div>
                 </CardContent>
               </Card>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>Soma de riscos altos, denúncias pendentes, controles vencendo e incidentes críticos</p>
-            </TooltipContent>
+            <TooltipContent><p>Soma de riscos altos, denúncias pendentes, controles vencendo e incidentes críticos</p></TooltipContent>
           </Tooltip>
 
           {/* Card 3: Controles Internos */}
@@ -188,32 +184,30 @@ export default function Dashboard() {
                 onKeyDown={(e) => e.key === 'Enter' && navigate('/governanca?tab=controles')}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors pl-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors pl-2">
                     Controles Internos
                   </CardTitle>
-                  <div className="p-2.5 rounded-lg bg-success/10 text-success group-hover:bg-success/20 transition-colors">
-                    <Shield className="h-4 w-4" />
+                  <div className="p-2 sm:p-2.5 rounded-lg bg-success/10 text-success group-hover:bg-success/20 transition-colors">
+                    <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </div>
                 </CardHeader>
-                <CardContent className="pl-7">
-                  <div className="text-3xl font-bold mb-2 tracking-tight">{controlesStats.data?.ativos || 0}</div>
-                  <div className="flex items-center gap-2 flex-wrap">
+                <CardContent className="pl-4 sm:pl-7">
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-2xl sm:text-3xl font-bold tracking-tight">{controlesStats.data?.ativos || 0}</div>
+                    {trends && <TrendBadge value={trends.controlesChange} />}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap mt-1">
                     <Badge 
                       variant={controlesStats.data?.vencendoAvaliacao > 0 ? "warning" : "success"}
                       icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}
                     >
                       {controlesStats.data?.vencendoAvaliacao || 0} vencendo
                     </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      de {controlesStats.data?.total || 0}
-                    </span>
                   </div>
                 </CardContent>
               </Card>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>Controles ativos e quantos estão com avaliação próxima do vencimento</p>
-            </TooltipContent>
+            <TooltipContent><p>Controles ativos e quantos estão com avaliação próxima do vencimento</p></TooltipContent>
           </Tooltip>
 
           {/* Card 4: Incidentes de Segurança */}
@@ -229,50 +223,51 @@ export default function Dashboard() {
                 onKeyDown={(e) => e.key === 'Enter' && navigate('/incidentes')}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors pl-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors pl-2">
                     Incidentes Ativos
                   </CardTitle>
-                  <div className="p-2.5 rounded-lg bg-destructive/10 text-destructive group-hover:bg-destructive/20 transition-colors">
-                    <AlertCircle className="h-4 w-4" />
+                  <div className="p-2 sm:p-2.5 rounded-lg bg-destructive/10 text-destructive group-hover:bg-destructive/20 transition-colors">
+                    <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </div>
                 </CardHeader>
-                <CardContent className="pl-7">
-                  <div className="text-3xl font-bold mb-2 tracking-tight">
-                    {(incidentesStats.data?.abertos || 0) + (incidentesStats.data?.investigacao || 0)}
+                <CardContent className="pl-4 sm:pl-7">
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-2xl sm:text-3xl font-bold tracking-tight">
+                      {(incidentesStats.data?.abertos || 0) + (incidentesStats.data?.investigacao || 0)}
+                    </div>
+                    {trends && <TrendBadge value={trends.incidentesChange} inverted />}
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap mt-1">
                     <Badge 
                       variant={(incidentesStats.data?.mes || 0) > 0 ? "info" : "neutral"}
                       icon={<div className="w-1.5 h-1.5 rounded-full bg-current" />}
                     >
                       +{incidentesStats.data?.mes || 0} este mês
                     </Badge>
-                    {incidentesStats.data?.criticos > 0 && (
-                      <Badge variant="destructive" size="sm">
-                        {incidentesStats.data.criticos} críticos
-                      </Badge>
-                    )}
                   </div>
                 </CardContent>
               </Card>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>Incidentes abertos ou em investigação</p>
-            </TooltipContent>
+            <TooltipContent><p>Incidentes abertos ou em investigação</p></TooltipContent>
           </Tooltip>
         </div>
 
         {/* Resumo Executivo com IA */}
         <ExecutiveSummaryAI />
 
-        {/* Matriz de Risco e Atividades Recentes */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6 w-full">
-          <MultiDimensionalRadar />
-          <RecentActivities />
+        {/* Matriz de Risco, Atividades e Vencimentos */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6 w-full">
+          <div className="xl:col-span-2">
+            <MultiDimensionalRadar />
+          </div>
+          <UpcomingExpirations />
         </div>
 
-        {/* Timeline do Score de Risco */}
-        <RiskScoreTimeline />
+        {/* Atividades Recentes + Timeline */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6 w-full">
+          <RecentActivities />
+          <RiskScoreTimeline />
+        </div>
 
         {/* Dialog de detalhes de alertas */}
         <AlertsDetailDialog
