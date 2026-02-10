@@ -1,35 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { DenunciasDashboard } from '@/components/denuncia/DenunciasDashboard';
-import { ConfiguracoesDenuncia } from '@/components/denuncia/ConfiguracoesDenuncia';
-import { CategoriasDenuncia } from '@/components/denuncia/CategoriasDenuncia';
 import { RelatoriosDenuncia } from '@/components/denuncia/RelatoriosDenuncia';
 import { useDenunciasStats } from '@/hooks/useDenunciasStats';
-import { Shield, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import { Shield, AlertTriangle, Clock, CheckCircle, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function Denuncia() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('dashboard');
   const [denunciaIdToOpen, setDenunciaIdToOpen] = useState<string | null>(null);
+  const [relatoriosOpen, setRelatoriosOpen] = useState(false);
   const { data: stats, isLoading: statsLoading } = useDenunciasStats();
-
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab && ['dashboard', 'configuracoes', 'categorias', 'relatorios'].includes(tab)) {
-      setActiveTab(tab);
-    }
-  }, [searchParams]);
 
   // Detectar se veio com itemId do dashboard
   useEffect(() => {
     const itemId = location.state?.itemId;
     if (itemId) {
       setDenunciaIdToOpen(itemId);
-      setActiveTab('dashboard'); // Garantir que está na aba dashboard
     }
   }, [location.state]);
 
@@ -38,6 +29,12 @@ export default function Denuncia() {
       <PageHeader
         title="Canal de Denúncia"
         description="Gerencie denúncias e mantenha um ambiente ético e transparente"
+        actions={
+          <Button variant="outline" onClick={() => setRelatoriosOpen(true)}>
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Relatórios
+          </Button>
+        }
       />
 
       {/* StatCards */}
@@ -78,30 +75,17 @@ export default function Denuncia() {
         />
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
-          <TabsTrigger value="categorias">Categorias</TabsTrigger>
-          <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
-        </TabsList>
+      <DenunciasDashboard itemIdToOpen={denunciaIdToOpen} />
 
-        <TabsContent value="dashboard">
-          <DenunciasDashboard itemIdToOpen={denunciaIdToOpen} />
-        </TabsContent>
-
-        <TabsContent value="configuracoes">
-          <ConfiguracoesDenuncia />
-        </TabsContent>
-
-        <TabsContent value="categorias">
-          <CategoriasDenuncia />
-        </TabsContent>
-
-        <TabsContent value="relatorios">
+      {/* Relatórios Dialog */}
+      <Dialog open={relatoriosOpen} onOpenChange={setRelatoriosOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Relatórios de Denúncias</DialogTitle>
+          </DialogHeader>
           <RelatoriosDenuncia />
-        </TabsContent>
-      </Tabs>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
