@@ -69,11 +69,11 @@ export default function Dashboard() {
         {/* Saudação personalizada com timestamp */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-              Olá, {profile?.nome || 'Usuário'}! 👋
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
+              Dashboard Executivo
             </h1>
-            <p className="text-muted-foreground text-base sm:text-lg">
-              Aqui está um resumo da sua situação de segurança e conformidade
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Bem-vindo, {profile?.nome || 'Usuário'} — visão consolidada de segurança e conformidade
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

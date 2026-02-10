@@ -146,20 +146,26 @@ export function ExecutiveSummaryAI() {
 
   if (!summary && !loading) {
     return (
-      <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
-        <CardContent className="flex flex-col items-center justify-center py-10 gap-4">
-          <div className="p-4 rounded-full bg-primary/10">
-            <Sparkles className="h-8 w-8 text-primary" />
-          </div>
-          <div className="text-center">
-            <h3 className="text-lg font-semibold mb-1">Resumo Executivo com IA</h3>
-            <p className="text-sm text-muted-foreground max-w-md">
-              Gere uma análise inteligente consolidando riscos, controles, incidentes e compliance em insights acionáveis.
+      <Card className="border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+        <CardContent className="flex flex-col sm:flex-row items-center gap-6 py-8 px-6">
+          <div className="flex-1 space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Resumo Executivo com IA</h3>
+            </div>
+            <p className="text-sm text-muted-foreground max-w-lg">
+              Consolide riscos, controles, incidentes e compliance em uma análise executiva com recomendações priorizadas.
             </p>
+            {/* Preview skeleton */}
+            <div className="space-y-2 pt-2">
+              <Skeleton className="h-3 w-full max-w-md opacity-40" />
+              <Skeleton className="h-3 w-3/4 max-w-sm opacity-30" />
+              <Skeleton className="h-3 w-1/2 max-w-xs opacity-20" />
+            </div>
           </div>
-          <Button onClick={generateSummary} className="gap-2">
+          <Button onClick={generateSummary} className="gap-2 shrink-0">
             <Sparkles className="h-4 w-4" />
-            Gerar Resumo Executivo
+            Gerar Análise
           </Button>
         </CardContent>
       </Card>

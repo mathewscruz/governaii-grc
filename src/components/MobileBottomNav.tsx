@@ -1,28 +1,29 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, AlertTriangle, Shield, FileText, Settings, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, AlertTriangle, FileCheck, FileText, Settings, MoreHorizontal } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { 
-  Database, BarChart3, Lock, CheckSquare, HardDrive, 
-  FileBarChart, GraduationCap, MessageSquare, BookOpen, ListTodo
+  Database, BarChart3, Lock, CheckSquare, AlertCircle, 
+  FileBarChart, GraduationCap, MessageSquare, BookOpen, ListTodo, Handshake, Eye
 } from 'lucide-react';
 
 const mainNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Riscos', url: '/riscos', icon: AlertTriangle },
-  { title: 'Controles', url: '/governanca', icon: Shield },
+  { title: 'Controles', url: '/governanca', icon: FileCheck },
   { title: 'Docs', url: '/documentos', icon: FileText },
 ];
 
 const moreNavItems = [
   { title: 'Planos de Ação', url: '/planos-acao', icon: ListTodo },
+  { title: 'Contratos', url: '/contratos', icon: Handshake },
   { title: 'Ativos', url: '/ativos', icon: Database },
   { title: 'Gap Analysis', url: '/gap-analysis/frameworks', icon: BarChart3 },
   { title: 'Segurança', url: '/contas-privilegiadas', icon: Lock },
-  { title: 'Incidentes', url: '/incidentes', icon: HardDrive },
-  { title: 'Privacidade', url: '/privacidade', icon: Shield },
+  { title: 'Incidentes', url: '/incidentes', icon: AlertCircle },
+  { title: 'Privacidade', url: '/privacidade', icon: Eye },
   { title: 'Due Diligence', url: '/due-diligence', icon: BookOpen },
   { title: 'Compliance', url: '/denuncia', icon: CheckSquare },
   { title: 'Políticas', url: '/politicas', icon: GraduationCap },

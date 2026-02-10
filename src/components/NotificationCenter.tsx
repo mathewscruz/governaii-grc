@@ -358,10 +358,20 @@ const NotificationCenter: React.FC = () => {
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
-  // Combinar notificações manuais e automáticas
+  // Combinar notificações manuais e automáticas, priorizando por severidade
+  const typePriority: Record<string, number> = { error: 0, warning: 1, info: 2, success: 3 };
   const allNotifications = [...notifications, ...automaticNotifications]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 20);
+    .sort((a, b) => {
+      // Não lidas primeiro
+      if (!a.read && b.read) return -1;
+      if (a.read && !b.read) return 1;
+      // Dentro do mesmo status de leitura, priorizar por severidade
+      const prioDiff = (typePriority[a.type] ?? 4) - (typePriority[b.type] ?? 4);
+      if (prioDiff !== 0) return prioDiff;
+      // Mesma severidade, mais recente primeiro
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    })
+    .slice(0, 30);
 
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
