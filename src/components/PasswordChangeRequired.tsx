@@ -80,6 +80,20 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
     try {
       setLoading(true);
 
+      // Validar senha atual via re-autenticação
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser?.email) throw new Error('Não foi possível obter o email do usuário');
+
+      const { error: reAuthError } = await supabase.auth.signInWithPassword({
+        email: currentUser.email,
+        password: currentPassword,
+      });
+
+      if (reAuthError) {
+        toast.error('Senha atual incorreta. Verifique e tente novamente.');
+        return;
+      }
+
       // Atualizar senha no Supabase Auth
       const { error } = await supabase.auth.updateUser({
         password: newPassword

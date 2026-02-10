@@ -91,67 +91,83 @@ Deno.serve(async (req) => {
 
     console.log(`Criando usuário: ${email}`)
 
-    // Verificar se já existe usuário com este email no Auth
-    const { data: existingAuthUsers, error: listUsersError } = await supabaseAdmin.auth.admin.listUsers()
-    
-    if (listUsersError) {
-      console.error('Erro ao verificar usuários existentes:', listUsersError)
+    // Gerar senha temporária ANTES de criar o usuário
+    const { data: tempPassword, error: tempPassError } = await supabaseAdmin
+      .rpc('generate_temp_password')
+
+    if (tempPassError || !tempPassword) {
+      console.error('Erro ao gerar senha temporária:', tempPassError)
+      throw new Error('Erro ao gerar senha temporária')
+    }
+
+    // Verificar se já existe usuário com este email via profiles (mais eficiente)
+    const { data: existingProfile, error: existingProfileError } = await supabaseAdmin
+      .from('profiles')
+      .select('user_id, id, nome, created_at')
+      .eq('email', email)
+      .maybeSingle()
+
+    if (existingProfileError) {
+      console.error('Erro ao verificar perfil existente:', existingProfileError)
       throw new Error('Erro ao verificar usuários existentes')
     }
 
-    const existingAuthUser = existingAuthUsers.users.find(user => user.email === email)
-
     let authData: any
 
-    if (existingAuthUser) {
-      console.log('Usuário já existe no Auth:', existingAuthUser.id)
-      
-      // Verificar se tem profile
-      const { data: existingProfile, error: profileCheckError } = await supabaseAdmin
-        .from('profiles')
-        .select('*')
-        .eq('user_id', existingAuthUser.id)
-        .single()
-      
-      if (profileCheckError && profileCheckError.code !== 'PGRST116') { // PGRST116 = not found
-        console.error('Erro ao verificar profile existente:', profileCheckError)
-        throw new Error('Erro ao verificar dados do usuário')
-      }
+    if (existingProfile) {
+      // Usuário já existe completamente
+      return new Response(JSON.stringify({
+        error: 'DUPLICATE_USER',
+        message: 'Usuário já existe no sistema',
+        details: {
+          user_id: existingProfile.user_id,
+          profile_id: existingProfile.id,
+          email: email,
+          nome: existingProfile.nome,
+          created_at: existingProfile.created_at
+        },
+        suggestions: [
+          'Verifique se o email está correto',
+          'Use a opção "Reenviar Email de Boas-vindas" se necessário',
+          'Edite o usuário existente se precisar fazer alterações'
+        ]
+      }), {
+        status: 409,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
+      })
+    }
 
-      if (existingProfile) {
-        // Usuário já existe completamente
-        return new Response(JSON.stringify({
-          error: 'DUPLICATE_USER',
-          message: 'Usuário já existe no sistema',
-          details: {
-            user_id: existingAuthUser.id,
-            profile_id: existingProfile.id,
-            email: email,
-            nome: existingProfile.nome,
-            created_at: existingProfile.created_at
-          },
-          suggestions: [
-            'Verifique se o email está correto',
-            'Use a opção "Reenviar Email de Boas-vindas" se necessário',
-            'Edite o usuário existente se precisar fazer alterações'
-          ]
-        }), {
-          status: 409, // Conflict
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders,
-          },
-        })
-      } else {
-        // Usuário órfão - existe no Auth mas não tem profile
-        console.log('Usuário órfão detectado - recriando profile para:', email)
-        authData = { user: existingAuthUser }
-      }
+    // Verificar se existe no Auth mas sem profile (órfão)
+    const { data: existingAuthUsers, error: listUsersError } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 1,
+    })
+
+    // Tentar buscar diretamente pelo email
+    let existingAuthUser = null
+    try {
+      const allUsers = await supabaseAdmin.auth.admin.listUsers()
+      existingAuthUser = allUsers.data?.users?.find(u => u.email === email) || null
+    } catch (e) {
+      console.warn('Erro ao buscar usuário no Auth, criando novo:', e)
+    }
+
+    if (existingAuthUser) {
+      console.log('Usuário órfão detectado - recriando profile para:', email)
+      authData = { user: existingAuthUser }
+
+      // Atualizar senha do usuário órfão
+      await supabaseAdmin.auth.admin.updateUserById(existingAuthUser.id, {
+        password: tempPassword
+      })
     } else {
-      // Criar novo usuário no Auth
+      // Criar novo usuário no Auth com a senha temporária já gerada
       const { data: newAuthData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
         email: email,
-        password: 'temp123456', // Senha temporária inicial
+        password: tempPassword,
         email_confirm: true,
         user_metadata: {
           nome: nome,
@@ -194,25 +210,7 @@ Deno.serve(async (req) => {
 
     console.log('Perfil criado com sucesso')
 
-    // Gerar senha temporária
-    const { data: tempPassword, error: passwordError } = await supabaseAdmin
-      .rpc('generate_temp_password')
-
-    if (passwordError || !tempPassword) {
-      console.error('Erro ao gerar senha temporária:', passwordError)
-      throw new Error('Erro ao gerar senha temporária')
-    }
-
-    // Atualizar com a senha temporária gerada
-    const { error: updatePasswordError } = await supabaseAdmin.auth.admin.updateUserById(
-      authData.user.id,
-      { password: tempPassword }
-    )
-
-    if (updatePasswordError) {
-      console.error('Erro ao atualizar senha:', updatePasswordError)
-      throw new Error('Erro ao definir senha temporária')
-    }
+    // Senha temporária já foi gerada no início da função
 
     // Registrar senha temporária
     await supabaseAdmin

@@ -25,6 +25,14 @@ const perfilSchema = z.object({
 }, {
   message: "As senhas não coincidem ou senha atual não foi informada",
   path: ["confirmar_senha"],
+}).refine((data) => {
+  if (data.nova_senha && data.nova_senha.length > 0 && data.nova_senha.length < 6) {
+    return false;
+  }
+  return true;
+}, {
+  message: "A nova senha deve ter pelo menos 6 caracteres",
+  path: ["nova_senha"],
 });
 
 type PerfilForm = z.infer<typeof perfilSchema>;
@@ -128,6 +136,17 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
 
       // Atualizar senha se fornecida
       if (data.nova_senha && data.senha_atual) {
+        // Validar senha atual via re-autenticação
+        const { error: reAuthError } = await supabase.auth.signInWithPassword({
+          email: user?.email || '',
+          password: data.senha_atual,
+        });
+
+        if (reAuthError) {
+          toast.error('Senha atual incorreta. Verifique e tente novamente.');
+          return;
+        }
+
         const { error: passwordError } = await supabase.auth.updateUser({
           password: data.nova_senha
         });

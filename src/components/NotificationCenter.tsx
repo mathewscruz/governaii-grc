@@ -384,6 +384,36 @@ const NotificationCenter: React.FC = () => {
     },
   });
 
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      // Marcar manuais como lidas
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('read', false);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const handleMarkAllAsRead = () => {
+    // Marcar automáticas como lidas via localStorage
+    const unreadAutomatic = automaticNotifications.filter(n => !n.read);
+    unreadAutomatic.forEach(n => markAutomaticNotificationAsRead(n.id));
+    setReadAutomaticIds(prev => {
+      const newSet = new Set(prev);
+      unreadAutomatic.forEach(n => newSet.add(n.id));
+      return newSet;
+    });
+    queryClient.invalidateQueries({ queryKey: ['automatic-notifications'] });
+
+    // Marcar manuais como lidas
+    markAllAsReadMutation.mutate();
+  };
+
   const unreadCount = allNotifications.filter(n => !n.read).length;
 
   const handleNotificationClick = (notification: Notification) => {
@@ -443,9 +473,22 @@ const NotificationCenter: React.FC = () => {
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold">Notificações</h3>
-          {unreadCount > 0 && (
-            <Badge variant="secondary">{unreadCount} não lidas</Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 px-2"
+                  onClick={handleMarkAllAsRead}
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  Marcar todas
+                </Button>
+                <Badge variant="secondary">{unreadCount} não lidas</Badge>
+              </>
+            )}
+          </div>
         </div>
         
         <ScrollArea className="h-80">

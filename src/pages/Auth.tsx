@@ -268,7 +268,7 @@ const Auth = () => {
             Política de Privacidade
           </Link>
           <p className="text-muted-foreground text-sm">
-            © 2025 - GovernAII - Todos os direitos reservados
+            © {new Date().getFullYear()} - GovernAII - Todos os direitos reservados
           </p>
         </div>
       </div>
