@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Eye, EyeOff, CheckCircle2, Loader2 } from 'lucide-react';
-import logoImage from '@/assets/governaii-logo-main.png';
+import logoImage from '@/assets/akuris-logo.png';
 import { ForgotPasswordDialog } from '@/components/ForgotPasswordDialog';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
@@ -141,7 +141,7 @@ const Auth = () => {
         <div className="text-center mb-8">
           <img 
             src={logoImage} 
-            alt="GovernAII Logo" 
+            alt="Akuris Logo" 
             className="h-20 mx-auto object-contain"
           />
         </div>
@@ -268,7 +268,7 @@ const Auth = () => {
             Política de Privacidade
           </Link>
           <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} - GovernAII - Todos os direitos reservados
+            © {new Date().getFullYear()} - Akuris - Todos os direitos reservados
           </p>
         </div>
       </div>

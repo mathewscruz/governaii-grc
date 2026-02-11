@@ -27,7 +27,7 @@ import {
   FileBarChart,
   GraduationCap
 } from 'lucide-react';
-import logoMini from '@/assets/governaii-logo-mini.png';
+import logoMini from '@/assets/akuris-logo.png';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
 import {
@@ -220,7 +220,7 @@ export function AppSidebar() {
   };
 
   const getLogoAlt = () => {
-    return company?.nome || "GovernAII";
+    return company?.nome || "Akuris";
   };
 
   // Função para verificar se um item tem acesso

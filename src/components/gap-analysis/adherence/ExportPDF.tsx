@@ -56,7 +56,7 @@ export async function exportAssessmentToPDF(
   // Helper para carregar e adicionar logo
   const loadLogo = (): Promise<void> => {
     return new Promise((resolve) => {
-      const logoUrl = empresaLogoUrl || '/governaii-logo.png';
+      const logoUrl = empresaLogoUrl || '/akuris-logo.png';
       const img = new Image();
       img.crossOrigin = 'anonymous';
       
