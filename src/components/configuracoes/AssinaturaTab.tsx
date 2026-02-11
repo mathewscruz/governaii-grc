@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Crown, Shield, Zap, ExternalLink, CreditCard, Calendar, Loader2 } from 'lucide-react';
+import { Crown, Shield, Zap, Sparkles, ExternalLink, CreditCard, Calendar, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { STRIPE_PLANS, PlanKey, getPlanByProductId } from '@/lib/stripe-plans';
@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const planIcons: Record<PlanKey, React.ElementType> = {
+  free: Sparkles,
   starter: Shield,
   professional: Zap,
   enterprise: Crown,

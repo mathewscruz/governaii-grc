@@ -1,12 +1,32 @@
 // Stripe product and price IDs mapping
 export const STRIPE_PLANS = {
+  free: {
+    name: 'Free',
+    product_id: '',
+    monthly_price_id: '',
+    monthly_price: 0,
+    annual_price: 0,
+    credits: 10,
+    isFree: true,
+    description: '14 dias grátis para conhecer a plataforma',
+    features: [
+      '14 dias de acesso completo',
+      'Até 10 créditos IA/mês',
+      'Gestão de Riscos',
+      'Controles Internos',
+      'Documentos',
+      'Incidentes',
+      'Suporte por email',
+    ],
+  },
   starter: {
     name: 'Starter',
     product_id: 'prod_TxZhB879BKZyBI',
     monthly_price_id: 'price_1SzeYEHrs8FLfXKfTvHzWVhP',
     monthly_price: 99,
-    annual_price: 1069.20, // 99 * 12 * 0.90
+    annual_price: 1069.20,
     credits: 10,
+    isFree: false,
     description: 'Ideal para pequenas empresas',
     features: [
       'Até 10 créditos IA/mês',
@@ -22,8 +42,9 @@ export const STRIPE_PLANS = {
     product_id: 'prod_TxZiV0aTyVS0Vq',
     monthly_price_id: 'price_1SzeYcHrs8FLfXKfOam3UREW',
     monthly_price: 249,
-    annual_price: 2689.20, // 249 * 12 * 0.90
+    annual_price: 2689.20,
     credits: 50,
+    isFree: false,
     description: 'Para empresas em crescimento',
     popular: true,
     features: [
@@ -43,8 +64,9 @@ export const STRIPE_PLANS = {
     product_id: 'prod_TxZiZ9mPsZ1r1n',
     monthly_price_id: 'price_1SzeYwHrs8FLfXKfeJ9QjnBD',
     monthly_price: 499,
-    annual_price: 5389.20, // 499 * 12 * 0.90
+    annual_price: 5389.20,
     credits: 200,
+    isFree: false,
     description: 'Governança corporativa completa',
     features: [
       'Até 200 créditos IA/mês',

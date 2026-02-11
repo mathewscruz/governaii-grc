@@ -21,9 +21,10 @@ const registroSchema = z.object({
 const Registro = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const planoParam = (searchParams.get('plano') || 'starter') as PlanKey;
+  const planoParam = (searchParams.get('plano') || 'free') as PlanKey;
   const billingParam = searchParams.get('billing') || 'monthly';
-  const selectedPlan = STRIPE_PLANS[planoParam] || STRIPE_PLANS.starter;
+  const selectedPlan = STRIPE_PLANS[planoParam] || STRIPE_PLANS.free;
+  const isFree = planoParam === 'free';
 
   const [form, setForm] = useState({ nome: '', email: '', senha: '', empresa: '', cnpj: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -169,7 +170,7 @@ const Registro = () => {
             </div>
 
             <Button type="submit" variant="gradient" className="w-full h-11 font-semibold text-sm mt-2" disabled={isLoading}>
-              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Criando conta...</> : 'Criar conta e assinar'}
+              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Criando conta...</> : isFree ? 'Criar conta grátis' : 'Criar conta e assinar'}
             </Button>
           </form>
         </div>
