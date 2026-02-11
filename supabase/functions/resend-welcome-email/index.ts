@@ -17,7 +17,6 @@ interface ResendWelcomeEmailRequest {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -32,13 +31,11 @@ Deno.serve(async (req) => {
   try {
     console.log('Recebendo requisição para reenviar e-mail de boas-vindas')
     
-    // Criar cliente Supabase com service role para operações administrativas
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Criar cliente normal para verificações de RLS
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -51,13 +48,11 @@ Deno.serve(async (req) => {
       }
     )
 
-    // Verificar autenticação do usuário atual
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       throw new Error('Usuário não autenticado')
     }
 
-    // Buscar perfil do usuário atual para verificar permissões
     const { data: currentUserProfile, error: profileError } = await supabase
       .from('profiles')
       .select('role, empresa_id')
@@ -68,7 +63,6 @@ Deno.serve(async (req) => {
       throw new Error('Perfil do usuário não encontrado')
     }
 
-    // Validar permissões - apenas admins e super_admins podem reenviar e-mails
     const isSuperAdmin = currentUserProfile.role === 'super_admin'
     const isAdmin = currentUserProfile.role === 'admin' || isSuperAdmin
     
@@ -82,7 +76,6 @@ Deno.serve(async (req) => {
       throw new Error('ID do usuário não fornecido')
     }
 
-    // Buscar informações do usuário a partir do ID
     const { data: targetUser, error: userError } = await supabaseAdmin.auth.admin
       .getUserById(userId)
 
@@ -90,7 +83,6 @@ Deno.serve(async (req) => {
       throw new Error('Usuário não encontrado')
     }
 
-    // Buscar perfil do usuário alvo e empresa
     const { data: userProfile, error: userProfileError } = await supabaseAdmin
       .from('profiles')
       .select('nome, email, empresa_id, empresa:empresas(nome, logo_url)')
@@ -101,12 +93,10 @@ Deno.serve(async (req) => {
       throw new Error('Perfil do usuário não encontrado')
     }
 
-    // Verificar se o usuário atual tem permissão para gerenciar o usuário alvo
     if (!isSuperAdmin && userProfile.empresa_id !== currentUserProfile.empresa_id) {
       throw new Error('Você não tem permissão para gerenciar este usuário')
     }
 
-    // Gerar senha temporária
     const { data: tempPassword, error: passwordError } = await supabaseAdmin
       .rpc('generate_temp_password')
 
@@ -114,7 +104,6 @@ Deno.serve(async (req) => {
       throw new Error('Erro ao gerar senha temporária')
     }
 
-    // Atualizar com a senha temporária gerada
     const { error: updatePasswordError } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
       { password: tempPassword }
@@ -124,26 +113,24 @@ Deno.serve(async (req) => {
       throw new Error('Erro ao atualizar senha')
     }
 
-    // Registrar ou atualizar senha temporária
     const { error: tempPasswordUpsertError } = await supabaseAdmin
       .from('temporary_passwords')
       .upsert({
         user_id: userId,
         is_temporary: true,
         created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 dias
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       }, {
         onConflict: 'user_id'
       })
 
     if (tempPasswordUpsertError) {
       console.error('Erro ao registrar senha temporária:', tempPasswordUpsertError)
-      // Não falhar o processo por causa deste erro
     }
 
     console.log(`Enviando e-mail de boas-vindas para: ${userProfile.email}`)
     
-    const loginUrl = 'https://governaii.com.br'
+    const loginUrl = 'https://akuris.com.br'
     
     const html = await renderAsync(
       React.createElement(WelcomeEmail, {
@@ -157,9 +144,9 @@ Deno.serve(async (req) => {
     )
 
     const { data, error } = await resend.emails.send({
-      from: `${userProfile.empresa?.nome || 'GovernAII'} <noreply@governaii.com.br>`,
+      from: `${userProfile.empresa?.nome || 'Akuris'} <noreply@akuris.com.br>`,
       to: [userProfile.email],
-      subject: `${userProfile.empresa?.nome || 'GovernAII'} - Seus novos dados de acesso`,
+      subject: `${userProfile.empresa?.nome || 'Akuris'} - Seus novos dados de acesso`,
       html,
     })
 

@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
         }
 
         // Enviar e-mail de lembrete
-        const loginUrl = 'https://governaii.com.br'
+        const loginUrl = 'https://akuris.com.br'
         
         const html = await renderAsync(
           React.createElement(InvitationReminderEmail, {
@@ -157,9 +157,9 @@ Deno.serve(async (req) => {
         )
 
         const { data: emailData, error: emailError } = await resend.emails.send({
-          from: 'GovernAI <noreply@governaii.com.br>',
+          from: 'Akuris <noreply@akuris.com.br>',
           to: [user.email],
-          subject: `Lembrete: Seu acesso ao GovernAI está aguardando - ${user.empresas.nome}`,
+          subject: `Lembrete: Seu acesso ao Akuris está aguardando - ${user.empresas.nome}`,
           html,
         })
 

@@ -21,37 +21,35 @@ interface BaseEmailTemplateProps {
   showFooter?: boolean;
 }
 
-// Logo fallback - quando a empresa não tem logo configurado, usa texto estilizado
-const GOVERNAII_LOGO_URL = 'https://governaii.com.br/governaii-logo.png';
+const AKURIS_LOGO_URL = 'https://akuris.com.br/akuris-logo.png';
 
-// Paleta de cores corporativa - Teal/Emerald
+// Paleta de cores corporativa - Violet
 const COLORS = {
-  primary: '#0D9488',        // Teal principal
-  primaryDark: '#0F766E',    // Teal escuro (hover)
-  secondary: '#1e3a5f',      // Azul marinho (textos)
-  text: '#3c4149',           // Texto normal
-  textLight: '#64748b',      // Texto secundário
-  textMuted: '#8898aa',      // Texto muted
-  background: '#f5f7fa',     // Fundo geral
-  surface: '#ffffff',        // Superfícies
-  border: '#e2e8f0',         // Bordas
-  borderLight: '#f1f5f9',    // Bordas leves
-  success: '#16a34a',        // Verde sucesso
-  warning: '#f59e0b',        // Amarelo warning
-  error: '#dc2626',          // Vermelho erro
-  info: '#0D9488',           // Info (teal)
+  primary: '#7552ff',
+  primaryDark: '#5a3fd6',
+  secondary: '#0a1628',
+  text: '#3c4149',
+  textLight: '#64748b',
+  textMuted: '#8898aa',
+  background: '#f5f7fa',
+  surface: '#ffffff',
+  border: '#e2e8f0',
+  borderLight: '#f1f5f9',
+  success: '#16a34a',
+  warning: '#f59e0b',
+  error: '#dc2626',
+  info: '#7552ff',
 };
 
 export const BaseEmailTemplate = ({
   previewText,
   title,
   children,
-  companyName = 'GovernAII',
+  companyName = 'Akuris',
   companyLogoUrl,
   showFooter = true,
 }: BaseEmailTemplateProps) => {
-  // Prioriza logo da empresa, depois o logo padrão do GovernAII
-  const logoUrl = companyLogoUrl || GOVERNAII_LOGO_URL;
+  const logoUrl = companyLogoUrl || AKURIS_LOGO_URL;
   
   return (
     <Html>
@@ -69,7 +67,6 @@ export const BaseEmailTemplate = ({
                 onError="this.style.display='none'"
               />
             ) : null}
-            {/* Fallback text sempre visível caso a imagem não carregue */}
             <Text style={logoTextFallback}>
               <span style={{ color: COLORS.primary, fontWeight: '700' }}>{companyName}</span>
             </Text>
@@ -92,10 +89,13 @@ export const BaseEmailTemplate = ({
                 Em caso de dúvidas, entre em contato conosco.
               </Text>
               <Text style={footerText}>
-                <Link href="https://governaii.com.br" style={link}>
-                  GovernAII
+                <Link href="https://akuris.com.br" style={link}>
+                  Akuris
                 </Link>
                 {' '}• Plataforma de Governança, Risco e Compliance
+              </Text>
+              <Text style={footerText}>
+                © {new Date().getFullYear()} Akuris. Todos os direitos reservados.
               </Text>
             </Section>
           )}
@@ -139,7 +139,7 @@ const logoTextFallback = {
   fontSize: '24px',
   fontWeight: '700',
   margin: '0',
-  display: 'none', // Hidden by default, shown via CSS when image fails
+  display: 'none',
 };
 
 const h1 = {
@@ -176,10 +176,8 @@ const link = {
 
 // Reusable component styles exportados para uso em outros templates
 export const emailStyles = {
-  // Cores para acesso direto
   colors: COLORS,
   
-  // Textos
   text: {
     color: COLORS.text,
     fontSize: '15px',
@@ -202,7 +200,6 @@ export const emailStyles = {
     margin: '0 0 20px',
   },
   
-  // Botões
   button: {
     backgroundColor: COLORS.primary,
     borderRadius: '8px',
@@ -233,9 +230,8 @@ export const emailStyles = {
     textAlign: 'center' as const,
   },
   
-  // Boxes informativos
   infoBox: {
-    backgroundColor: '#f0f9f8',
+    backgroundColor: '#f0eeff',
     border: `1px solid ${COLORS.primary}20`,
     borderLeft: `4px solid ${COLORS.primary}`,
     borderRadius: '8px',
@@ -274,7 +270,6 @@ export const emailStyles = {
     margin: '16px 0',
   },
   
-  // Campos
   field: {
     marginBottom: '12px',
   },
@@ -290,7 +285,6 @@ export const emailStyles = {
     margin: '0',
   },
   
-  // Código/Senha
   code: {
     backgroundColor: COLORS.borderLight,
     border: `1px solid ${COLORS.border}`,
@@ -305,7 +299,6 @@ export const emailStyles = {
     textAlign: 'center' as const,
   },
   
-  // Badges
   badge: {
     display: 'inline-block',
     padding: '4px 12px',
@@ -330,13 +323,11 @@ export const emailStyles = {
     color: '#991b1b',
   },
   
-  // Dividers
   divider: {
     borderTop: `1px solid ${COLORS.border}`,
     margin: '24px 0',
   },
   
-  // Links
   link: {
     color: COLORS.primary,
     textDecoration: 'underline',
@@ -346,7 +337,6 @@ export const emailStyles = {
     textDecoration: 'underline',
   },
   
-  // Listas
   list: {
     paddingLeft: '20px',
     margin: '16px 0',

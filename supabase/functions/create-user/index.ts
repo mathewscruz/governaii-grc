@@ -15,7 +15,6 @@ interface CreateUserRequest {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -30,13 +29,11 @@ Deno.serve(async (req) => {
   try {
     console.log('Recebendo requisição para criar usuário')
 
-    // Criar cliente Supabase com service role para operações administrativas
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Criar cliente normal para verificações de RLS
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -49,13 +46,11 @@ Deno.serve(async (req) => {
       }
     )
 
-    // Verificar autenticação do usuário atual
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       throw new Error('Usuário não autenticado')
     }
 
-    // Buscar perfil do usuário atual
     const { data: currentUserProfile, error: profileError } = await supabase
       .from('profiles')
       .select('role, empresa_id')
@@ -68,7 +63,6 @@ Deno.serve(async (req) => {
 
     const { nome, email, role, empresa_id, permission_profile_id }: CreateUserRequest = await req.json()
 
-    // Validar permissões
     const isSuperAdmin = currentUserProfile.role === 'super_admin'
     const isAdmin = currentUserProfile.role === 'admin'
 
@@ -76,23 +70,19 @@ Deno.serve(async (req) => {
       throw new Error('Usuário não tem permissão para criar outros usuários')
     }
 
-    // Se não for super admin, não pode criar super admins
     if (!isSuperAdmin && role === 'super_admin') {
       throw new Error('Apenas super admins podem criar outros super admins')
     }
 
-    // Para admins, forçar empresa_id para ser a mesma do usuário atual
     let finalEmpresaId = empresa_id
     if (!isSuperAdmin) {
       finalEmpresaId = currentUserProfile.empresa_id
     } else if (!empresa_id) {
-      // Se super admin não especificou empresa, usar a própria
       finalEmpresaId = currentUserProfile.empresa_id
     }
 
     console.log(`Criando usuário: ${email}`)
 
-    // Gerar senha temporária ANTES de criar o usuário
     const { data: tempPassword, error: tempPassError } = await supabaseAdmin
       .rpc('generate_temp_password')
 
@@ -101,7 +91,6 @@ Deno.serve(async (req) => {
       throw new Error('Erro ao gerar senha temporária')
     }
 
-    // Verificar se já existe usuário com este email via profiles (mais eficiente)
     const { data: existingProfile, error: existingProfileError } = await supabaseAdmin
       .from('profiles')
       .select('user_id, id, nome, created_at')
@@ -116,7 +105,6 @@ Deno.serve(async (req) => {
     let authData: any
 
     if (existingProfile) {
-      // Usuário já existe completamente
       return new Response(JSON.stringify({
         error: 'DUPLICATE_USER',
         message: 'Usuário já existe no sistema',
@@ -141,13 +129,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Verificar se existe no Auth mas sem profile (órfão)
-    const { data: existingAuthUsers, error: listUsersError } = await supabaseAdmin.auth.admin.listUsers({
-      page: 1,
-      perPage: 1,
-    })
-
-    // Tentar buscar diretamente pelo email
     let existingAuthUser = null
     try {
       const allUsers = await supabaseAdmin.auth.admin.listUsers()
@@ -160,12 +141,10 @@ Deno.serve(async (req) => {
       console.log('Usuário órfão detectado - recriando profile para:', email)
       authData = { user: existingAuthUser }
 
-      // Atualizar senha do usuário órfão
       await supabaseAdmin.auth.admin.updateUserById(existingAuthUser.id, {
         password: tempPassword
       })
     } else {
-      // Criar novo usuário no Auth com a senha temporária já gerada
       const { data: newAuthData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
         email: email,
         password: tempPassword,
@@ -186,10 +165,8 @@ Deno.serve(async (req) => {
 
     console.log('Processando usuário no Auth:', authData.user.id)
 
-    // Aguardar um pouco para garantir que o usuário foi criado
     await new Promise(resolve => setTimeout(resolve, 100))
 
-    // Criar perfil do usuário (o trigger não criará automaticamente devido ao admin_created)
     const profileInsertData: any = {
       user_id: authData.user.id,
       nome: nome,
@@ -207,7 +184,6 @@ Deno.serve(async (req) => {
 
     if (profileInsertError) {
       console.error('Erro ao criar perfil:', profileInsertError)
-      // Se falhar ao criar perfil e o usuário foi criado agora, remover do Auth
       if (!existingAuthUser) {
         await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       }
@@ -216,9 +192,6 @@ Deno.serve(async (req) => {
 
     console.log('Perfil criado com sucesso')
 
-    // Senha temporária já foi gerada no início da função
-
-    // Registrar senha temporária
     await supabaseAdmin
       .from('temporary_passwords')
       .insert({
@@ -228,7 +201,6 @@ Deno.serve(async (req) => {
 
     console.log('Senha temporária registrada')
 
-    // Aplicar permissões para o novo usuário
     try {
       if (permission_profile_id) {
         console.log('Aplicando perfil de permissão:', permission_profile_id)
@@ -260,9 +232,8 @@ Deno.serve(async (req) => {
       console.error('Exceção ao aplicar permissões:', permError)
     }
 
-    // Buscar informações da empresa para o email de boas-vindas
-    let companyName = 'GovernAII';
-    let companyLogoUrl = 'https://governaii.com.br/governaii-logo.png';
+    let companyName = 'Akuris';
+    let companyLogoUrl = 'https://akuris.com.br/akuris-logo.png';
     
     try {
       const { data: empresaData } = await supabaseAdmin
@@ -279,7 +250,6 @@ Deno.serve(async (req) => {
       console.log('Não foi possível buscar dados da empresa, usando padrões:', empresaError);
     }
 
-    // Enviar e-mail de boas-vindas
     let emailSent = false;
     try {
       console.log('Tentando enviar e-mail de boas-vindas...')
@@ -288,7 +258,7 @@ Deno.serve(async (req) => {
           userName: nome,
           userEmail: email,
           temporaryPassword: tempPassword,
-          loginUrl: 'https://governaii.com.br/auth',
+          loginUrl: 'https://akuris.com.br/auth',
           companyName: companyName,
           companyLogoUrl: companyLogoUrl
         }
@@ -296,7 +266,6 @@ Deno.serve(async (req) => {
 
       if (emailError) {
         console.error('Erro ao enviar e-mail:', emailError)
-        console.error('Detalhes do erro:', JSON.stringify(emailError, null, 2))
       } else {
         console.log('E-mail de boas-vindas enviado com sucesso:', emailData)
         emailSent = true;

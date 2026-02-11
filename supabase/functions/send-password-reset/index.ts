@@ -22,7 +22,6 @@ interface PasswordResetRequest {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -43,7 +42,6 @@ Deno.serve(async (req) => {
     
     const { email, userId, companyLogoUrl }: PasswordResetRequest = body
     
-    // Validar que pelo menos email ou userId foi fornecido
     if (!email && !userId) {
       console.error('Nem email nem userId foram fornecidos')
       throw new Error('email ou userId é obrigatório')
@@ -52,7 +50,6 @@ Deno.serve(async (req) => {
     let profile: any = null
     let targetUserId: string = userId || ''
     
-    // Se email foi fornecido, buscar pelo email primeiro
     if (email) {
       console.log('Buscando perfil para email:', email)
       
@@ -64,7 +61,6 @@ Deno.serve(async (req) => {
       
       if (emailError) {
         console.error('Erro ao buscar perfil por email:', JSON.stringify(emailError))
-        // Retornar sucesso silencioso para proteção contra enumeração de emails
         console.log('Retornando sucesso silencioso (email não encontrado)')
         return new Response(JSON.stringify({ success: true, message: 'Se o email existir, uma senha será enviada' }), {
           status: 200,
@@ -74,7 +70,6 @@ Deno.serve(async (req) => {
       
       if (!profileByEmail) {
         console.log('Perfil não encontrado para email:', email)
-        // Retornar sucesso silencioso para proteção contra enumeração de emails
         return new Response(JSON.stringify({ success: true, message: 'Se o email existir, uma senha será enviada' }), {
           status: 200,
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -85,7 +80,6 @@ Deno.serve(async (req) => {
       targetUserId = profileByEmail.user_id
       console.log('Perfil encontrado por email:', { nome: profile.nome, userId: targetUserId })
     } else {
-      // Buscar pelo userId
       console.log('Buscando perfil para userId:', userId)
       
       const { data: profileByUserId, error: profileError } = await supabase
@@ -110,7 +104,6 @@ Deno.serve(async (req) => {
     
     console.log('Perfil a processar:', { nome: profile.nome, email: profile.email })
     
-    // Gerar nova senha temporária
     console.log('Gerando senha temporária...')
     const { data: tempPassword, error: passwordError } = await supabase
       .rpc('generate_temp_password')
@@ -127,7 +120,6 @@ Deno.serve(async (req) => {
     
     console.log('Senha temporária gerada com sucesso (length:', tempPassword.length, ')')
     
-    // Atualizar senha do usuário no Auth
     console.log('Atualizando senha no Auth para userId:', targetUserId)
     const { error: updateError } = await supabase.auth.admin.updateUserById(
       targetUserId,
@@ -141,7 +133,6 @@ Deno.serve(async (req) => {
     
     console.log('Senha atualizada no Auth com sucesso')
     
-    // Registrar senha temporária na tabela
     console.log('Registrando senha temporária na tabela...')
     const { error: tempPasswordError } = await supabase
       .from('temporary_passwords')
@@ -161,14 +152,13 @@ Deno.serve(async (req) => {
     
     if (tempPasswordError) {
       console.error('Erro ao registrar senha temporária na tabela:', JSON.stringify(tempPasswordError))
-      // Não lançamos erro aqui, apenas logamos
     } else {
       console.log('Senha temporária registrada na tabela com sucesso')
     }
     
     console.log('Preparando envio de e-mail para:', profile.email)
     
-    const loginUrl = 'https://governaii.com.br'
+    const loginUrl = 'https://akuris.com.br'
     
     const html = await renderAsync(
       React.createElement(PasswordResetEmail, {
@@ -182,13 +172,13 @@ Deno.serve(async (req) => {
     )
 
     console.log('Enviando e-mail via Resend...')
-    console.log('From:', `${profile.empresa?.nome || 'GovernAII'} <noreply@governaii.com.br>`)
+    console.log('From:', `${profile.empresa?.nome || 'Akuris'} <noreply@akuris.com.br>`)
     console.log('To:', profile.email)
     
     const { data, error } = await resend.emails.send({
-      from: `${profile.empresa?.nome || 'GovernAII'} <noreply@governaii.com.br>`,
+      from: `${profile.empresa?.nome || 'Akuris'} <noreply@akuris.com.br>`,
       to: [profile.email],
-      subject: `${profile.empresa?.nome || 'GovernAII'} - Nova senha temporária`,
+      subject: `${profile.empresa?.nome || 'Akuris'} - Nova senha temporária`,
       html,
     })
 

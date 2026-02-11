@@ -12,153 +12,91 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Buscar empresas ativas
-    const { data: empresas, error: empresasError } = await supabase
-      .from('empresas')
-      .select('id, nome')
-      .eq('ativo', true);
-
+    const { data: empresas, error: empresasError } = await supabase.from('empresas').select('id, nome').eq('ativo', true);
     if (empresasError) throw empresasError;
 
     const hoje = new Date();
     const resultados: any[] = [];
 
     for (const empresa of empresas || []) {
-      // Buscar chaves ativas da empresa
-      const { data: chaves, error: chavesError } = await supabase
-        .from('ativos_chaves_criptograficas')
-        .select('*')
-        .eq('empresa_id', empresa.id)
-        .eq('status', 'ativa')
-        .not('data_proxima_rotacao', 'is', null);
+      const { data: chaves, error: chavesError } = await supabase.from('ativos_chaves_criptograficas').select('*').eq('empresa_id', empresa.id).eq('status', 'ativa').not('data_proxima_rotacao', 'is', null);
+      if (chavesError) { console.error(`Erro ao buscar chaves da empresa ${empresa.id}:`, chavesError); continue; }
 
-      if (chavesError) {
-        console.error(`Erro ao buscar chaves da empresa ${empresa.id}:`, chavesError);
-        continue;
-      }
-
-      // Processar cada chave
       for (const chave of chaves || []) {
         const dataRotacao = new Date(chave.data_proxima_rotacao);
-        const diffTime = dataRotacao.getTime() - hoje.getTime();
-        const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diasRestantes = Math.ceil((dataRotacao.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Notificar se faltam 7, 15 ou 30 dias, ou se já expirou
         let tipoNotificacao = '';
-        if (diasRestantes < 0) {
-          tipoNotificacao = 'expirado';
-        } else if (diasRestantes <= 7) {
-          tipoNotificacao = 'rotacao_7d';
-        } else if (diasRestantes <= 15) {
-          tipoNotificacao = 'rotacao_15d';
-        } else if (diasRestantes <= 30) {
-          tipoNotificacao = 'rotacao_30d';
-        }
-
+        if (diasRestantes < 0) tipoNotificacao = 'expirado';
+        else if (diasRestantes <= 7) tipoNotificacao = 'rotacao_7d';
+        else if (diasRestantes <= 15) tipoNotificacao = 'rotacao_15d';
+        else if (diasRestantes <= 30) tipoNotificacao = 'rotacao_30d';
         if (!tipoNotificacao) continue;
 
-        // Verificar se já foi enviada notificação deste tipo
-        const { data: jaEnviado } = await supabase
-          .from('ativos_notificacoes_enviadas')
-          .select('id')
-          .eq('empresa_id', empresa.id)
-          .eq('modulo', 'chaves')
-          .eq('registro_id', chave.id)
-          .eq('tipo_notificacao', tipoNotificacao)
-          .gte('enviado_em', new Date(hoje.getTime() - 24 * 60 * 60 * 1000).toISOString())
-          .single();
-
+        const { data: jaEnviado } = await supabase.from('ativos_notificacoes_enviadas').select('id').eq('empresa_id', empresa.id).eq('modulo', 'chaves').eq('registro_id', chave.id).eq('tipo_notificacao', tipoNotificacao).gte('enviado_em', new Date(hoje.getTime() - 24 * 60 * 60 * 1000).toISOString()).single();
         if (jaEnviado) continue;
 
-        // Buscar usuários admin da empresa para enviar email
-        const { data: admins } = await supabase
-          .from('profiles')
-          .select('email, nome')
-          .eq('empresa_id', empresa.id)
-          .in('role', ['admin', 'super_admin']);
+        const { data: admins } = await supabase.from('profiles').select('email, nome').eq('empresa_id', empresa.id).in('role', ['admin', 'super_admin']);
 
         if (admins && admins.length > 0) {
           for (const admin of admins) {
             try {
-              const mensagem = diasRestantes < 0
-                ? `A chave "${chave.nome}" expirou há ${Math.abs(diasRestantes)} dias`
-                : `A chave "${chave.nome}" precisa ser rotacionada em ${diasRestantes} dias`;
+              const mensagem = diasRestantes < 0 ? `A chave "${chave.nome}" expirou há ${Math.abs(diasRestantes)} dias` : `A chave "${chave.nome}" precisa ser rotacionada em ${diasRestantes} dias`;
 
               await resend.emails.send({
-                from: "GovernAI <noreply@governaii.com>",
+                from: "Akuris <noreply@akuris.com.br>",
                 to: [admin.email],
-                subject: diasRestantes < 0 
-                  ? `⚠️ Chave Expirada - ${chave.nome}` 
-                  : `🔔 Rotação de Chave Necessária - ${chave.nome}`,
+                subject: diasRestantes < 0 ? `⚠️ Chave Expirada - ${chave.nome}` : `🔔 Rotação de Chave Necessária - ${chave.nome}`,
                 html: `
-                  <h2>Alerta de Rotação de Chave Criptográfica</h2>
-                  <p>Olá ${admin.nome},</p>
-                  <p>${mensagem}</p>
-                  <p><strong>Detalhes:</strong></p>
-                  <ul>
-                    <li><strong>Nome:</strong> ${chave.nome}</li>
-                    <li><strong>Tipo:</strong> ${chave.tipo_chave}</li>
-                    <li><strong>Ambiente:</strong> ${chave.ambiente}</li>
-                    <li><strong>Próxima Rotação:</strong> ${new Date(chave.data_proxima_rotacao).toLocaleDateString('pt-BR')}</li>
-                    <li><strong>Localização:</strong> ${chave.localizacao}</li>
-                    <li><strong>Criticidade:</strong> ${chave.criticidade}</li>
-                  </ul>
-                  <p>Acesse o sistema para realizar a rotação desta chave.</p>
-                  <p><strong>Atenção:</strong> Chaves críticas devem ser rotacionadas imediatamente para garantir a segurança.</p>
-                  <p>Atenciosamente,<br>Equipe GovernAI</p>
-                `,
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f7fa;">
+<div style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden;">
+  <div style="text-align: center; padding: 32px 32px 16px; border-bottom: 1px solid #e2e8f0;">
+    <p style="font-size: 24px; font-weight: 700; color: #7552ff; margin: 0;">Akuris</p>
+  </div>
+  <div style="padding: 32px;">
+    <h2 style="color: #0a1628; margin: 0 0 16px;">Alerta de Rotação de Chave Criptográfica</h2>
+    <p>Olá ${admin.nome},</p>
+    <p>${mensagem}</p>
+    <div style="background-color: #f0eeff; border-left: 4px solid #7552ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+      <p style="margin: 0 0 8px;"><strong>Nome:</strong> ${chave.nome}</p>
+      <p style="margin: 0 0 8px;"><strong>Tipo:</strong> ${chave.tipo_chave}</p>
+      <p style="margin: 0 0 8px;"><strong>Ambiente:</strong> ${chave.ambiente}</p>
+      <p style="margin: 0 0 8px;"><strong>Próxima Rotação:</strong> ${new Date(chave.data_proxima_rotacao).toLocaleDateString('pt-BR')}</p>
+      <p style="margin: 0 0 8px;"><strong>Localização:</strong> ${chave.localizacao}</p>
+      <p style="margin: 0;"><strong>Criticidade:</strong> ${chave.criticidade}</p>
+    </div>
+    <p><strong>Atenção:</strong> Chaves críticas devem ser rotacionadas imediatamente.</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="https://akuris.com.br/ativos/chaves" style="display: inline-block; background-color: #7552ff; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600;">Acessar Sistema</a>
+    </div>
+  </div>
+  <div style="border-top: 1px solid #e2e8f0; padding: 20px 32px; text-align: center;">
+    <p style="font-size: 12px; color: #8898aa; margin: 0;">© ${new Date().getFullYear()} Akuris. Todos os direitos reservados.</p>
+  </div>
+</div>
+</body></html>`,
               });
 
-              // Registrar notificação enviada
-              await supabase
-                .from('ativos_notificacoes_enviadas')
-                .insert({
-                  empresa_id: empresa.id,
-                  modulo: 'chaves',
-                  registro_id: chave.id,
-                  tipo_notificacao: tipoNotificacao,
-                  canal: 'email',
-                  destinatario_email: admin.email,
-                  status: 'enviado'
-                });
-
-              resultados.push({
-                chave: chave.nome,
-                email: admin.email,
-                tipo: tipoNotificacao,
-                status: 'enviado'
-              });
+              await supabase.from('ativos_notificacoes_enviadas').insert({ empresa_id: empresa.id, modulo: 'chaves', registro_id: chave.id, tipo_notificacao: tipoNotificacao, canal: 'email', destinatario_email: admin.email, status: 'enviado' });
+              resultados.push({ chave: chave.nome, email: admin.email, tipo: tipoNotificacao, status: 'enviado' });
             } catch (emailError) {
               console.error('Erro ao enviar email:', emailError);
-              resultados.push({
-                chave: chave.nome,
-                email: admin.email,
-                tipo: tipoNotificacao,
-                status: 'erro',
-                erro: emailError
-              });
+              resultados.push({ chave: chave.nome, email: admin.email, tipo: tipoNotificacao, status: 'erro', erro: emailError });
             }
           }
         }
       }
     }
 
-    return new Response(
-      JSON.stringify({ success: true, resultados }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, resultados }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error: any) {
     console.error("Erro no processamento:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

@@ -59,7 +59,7 @@ const handler = async (req: Request): Promise<Response> => {
             template_nome: assessment.due_diligence_templates.nome,
             assessment_link: assessmentLink,
             data_expiracao: assessment.data_expiracao,
-            empresa_nome: 'GovernAI'
+            empresa_nome: 'Akuris'
           }
         });
 
