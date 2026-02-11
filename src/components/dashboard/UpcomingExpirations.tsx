@@ -93,7 +93,7 @@ export function UpcomingExpirations() {
 
   if (isLoading) {
     return (
-      <Card>
+    <Card className="h-full flex flex-col">
         <CardHeader><CardTitle className="text-base flex items-center gap-2"><Calendar className="h-4 w-4" /> {t('dashboard.upcomingExpirations')}</CardTitle></CardHeader>
         <CardContent className="flex items-center justify-center h-48"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></CardContent>
       </Card>
@@ -101,13 +101,13 @@ export function UpcomingExpirations() {
   }
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <Calendar className="h-4 w-4 text-warning" /> {t('dashboard.upcomingExpirations')}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1">
         {!items || items.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">{t('dashboard.noExpirations')}</p>
         ) : (

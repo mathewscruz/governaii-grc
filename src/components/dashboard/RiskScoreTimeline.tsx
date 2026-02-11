@@ -122,7 +122,7 @@ export function RiskScoreTimeline() {
   }
 
   return (
-    <Card className="w-full flex flex-col overflow-hidden min-w-0">
+    <Card className="h-full w-full flex flex-col overflow-hidden min-w-0">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-2">
           <CardTitle>{t('dashboard.riskEvolution')}</CardTitle>
