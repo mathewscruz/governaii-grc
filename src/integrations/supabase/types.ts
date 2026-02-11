@@ -4861,6 +4861,95 @@ export type Database = {
           },
         ]
       }
+      permission_profile_modules: {
+        Row: {
+          can_access: boolean
+          can_create: boolean
+          can_delete: boolean
+          can_read: boolean
+          can_update: boolean
+          id: string
+          module_id: string
+          profile_id: string
+        }
+        Insert: {
+          can_access?: boolean
+          can_create?: boolean
+          can_delete?: boolean
+          can_read?: boolean
+          can_update?: boolean
+          id?: string
+          module_id: string
+          profile_id: string
+        }
+        Update: {
+          can_access?: boolean
+          can_create?: boolean
+          can_delete?: boolean
+          can_read?: boolean
+          can_update?: boolean
+          id?: string
+          module_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_profile_modules_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "system_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_profile_modules_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "permission_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permission_profiles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          empresa_id: string
+          id: string
+          is_default: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          empresa_id: string
+          id?: string
+          is_default?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          empresa_id?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_profiles_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       planos: {
         Row: {
           ativo: boolean | null
@@ -5214,6 +5303,7 @@ export type Database = {
           foto_url: string | null
           id: string
           nome: string
+          permission_profile_id: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           user_id: string
@@ -5226,6 +5316,7 @@ export type Database = {
           foto_url?: string | null
           id?: string
           nome: string
+          permission_profile_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id: string
@@ -5238,6 +5329,7 @@ export type Database = {
           foto_url?: string | null
           id?: string
           nome?: string
+          permission_profile_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id?: string
@@ -5248,6 +5340,13 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_permission_profile_id_fkey"
+            columns: ["permission_profile_id"]
+            isOneToOne: false
+            referencedRelation: "permission_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -6273,6 +6372,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: undefined
       }
+      apply_permission_profile: {
+        Args: { _profile_id: string; _user_id: string }
+        Returns: undefined
+      }
       assessment_pertence_empresa: {
         Args: { assessment_id: string }
         Returns: boolean
@@ -6356,7 +6459,9 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_user_empresa_id: { Args: never; Returns: string }
+      get_user_empresa_id:
+        | { Args: never; Returns: string }
+        | { Args: { _user_id: string }; Returns: string }
       has_admin_role: { Args: never; Returns: boolean }
       has_role: {
         Args: {
