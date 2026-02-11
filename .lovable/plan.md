@@ -1,85 +1,40 @@
 
-# AkurIA - Chatbot Inteligente no Dashboard
+# Ajustes Visuais no Dashboard
 
-## Resumo
+## 1. Cards com mesma altura (Vencimentos, Maturidade GRC, Evolucao dos Riscos)
 
-Transformar o "Resumo com IA" (card estático) em um chatbot flutuante chamado **AkurIA**, posicionado como botão no canto inferior direito da tela. O chatbot permite conversas interativas sobre os módulos do sistema, com streaming de respostas. O espaço liberado no dashboard será reorganizado para melhor distribuição dos cards restantes.
+Adicionar `h-full` aos componentes `UpcomingExpirations`, `MultiDimensionalRadar` e `RiskScoreTimeline` para que os Cards ocupem 100% da altura da celula do grid, ficando todos alinhados independente do conteudo.
 
-## Mudancas Visuais
+**Arquivo:** `src/components/dashboard/UpcomingExpirations.tsx`
+- Adicionar `className="h-full"` no Card raiz (linha 104)
 
-### Antes (layout atual)
-```text
-[Hero Score Banner                                        ]
-[KPI Pills                                                ]
-[Resumo IA (2/3)              ] [Vencimentos (1/3)        ]
-[Radar (1/3)] [Timeline (1/3)] [Atividades (1/3)          ]
-```
+**Arquivo:** `src/components/dashboard/MultiDimensionalRadar.tsx`
+- Verificar e adicionar `className="h-full"` no Card raiz
 
-### Depois (novo layout)
-```text
-[Hero Score Banner                                        ]
-[KPI Pills                                                ]
-[Vencimentos (1/3)] [Radar (1/3)] [Timeline (1/3)         ]
-[Atividades Recentes (full width)                         ]
-                                        [Botão AkurIA FAB]
-```
+**Arquivo:** `src/components/dashboard/RiskScoreTimeline.tsx`
+- Verificar e adicionar `className="h-full"` no Card raiz
 
-Com a remoção do card "Resumo IA" (que ocupava 2/3), os demais cards serão reorganizados em uma distribuição mais equilibrada: Vencimentos, Radar e Timeline ficam em uma linha de 3 colunas, e Atividades Recentes ocupa a largura total abaixo.
+## 2. Icone do chatbot sem fundo roxo
 
-## Componente AkurIA Chatbot
+O botao FAB do AkurIA usa `bg-primary` (roxo), fazendo o icone parecer um circulo roxo solido. A correcao sera trocar o fundo para branco com borda sutil, deixando o favicon visivel com suas cores originais.
 
-Um botão flutuante (FAB) no canto inferior direito com o favicon do Akuris como ícone. Ao clicar, abre um painel de chat com:
-- Header com nome "AkurIA" e botão fechar
-- Área de mensagens com scroll
-- Input de texto com botão enviar
-- Streaming de respostas token-a-token
-- Renderização markdown nas respostas
-
-## Edge Function: akuria-chat
-
-Nova edge function que:
-- Recebe o histórico de mensagens do chat
-- Busca dados contextuais da empresa (riscos, controles, incidentes, etc.) -- reaproveitando a lógica do `dashboard-ai-summary`
-- Envia para a Lovable AI Gateway com system prompt de consultor GRC
-- Retorna streaming SSE para renderização progressiva
-- Consome crédito de IA por mensagem
+**Arquivo:** `src/components/dashboard/AkurIAChatbot.tsx`
+- Linha 163: trocar `bg-primary` por `bg-white shadow-lg border border-border` no botao FAB
+- Remover `border-2 border-primary-foreground/20`
+- Resultado: botao branco com sombra, exibindo o favicon com cores originais
 
 ## Detalhes Tecnicos
 
-### Arquivos a criar
+### Alteracoes por arquivo
 
-**`src/components/dashboard/AkurIAChatbot.tsx`**
-- Componente com estado open/closed
-- Botão FAB fixo (`fixed bottom-6 right-6 z-50`) com imagem `/akuris-favicon.png`
-- Painel de chat com `fixed bottom-20 right-6 w-96 h-[500px]`
-- Gerenciamento de mensagens com useState
-- Streaming SSE usando fetch + ReadableStream
-- Markdown rendering com formatação simples (bold, listas)
-- Tratamento de erros 429/402 com toast
+**`src/components/dashboard/UpcomingExpirations.tsx`** (linha 104):
+- `<Card>` passa a `<Card className="h-full flex flex-col">` e o CardContent ganha `flex-1` para ocupar espaco restante
 
-**`supabase/functions/akuria-chat/index.ts`**
-- Recebe `{ messages }` do frontend
-- Autentica o usuário e obtém empresa_id
-- Consome crédito de IA (funcionalidade `akuria_chat`)
-- Busca dados resumidos da empresa (riscos, controles, incidentes, documentos, contratos, frameworks)
-- Envia para `https://ai.gateway.lovable.dev/v1/chat/completions` com streaming
-- System prompt: consultor GRC que conhece os dados da empresa e pode responder perguntas sobre módulos, dar insights e recomendações
-- Retorna stream SSE direto ao frontend
+**`src/components/dashboard/MultiDimensionalRadar.tsx`**:
+- Mesmo padrao: Card com `h-full flex flex-col`, CardContent com `flex-1`
 
-### Arquivos a modificar
+**`src/components/dashboard/RiskScoreTimeline.tsx`**:
+- Mesmo padrao: Card com `h-full flex flex-col`, CardContent com `flex-1`
 
-**`src/pages/Dashboard.tsx`**
-- Remover import e uso de `ExecutiveSummaryAI`
-- Adicionar import de `AkurIAChatbot`
-- Reorganizar grid: linha 1 com 3 colunas (Vencimentos + Radar + Timeline), linha 2 com Atividades full width
-- Renderizar `<AkurIAChatbot />` no final do componente
-
-**`supabase/config.toml`**
-- Adicionar entrada `[functions.akuria-chat]` com `verify_jwt = true`
-
-### System Prompt do AkurIA
-O chatbot receberá um prompt de sistema que inclui:
-- Dados resumidos da empresa (totais de riscos, controles, incidentes, etc.)
-- Instrução para responder como consultor GRC especializado
-- Instrução para usar os dados fornecidos sem inventar informações
-- Capacidade de dar recomendações, explicar conceitos de GRC e analisar a situação da empresa
+**`src/components/dashboard/AkurIAChatbot.tsx`** (linha 162-163):
+- Classe do botao FAB: `bg-white dark:bg-card shadow-lg border border-border hover:shadow-xl`
