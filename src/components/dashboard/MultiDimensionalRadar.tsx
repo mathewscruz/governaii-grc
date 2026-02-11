@@ -130,7 +130,8 @@ export const MultiDimensionalRadar = () => {
         </div>
       </CardHeader>
       <CardContent className="w-full overflow-hidden">
-        <ResponsiveContainer width="100%" height={250}>
+        <div className="h-52 sm:h-72 w-full">
+        <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={data}>
             <PolarGrid 
               strokeDasharray="3 3" 
@@ -185,6 +186,7 @@ export const MultiDimensionalRadar = () => {
             <Tooltip content={(props) => <CustomTooltip {...props} />} />
           </RadarChart>
         </ResponsiveContainer>
+        </div>
         
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center border-t pt-4">
           {(data ?? []).slice(0, 4).map((item) => {
