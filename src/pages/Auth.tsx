@@ -228,11 +228,6 @@ const Auth = () => {
               </Button>
             </form>
 
-            {/* Security badge */}
-            <div className="flex items-center justify-center gap-1.5 text-white/30 text-xs">
-              <Shield className="w-3.5 h-3.5" />
-              <span>Seguro e Criptografado</span>
-            </div>
           </div>
 
           {/* Footer */}
