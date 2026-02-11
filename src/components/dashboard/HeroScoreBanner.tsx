@@ -43,12 +43,12 @@ export function HeroScoreBanner({
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/5 via-card to-accent/5 p-6 lg:p-8">
+    <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/5 via-card to-accent/5 p-4 md:p-6 lg:p-8">
       {/* Decorative elements */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
       
-      <div className="relative flex flex-col lg:flex-row items-center gap-6 lg:gap-10">
+      <div className="relative flex flex-col lg:flex-row items-center gap-4 lg:gap-10">
         {/* Gauge */}
         <div className="shrink-0">
           <HealthScoreGauge score={healthScore} />

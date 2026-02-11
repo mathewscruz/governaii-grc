@@ -153,7 +153,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="flex items-center gap-4 min-w-0">
               <SidebarTrigger />
               
-              <Breadcrumb>
+              <Breadcrumb className="hidden sm:block">
                 <BreadcrumbList>
                   {breadcrumbs.map((breadcrumb, index) => (
                     <div key={breadcrumb.path} className="flex items-center">
@@ -178,7 +178,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </Breadcrumb>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
               <CommandPaletteButton />
               <LanguageSelector />
               <ChangelogPopover />

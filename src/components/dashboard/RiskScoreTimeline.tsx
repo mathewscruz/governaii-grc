@@ -124,7 +124,7 @@ export function RiskScoreTimeline() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center justify-between w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-2">
           <CardTitle>{t('dashboard.riskEvolution')}</CardTitle>
           <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
             <TabsList>
@@ -145,7 +145,7 @@ export function RiskScoreTimeline() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-72 w-full">
+        <div className="h-52 sm:h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -160,7 +160,7 @@ export function RiskScoreTimeline() {
             </LineChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-4 grid grid-cols-4 gap-4 text-center border-t pt-4">
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center border-t pt-4">
           <div><p className="text-lg font-bold text-destructive">{chartData[chartData.length - 1]?.criticos || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.critical')}</p></div>
           <div><p className="text-lg font-bold text-warning">{chartData[chartData.length - 1]?.altos || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.high')}</p></div>
           <div><p className="text-lg font-bold text-primary">{chartData[chartData.length - 1]?.medios || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.medium')}</p></div>

@@ -20,7 +20,7 @@ interface Activity {
   status?: string;
 }
 
-export function RecentActivities() {
+export function RecentActivities({ className }: { className?: string }) {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const { t, locale } = useLanguage();
@@ -235,11 +235,11 @@ export function RecentActivities() {
   };
 
   return (
-    <Card className="w-full">
+    <Card className={`w-full ${className || ''}`}>
       <CardHeader>
         <CardTitle>{t('dashboard.recentActivities')}</CardTitle>
       </CardHeader>
-      <CardContent className="max-h-[500px] overflow-y-auto">
+      <CardContent className="max-h-[400px] overflow-y-auto">
         {loading ? (
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
