@@ -61,7 +61,7 @@ const PoliticaPrivacidade = () => {
               <div className="bg-white/5 rounded-xl p-6 space-y-3 border border-white/10">
                 <div className="flex items-center gap-3">
                   <Mail className="h-5 w-5 text-blue-400" />
-                  <span>privacidade@governaii.com.br</span>
+                  <span>privacidade@akuris.com.br</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <MapPin className="h-5 w-5 text-blue-400" />
@@ -182,7 +182,7 @@ const PoliticaPrivacidade = () => {
                 <li>Revogação do consentimento</li>
               </ul>
               <p className="leading-relaxed mt-4">
-                Para exercer seus direitos, entre em contato através do e-mail: <span className="text-blue-400">privacidade@governaii.com.br</span>
+                Para exercer seus direitos, entre em contato através do e-mail: <span className="text-blue-400">privacidade@akuris.com.br</span>
               </p>
             </section>
 
@@ -221,7 +221,7 @@ const PoliticaPrivacidade = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-3">
                     <Mail className="h-4 w-4 text-blue-400" />
-                    <span>dpo@governaii.com.br</span>
+                    <span>dpo@akuris.com.br</span>
                   </div>
                 </div>
               </div>

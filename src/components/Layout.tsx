@@ -81,7 +81,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
           <div className="space-y-3">
             <a 
-              href="mailto:contato@governaii.com.br" 
+              href="mailto:contato@akuris.com.br" 
               className="block w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg font-medium transition-colors"
             >
               Entrar em Contato
@@ -115,7 +115,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
           <div className="space-y-3">
             <a 
-              href="mailto:comercial@governaii.com.br" 
+              href="mailto:comercial@akuris.com.br" 
               className="block w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg font-medium transition-colors"
             >
               Ativar Licença

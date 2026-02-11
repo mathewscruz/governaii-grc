@@ -44,8 +44,8 @@ export function CreditsExhaustedDialog({
             <div className="space-y-2 pt-2">
               <div className="flex items-center gap-2 text-sm">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <a href="mailto:contato@governaii.com.br" className="text-primary hover:underline">
-                  contato@governaii.com.br
+                <a href="mailto:contato@akuris.com.br" className="text-primary hover:underline">
+                  contato@akuris.com.br
                 </a>
               </div>
               <div className="flex items-center gap-2 text-sm">

@@ -126,7 +126,7 @@ serve(async (req) => {
                     type: "button",
                     text: {
                       type: "plain_text",
-                      text: "Ver no GovernAII",
+                      text: "Ver no Akuris",
                       emoji: true
                     },
                     url: link
@@ -159,7 +159,7 @@ serve(async (req) => {
               "sections": [{
                 "activityTitle": titulo,
                 "activitySubtitle": new Date(timestamp || Date.now()).toLocaleString('pt-BR'),
-                "activityImage": "https://governaii.com.br/governaii-logo.png",
+                "activityImage": "https://akuris.com.br/akuris-logo.png",
                 "facts": [
                   { "name": "Evento", "value": evento },
                   ...(gravidade ? [{ "name": "Gravidade", "value": gravidade }] : [])
@@ -170,7 +170,7 @@ serve(async (req) => {
               ...(link ? {
                 "potentialAction": [{
                   "@type": "OpenUri",
-                  "name": "Ver no GovernAII",
+                  "name": "Ver no Akuris",
                   "targets": [{ "os": "default", "uri": link }]
                 }]
               } : {})

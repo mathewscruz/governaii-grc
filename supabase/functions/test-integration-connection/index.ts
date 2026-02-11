@@ -67,7 +67,7 @@ serve(async (req) => {
           "sections": [{
             "activityTitle": "✅ Conexão com GovernAII estabelecida!",
             "activitySubtitle": new Date().toLocaleString('pt-BR'),
-            "activityImage": "https://governaii.com.br/governaii-logo.png",
+            "activityImage": "https://akuris.com.br/akuris-logo.png",
             "facts": [{
               "name": "Status",
               "value": "Conectado com sucesso"
