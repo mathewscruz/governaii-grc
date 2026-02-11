@@ -165,7 +165,7 @@ export const MultiDimensionalRadar = () => {
         </ResponsiveContainer>
         
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center border-t pt-4">
-          {data.slice(0, 4).map((item) => {
+          {(data ?? []).slice(0, 4).map((item) => {
             const color = item.score >= 80 ? 'text-green-500' : item.score >= 60 ? 'text-primary' : item.score >= 40 ? 'text-warning' : 'text-destructive';
             return (
               <div key={item.subject}>
