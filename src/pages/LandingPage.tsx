@@ -324,6 +324,12 @@ const LandingPage = () => {
                 Benefícios
               </button>
               <button
+                onClick={() => scrollToSection("precos")}
+                className="text-sm text-gray-300 hover:text-white transition-colors"
+              >
+                Preços
+              </button>
+              <button
                 onClick={() => scrollToSection("contato")}
                 className="text-sm text-gray-300 hover:text-white transition-colors"
               >
@@ -406,14 +412,15 @@ const LandingPage = () => {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 landing-fade-in-up landing-stagger-4">
-                <Button
-                  size="lg"
-                  onClick={() => scrollToSection("contato")}
-                  className="bg-blue-600 hover:bg-blue-700 text-white landing-glow-btn group"
-                >
-                  Solicitar Demonstração
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
+                <Link to="/registro">
+                  <Button
+                    size="lg"
+                    className="bg-blue-600 hover:bg-blue-700 text-white landing-glow-btn group"
+                  >
+                    Começar Teste Grátis
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
                 <Link to="/auth">
                   <button
                     className="h-11 px-8 rounded-md text-base font-medium border-2 border-blue-400 bg-transparent text-blue-400 hover:bg-blue-500/20 hover:text-white transition-all w-full sm:w-auto"
@@ -858,6 +865,98 @@ const LandingPage = () => {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Transition Line */}
+      <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+
+      {/* Pricing Section */}
+      <section id="precos" className="relative py-12 sm:py-16 lg:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 sm:mb-14">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
+              Planos que se adaptam à sua{" "}
+              <span className="landing-gradient-text">empresa</span>
+            </h2>
+            <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto">
+              Comece com 14 dias grátis. Sem compromisso, cancele quando quiser.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            {/* Starter */}
+            <div className="landing-glass rounded-2xl p-6 sm:p-8 landing-border-gradient flex flex-col">
+              <h3 className="text-xl font-bold text-white mb-1">Starter</h3>
+              <p className="text-gray-400 text-sm mb-4">Ideal para pequenas empresas</p>
+              <div className="mb-6">
+                <span className="text-3xl sm:text-4xl font-bold text-white">R$ 99</span>
+                <span className="text-gray-400 text-sm">/mês</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {["Até 10 créditos IA/mês", "Gestão de Riscos", "Controles Internos", "Documentos", "Incidentes", "Suporte por email"].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-gray-300">
+                    <CheckCircle2 className="h-4 w-4 text-blue-400 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/registro?plano=starter">
+                <Button className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10">
+                  Começar teste grátis
+                </Button>
+              </Link>
+            </div>
+
+            {/* Professional */}
+            <div className="relative landing-glass rounded-2xl p-6 sm:p-8 border-2 border-blue-500/50 flex flex-col">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-semibold px-4 py-1 rounded-full">
+                Mais popular
+              </div>
+              <h3 className="text-xl font-bold text-white mb-1">Professional</h3>
+              <p className="text-gray-400 text-sm mb-4">Para empresas em crescimento</p>
+              <div className="mb-6">
+                <span className="text-3xl sm:text-4xl font-bold text-white">R$ 249</span>
+                <span className="text-gray-400 text-sm">/mês</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {["Até 50 créditos IA/mês", "Tudo do Starter +", "Gap Analysis & Frameworks", "Due Diligence", "Contratos", "Canal de Denúncias", "Revisão de Acessos", "Integrações (Slack, Teams)", "Suporte prioritário"].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-gray-300">
+                    <CheckCircle2 className="h-4 w-4 text-blue-400 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/registro?plano=professional">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white landing-glow-btn">
+                  Começar teste grátis
+                </Button>
+              </Link>
+            </div>
+
+            {/* Enterprise */}
+            <div className="landing-glass rounded-2xl p-6 sm:p-8 landing-border-gradient flex flex-col">
+              <h3 className="text-xl font-bold text-white mb-1">Enterprise</h3>
+              <p className="text-gray-400 text-sm mb-4">Governança corporativa completa</p>
+              <div className="mb-6">
+                <span className="text-3xl sm:text-4xl font-bold text-white">R$ 499</span>
+                <span className="text-gray-400 text-sm">/mês</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {["Até 200 créditos IA/mês", "Tudo do Professional +", "API Pública & Webhooks", "Contas Privilegiadas", "Auditoria Completa", "Multi-frameworks", "Relatórios avançados", "Onboarding dedicado", "Suporte 24/7"].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-gray-300">
+                    <CheckCircle2 className="h-4 w-4 text-cyan-400 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/registro?plano=enterprise">
+                <Button className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10">
+                  Começar teste grátis
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

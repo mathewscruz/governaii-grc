@@ -40,6 +40,8 @@ import PlanosAcao from '@/pages/PlanosAcao';
 import Relatorios from '@/pages/Relatorios';
 import Politicas from '@/pages/Politicas';
 import Planos from '@/pages/Planos';
+import Registro from '@/pages/Registro';
+import CheckoutSuccess from '@/pages/CheckoutSuccess';
 
 const queryClient = new QueryClient();
 
@@ -60,6 +62,8 @@ function App() {
             <Route path="/404" element={<NotFound />} />
             <Route path="/" element={<LandingPage />} />
             <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
+            <Route path="/registro" element={<Registro />} />
+            <Route path="/checkout-success" element={<CheckoutSuccess />} />
             <Route path="/dashboard" element={
               <Layout>
                 <ProtectedRoute moduleName="dashboard" fallbackToRoleCheck={false}>

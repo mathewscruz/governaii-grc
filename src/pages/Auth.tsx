@@ -231,8 +231,12 @@ const Auth = () => {
           </div>
 
           {/* Footer */}
-          <div className="text-center space-y-1.5 landing-fade-in-5">
-            <Link to="/politica-privacidade" target="_blank" className="text-white/30 hover:text-primary text-xs transition-colors">
+          <div className="text-center space-y-2 landing-fade-in-5">
+            <p className="text-white/40 text-sm">
+              Não tem uma conta?{' '}
+              <Link to="/registro" className="text-primary hover:text-primary/80 hover:underline font-medium">Criar conta grátis</Link>
+            </p>
+            <Link to="/politica-privacidade" target="_blank" className="text-white/30 hover:text-primary text-xs transition-colors block">
               Política de Privacidade
             </Link>
             <p className="text-white/20 text-xs">© {new Date().getFullYear()} Akuris — Todos os direitos reservados</p>
