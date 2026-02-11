@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import governaiiLogo from "@/assets/governaii-logo.png";
+import akurisLogo from "@/assets/akuris-logo.png";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -296,8 +296,8 @@ const LandingPage = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <img
-                src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/empresa-logos/Governiaa%20(500%20x%20200%20px).png"
-                alt="GovernAII - Plataforma de Governança, Riscos e Conformidade"
+                src={akurisLogo}
+                alt="Akuris - Plataforma de Governança, Riscos e Conformidade"
                 className="h-20 w-auto"
                 loading="eager"
               />
@@ -451,7 +451,7 @@ const LandingPage = () => {
                         <div className="w-3 h-3 rounded-full bg-yellow-500" />
                         <div className="w-3 h-3 rounded-full bg-green-500" />
                       </div>
-                      <img src={governaiiLogo} alt="GovernAII" className="h-5 object-contain" />
+                      <img src={akurisLogo} alt="Akuris" className="h-5 object-contain" />
                     </div>
 
                     {/* Score Cards */}
@@ -998,8 +998,8 @@ const LandingPage = () => {
             <div className="sm:col-span-2">
               <div className="flex items-center mb-4">
                 <img
-                  src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/empresa-logos/Governiaa%20(500%20x%20200%20px).png"
-                  alt="GovernAII - Logotipo da empresa"
+                  src={akurisLogo}
+                  alt="Akuris - Logotipo da empresa"
                   className="h-10 sm:h-12 w-auto"
                 />
               </div>

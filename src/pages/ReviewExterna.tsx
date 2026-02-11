@@ -115,8 +115,8 @@ export default function ReviewExterna() {
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-2">
               <img
-                src="/governaii-logo.png"
-                alt="GovernAI"
+                src="/akuris-logo.png"
+                alt="Akuris"
                 className="h-8"
               />
               <h1 className="text-2xl font-bold">Revisão de Acessos</h1>
