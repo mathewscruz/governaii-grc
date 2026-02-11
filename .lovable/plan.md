@@ -1,76 +1,105 @@
 
-# Validacao do Fluxo de Contratacao - Analise Completa
+# Avaliacao Geral do Sistema Akuris - Prontidao para Venda e Divulgacao
 
-## Resultado Geral: Funcional com alguns pontos de atencao
+## Veredicto Geral: PRONTO para lancamento, com ajustes recomendados
 
-O fluxo esta bem estruturado e coerente do ponto de vista do usuario. Abaixo a analise passo a passo:
-
----
-
-## Fluxo 1: Plano Free (14 dias)
-
-| Etapa | Status | Observacao |
-|-------|--------|------------|
-| Landing Page -> card Free com botao "Comecar gratis" | OK | Link para `/registro?plano=free` |
-| Registro -> formulario com validacao Zod | OK | Campos: nome, email, senha, empresa, CNPJ |
-| Registro -> chama `provision-new-account` | OK | Envia `plano_codigo: 'free'` |
-| Edge Function -> cria auth user, empresa (trial), profile (admin), permissoes | OK | Rollback em caso de erro |
-| Edge Function -> pula Stripe, retorna `{ success: true }` | OK | Sem `checkout_url` |
-| Frontend -> faz login automatico e redireciona para `/dashboard` | OK | `signInWithPassword` + `navigate` |
-| Dashboard -> TrialBanner exibe dias restantes + link "Ver planos" | OK | Banner com cor dinamica |
-| Apos 14 dias -> `check_trial_expiration` corta acesso | OK | Logica ja existente no Layout |
-
-**Veredicto: 100% funcional**
+O sistema esta bem construido, com visual profissional e fluxo de contratacao funcional. Abaixo a analise detalhada em 5 dimensoes.
 
 ---
 
-## Fluxo 2: Planos Pagos (Starter, Professional, Enterprise)
+## 1. SEO da Landing Page
 
-| Etapa | Status | Observacao |
-|-------|--------|------------|
-| Landing Page -> card com botao "Assinar agora" | OK | Link para `/registro?plano=starter` etc. |
-| Registro -> formulario identico, botao "Criar conta e assinar" | OK | Texto condicional funciona |
-| Edge Function -> cria user/empresa/profile + Stripe Checkout | OK | Trial de 14 dias no Stripe |
-| Frontend -> faz login, redireciona para Stripe Checkout | OK | `window.location.href` |
-| Stripe -> usuario completa pagamento | OK | Stripe gerencia |
-| Stripe -> redireciona para `/checkout-success` | OK | Rota publica configurada |
-| CheckoutSuccess -> countdown 5s e redireciona para `/dashboard` | OK | Funciona |
+### O que esta BEM
+- Meta tags completas (title, description, keywords, og:*, twitter:*)
+- Structured data (JSON-LD) com SoftwareApplication, Organization, WebSite e FAQPage
+- robots.txt e sitemap.xml configurados
+- Canonical URL definida
+- hreflang para pt-BR
+- Semantica HTML correta (header, main, footer, nav, section, h1/h2/h3)
+- Skip-to-content link para acessibilidade
+- Alt texts em imagens
 
-**Veredicto: Funcional, mas com pontos de atencao abaixo**
-
----
-
-## Pontos de Atencao Identificados
-
-### 1. Sessao pode ser perdida apos Stripe Checkout (MEDIO RISCO)
-O usuario faz login no frontend ANTES de ser redirecionado para o Stripe (`window.location.href`). Porem, ao voltar do Stripe para `/checkout-success`, a sessao do Supabase pode nao estar persistida no navegador porque o `window.location.href` para o Stripe e uma navegacao externa. A sessao depende do `localStorage` do Supabase -- que normalmente persiste. Porem, se o usuario trocar de aba ou demorar no Stripe, pode haver timeout.
-
-**Impacto**: O usuario chega no `/checkout-success`, e redirecionado para `/dashboard`, mas o Layout verifica autenticacao. Se a sessao expirou, ele sera redirecionado para `/auth`. Nao e um bloqueio critico porque ele pode fazer login manualmente.
-
-### 2. Pagina `/checkout-success` nao verifica autenticacao (BAIXO RISCO)
-A pagina apenas faz countdown e redireciona para `/dashboard`. Nao verifica se o usuario esta autenticado nem confirma o status da assinatura com o Stripe. Se o usuario nao estiver logado, ele chegara no `/dashboard` e sera redirecionado para `/auth` pelo Layout.
-
-**Sugestao**: Seria ideal verificar a sessao e, se nao estiver logado, mostrar um botao "Fazer login" ao inves de redirecionar cegamente.
-
-### 3. Sem toggle mensal/anual na Landing Page (INFORMATIVO)
-Os cards de preco mostram apenas precos mensais. O `stripe-plans.ts` tem `annual_price` definido, e o Registro aceita `billing` como parametro, mas nao ha precos anuais criados no Stripe (apenas os mensais existem) e a landing page nao tem toggle.
-
-### 4. Rota `/planos` esta dentro do Layout (requer login) (INFORMATIVO)
-A rota `/planos` esta envolvida pelo `Layout` (linha 241-245 do App.tsx), o que significa que requer autenticacao. Isso esta correto para usuarios ja logados que querem trocar de plano, mas visitantes nao conseguem acessar essa pagina diretamente. A landing page supre essa necessidade com a secao de precos.
-
-### 5. Empresa criada com `status_licenca: 'trial'` para todos os planos (CORRETO)
-Tanto o plano free quanto os pagos criam a empresa com status `trial`. Isso e correto porque os planos pagos tambem tem 14 dias de trial no Stripe. A diferenciacao entre "trial que paga depois" e "trial que expira" e feita pela existencia ou nao de uma assinatura Stripe ativa.
+### O que precisa AJUSTAR
+- **Comentario no CSS desatualizado**: O arquivo `src/index.css` ainda referencia "GovernAII Design System v2.0" na linha 6. Deve ser atualizado para "Akuris Design System"
+- **localStorage keys desatualizadas**: Em `Auth.tsx`, as chaves `governaii_remember_email` e `governaii_remember_me` ainda referenciam o nome antigo. Deve ser `akuris_remember_email`
+- **Claim "500 horas economizadas"**: Na secao "Esqueca as Planilhas", o texto diz "Mais de 500 horas economizadas por ano" sem base comprovada. Para um sistema novo, isso pode parecer generico/IA. Sugestao: trocar para algo como "Reduza o tempo gasto com gestao manual" sem numero especifico, ou adicionar "em media" com asterisco
+- **Stats na hero (99.9% Uptime, 8/5 Suporte, 48h Implantacao)**: Esses numeros na secao de beneficios sao afirmacoes que precisam ser sustentaveis. Se o sistema e novo, "99.9% Uptime" pode ser questionado. Considere trocar para indicadores do produto (ex: "8 Modulos", "20+ Frameworks") em vez de promessas operacionais
 
 ---
 
-## Sugestoes de Melhoria (nao bloqueantes)
+## 2. Fluxo do Usuario (Contratacao)
 
-1. **CheckoutSuccess**: Adicionar verificacao de sessao -- se nao logado, mostrar botao de login ao inves de redirecionar cegamente
-2. **Landing Page**: Considerar adicionar toggle mensal/anual quando os precos anuais forem criados no Stripe
-3. **Protecao contra duplo registro**: A edge function ja trata erro de email duplicado, e o frontend mostra mensagem adequada
+### Plano Free
+Landing -> /registro?plano=free -> provision-new-account -> auto-login -> /dashboard
+**Status: 100% funcional**
 
-## Conclusao
+### Planos Pagos
+Landing -> /registro?plano=X -> provision-new-account -> Stripe Checkout -> /checkout-success -> /dashboard
+**Status: Funcional, com sessao verificada no checkout-success**
 
-O fluxo esta **funcional e pronto para uso**. Os pontos de atencao sao melhorias incrementais, nenhum deles bloqueia o funcionamento. O caminho critico (Landing -> Registro -> Provisionamento -> Dashboard) funciona corretamente para ambos os cenarios (free e pago).
+### Pontos ja resolvidos
+- Verificacao de sessao no CheckoutSuccess (implementado)
+- Texto condicional nos botoes (Free vs Pago)
+- Rollback em caso de erro no provisionamento
 
-Deseja que eu implemente alguma das melhorias sugeridas?
+---
+
+## 3. Itens com "Cara de IA" para Corrigir
+
+| Item | Onde | Problema | Sugestao |
+|------|------|----------|----------|
+| "500 horas economizadas" | Landing, secao Planilhas | Numero inventado, generico | Remover numero ou usar linguagem qualitativa |
+| "99.9% Uptime Garantido" | Landing, beneficios | Promessa sem SLA real | Trocar por indicador do produto |
+| "48h Implantacao Rapida" | Landing, beneficios | Pode nao ser real | Usar "Self-service" ou "Comece em minutos" |
+| "8/5 Suporte Especializado" | Landing, beneficios | Requer equipe real | Trocar por "Suporte por email" |
+| Feature detail dialogs | Landing, modulos | Texto com bullet points repetitivos ("Com o modulo X voce pode:") | Variar a abertura de cada descricao |
+| Exit-intent popup | Landing | Popup "Espere!" e agressivo e comum em sites de baixa qualidade | Considerar remover ou tornar mais sutil |
+
+---
+
+## 4. Melhorias Tecnicas Recomendadas
+
+### Prioridade ALTA
+1. **Referencia "GovernAII" residual**: Atualizar o comentario no CSS (`index.css` linha 6-8) e as keys de localStorage em `Auth.tsx` (linhas 49-50, 88-89)
+2. **Termos de Uso/Servico**: O formulario de registro nao tem checkbox de aceite dos Termos de Uso. Para venda, isso e essencial para protecao juridica
+3. **CNPJ sem mascara**: O campo CNPJ no registro aceita texto livre. Adicionar mascara de formatacao (XX.XXX.XXX/XXXX-XX) para profissionalismo
+
+### Prioridade MEDIA
+4. **Confirmacao de senha**: O formulario de registro nao tem campo "Confirmar senha". Isso e padrao em SaaS profissional
+5. **Forca da senha**: Nao ha indicador visual de forca da senha (fraca/media/forte)
+6. **Precos anuais**: O toggle mensal/anual nao existe na landing page. Quando configurar os precos anuais no Stripe, adicionar o toggle
+
+### Prioridade BAIXA
+7. **Politica de Privacidade no registro**: Adicionar link para Politica de Privacidade no formulario de registro
+8. **Google Analytics / Tag Manager**: Nao ha rastreamento de conversoes. Para medir efetividade da landing page, integrar GA4 ou similar
+
+---
+
+## 5. Visual e Profissionalismo
+
+### Pontos POSITIVOS
+- Identidade visual consistente (paleta navy + violeta)
+- Tipografia DM Sans profissional
+- Dashboard preview na hero e convincente
+- Carousel de frameworks transmite credibilidade
+- Cards de pricing bem alinhados e claros
+- Mobile responsive funcional
+- Transicoes e animacoes suaves sem exagero
+
+### Pontos a AJUSTAR
+- **Secao "Esqueca as Planilhas"**: A animacao de "DESATUALIZADO" com `animate-pulse` fica piscando infinitamente, o que pode distrair. Considerar remover a animacao ou usar apenas uma vez
+- **Badge "LIVE" no dashboard preview**: Pode confundir o usuario pensando que e um dashboard real. Trocar para "PREVIEW" ou "DEMO"
+- **Secao de contato redundante**: Com os botoes de "Comecar gratis" e "Assinar agora" nos cards de preco, a secao de contato com formulario pode ser simplificada ou focada apenas em "Enterprise/Demonstracao"
+
+---
+
+## Resumo Executivo
+
+O sistema esta **pronto para lancamento** com os fluxos de contratacao funcionais. As melhorias recomendadas sao incrementais e focam em:
+
+1. **Credibilidade**: Remover claims numericos nao compravaveis (500h, 99.9%, 48h)
+2. **Profissionalismo**: Adicionar Termos de Uso, mascara CNPJ, confirmacao de senha
+3. **Limpeza de marca**: Remover referencias residuais a "GovernAII"
+4. **Conversao**: Considerar remover exit-intent popup e trocar badge "LIVE" por "DEMO"
+
+Nenhum desses itens e bloqueante para o lancamento, mas corrigi-los elevara significativamente a percepcao de qualidade e profissionalismo do produto.
