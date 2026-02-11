@@ -167,6 +167,11 @@ export default {
 				'pulse-subtle': {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.7' }
+				},
+				'spin-burst': {
+					'0%': { transform: 'rotate(0deg)' },
+					'15%': { transform: 'rotate(1080deg)' },
+					'100%': { transform: 'rotate(1080deg)' }
 				}
 			},
 			animation: {
@@ -177,7 +182,8 @@ export default {
 				'scale-in': 'scale-in 0.2s ease-out',
 				'hover-lift': 'hover-lift 0.2s ease-out',
 				'shimmer': 'shimmer 2s infinite linear',
-				'pulse-subtle': 'pulse-subtle 3s infinite ease-in-out'
+				'pulse-subtle': 'pulse-subtle 3s infinite ease-in-out',
+				'spin-burst': 'spin-burst 5s ease-in-out infinite'
 			},
 			spacing: {
 				'xs': 'var(--spacing-xs)',

@@ -160,11 +160,10 @@ export function AkurIAChatbot() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-white dark:bg-card shadow-lg border border-border hover:shadow-2xl transition-all duration-300 hover:scale-110 flex items-center justify-center animate-fade-in group"
+          className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-white dark:bg-card shadow-lg border border-border hover:shadow-2xl transition-all duration-300 hover:scale-110 flex items-center justify-center animate-fade-in"
           title="AkurIA - Assistente Inteligente"
         >
-          <img src="/akuris-favicon.png" alt="AkurIA" className="h-8 w-8 rounded-full transition-transform duration-300 group-hover:rotate-12" />
-          <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-white dark:border-card animate-pulse" />
+          <img src="/akuris-favicon.png" alt="AkurIA" className="h-8 w-8 rounded-full animate-[spin-burst_5s_ease-in-out_infinite]" />
         </button>
       )}
 
