@@ -28,4 +28,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://governaii.com.br/sitemap.xml
+Sitemap: https://akuris.com.br/sitemap.xml
