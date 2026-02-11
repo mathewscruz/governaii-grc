@@ -41,13 +41,14 @@ serve(async (req) => {
 
   try {
     const { nome, email, senha, empresa_nome, cnpj, plano_codigo, billing } = await req.json();
-    logStep("Request received", { email, empresa_nome, plano_codigo, billing });
+    const isFree = plano_codigo === "free";
+    logStep("Request received", { email, empresa_nome, plano_codigo, billing, isFree });
 
     if (!nome || !email || !senha || !empresa_nome) {
       throw new Error("Campos obrigatórios: nome, email, senha, empresa_nome");
     }
 
-    const planConfig = PLAN_MAP[plano_codigo] || PLAN_MAP.starter;
+    const planConfig = PLAN_MAP[isFree ? "starter" : plano_codigo] || PLAN_MAP.starter;
     const priceId = billing === "annual" && planConfig.stripe_price_annual
       ? planConfig.stripe_price_annual
       : planConfig.stripe_price_monthly;
@@ -148,7 +149,15 @@ serve(async (req) => {
       logStep("Permissions warning (non-fatal)", { message: String(permError) });
     }
 
-    // 6. Create Stripe Checkout session with trial
+    // 6. For free plan, skip Stripe checkout entirely
+    if (isFree) {
+      logStep("Free plan - skipping Stripe checkout");
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // 7. Create Stripe Checkout session with trial for paid plans
     logStep("Creating Stripe checkout");
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {

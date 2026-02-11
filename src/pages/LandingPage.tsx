@@ -882,11 +882,34 @@ const LandingPage = () => {
               <span className="landing-gradient-text">empresa</span>
             </h2>
             <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto">
-              Comece com 14 dias grátis. Sem compromisso, cancele quando quiser.
+              Comece grátis por 14 dias ou escolha o plano ideal para sua operação.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Free */}
+            <div className="landing-glass rounded-2xl p-6 sm:p-8 landing-border-gradient flex flex-col">
+              <h3 className="text-xl font-bold text-white mb-1">Free</h3>
+              <p className="text-gray-400 text-sm mb-4">14 dias para conhecer a plataforma</p>
+              <div className="mb-6">
+                <span className="text-3xl sm:text-4xl font-bold text-white">R$ 0</span>
+                <span className="text-gray-400 text-sm ml-1">/ 14 dias</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {["14 dias de acesso completo", "Até 10 créditos IA/mês", "Gestão de Riscos", "Controles Internos", "Documentos", "Incidentes", "Suporte por email"].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-gray-300">
+                    <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/registro?plano=free">
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                  Começar grátis
+                </Button>
+              </Link>
+            </div>
+
             {/* Starter */}
             <div className="landing-glass rounded-2xl p-6 sm:p-8 landing-border-gradient flex flex-col">
               <h3 className="text-xl font-bold text-white mb-1">Starter</h3>
@@ -905,7 +928,7 @@ const LandingPage = () => {
               </ul>
               <Link to="/registro?plano=starter">
                 <Button className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10">
-                  Começar teste grátis
+                  Assinar agora
                 </Button>
               </Link>
             </div>
@@ -931,7 +954,7 @@ const LandingPage = () => {
               </ul>
               <Link to="/registro?plano=professional">
                 <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white landing-glow-btn">
-                  Começar teste grátis
+                  Assinar agora
                 </Button>
               </Link>
             </div>
@@ -954,7 +977,7 @@ const LandingPage = () => {
               </ul>
               <Link to="/registro?plano=enterprise">
                 <Button className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10">
-                  Começar teste grátis
+                  Assinar agora
                 </Button>
               </Link>
             </div>

@@ -11,6 +11,7 @@ import { STRIPE_PLANS, PlanKey } from '@/lib/stripe-plans';
 import { cn } from '@/lib/utils';
 
 const planIcons: Record<PlanKey, React.ElementType> = {
+  free: Sparkles,
   starter: Shield,
   professional: Zap,
   enterprise: Crown,

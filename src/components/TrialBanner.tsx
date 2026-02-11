@@ -1,8 +1,8 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/components/AuthProvider';
 import { differenceInDays } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 const TrialBanner: React.FC = () => {
   const { company } = useAuth();
@@ -28,10 +28,13 @@ const TrialBanner: React.FC = () => {
         <AlertCircle className="h-4 w-4 flex-shrink-0" />
         <p className="text-sm font-medium">
           {diasRestantes === 1 
-            ? 'Licença Trial - Resta 1 dia de teste. Entre em contato para ativar sua licença.'
-            : `Licença Trial - Restam ${diasRestantes} dias de teste. Entre em contato para ativar sua licença.`
+            ? 'Licença Trial - Resta 1 dia de teste.'
+            : `Licença Trial - Restam ${diasRestantes} dias de teste.`
           }
         </p>
+        <Link to="/planos" className="text-sm font-semibold underline hover:no-underline ml-1">
+          Ver planos
+        </Link>
       </div>
     </div>
   );
