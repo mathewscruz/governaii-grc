@@ -235,7 +235,7 @@ export function RecentActivities({ className }: { className?: string }) {
   };
 
   return (
-    <Card className={`w-full ${className || ''}`}>
+    <Card className={`w-full min-w-0 ${className || ''}`}>
       <CardHeader>
         <CardTitle>{t('dashboard.recentActivities')}</CardTitle>
       </CardHeader>

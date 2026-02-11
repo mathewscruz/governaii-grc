@@ -118,7 +118,7 @@ export const MultiDimensionalRadar = () => {
   const StatusIcon = statusConfig.icon;
 
   return (
-    <Card className="w-full flex flex-col">
+    <Card className="w-full flex flex-col overflow-hidden min-w-0">
       <CardHeader>
         <CardTitle>{t('dashboard.maturity')}</CardTitle>
         <div className="flex items-center space-x-2 mt-4">

@@ -122,7 +122,7 @@ export function RiskScoreTimeline() {
   }
 
   return (
-    <Card className="w-full flex flex-col">
+    <Card className="w-full flex flex-col overflow-hidden min-w-0">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-2">
           <CardTitle>{t('dashboard.riskEvolution')}</CardTitle>
@@ -145,7 +145,7 @@ export function RiskScoreTimeline() {
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
-        <div className="h-52 sm:h-72 w-full">
+        <div className="h-52 sm:h-72 w-full overflow-hidden">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />

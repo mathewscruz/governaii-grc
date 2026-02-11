@@ -116,9 +116,9 @@ export default function Dashboard() {
 
         {/* Maturidade + Timeline + Atividades */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5 w-full">
-          <MultiDimensionalRadar />
-          <RiskScoreTimeline />
-          <RecentActivities className="md:col-span-2 xl:col-span-1" />
+          <div className="min-w-0"><MultiDimensionalRadar /></div>
+          <div className="min-w-0"><RiskScoreTimeline /></div>
+          <div className="min-w-0 md:col-span-2 xl:col-span-1"><RecentActivities /></div>
         </div>
 
         {/* Dialog de alertas */}
