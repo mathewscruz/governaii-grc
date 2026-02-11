@@ -1,77 +1,96 @@
 
-# Troca de Conteudo dos Cards do Dashboard + Sistema de Idiomas (PT/EN)
+# Ajuste de Responsividade Global + Padronizacao Visual do Card Maturidade GRC
 
-## Parte 1: Trocar conteudo entre cards do Dashboard
+## Problemas Identificados
 
-### Situacao atual
-- **Linha 3 do grid (xl:grid-cols-3):** `MultiDimensionalRadar` (Maturidade GRC) ocupa `xl:col-span-2` (2/3) + `UpcomingExpirations` (1/3)
-- **Linha 4 do grid (xl:grid-cols-3):** `ExecutiveSummaryAI` (1/3) + `RiskScoreTimeline` (1/3) + `RecentActivities` (1/3)
+### 1. Card "Maturidade GRC" fora do padrao visual
+O card de Maturidade GRC tem visual diferente do card "Evolucao de Riscos por Criticidade" ao lado:
+- O grafico radar esta centralizado ocupando muito espaco vertical
+- Nao tem o mesmo estilo de header (o card de Riscos tem tabs no header, badge de status, metricas de resumo no rodape)
+- A legenda de cores (Excelente/Bom/Atencao/Critico) ocupa espaco desnecessario embaixo
 
-### Problema
-O grafico radar de Maturidade GRC e muito grande para o card de 2/3 e o Resumo Executivo IA esta comprimido em 1/3.
+**Solucao:** Alinhar visualmente o card de Maturidade com o padrao do card de Riscos -- compactar o radar, remover a legenda extensa (mover para tooltip), e adicionar um rodape com scores resumidos por categoria (similar ao rodape de Criticos/Altos/Medios/Baixos do card de Riscos).
 
-### Solucao
-- Mover `MultiDimensionalRadar` para a posicao do `ExecutiveSummaryAI` (1/3 da linha 4)
-- Mover `ExecutiveSummaryAI` para a posicao do `MultiDimensionalRadar` (2/3 da linha 3)
-- Renomear "Resumo Executivo IA" para "Resumo" em todos os estados do componente (inicial, loading, resultado, PDF)
-- Reduzir a altura do radar chart de 400px para ~280px para caber no card menor
+### 2. Responsividade dos elementos comprimidos
+Em telas intermediarias (1024px, tablets) e mobile (390px), os elementos estao sendo espremidos em vez de reorganizarem o layout:
 
-### Arquivos modificados
-- `src/pages/Dashboard.tsx` -- trocar posicao dos componentes no grid
-- `src/components/dashboard/ExecutiveSummaryAI.tsx` -- renomear titulo para "Resumo"
-- `src/components/dashboard/MultiDimensionalRadar.tsx` -- ajustar altura do chart para card menor
+**Problemas especificos:**
+- **Hero Banner:** Em telas medias, os 3 metric cards ficam apertados
+- **KPI Pills:** Em mobile, os pills perdem labels e badges, ficando incompreensiveis (so mostram icone + numero)
+- **Grid de 3 colunas:** Em telas de 1024px, o grid `xl:grid-cols-3` colapsa para 1 coluna de uma vez, sem estagio intermediario
+- **Header:** Em mobile, os botoes do header (busca, idioma, changelog, notificacoes, perfil) ficam comprimidos
+- **Cards de Riscos/Maturidade:** Em telas medias, os graficos sao comprimidos horizontalmente
 
----
+**Solucao:** Ajustes progressivos de breakpoints:
 
-## Parte 2: Sistema de Idiomas (Portugues/Ingles)
+## Mudancas Propostas
 
-### Abordagem
-Criar um sistema de internacionalizacao (i18n) leve e sem dependencias externas, usando React Context + dicionarios de traducao. O usuario seleciona o idioma no perfil/header.
+### Arquivo: `src/components/dashboard/MultiDimensionalRadar.tsx`
+- Reduzir altura do `ResponsiveContainer` de 280px para 250px
+- Remover a legenda de 4 colunas debaixo do grafico (Excelente/Bom/Atencao/Critico)
+- Adicionar rodape com grid de scores resumidos (top 4 dimensoes com valores) no mesmo estilo do card de Riscos (grid de 4 colunas com valor + label, separado por border-top)
+- Reduzir fontSize dos labels do PolarAngleAxis para 10px
+- Remover a `Legend` do recharts (redundante com os dots)
 
-### Arquitetura
+### Arquivo: `src/pages/Dashboard.tsx`
+- Linha de Resumo + Vencimentos: trocar `xl:grid-cols-3` para `lg:grid-cols-3` para usar melhor telas de 1024px
+- Linha de Maturidade + Riscos + Atividades: adicionar breakpoint intermediario `lg:grid-cols-2` antes de `xl:grid-cols-3` -- em telas medias, Maturidade e Riscos ficam lado a lado (2 cols) com Atividades embaixo
+- Ajustar o container principal para `overflow-x-hidden` e garantir `min-w-0` nos grids
 
-**Novo contexto:** `src/contexts/LanguageContext.tsx`
-- Provider com estado `locale: 'pt' | 'en'`
-- Persiste no `localStorage`
-- Exporta hook `useLanguage()` que retorna `{ t, locale, setLocale }`
-- Funcao `t(key)` busca traducao no dicionario ativo
+### Arquivo: `src/components/dashboard/HeroScoreBanner.tsx`
+- Em telas `md` (768-1024px), mudar layout dos metrics para `flex-wrap` com items menores
+- Em mobile, empilhar gauge em cima e metrics embaixo em grid 1x3
+- Reduzir padding de `p-6 lg:p-8` para `p-4 md:p-6 lg:p-8`
 
-**Dicionarios:** `src/i18n/pt.ts` e `src/i18n/en.ts`
-- Contem todas as strings do sistema organizadas por modulo
-- Chaves como `dashboard.title`, `sidebar.riscos`, `common.save`, etc.
-- Comecar com as strings principais: sidebar, header, dashboard, dialogs comuns, botoes
+### Arquivo: `src/components/dashboard/KPIPills.tsx`
+- Mostrar labels em todas as telas (remover `hidden sm:inline` do label)
+- Usar `text-[11px]` no label para caber em mobile
+- Adicionar `overflow-x-auto` no container para scroll horizontal em mobile em vez de comprimir
+- Adicionar `flex-nowrap` e `min-w-fit` nos pills para evitar quebra
 
-**Seletor de idioma:** Adicionado ao header (ao lado do ChangelogPopover) como um botao com bandeira/sigla (PT | EN)
+### Arquivo: `src/components/dashboard/RiskScoreTimeline.tsx`
+- Em mobile, reduzir altura do chart de `h-72` para `h-52`
+- No header, empilhar titulo e tabs verticalmente em mobile em vez de lado a lado
+- Rodape: mudar `grid-cols-4` para `grid-cols-2 sm:grid-cols-4` em mobile
 
-### Escopo das traducoes (primeira entrega)
-- Sidebar completo (todos os menus e submenus)
-- Header (breadcrumbs ficam dinamicos)
-- Dashboard (titulos, labels, KPI pills, hero banner)
-- Botoes comuns (Salvar, Cancelar, Excluir, Editar, Novo, Exportar)
-- Estados vazios e loading
-- Componentes de UI (DataTable headers, filtros)
+### Arquivo: `src/components/dashboard/RecentActivities.tsx`
+- Ajustar `max-h-[500px]` para `max-h-[400px]` para consistencia de altura com os cards ao lado
 
-### Arquivos criados
-- `src/contexts/LanguageContext.tsx` -- Context + Provider + hook
-- `src/i18n/pt.ts` -- dicionario portugues
-- `src/i18n/en.ts` -- dicionario ingles
-- `src/components/LanguageSelector.tsx` -- botao toggle PT/EN
+### Arquivo: `src/components/Layout.tsx`
+- No header, em mobile esconder breadcrumbs longos (manter so o ultimo item)
+- Reduzir gap entre botoes do header em mobile
 
-### Arquivos modificados
-- `src/main.tsx` -- envolver app com LanguageProvider
-- `src/components/Layout.tsx` -- adicionar LanguageSelector no header
-- `src/components/AppSidebar.tsx` -- usar `t()` nos labels do menu
-- `src/pages/Dashboard.tsx` -- usar `t()` nos titulos e labels
-- `src/components/dashboard/HeroScoreBanner.tsx` -- usar `t()`
-- `src/components/dashboard/KPIPills.tsx` -- usar `t()`
-- `src/components/dashboard/ExecutiveSummaryAI.tsx` -- usar `t()`
-- `src/components/dashboard/MultiDimensionalRadar.tsx` -- usar `t()`
-- `src/components/dashboard/UpcomingExpirations.tsx` -- usar `t()`
-- `src/components/dashboard/RecentActivities.tsx` -- usar `t()`
-- `src/components/dashboard/RiskScoreTimeline.tsx` -- usar `t()`
+## Detalhes Tecnicos
 
-### Detalhes tecnicos
-- Sem bibliotecas externas (react-i18next, etc.) -- o sistema e simples o suficiente para um Context nativo
-- Persistencia via `localStorage.getItem('governaii-locale')`
-- Fallback para 'pt' se nao houver preferencia salva
-- Os modulos internos (Riscos, Controles, etc.) serao traduzidos incrementalmente em etapas futuras -- nesta primeira entrega o foco e sidebar + dashboard + componentes comuns
+### Card Maturidade - Rodape com scores
+Adicionar um rodape identico ao do card de Riscos:
+```
+<div className="mt-4 grid grid-cols-4 gap-4 text-center border-t pt-4">
+  <!-- Top 4 dimensoes com score e label -->
+</div>
+```
+Os valores serao extraidos dos dados do radar chart (ex: Riscos 85%, Controles 72%, Ativos 90%, Incidentes 45%).
+
+### Breakpoints progressivos do grid
+```
+Atual:    grid-cols-1 xl:grid-cols-3
+Proposto: grid-cols-1 md:grid-cols-2 xl:grid-cols-3
+```
+Isso cria um estagio intermediario em tablets e laptops pequenos.
+
+### KPI Pills scroll horizontal
+```
+Atual:    flex flex-wrap gap-2
+Proposto: flex gap-2 overflow-x-auto pb-1 scrollbar-thin
+```
+Em mobile, os pills fazem scroll horizontal em vez de comprimir.
+
+## Arquivos modificados
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/dashboard/MultiDimensionalRadar.tsx` | Padronizar visual com card de Riscos, compactar, adicionar rodape |
+| `src/pages/Dashboard.tsx` | Breakpoints intermediarios nos grids |
+| `src/components/dashboard/HeroScoreBanner.tsx` | Responsividade mobile/tablet |
+| `src/components/dashboard/KPIPills.tsx` | Scroll horizontal mobile, labels visiveis |
+| `src/components/dashboard/RiskScoreTimeline.tsx` | Responsividade header e chart |
+| `src/components/dashboard/RecentActivities.tsx` | Ajuste de altura maxima |
