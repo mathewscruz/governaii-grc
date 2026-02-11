@@ -118,7 +118,7 @@ export const MultiDimensionalRadar = () => {
   const StatusIcon = statusConfig.icon;
 
   return (
-    <Card className="w-full">
+    <Card className="w-full flex flex-col">
       <CardHeader>
         <CardTitle>{t('dashboard.maturity')}</CardTitle>
         <div className="flex items-center space-x-2 mt-4">
@@ -129,7 +129,7 @@ export const MultiDimensionalRadar = () => {
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="w-full overflow-hidden">
+      <CardContent className="w-full overflow-hidden flex-1 flex flex-col">
         <div className="h-52 sm:h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={data}>
@@ -188,7 +188,7 @@ export const MultiDimensionalRadar = () => {
         </ResponsiveContainer>
         </div>
         
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center border-t pt-4">
+        <div className="mt-auto grid grid-cols-2 sm:grid-cols-4 gap-4 text-center border-t pt-4">
           {(data ?? []).slice(0, 4).map((item) => {
             const color = item.score >= 80 ? 'text-green-500' : item.score >= 60 ? 'text-primary' : item.score >= 40 ? 'text-warning' : 'text-destructive';
             return (

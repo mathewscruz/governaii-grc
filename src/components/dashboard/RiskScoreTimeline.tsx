@@ -122,7 +122,7 @@ export function RiskScoreTimeline() {
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full flex flex-col">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-2">
           <CardTitle>{t('dashboard.riskEvolution')}</CardTitle>
@@ -144,7 +144,7 @@ export function RiskScoreTimeline() {
           </Badge>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col">
         <div className="h-52 sm:h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
@@ -160,7 +160,7 @@ export function RiskScoreTimeline() {
             </LineChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center border-t pt-4">
+        <div className="mt-auto grid grid-cols-2 sm:grid-cols-4 gap-4 text-center border-t pt-4">
           <div><p className="text-lg font-bold text-destructive">{chartData[chartData.length - 1]?.criticos || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.critical')}</p></div>
           <div><p className="text-lg font-bold text-warning">{chartData[chartData.length - 1]?.altos || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.high')}</p></div>
           <div><p className="text-lg font-bold text-primary">{chartData[chartData.length - 1]?.medios || 0}</p><p className="text-xs text-muted-foreground">{t('dashboard.medium')}</p></div>
