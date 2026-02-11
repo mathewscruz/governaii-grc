@@ -1,51 +1,110 @@
 
-# Redesign de Cores do Sistema Akuris
 
-## Mapeamento das Novas Cores
+# Reestruturar Gestao de Permissoes
 
-| Cor Hex | HSL | Uso Principal |
-|---------|-----|---------------|
-| #7552ff | 252 100% 66% | Primary: botoes, links, destaques, ring, sidebar ativo, gradients, glow |
-| #444444 | 0 0% 27% | Secondary/Foreground: textos principais, icones, labels |
-| #0a1628 | 216 60% 10% | Backgrounds escuros: sidebar, login, landing page, dark mode base |
+## Problema Atual
 
-## Arquivo: `src/index.css`
+A Matriz de Permissoes atual exibe uma tabela gigante de **usuarios x modulos** (13 modulos x 5 permissoes = 65 checkboxes por usuario). Isso torna a gestao confusa e propensa a erros, especialmente com muitos usuarios.
 
-### Light Mode (:root)
-- **--primary**: 172 66% 35% (teal) --> 252 100% 66% (violet)
-- **--primary-glow**: 166 72% 45% --> 252 100% 75% (violet mais claro)
-- **--accent-vibrant**: 160 84% 39% --> 252 90% 58% (violet mais saturado)
-- **--foreground**: 200 25% 12% --> 0 0% 17% (baseado no #444 mais escuro para contraste)
-- **--ring**: 172 66% 35% --> 252 100% 66%
-- **--accent**: 172 35% 93% --> 252 30% 95% (violet tint sutil)
-- **--accent-foreground**: 172 66% 28% --> 252 80% 50%
-- **--table-row-hover**: 172 15% 97% --> 252 15% 97%
-- **--gradient-primary**: atualizar para usar tons de violet
-- **--gradient-subtle**: manter neutro com leve tint violet
-- **--gradient-card**: manter neutro com leve tint violet
-- **--gradient-accent**: atualizar para tons violet
-- **--shadow-elegant/glow**: atualizar cores de hsl(172...) para hsl(252...)
-- **Sidebar Light**: --sidebar-background baseado em #0a1628, --sidebar-primary em violet
+## Solucao Proposta: Perfis de Permissao (Permission Profiles)
 
-### Dark Mode (.dark)
-- **--background**: 200 25% 8% --> 216 60% 8% (baseado no #0a1628)
-- **--primary**: 168 70% 42% --> 252 100% 70% (violet vibrante no dark)
-- **--primary-glow**: 164 75% 50% --> 252 100% 78%
-- **--accent-vibrant**: 158 80% 45% --> 252 85% 62%
-- **--accent**: 172 30% 18% --> 252 30% 20%
-- **--accent-foreground**: 168 70% 55% --> 252 100% 75%
-- **--card**: 200 22% 11% --> 216 45% 12%
-- **--popover**: 200 22% 11% --> 216 45% 12%
-- **--ring**: 168 70% 42% --> 252 100% 70%
-- **Sidebar Dark**: atualizar para tons de #0a1628 com primary violet
-- **Gradients e Shadows**: atualizar todas as referencias de teal/emerald para violet
+A ideia central e criar **perfis de permissao reutilizaveis** (ex: "Auditor", "Gestor de Riscos", "Apenas Leitura") que pre-definem todas as permissoes por modulo. Depois, basta associar um perfil a um ou mais usuarios.
 
-### Landing Page CSS
-- `.landing-glass`: rgba(15, 35, 64, 0.8) --> manter (ja usa #0a1628 como base)
-- `.landing-gradient-text`: atualizar para usar violet ao inves de teal
+### Como funciona na pratica
 
-### Auth.tsx
-- Gradientes de fundo: atualizar hsl(200,25%,8%) para cores baseadas em #0a1628
+1. O admin cria perfis como "Auditor Interno" e define quais modulos esse perfil pode acessar/criar/editar/excluir
+2. Ao cadastrar ou editar um usuario, seleciona o perfil desejado -- todas as permissoes sao aplicadas automaticamente
+3. Se precisar de ajuste fino, pode personalizar permissoes individuais apos aplicar o perfil
+4. Alterar um perfil pode ser replicado para todos os usuarios vinculados
 
-## Resultado
-O sistema inteiro muda de teal/emerald para violet/navy, mantendo a hierarquia visual: violet como cor de acao e destaque, cinza escuro para textos, e navy escuro para superficies de fundo e sidebar.
+### Fluxo do usuario
+
+```text
++---------------------------+       +---------------------------+
+|   Aba "Perfis"            |       |   Aba "Usuarios"          |
+|                           |       |                           |
+|  [+ Novo Perfil]          |       |  Lista de usuarios        |
+|                           |       |  Cada usuario mostra:     |
+|  Auditor Interno    (3)   |       |  - Nome / Email           |
+|  Gestor de Riscos   (5)   |       |  - Perfil: "Auditor"      |
+|  Analista LGPD      (2)   |       |  - Botao: Editar Perms    |
+|  Acesso Total       (1)   |       |                           |
+|  Somente Leitura    (4)   |       |  Ao clicar "Editar Perms" |
+|                           |       |  abre dialog individual   |
++---------------------------+       +---------------------------+
+```
+
+## Mudancas no Banco de Dados
+
+### Nova tabela: `permission_profiles`
+- `id` (uuid, PK)
+- `empresa_id` (uuid, FK empresas) -- isolamento por empresa
+- `name` (text) -- ex: "Auditor Interno"
+- `description` (text)
+- `is_default` (boolean) -- perfil padrao para novos usuarios
+- `created_by` (uuid)
+- `created_at`, `updated_at`
+
+### Nova tabela: `permission_profile_modules`
+- `id` (uuid, PK)
+- `profile_id` (uuid, FK permission_profiles)
+- `module_id` (uuid, FK system_modules)
+- `can_access`, `can_create`, `can_read`, `can_update`, `can_delete` (boolean)
+
+### Alteracao na tabela `profiles`
+- Adicionar coluna `permission_profile_id` (uuid, FK permission_profiles, nullable)
+
+### RLS
+- Ambas as tabelas com RLS habilitado e politicas por `empresa_id`
+- Somente admin/super_admin podem criar/editar perfis
+
+## Mudancas na Interface
+
+### 1. Aba "Permissoes" reformulada (em Configuracoes)
+Substituir a matriz atual por duas sub-abas:
+
+**Sub-aba "Perfis de Permissao"**
+- Lista de perfis em cards com nome, descricao e quantidade de usuarios vinculados
+- Botao "+ Novo Perfil" abre dialog com:
+  - Nome e descricao do perfil
+  - Lista de modulos com toggles (switch) agrupados: Acessar | Criar | Ler | Editar | Excluir
+  - Botoes de atalho: "Marcar Todos", "Somente Leitura", "Desmarcar Todos"
+- Ao editar um perfil existente, opcao de "Aplicar alteracoes a todos os usuarios deste perfil"
+
+**Sub-aba "Permissoes por Usuario"**
+- Lista de usuarios com filtro/busca
+- Cada usuario mostra o perfil atual em badge
+- Botao "Gerenciar" abre dialog individual com:
+  - Dropdown para selecionar perfil (aplica permissoes automaticamente)
+  - Abaixo, lista de modulos com toggles para ajuste fino
+  - Indicador visual quando permissao difere do perfil base (badge "Personalizado")
+
+### 2. Integracao com Gerenciamento de Usuarios
+- No dialog de criar/editar usuario, adicionar campo "Perfil de Permissao"
+- Ao selecionar perfil, permissoes sao aplicadas automaticamente
+
+### 3. Componentes a criar/modificar
+
+| Componente | Acao |
+|-----------|------|
+| `PermissionProfileDialog.tsx` | Novo - Dialog para criar/editar perfis |
+| `PermissionProfilesList.tsx` | Novo - Lista de perfis com cards |
+| `UserPermissionDialog.tsx` | Novo - Dialog individual de permissoes por usuario |
+| `PermissionMatrix.tsx` | Refatorar - Substituir matriz por sub-abas |
+| `GerenciamentoUsuariosEnhanced.tsx` | Atualizar - Adicionar campo de perfil no dialog |
+| `usePermissions.tsx` | Atualizar - Buscar profile_id e resolver permissoes |
+
+### 4. Perfis padrao pre-cadastrados
+Ao ativar o recurso, criar automaticamente:
+- **Acesso Total** -- todos os modulos com todas as permissoes
+- **Somente Leitura** -- todos os modulos apenas com leitura
+- **Operacional** -- modulos principais com criar/ler/editar (sem excluir)
+
+## Beneficios
+
+- Reduz de 65+ checkboxes por usuario para 1 selecao de perfil
+- Padroniza permissoes entre usuarios com mesma funcao
+- Permite ajuste fino quando necessario
+- Facilita onboarding de novos usuarios
+- Auditoria clara: "Usuario X usa perfil Y com personalizacao Z"
+
