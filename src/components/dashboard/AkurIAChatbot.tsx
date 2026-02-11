@@ -160,7 +160,7 @@ export function AkurIAChatbot() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-white dark:bg-card shadow-lg border border-border hover:shadow-2xl transition-all duration-300 hover:scale-110 flex items-center justify-center animate-fade-in"
+          className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 h-14 w-14 rounded-full bg-white dark:bg-card shadow-lg border border-border hover:shadow-2xl transition-all duration-300 hover:scale-110 flex items-center justify-center animate-fade-in"
           title="AkurIA - Assistente Inteligente"
         >
           <img src="/akuris-favicon.png" alt="AkurIA" className="h-8 w-8 rounded-full animate-[spin-burst_5s_ease-in-out_infinite]" />
@@ -169,7 +169,7 @@ export function AkurIAChatbot() {
 
       {/* Chat Panel */}
       {open && (
-        <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] rounded-2xl border border-border bg-background shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+        <div className="fixed inset-x-3 bottom-20 md:bottom-6 md:right-6 md:left-auto md:w-[380px] z-50 h-[calc(100vh-10rem)] max-h-[520px] rounded-2xl border border-border bg-background shadow-2xl flex flex-col overflow-hidden animate-fade-in">
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-primary/5">
             <img src="/akuris-favicon.png" alt="AkurIA" className="h-8 w-8 rounded-full" />

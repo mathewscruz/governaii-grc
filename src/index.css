@@ -514,3 +514,43 @@
     box-shadow: var(--shadow-glow);
   }
 }
+
+/* ========================================
+   Mobile Performance Optimizations
+   ======================================== */
+@media (max-width: 768px) {
+  .landing-grid-bg {
+    display: none;
+  }
+  
+  .landing-float {
+    animation: none !important;
+  }
+  
+  .landing-glass,
+  .landing-glass-light {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-gradient-text,
+  .landing-float,
+  .flow-particle {
+    animation: none !important;
+  }
+  
+  .landing-glow-btn::before {
+    animation: none !important;
+  }
+  
+  .landing-fade-in-1,
+  .landing-fade-in-2,
+  .landing-fade-in-3,
+  .landing-fade-in-4,
+  .landing-fade-in-5 {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}

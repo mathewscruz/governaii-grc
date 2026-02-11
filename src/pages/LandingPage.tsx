@@ -279,9 +279,9 @@ const LandingPage = () => {
       {/* Animated Background Grid */}
       <div className="fixed inset-0 landing-grid-bg opacity-50 pointer-events-none" aria-hidden="true" />
       
-      {/* Gradient Orbs */}
-      <div className="fixed top-1/4 -left-32 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] pointer-events-none" aria-hidden="true" />
-      <div className="fixed bottom-1/4 -right-32 w-96 h-96 bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none" aria-hidden="true" />
+      {/* Gradient Orbs - hidden on mobile for performance */}
+      <div className="hidden md:block fixed top-1/4 -left-32 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] pointer-events-none" aria-hidden="true" />
+      <div className="hidden md:block fixed bottom-1/4 -right-32 w-96 h-96 bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none" aria-hidden="true" />
 
       {/* Header */}
       <header
@@ -298,7 +298,7 @@ const LandingPage = () => {
               <img
                 src={akurisLogo}
                 alt="Akuris - Plataforma de Governança, Riscos e Conformidade"
-                className="h-20 w-auto"
+                className="h-12 sm:h-16 md:h-20 w-auto"
                 loading="eager"
               />
             </div>
@@ -388,7 +388,7 @@ const LandingPage = () => {
       {/* Main Content */}
       <main id="main-content" role="main">
       {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center pt-20" aria-labelledby="hero-title">
+      <section className="relative min-h-[70vh] sm:min-h-[85vh] flex items-center pt-20" aria-labelledby="hero-title">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
