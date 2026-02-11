@@ -14,12 +14,13 @@ import PageTransition from '@/components/PageTransition';
 import TrialBanner from '@/components/TrialBanner';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
-import { LanguageSelector } from '@/components/LanguageSelector';
+
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { differenceInDays, parseISO } from 'date-fns';
-import { AlertTriangle, Lock } from 'lucide-react';
+import { AlertTriangle, Lock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import akurisLogo from '@/assets/akuris-logo.png';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -150,8 +151,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <TrialBanner />
           
           <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card flex-shrink-0">
-            <div className="flex items-center gap-4 min-w-0">
-              <SidebarTrigger />
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              {/* Mobile: logo, Desktop: sidebar trigger */}
+              {isMobile ? (
+                <img 
+                  src={akurisLogo} 
+                  alt="Akuris" 
+                  className="h-7 cursor-pointer flex-shrink-0" 
+                  onClick={() => navigate('/dashboard')} 
+                />
+              ) : (
+                <SidebarTrigger />
+              )}
+
+              {/* Back button - visible when not on dashboard */}
+              {location.pathname !== '/dashboard' && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 flex-shrink-0" 
+                  onClick={() => navigate(-1)}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              )}
               
               <Breadcrumb className="hidden sm:block">
                 <BreadcrumbList>
@@ -180,7 +203,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
               <div className="hidden sm:flex"><CommandPaletteButton /></div>
-              <div className="hidden md:flex"><LanguageSelector /></div>
               <div className="hidden md:flex"><ChangelogPopover /></div>
               <NotificationCenter />
               <UserProfile />
