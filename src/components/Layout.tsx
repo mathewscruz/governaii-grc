@@ -67,7 +67,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Tela de bloqueio para empresa inativa
   if (isCompanyInactive) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(200,25%,8%)] via-[hsl(200,22%,11%)] to-[hsl(200,25%,8%)] p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(216,60%,8%)] via-[hsl(216,45%,12%)] to-[hsl(216,60%,8%)] p-4">
         <div className="max-w-md w-full text-center space-y-6">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
             <Lock className="h-8 w-8 text-red-600" />
@@ -101,7 +101,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Tela de bloqueio para trial expirado
   if (isTrialExpired) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(200,25%,8%)] via-[hsl(200,22%,11%)] to-[hsl(200,25%,8%)] p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(216,60%,8%)] via-[hsl(216,45%,12%)] to-[hsl(216,60%,8%)] p-4">
         <div className="max-w-md w-full text-center space-y-6">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
             <AlertTriangle className="h-8 w-8 text-amber-600" />
