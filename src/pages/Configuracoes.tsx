@@ -3,7 +3,8 @@ import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
-import { Users, Building2, Settings, Shield, Plug, MessageSquare } from 'lucide-react';
+import { Users, Building2, Settings, Shield, Plug, MessageSquare, CreditCard } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
 import GerenciamentoUsuariosEnhanced from '@/components/configuracoes/GerenciamentoUsuariosEnhanced';
@@ -13,11 +14,14 @@ import { ReminderSettings } from '@/components/configuracoes/ReminderSettings';
 import { IntegrationHub } from '@/components/configuracoes/IntegrationHub';
 import { ConfiguracoesDenuncia } from '@/components/denuncia/ConfiguracoesDenuncia';
 import { CategoriasDenuncia } from '@/components/denuncia/CategoriasDenuncia';
+import { AssinaturaTab } from '@/components/configuracoes/AssinaturaTab';
 
 const Configuracoes = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [userRole, setUserRole] = useState<string>('user');
   const [loading, setLoading] = useState(true);
+  const defaultTab = searchParams.get('tab') || 'usuarios';
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -63,8 +67,8 @@ const Configuracoes = () => {
         description="Gerencie empresas, usuários e configurações do sistema"
       />
 
-      <Tabs defaultValue="usuarios" className="space-y-6">
-        <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-6' : isAdmin ? 'grid-cols-5' : 'grid-cols-3'}`}>
+      <Tabs defaultValue={defaultTab} className="space-y-6">
+        <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-7' : isAdmin ? 'grid-cols-6' : 'grid-cols-4'}`}>
           {isSuperAdmin && (
             <TabsTrigger value="empresas" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
@@ -93,6 +97,10 @@ const Configuracoes = () => {
               <span className="hidden sm:inline">Denúncia</span>
             </TabsTrigger>
           )}
+          <TabsTrigger value="assinatura" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            <span className="hidden sm:inline">Assinatura</span>
+          </TabsTrigger>
           <TabsTrigger value="geral" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Geral</span>
@@ -159,6 +167,10 @@ const Configuracoes = () => {
             </div>
           </TabsContent>
         )}
+
+        <TabsContent value="assinatura">
+          <AssinaturaTab />
+        </TabsContent>
 
         <TabsContent value="geral">
           <div className="space-y-6">
