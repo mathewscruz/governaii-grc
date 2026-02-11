@@ -149,7 +149,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {/* Banner de Trial */}
           <TrialBanner />
           
-          <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card flex-shrink-0">
+          <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card flex-shrink-0 -ml-px">
             <div className="flex items-center gap-4 min-w-0">
               <SidebarTrigger />
               
