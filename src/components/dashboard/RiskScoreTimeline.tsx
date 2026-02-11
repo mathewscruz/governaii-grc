@@ -152,7 +152,7 @@ export function RiskScoreTimeline() {
               <XAxis dataKey="month" axisLine={false} tickLine={false} />
               <YAxis axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip content={customTooltip} />
-              <Legend />
+              
               <Line type="monotone" dataKey="criticos" stroke="hsl(var(--destructive))" strokeWidth={3} name={t('dashboard.critical')} dot={{ r: 3 }} />
               <Line type="monotone" dataKey="altos" stroke="hsl(var(--warning))" strokeWidth={2} name={t('dashboard.high')} dot={{ r: 3 }} />
               <Line type="monotone" dataKey="medios" stroke="hsl(var(--primary))" strokeWidth={2} name={t('dashboard.medium')} dot={{ r: 3 }} />
