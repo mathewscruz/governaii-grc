@@ -77,7 +77,7 @@ const handler = async (req: Request): Promise<Response> => {
       <a href="${controleLink}" style="display: inline-block; background-color: #7552ff; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 14px;">Acessar Controle</a>
     </div>
     <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px;">
-      <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">Esta é uma mensagem automática do sistema ${companyName}.<br>Por favor, não responda a este e-mail.</p>
+      <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">Esta é uma mensagem automática do sistema Akuris.<br>Por favor, não responda a este e-mail.</p>
       <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 8px 0 0;">© ${new Date().getFullYear()} Akuris. Todos os direitos reservados.</p>
     </div>
   </div>
@@ -85,9 +85,9 @@ const handler = async (req: Request): Promise<Response> => {
 </html>`;
 
     const emailResponse = await resend.emails.send({
-      from: `${companyName} <noreply@akuris.com.br>`,
+      from: 'Akuris <noreply@akuris.com.br>',
       to: [responsavelData.email],
-      subject: `[${companyName}] Você foi designado como responsável: ${controle_nome}`,
+      subject: `[Akuris] Você foi designado como responsável: ${controle_nome}`,
       html: htmlContent,
     });
 

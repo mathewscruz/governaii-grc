@@ -20,13 +20,12 @@ export const WelcomeEmail = ({
   companyLogoUrl,
 }: WelcomeEmailProps) => (
   <BaseEmailTemplate
-    previewText={`Bem-vindo ao ${companyName || 'Akuris'}`}
+    previewText="Bem-vindo ao Akuris"
     title={`Bem-vindo, ${userName}!`}
-    companyName={companyName}
     companyLogoUrl={companyLogoUrl}
   >
     <Text style={emailStyles.text}>
-      Sua conta foi criada com sucesso na plataforma <strong>{companyName || 'Akuris'}</strong>.
+      Sua conta foi criada com sucesso na plataforma <strong>Akuris</strong>.
     </Text>
 
     <Text style={emailStyles.text}>

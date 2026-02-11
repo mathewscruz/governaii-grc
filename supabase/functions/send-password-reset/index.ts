@@ -172,13 +172,13 @@ Deno.serve(async (req) => {
     )
 
     console.log('Enviando e-mail via Resend...')
-    console.log('From:', `${profile.empresa?.nome || 'Akuris'} <noreply@akuris.com.br>`)
+    console.log('From: Akuris <noreply@akuris.com.br>')
     console.log('To:', profile.email)
     
     const { data, error } = await resend.emails.send({
-      from: `${profile.empresa?.nome || 'Akuris'} <noreply@akuris.com.br>`,
+      from: 'Akuris <noreply@akuris.com.br>',
       to: [profile.email],
-      subject: `${profile.empresa?.nome || 'Akuris'} - Nova senha temporária`,
+      subject: 'Akuris - Nova senha temporária',
       html,
     })
 

@@ -47,9 +47,9 @@ const handler = async (req: Request): Promise<Response> => {
     const logoUrl = empresa?.logo_url || 'https://akuris.com.br/akuris-logo.png';
 
     const emailResponse = await resend.emails.send({
-      from: `${companyName} <noreply@akuris.com.br>`,
+      from: 'Akuris <noreply@akuris.com.br>',
       to: [aprovador.email],
-      subject: `[${companyName}] Solicitação de Aprovação: ${document.nome}`,
+      subject: `[Akuris] Solicitação de Aprovação: ${document.nome}`,
       html: `
 <!DOCTYPE html>
 <html>
@@ -74,7 +74,7 @@ const handler = async (req: Request): Promise<Response> => {
       <p style="font-size: 14px; color: #64748b; text-align: center;">Acesse o sistema para revisar o documento e tomar sua decisão.</p>
     </div>
     <div style="border-top: 1px solid #e2e8f0; padding: 20px 32px; text-align: center;">
-      <p style="font-size: 12px; color: #94a3b8; margin: 0;">Esta é uma mensagem automática do sistema ${companyName}.<br>Por favor, não responda a este e-mail.</p>
+      <p style="font-size: 12px; color: #94a3b8; margin: 0;">Esta é uma mensagem automática do sistema Akuris.<br>Por favor, não responda a este e-mail.</p>
       <p style="font-size: 12px; color: #94a3b8; margin: 8px 0 0;">© ${new Date().getFullYear()} Akuris. Todos os direitos reservados.</p>
     </div>
   </div>

@@ -67,7 +67,7 @@ serve(async (req) => {
           </td></tr></table>
         </td></tr>
         <tr><td style="padding: 24px 32px; background-color: #f5f7fa; border-radius: 0 0 12px 12px; text-align: center;">
-          <p style="margin: 0; color: #8898aa; font-size: 12px;">Esta é uma mensagem automática do sistema ${companyName}.</p>
+          <p style="margin: 0; color: #8898aa; font-size: 12px;">Esta é uma mensagem automática do sistema Akuris.</p>
           <p style="margin: 8px 0 0 0; color: #8898aa; font-size: 12px;">© ${new Date().getFullYear()} Akuris. Todos os direitos reservados.</p>
         </td></tr>
       </table>
@@ -77,7 +77,7 @@ serve(async (req) => {
 </html>`;
 
     const { error: emailError } = await resend.emails.send({
-      from: `${companyName} <noreply@akuris.com.br>`,
+      from: 'Akuris <noreply@akuris.com.br>',
       to: [usuario.email],
       subject: `[Controle Interno] ${autorNome} mencionou você em "${controle_nome}"`,
       html: emailHtml,

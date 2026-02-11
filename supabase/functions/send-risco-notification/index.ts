@@ -77,14 +77,14 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
     </div>
     <div style="border-top: 1px solid #e2e8f0; padding: 20px 32px; text-align: center;">
-      <p style="font-size: 12px; color: #94a3b8; margin: 0;">Esta é uma mensagem automática do sistema ${companyName}.<br>Por favor, não responda a este e-mail.</p>
+      <p style="font-size: 12px; color: #94a3b8; margin: 0;">Esta é uma mensagem automática do sistema Akuris.<br>Por favor, não responda a este e-mail.</p>
       <p style="font-size: 12px; color: #94a3b8; margin: 8px 0 0;">© ${new Date().getFullYear()} Akuris. Todos os direitos reservados.</p>
     </div>
   </div>
 </body>
 </html>`;
 
-    const emailResponse = await resend.emails.send({ from: `${companyName} <noreply@akuris.com.br>`, to: [responsavelData.email], subject: `[${companyName}] ${config.icon} Risco Atribuído: ${titulo}`, html: htmlContent });
+    const emailResponse = await resend.emails.send({ from: 'Akuris <noreply@akuris.com.br>', to: [responsavelData.email], subject: `[Akuris] ${config.icon} Risco Atribuído: ${titulo}`, html: htmlContent });
     console.log("E-mail enviado com sucesso:", emailResponse);
 
     await supabase.from("notifications").insert({ user_id: responsavel_id, type: nivelRisco >= 12 ? "warning" : "info", title: "Novo risco atribuído", message: `Você é responsável pelo risco: ${titulo} (Nível ${config.text})`, link_to: `/riscos?risco=${risco_id}`, read: false });

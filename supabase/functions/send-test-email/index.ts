@@ -45,7 +45,7 @@ const handler = async (req: Request): Promise<Response> => {
     </div>
     <div style="padding: 32px;">
       <h1 style="color: #0a1628; font-size: 22px; font-weight: 600; margin: 0 0 24px;">✅ E-mail de Teste</h1>
-      <p style="font-size: 15px; color: #3c4149; margin: 0 0 16px;">Este é um e-mail de teste enviado pelo sistema <strong>${companyName}</strong>.</p>
+      <p style="font-size: 15px; color: #3c4149; margin: 0 0 16px;">Este é um e-mail de teste enviado pelo sistema <strong>Akuris</strong>.</p>
       <p style="font-size: 15px; color: #3c4149; margin: 0 0 24px;">Se você está recebendo este e-mail, significa que o serviço de envio de e-mails está funcionando corretamente.</p>
       <div style="background-color: #f0eeff; border-left: 4px solid #7552ff; border-radius: 8px; padding: 20px; margin: 0 0 24px;">
         <p style="margin: 0 0 8px; font-size: 14px;"><strong>Destinatário:</strong> ${email}</p>
@@ -57,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
     </div>
     <div style="border-top: 1px solid #e2e8f0; padding: 20px 32px; text-align: center;">
-      <p style="font-size: 12px; color: #8898aa; margin: 0;">Este é um e-mail automático do ${companyName}.</p>
+      <p style="font-size: 12px; color: #8898aa; margin: 0;">Este é um e-mail automático do Akuris.</p>
       <p style="font-size: 12px; color: #8898aa; margin: 8px 0 0;"><a href="https://akuris.com.br" style="color: #7552ff; text-decoration: none;">Akuris</a> • Plataforma de Governança, Risco e Compliance</p>
       <p style="font-size: 12px; color: #8898aa; margin: 8px 0 0;">© ${new Date().getFullYear()} Akuris. Todos os direitos reservados.</p>
     </div>
@@ -66,9 +66,9 @@ const handler = async (req: Request): Promise<Response> => {
 </html>`;
 
     const { error: emailError } = await resend.emails.send({
-      from: `${companyName} <noreply@akuris.com.br>`,
+      from: 'Akuris <noreply@akuris.com.br>',
       to: [email],
-      subject: `[TESTE] ${companyName} - Teste de E-mail`,
+      subject: '[TESTE] Akuris - Teste de E-mail',
       html: emailHtml,
     });
 

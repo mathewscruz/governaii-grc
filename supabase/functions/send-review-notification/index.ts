@@ -59,14 +59,14 @@ Deno.serve(async (req) => {
     </div>
     <p style="font-size: 13px; color: #64748b; text-align: center; margin-bottom: 24px;">Você pode acessar a revisão diretamente através do link acima, sem necessidade de login.</p>
     <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px;">
-      <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">Esta é uma mensagem automática do sistema ${companyName}.<br>Por favor, não responda a este e-mail.</p>
+      <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">Esta é uma mensagem automática do sistema Akuris.<br>Por favor, não responda a este e-mail.</p>
       <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 8px 0 0;">© ${new Date().getFullYear()} Akuris. Todos os direitos reservados.</p>
     </div>
   </div>
 </body>
 </html>`;
 
-    const emailResponse = await resend.emails.send({ from: `${companyName} <noreply@akuris.com.br>`, to: [review.responsavel.email], subject: `[${companyName}] Nova Revisão de Acesso: ${review.nome_revisao}`, html: htmlContent });
+    const emailResponse = await resend.emails.send({ from: 'Akuris <noreply@akuris.com.br>', to: [review.responsavel.email], subject: `[Akuris] Nova Revisão de Acesso: ${review.nome_revisao}`, html: htmlContent });
     console.log('E-mail enviado com sucesso:', emailResponse);
 
     await supabaseClient.from('notifications').insert({ user_id: review.responsavel_revisao, title: 'Nova Revisão de Acesso Atribuída', message: `Você foi atribuído como responsável pela revisão "${review.nome_revisao}" do sistema ${review.sistema?.nome_sistema || 'N/A'}.`, type: 'info', link_to: '/revisao-acessos', metadata: { review_id: reviewId, tipo: 'revisao_atribuida' } });

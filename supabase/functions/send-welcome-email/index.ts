@@ -52,9 +52,9 @@ Deno.serve(async (req) => {
     )
 
     const { data, error } = await resend.emails.send({
-      from: `${companyName || 'Akuris'} <noreply@akuris.com.br>`,
+      from: 'Akuris <noreply@akuris.com.br>',
       to: [userEmail],
-      subject: `Bem-vindo ao ${companyName || 'Akuris'} - Seus dados de acesso`,
+      subject: 'Bem-vindo ao Akuris - Seus dados de acesso',
       html,
     })
 

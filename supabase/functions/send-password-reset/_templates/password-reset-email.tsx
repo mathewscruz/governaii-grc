@@ -22,7 +22,6 @@ export const PasswordResetEmail = ({
   <BaseEmailTemplate
     previewText="Sua senha foi redefinida"
     title="Redefinição de Senha"
-    companyName={companyName}
     companyLogoUrl={companyLogoUrl}
   >
     <Text style={emailStyles.text}>

@@ -26,17 +26,17 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { type, assessment_id, fornecedor_nome, fornecedor_email, template_nome, assessment_link, data_expiracao, empresa_nome, empresa_logo_url }: EmailRequest = await req.json();
 
-    const sysName = empresa_nome || 'Akuris';
+    const sysName = 'Akuris';
     let emailContent: { subject: string; html: string };
 
     const headerHtml = empresa_logo_url ? `<div style="text-align: center; margin-bottom: 30px;"><img src="${empresa_logo_url}" alt="${sysName}" style="max-height: 80px; max-width: 200px;"></div>` : '';
-    const footerHtml = `<hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;"><p style="color: #64748b; font-size: 14px;">Este é um e-mail automático da <strong>${sysName}</strong>. Em caso de dúvidas, entre em contato conosco.</p><p style="color: #8898aa; font-size: 12px;">© ${new Date().getFullYear()} Akuris. Todos os direitos reservados.</p>`;
+    const footerHtml = `<hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;"><p style="color: #64748b; font-size: 14px;">Este é um e-mail automático da <strong>Akuris</strong>. Em caso de dúvidas, entre em contato conosco.</p><p style="color: #8898aa; font-size: 12px;">© ${new Date().getFullYear()} Akuris. Todos os direitos reservados.</p>`;
 
     switch (type) {
       case 'send':
       case 'invitation':
         emailContent = {
-          subject: `${sysName} - Te enviou uma avaliação de "${template_nome}"`,
+          subject: `Akuris - Te enviou uma avaliação de "${template_nome}"`,
           html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">${headerHtml}<h1 style="color: #7552ff;">Questionário de Due Diligence</h1><p>Olá <strong>${fornecedor_nome}</strong>,</p><p>Você foi convidado(a) a responder um questionário de due diligence para <strong>${sysName}</strong>.</p><div style="background-color: #f0eeff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #7552ff;"><h3 style="margin: 0 0 10px 0;">Template: ${template_nome}</h3><p style="margin: 0; color: #64748b;">Por favor, clique no link abaixo para acessar e responder o questionário.</p></div><div style="text-align: center; margin: 30px 0;"><a href="${assessment_link}" style="background-color: #7552ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">Responder Questionário</a></div><p><strong>⏰ Prazo:</strong> ${data_expiracao ? new Date(data_expiracao).toLocaleString('pt-BR') : 'Conforme acordado'}</p>${footerHtml}</div>`
         };
         break;
@@ -60,7 +60,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: `Due Diligence <noreply@akuris.com.br>`,
+      from: 'Akuris <noreply@akuris.com.br>',
       to: [fornecedor_email],
       subject: emailContent.subject,
       html: emailContent.html,
