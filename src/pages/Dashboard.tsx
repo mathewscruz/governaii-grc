@@ -7,8 +7,8 @@ import { MultiDimensionalRadar } from '@/components/dashboard/MultiDimensionalRa
 import { RecentActivities } from '@/components/dashboard/RecentActivities';
 import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
 import AlertsDetailDialog from '@/components/dashboard/AlertsDetailDialog';
-import { ExecutiveSummaryAI } from '@/components/dashboard/ExecutiveSummaryAI';
 import { UpcomingExpirations } from '@/components/dashboard/UpcomingExpirations';
+import { AkurIAChatbot } from '@/components/dashboard/AkurIAChatbot';
 import { useTrendData } from '@/components/dashboard/TrendIndicators';
 import { HeroScoreBanner } from '@/components/dashboard/HeroScoreBanner';
 import { KPIPills } from '@/components/dashboard/KPIPills';
@@ -106,20 +106,15 @@ export default function Dashboard() {
           onAlertsClick={() => setAlertsDialogOpen(true)}
         />
 
-        {/* Resumo IA + Vencimentos */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5 w-full">
-          <div className="lg:col-span-2">
-            <ExecutiveSummaryAI />
-          </div>
-          <UpcomingExpirations />
+        {/* Vencimentos + Radar + Timeline */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5 w-full">
+          <div className="min-w-0"><UpcomingExpirations /></div>
+          <div className="min-w-0"><MultiDimensionalRadar /></div>
+          <div className="min-w-0 md:col-span-2 xl:col-span-1"><RiskScoreTimeline /></div>
         </div>
 
-        {/* Maturidade + Timeline + Atividades */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5 w-full">
-          <div className="min-w-0"><MultiDimensionalRadar /></div>
-          <div className="min-w-0"><RiskScoreTimeline /></div>
-          <div className="min-w-0 md:col-span-2 xl:col-span-1"><RecentActivities /></div>
-        </div>
+        {/* Atividades Recentes full width */}
+        <RecentActivities />
 
         {/* Dialog de alertas */}
         <AlertsDetailDialog
@@ -131,6 +126,9 @@ export default function Dashboard() {
           controlesVencendo={dashboardData?.controlesVencendo || 0}
           incidentesCriticos={dashboardData?.incidentesCriticos || 0}
         />
+
+        {/* AkurIA Chatbot */}
+        <AkurIAChatbot />
       </div>
     </TooltipProvider>
   );

@@ -168,3 +168,6 @@ verify_jwt = false
 
 [functions.docgen-chat]
 verify_jwt = true
+
+[functions.akuria-chat]
+verify_jwt = true
