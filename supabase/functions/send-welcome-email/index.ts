@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     
     console.log(`Enviando e-mail de boas-vindas para: ${userEmail}`)
     
-    const loginUrl = 'https://governaii.com.br'
+    const loginUrl = 'https://akuris.com.br'
     
     const html = await renderAsync(
       React.createElement(WelcomeEmail, {
@@ -52,9 +52,9 @@ Deno.serve(async (req) => {
     )
 
     const { data, error } = await resend.emails.send({
-      from: `${companyName || 'GovernAII'} <noreply@governaii.com.br>`,
+      from: `${companyName || 'Akuris'} <noreply@akuris.com.br>`,
       to: [userEmail],
-      subject: `Bem-vindo ao ${companyName || 'GovernAII'} - Seus dados de acesso`,
+      subject: `Bem-vindo ao ${companyName || 'Akuris'} - Seus dados de acesso`,
       html,
     })
 
