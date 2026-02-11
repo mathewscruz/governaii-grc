@@ -68,7 +68,7 @@ function App() {
             } />
             <Route path="/planos-acao" element={
               <Layout>
-                <ProtectedRoute moduleName="planos-acao" fallbackToRoleCheck={false}>
+                <ProtectedRoute moduleName="planos-acao">
                   <PlanosAcao />
                 </ProtectedRoute>
               </Layout>
