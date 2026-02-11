@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import akurisLogo from "@/assets/akuris-logo.png";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -54,8 +54,6 @@ const LandingPage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<number | null>(null);
-  const [showExitPopup, setShowExitPopup] = useState(false);
-  const exitIntentShown = useRef(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -65,18 +63,7 @@ const LandingPage = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Exit-intent detection
-  useEffect(() => {
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 0 && !exitIntentShown.current && !sessionStorage.getItem('exitPopupShown')) {
-        exitIntentShown.current = true;
-        sessionStorage.setItem('exitPopupShown', 'true');
-        setShowExitPopup(true);
-      }
-    };
-    document.addEventListener('mouseleave', handleMouseLeave);
-    return () => document.removeEventListener('mouseleave', handleMouseLeave);
-  }, []);
+  // Exit-intent removed for professionalism
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -173,10 +160,10 @@ const LandingPage = () => {
 
   // Indicadores diferentes para Benefits section
   const benefitStats = [
-    { value: "99.9%", label: "Uptime Garantido", icon: TrendingUp },
-    { value: "8/5", label: "Suporte Especializado", icon: Headphones },
-    { value: "48h", label: "Implantação Rápida", icon: Rocket },
-    { value: "100%", label: "Treinamento Incluído", icon: GraduationCap },
+    { value: "100%", label: "Cloud Nativo", icon: TrendingUp },
+    { value: "Email", label: "Suporte Dedicado", icon: Headphones },
+    { value: "Self", label: "Service Imediato", icon: Rocket },
+    { value: "100%", label: "Documentação Incluída", icon: GraduationCap },
   ];
 
   const benefits = [
@@ -263,7 +250,7 @@ const LandingPage = () => {
       element.scrollIntoView({ behavior: "smooth" });
     }
     setIsMenuOpen(false);
-    setShowExitPopup(false);
+    
   };
 
   return (
@@ -501,8 +488,8 @@ const LandingPage = () => {
                 </div>
 
                 {/* Floating Badge */}
-                <div className="absolute -top-4 -right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                  LIVE
+                <div className="absolute -top-4 -right-4 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                  DEMO
                 </div>
               </div>
             </div>
@@ -584,12 +571,13 @@ const LandingPage = () => {
                     </div>
                     <div className="space-y-1.5 sm:space-y-2">
                       {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="h-3 sm:h-4 bg-red-500/10 rounded animate-pulse" style={{ width: `${60 + Math.random() * 40}%` }} />
+                        <div key={i} className="h-3 sm:h-4 bg-red-500/10 rounded" style={{ width: `${60 + Math.random() * 40}%` }} />
                       ))}
                     </div>
                     <div className="absolute -bottom-2 -right-2 bg-red-500 text-white text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">
                       DESATUALIZADO
                     </div>
+
                   </div>
                   <div className="hidden sm:block absolute -top-4 -left-4 w-32 sm:w-40 h-40 sm:h-48 bg-gradient-to-br from-orange-900/30 to-orange-800/20 rounded-2xl border border-orange-500/30 p-3 transform rotate-3 -z-10">
                     <div className="space-y-2">
@@ -663,11 +651,11 @@ const LandingPage = () => {
 
               <div className="mt-4 sm:mt-6 p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-500/30">
                 <p className="text-base sm:text-lg text-white font-medium mb-2">
-                  Mais de 500 horas economizadas por ano
+                  Reduza drasticamente o tempo com gestão manual
                 </p>
                 <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
-                  Empresas que migram de planilhas para o Akuris relatam redução significativa 
-                  no tempo gasto com gestão manual e retrabalho.
+                  Centralize processos, elimine retrabalho e automatize tarefas repetitivas 
+                  com uma plataforma projetada para equipes de governança e compliance.
                 </p>
               </div>
             </div>
@@ -1199,43 +1187,6 @@ const LandingPage = () => {
         </div>
       </footer>
 
-      {/* Exit Intent Popup */}
-      <Dialog open={showExitPopup} onOpenChange={setShowExitPopup}>
-        <DialogContent className="bg-[#0A1628] border-blue-500/30 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl text-center flex items-center justify-center gap-2">
-              <Target className="h-6 w-6 text-blue-400" />
-              Espere!
-            </DialogTitle>
-          </DialogHeader>
-          <div className="text-center space-y-4 py-4">
-            <p className="text-gray-300">
-              Não vá embora sem conhecer como o Akuris pode{" "}
-              <span className="text-blue-400 font-semibold">transformar a governança</span> da sua empresa!
-            </p>
-            <p className="text-sm text-gray-400">
-              Agende uma demonstração gratuita e veja na prática como 
-              automatizar compliance, riscos e auditorias.
-            </p>
-            <div className="flex flex-col gap-3 pt-4">
-              <Button 
-                onClick={() => { setShowExitPopup(false); scrollToSection("contato"); }}
-                className="bg-blue-600 hover:bg-blue-700 py-6"
-              >
-                <Rocket className="mr-2 h-4 w-4" />
-                Quero conhecer mais!
-              </Button>
-              <Button 
-                variant="ghost" 
-                onClick={() => setShowExitPopup(false)}
-                className="text-gray-400 hover:text-white hover:bg-white/10"
-              >
-                Não, obrigado
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* CSS for carousel animation */}
       <style>{`

@@ -46,8 +46,8 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem('governaii_remember_email');
-    const savedRemember = localStorage.getItem('governaii_remember_me') === 'true';
+    const savedEmail = localStorage.getItem('akuris_remember_email');
+    const savedRemember = localStorage.getItem('akuris_remember_me') === 'true';
     if (savedEmail && savedRemember) {
       setEmail(savedEmail);
       setRememberMe(true);
@@ -85,11 +85,11 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
       if (rememberMe) {
-        localStorage.setItem('governaii_remember_email', email.trim());
-        localStorage.setItem('governaii_remember_me', 'true');
+        localStorage.setItem('akuris_remember_email', email.trim());
+        localStorage.setItem('akuris_remember_me', 'true');
       } else {
-        localStorage.removeItem('governaii_remember_email');
-        localStorage.removeItem('governaii_remember_me');
+        localStorage.removeItem('akuris_remember_email');
+        localStorage.removeItem('akuris_remember_me');
       }
       setLoginSuccess(true);
       toast.success('Login realizado com sucesso!');
