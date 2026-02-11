@@ -26,9 +26,15 @@ const usuarioSchema = z.object({
   email: z.string().email('Email inválido'),
   role: z.enum(['super_admin', 'admin', 'user', 'readonly']),
   empresa_id: z.string().optional(),
+  permission_profile_id: z.string().optional(),
 });
 
 type UsuarioForm = z.infer<typeof usuarioSchema>;
+
+interface PermissionProfile {
+  id: string;
+  name: string;
+}
 
 interface Usuario {
   id: string;
@@ -40,8 +46,12 @@ interface Usuario {
   empresa_id?: string;
   foto_url?: string;
   created_at: string;
+  permission_profile_id?: string;
   empresas?: {
     nome: string;
+  };
+  permission_profiles?: {
+    name: string;
   };
 }
 
@@ -67,6 +77,7 @@ interface Props {
 const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [permissionProfiles, setPermissionProfiles] = useState<PermissionProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState<string>('all');
@@ -91,6 +102,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       email: '',
       role: 'user',
       empresa_id: '',
+      permission_profile_id: '',
     },
   });
 
@@ -104,6 +116,9 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
           *,
           empresas (
             nome
+          ),
+          permission_profiles (
+            name
           )
         `)
         .order('nome');
@@ -133,7 +148,9 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         empresa_id: usuario.empresa_id,
         foto_url: usuario.foto_url,
         created_at: usuario.created_at,
+        permission_profile_id: usuario.permission_profile_id,
         empresas: usuario.empresas,
+        permission_profiles: usuario.permission_profiles,
       }));
 
       setUsuarios(usuariosData);
@@ -182,11 +199,33 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     }
   };
 
+  const fetchPermissionProfiles = async () => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (!profile?.empresa_id) return;
+
+      const { data, error } = await supabase
+        .from('permission_profiles')
+        .select('id, name')
+        .eq('empresa_id', profile.empresa_id)
+        .order('name');
+
+      if (error) throw error;
+      setPermissionProfiles(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar perfis de permissão:', error);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await fetchUsuarios();
-      await fetchEmpresas();
+      await Promise.all([fetchUsuarios(), fetchEmpresas(), fetchPermissionProfiles()]);
       setLoading(false);
     };
 
@@ -228,6 +267,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       setCreating(true);
       
       if (editingUsuario) {
+        const profileId = data.permission_profile_id || null;
         const { error } = await supabase
           .from('profiles')
           .update({
@@ -235,10 +275,20 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
             email: data.email,
             role: data.role,
             empresa_id: data.empresa_id || null,
+            permission_profile_id: profileId,
           })
           .eq('user_id', editingUsuario.user_id);
 
         if (error) throw error;
+
+        // Aplicar permissões do perfil se selecionado
+        if (profileId) {
+          await supabase.rpc('apply_permission_profile', {
+            _profile_id: profileId,
+            _user_id: editingUsuario.user_id,
+          } as any);
+        }
+
         toast.success('Usuário atualizado com sucesso');
       } else {
         const { error } = await supabase.functions.invoke('create-user', {
@@ -247,6 +297,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
             nome: data.nome,
             role: data.role,
             empresa_id: data.empresa_id || null,
+            permission_profile_id: data.permission_profile_id || null,
           }
         });
 
@@ -278,6 +329,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     form.setValue('email', usuario.email);
     form.setValue('role', usuario.role as any);
     form.setValue('empresa_id', usuario.empresa_id || '');
+    form.setValue('permission_profile_id', usuario.permission_profile_id || '');
     setDialogOpen(true);
   };
 
@@ -470,9 +522,25 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     },
     {
       key: 'role',
-      label: 'Perfil',
+      label: 'Papel',
       sortable: true,
       render: (value) => getRoleBadge(value),
+    },
+    {
+      key: 'permission_profile_id',
+      label: 'Perfil de Permissão',
+      sortable: false,
+      render: (_, usuario) => {
+        const profileName = usuario.permission_profiles?.name;
+        return profileName ? (
+          <Badge variant="outline" className="whitespace-nowrap">
+            <Shield className="h-3 w-3 mr-1" />
+            {profileName}
+          </Badge>
+        ) : (
+          <span className="text-sm text-muted-foreground">Sem perfil</span>
+        );
+      },
     },
     {
       key: 'empresa',
@@ -606,9 +674,9 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     }] : []),
     {
       key: 'role',
-      label: 'Perfil',
+      label: 'Papel',
       options: [
-        { value: 'all', label: 'Todos os perfis' },
+        { value: 'all', label: 'Todos os papéis' },
         { value: 'super_admin', label: 'Super Admin' },
         { value: 'admin', label: 'Administrador' },
         { value: 'user', label: 'Usuário' },
@@ -728,11 +796,11 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                   name="role"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Perfil</FormLabel>
+                      <FormLabel>Papel</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione o perfil" />
+                            <SelectValue placeholder="Selecione o papel" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -742,6 +810,32 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                           <SelectItem value="admin">Administrador</SelectItem>
                           <SelectItem value="user">Usuário</SelectItem>
                           <SelectItem value="readonly">Somente Leitura</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="permission_profile_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Perfil de Permissão</FormLabel>
+                      <Select onValueChange={(value) => field.onChange(value === 'none' ? '' : value)} value={field.value || 'none'}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o perfil de permissão" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">Sem perfil</SelectItem>
+                          {permissionProfiles.map((profile) => (
+                            <SelectItem key={profile.id} value={profile.id}>
+                              {profile.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />

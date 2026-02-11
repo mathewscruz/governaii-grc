@@ -11,6 +11,7 @@ interface CreateUserRequest {
   email: string
   role: 'super_admin' | 'admin' | 'user' | 'readonly'
   empresa_id?: string
+  permission_profile_id?: string
 }
 
 Deno.serve(async (req) => {
@@ -65,7 +66,7 @@ Deno.serve(async (req) => {
       throw new Error('Perfil do usuário não encontrado')
     }
 
-    const { nome, email, role, empresa_id }: CreateUserRequest = await req.json()
+    const { nome, email, role, empresa_id, permission_profile_id }: CreateUserRequest = await req.json()
 
     // Validar permissões
     const isSuperAdmin = currentUserProfile.role === 'super_admin'
@@ -189,15 +190,20 @@ Deno.serve(async (req) => {
     await new Promise(resolve => setTimeout(resolve, 100))
 
     // Criar perfil do usuário (o trigger não criará automaticamente devido ao admin_created)
+    const profileInsertData: any = {
+      user_id: authData.user.id,
+      nome: nome,
+      email: email,
+      role: role,
+      empresa_id: finalEmpresaId,
+    }
+    if (permission_profile_id) {
+      profileInsertData.permission_profile_id = permission_profile_id
+    }
+
     const { error: profileInsertError } = await supabaseAdmin
       .from('profiles')
-      .insert({
-        user_id: authData.user.id,
-        nome: nome,
-        email: email,
-        role: role,
-        empresa_id: finalEmpresaId,
-      })
+      .insert(profileInsertData)
 
     if (profileInsertError) {
       console.error('Erro ao criar perfil:', profileInsertError)
@@ -222,23 +228,36 @@ Deno.serve(async (req) => {
 
     console.log('Senha temporária registrada')
 
-    // Aplicar permissões padrão para o novo usuário
+    // Aplicar permissões para o novo usuário
     try {
-      console.log('Aplicando permissões padrão para o usuário...')
-      const { error: permissionsError } = await supabaseAdmin
-        .rpc('apply_default_permissions_for_user', { 
-          user_id_param: authData.user.id 
-        })
+      if (permission_profile_id) {
+        console.log('Aplicando perfil de permissão:', permission_profile_id)
+        const { error: permissionsError } = await supabaseAdmin
+          .rpc('apply_permission_profile', { 
+            profile_id: permission_profile_id,
+            target_user_id: authData.user.id 
+          })
 
-      if (permissionsError) {
-        console.error('Erro ao aplicar permissões padrão:', permissionsError)
-        // Não falhar a criação do usuário por causa das permissões
+        if (permissionsError) {
+          console.error('Erro ao aplicar perfil de permissão:', permissionsError)
+        } else {
+          console.log('Perfil de permissão aplicado com sucesso')
+        }
       } else {
-        console.log('Permissões padrão aplicadas com sucesso')
+        console.log('Aplicando permissões padrão para o usuário...')
+        const { error: permissionsError } = await supabaseAdmin
+          .rpc('apply_default_permissions_for_user', { 
+            user_id_param: authData.user.id 
+          })
+
+        if (permissionsError) {
+          console.error('Erro ao aplicar permissões padrão:', permissionsError)
+        } else {
+          console.log('Permissões padrão aplicadas com sucesso')
+        }
       }
     } catch (permError) {
       console.error('Exceção ao aplicar permissões:', permError)
-      // Não falhar a criação do usuário por causa das permissões
     }
 
     // Buscar informações da empresa para o email de boas-vindas
