@@ -1,105 +1,122 @@
 
-# Avaliacao Geral do Sistema Akuris - Prontidao para Venda e Divulgacao
 
-## Veredicto Geral: PRONTO para lancamento, com ajustes recomendados
+# Auditoria SEO Completa - Akuris (Visao de Especialista em Trafego e Midia)
 
-O sistema esta bem construido, com visual profissional e fluxo de contratacao funcional. Abaixo a analise detalhada em 5 dimensoes.
+## VEREDICTO: NAO esta otimizado. Ha problemas criticos no index.html.
 
----
-
-## 1. SEO da Landing Page
-
-### O que esta BEM
-- Meta tags completas (title, description, keywords, og:*, twitter:*)
-- Structured data (JSON-LD) com SoftwareApplication, Organization, WebSite e FAQPage
-- robots.txt e sitemap.xml configurados
-- Canonical URL definida
-- hreflang para pt-BR
-- Semantica HTML correta (header, main, footer, nav, section, h1/h2/h3)
-- Skip-to-content link para acessibilidade
-- Alt texts em imagens
-
-### O que precisa AJUSTAR
-- **Comentario no CSS desatualizado**: O arquivo `src/index.css` ainda referencia "GovernAII Design System v2.0" na linha 6. Deve ser atualizado para "Akuris Design System"
-- **localStorage keys desatualizadas**: Em `Auth.tsx`, as chaves `governaii_remember_email` e `governaii_remember_me` ainda referenciam o nome antigo. Deve ser `akuris_remember_email`
-- **Claim "500 horas economizadas"**: Na secao "Esqueca as Planilhas", o texto diz "Mais de 500 horas economizadas por ano" sem base comprovada. Para um sistema novo, isso pode parecer generico/IA. Sugestao: trocar para algo como "Reduza o tempo gasto com gestao manual" sem numero especifico, ou adicionar "em media" com asterisco
-- **Stats na hero (99.9% Uptime, 8/5 Suporte, 48h Implantacao)**: Esses numeros na secao de beneficios sao afirmacoes que precisam ser sustentaveis. Se o sistema e novo, "99.9% Uptime" pode ser questionado. Considere trocar para indicadores do produto (ex: "8 Modulos", "20+ Frameworks") em vez de promessas operacionais
+O `robots.txt` e `sitemap.xml` foram corrigidos, mas o arquivo principal `index.html` -- que e o que o Google realmente le -- ainda tem **~15 referencias ao dominio antigo `governaii.com.br`** e ao nome "GovernAII". Isso significa que o Google esta indexando informacoes erradas.
 
 ---
 
-## 2. Fluxo do Usuario (Contratacao)
+## PROBLEMAS CRITICOS (Bloqueantes para SEO)
 
-### Plano Free
-Landing -> /registro?plano=free -> provision-new-account -> auto-login -> /dashboard
-**Status: 100% funcional**
+### 1. index.html com dominio errado em 15+ lugares
+Todas as URLs de canonical, hreflang, Open Graph, Twitter Cards e JSON-LD ainda apontam para `governaii.com.br` ao inves de `akuris.com.br`:
 
-### Planos Pagos
-Landing -> /registro?plano=X -> provision-new-account -> Stripe Checkout -> /checkout-success -> /dashboard
-**Status: Funcional, com sessao verificada no checkout-success**
+- Linha 30: `canonical` -> `governaii.com.br`
+- Linha 33-34: `hreflang` -> `governaii.com.br`
+- Linha 41: `og:url` -> `governaii.com.br`
+- Linha 53: `twitter:url` -> `governaii.com.br`
+- Linhas 77, 143, 179, 186: JSON-LD `url` -> `governaii.com.br`
 
-### Pontos ja resolvidos
-- Verificacao de sessao no CheckoutSuccess (implementado)
-- Texto condicional nos botoes (Free vs Pago)
-- Rollback em caso de erro no provisionamento
+**Impacto**: O Google vai indexar o site com canonical errado, causando confusao de identidade e potencialmente nao rankear o dominio correto.
 
----
+### 2. Meta description ainda diz "GovernAII"
+Linha 24: `"GovernAII e a plataforma completa..."` -- A meta description e o texto que aparece nos resultados do Google. Dizer "GovernAII" quando a marca e "Akuris" confunde o usuario e prejudica CTR (taxa de cliques).
 
-## 3. Itens com "Cara de IA" para Corrigir
+### 3. JSON-LD com nome de plano antigo
+Linha 106: `"name": "GovernAII Enterprise"` nos dados estruturados de ofertas.
 
-| Item | Onde | Problema | Sugestao |
-|------|------|----------|----------|
-| "500 horas economizadas" | Landing, secao Planilhas | Numero inventado, generico | Remover numero ou usar linguagem qualitativa |
-| "99.9% Uptime Garantido" | Landing, beneficios | Promessa sem SLA real | Trocar por indicador do produto |
-| "48h Implantacao Rapida" | Landing, beneficios | Pode nao ser real | Usar "Self-service" ou "Comece em minutos" |
-| "8/5 Suporte Especializado" | Landing, beneficios | Requer equipe real | Trocar por "Suporte por email" |
-| Feature detail dialogs | Landing, modulos | Texto com bullet points repetitivos ("Com o modulo X voce pode:") | Variar a abertura de cada descricao |
-| Exit-intent popup | Landing | Popup "Espere!" e agressivo e comum em sites de baixa qualidade | Considerar remover ou tornar mais sutil |
+### 4. AggregateRating falso (RISCO ALTO)
+Linhas 111-117: O JSON-LD declara `"ratingValue": "5"` com `"ratingCount": "10"`. Isso e uma avaliacao fake. O Google **penaliza** sites que inventam reviews. Para um produto novo, isso e facilmente detectavel e pode resultar em penalizacao manual.
 
----
+**Recomendacao**: Remover completamente o bloco `aggregateRating` ate ter avaliacoes reais.
 
-## 4. Melhorias Tecnicas Recomendadas
+### 5. apple-touch-icon e og:image com logo antiga
+Linhas 9, 44, 56, 60, 84, 146: Todas as imagens OG/Twitter/apple-touch-icon apontam para um arquivo chamado `Governiaa%20(500%20x%20200%20px).png` no Supabase Storage. Isso:
+- Mostra a marca antiga quando compartilhado no WhatsApp/LinkedIn/Facebook
+- O nome do arquivo tem acentuacao e espacos, o que nao e ideal para SEO
 
-### Prioridade ALTA
-1. **Referencia "GovernAII" residual**: Atualizar o comentario no CSS (`index.css` linha 6-8) e as keys de localStorage em `Auth.tsx` (linhas 49-50, 88-89)
-2. **Termos de Uso/Servico**: O formulario de registro nao tem checkbox de aceite dos Termos de Uso. Para venda, isso e essencial para protecao juridica
-3. **CNPJ sem mascara**: O campo CNPJ no registro aceita texto livre. Adicionar mascara de formatacao (XX.XXX.XXX/XXXX-XX) para profissionalismo
-
-### Prioridade MEDIA
-4. **Confirmacao de senha**: O formulario de registro nao tem campo "Confirmar senha". Isso e padrao em SaaS profissional
-5. **Forca da senha**: Nao ha indicador visual de forca da senha (fraca/media/forte)
-6. **Precos anuais**: O toggle mensal/anual nao existe na landing page. Quando configurar os precos anuais no Stripe, adicionar o toggle
-
-### Prioridade BAIXA
-7. **Politica de Privacidade no registro**: Adicionar link para Politica de Privacidade no formulario de registro
-8. **Google Analytics / Tag Manager**: Nao ha rastreamento de conversoes. Para medir efetividade da landing page, integrar GA4 ou similar
+### 6. Comentario referenciando marca antiga
+Linha 64: `"Google Fonts - DM Sans (GovernAII Identity)"` -- Nao afeta SEO diretamente mas e descuido de marca.
 
 ---
 
-## 5. Visual e Profissionalismo
+## PROBLEMAS IMPORTANTES (Impactam ranking)
 
-### Pontos POSITIVOS
-- Identidade visual consistente (paleta navy + violeta)
-- Tipografia DM Sans profissional
-- Dashboard preview na hero e convincente
-- Carousel de frameworks transmite credibilidade
-- Cards de pricing bem alinhados e claros
-- Mobile responsive funcional
-- Transicoes e animacoes suaves sem exagero
+### 7. SPA sem pre-rendering (LIMITACAO TECNICA)
+O site e uma Single Page Application (React). O Google consegue renderizar JavaScript, mas:
+- Demora mais para indexar
+- Bots como Facebook, LinkedIn, WhatsApp dependem do HTML estatico do `index.html`
+- Os meta tags no `index.html` sao os mesmos para TODAS as paginas (landing, auth, registro)
 
-### Pontos a AJUSTAR
-- **Secao "Esqueca as Planilhas"**: A animacao de "DESATUALIZADO" com `animate-pulse` fica piscando infinitamente, o que pode distrair. Considerar remover a animacao ou usar apenas uma vez
-- **Badge "LIVE" no dashboard preview**: Pode confundir o usuario pensando que e um dashboard real. Trocar para "PREVIEW" ou "DEMO"
-- **Secao de contato redundante**: Com os botoes de "Comecar gratis" e "Assinar agora" nos cards de preco, a secao de contato com formulario pode ser simplificada ou focada apenas em "Enterprise/Demonstracao"
+**Impacto real**: Quando alguem compartilhar `akuris.com.br/auth` no LinkedIn, vai aparecer o titulo e descricao da landing page, nao da pagina de login. Isso e aceitavel para o momento, mas nao e ideal.
+
+### 8. Sitemap incompleto
+O sitemap tem apenas 4 URLs. Faltam:
+- `/registro` (pagina de conversao - importante!)
+- `/planos` (se for tornado publico no futuro)
+
+### 9. Sitemap com lastmod desatualizado
+Todas as datas sao `2025-12-09`. Devem refletir a data real da ultima alteracao. Para o lancamento, usar a data atual.
+
+### 10. Sem Google Search Console / Analytics
+Sem rastreamento, voce nao sabe:
+- Quantas pessoas acessam a landing page
+- Quais palavras-chave rankeia
+- Taxa de conversao dos CTAs
+- Se ha erros de indexacao
+
+### 11. Emails com dominio antigo em outros arquivos
+Encontrei `contato@governaii.com.br`, `privacidade@governaii.com.br`, `dpo@governaii.com.br` em:
+- `src/pages/PoliticaPrivacidade.tsx`
+- `src/components/CreditsExhaustedDialog.tsx`
+- `src/components/Layout.tsx`
+- Edge functions de integracao
 
 ---
 
-## Resumo Executivo
+## PLANO DE IMPLEMENTACAO
 
-O sistema esta **pronto para lancamento** com os fluxos de contratacao funcionais. As melhorias recomendadas sao incrementais e focam em:
+### Etapa 1: Correcoes criticas no index.html
+- Substituir TODAS as 15+ ocorrencias de `governaii.com.br` por `akuris.com.br`
+- Atualizar meta description de "GovernAII e a plataforma..." para "Akuris e a plataforma..."
+- Remover bloco `aggregateRating` (reviews falsos)
+- Renomear "GovernAII Enterprise" para "Akuris Enterprise" no JSON-LD
+- Atualizar comentario da fonte de "GovernAII Identity" para "Akuris Identity"
 
-1. **Credibilidade**: Remover claims numericos nao compravaveis (500h, 99.9%, 48h)
-2. **Profissionalismo**: Adicionar Termos de Uso, mascara CNPJ, confirmacao de senha
-3. **Limpeza de marca**: Remover referencias residuais a "GovernAII"
-4. **Conversao**: Considerar remover exit-intent popup e trocar badge "LIVE" por "DEMO"
+### Etapa 2: Atualizar imagens OG
+- Atualizar `og:image`, `twitter:image`, `apple-touch-icon` e `preload` para usar logo Akuris (idealmente em tamanho 1200x630 para OG)
+- Se nao houver imagem Akuris no Storage, manter a atual temporariamente mas planejar substituicao
 
-Nenhum desses itens e bloqueante para o lancamento, mas corrigi-los elevara significativamente a percepcao de qualidade e profissionalismo do produto.
+### Etapa 3: Atualizar sitemap
+- Adicionar `/registro` ao sitemap
+- Atualizar `lastmod` para data atual (`2026-02-11`)
+
+### Etapa 4: Atualizar emails residuais
+- Substituir `contato@governaii.com.br` por `contato@akuris.com.br` em PoliticaPrivacidade, CreditsExhaustedDialog e Layout
+- Substituir `privacidade@governaii.com.br` e `dpo@governaii.com.br` em PoliticaPrivacidade
+- Atualizar URLs de logo nas edge functions de integracao
+
+### Etapa 5 (Recomendacao futura - nao implementavel aqui)
+- Configurar Google Search Console e submeter sitemap
+- Configurar Google Analytics 4 (GA4) para rastreamento de conversoes
+- Criar imagem OG dedicada com tamanho 1200x630px com a marca Akuris
+- Considerar blog/conteudo para SEO organico de longo prazo
+
+---
+
+## Secao Tecnica - Arquivos Afetados
+
+| Arquivo | Alteracao |
+|---------|-----------|
+| `index.html` | ~15 substituicoes de dominio + remocao aggregateRating + meta description |
+| `public/sitemap.xml` | Adicionar /registro + atualizar lastmod |
+| `src/pages/PoliticaPrivacidade.tsx` | 3 emails antigos |
+| `src/components/CreditsExhaustedDialog.tsx` | 1 email antigo |
+| `src/components/Layout.tsx` | 1 email antigo |
+| `supabase/functions/integration-webhook-dispatcher/index.ts` | URL logo antiga |
+| `supabase/functions/test-integration-connection/index.ts` | URL logo antiga |
+
+Total: 7 arquivos, ~25 substituicoes pontuais.
+
