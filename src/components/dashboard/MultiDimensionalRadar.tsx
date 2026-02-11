@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRadarChartData, RadarDataPoint } from "@/hooks/useRadarChartData";
 import { useNavigate } from "react-router-dom";
@@ -10,10 +10,9 @@ import {
   Radar,
   ResponsiveContainer,
   Tooltip,
-  Legend
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, XCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const CustomDot = ({ cx, cy, payload, navigate }: any) => {
@@ -106,15 +105,10 @@ export const MultiDimensionalRadar = () => {
   return (
     <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center justify-between w-full">
-          <CardTitle>{t('dashboard.maturity')}</CardTitle>
-        </div>
-        <CardDescription>
-          {t('dashboard.maturityDesc')}
-        </CardDescription>
+        <CardTitle>{t('dashboard.maturity')}</CardTitle>
       </CardHeader>
       <CardContent className="w-full overflow-hidden">
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer width="100%" height={250}>
           <RadarChart data={data}>
             <PolarGrid 
               strokeDasharray="3 3" 
@@ -136,7 +130,7 @@ export const MultiDimensionalRadar = () => {
                     y={y}
                     textAnchor="middle"
                     fill="hsl(var(--foreground))"
-                    fontSize={12}
+                    fontSize={10}
                     fontWeight={500}
                     onClick={handleClick}
                     style={{ cursor: 'pointer' }}
@@ -167,34 +161,19 @@ export const MultiDimensionalRadar = () => {
               dot={<CustomDot navigate={navigate} />}
             />
             <Tooltip content={(props) => <CustomTooltip {...props} />} />
-            <Legend
-              iconType="circle"
-              wrapperStyle={{
-                paddingTop: '20px',
-                fontSize: '12px',
-                color: 'hsl(var(--foreground))'
-              }}
-            />
           </RadarChart>
         </ResponsiveContainer>
         
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <div className="flex items-center gap-1 text-xs">
-            <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
-            <span className="text-muted-foreground">80-100%: {t('dashboard.excellent')}</span>
-          </div>
-          <div className="flex items-center gap-1 text-xs">
-            <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></div>
-            <span className="text-muted-foreground">60-79%: {t('dashboard.good')}</span>
-          </div>
-          <div className="flex items-center gap-1 text-xs">
-            <div className="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0"></div>
-            <span className="text-muted-foreground">40-59%: {t('dashboard.warning')}</span>
-          </div>
-          <div className="flex items-center gap-1 text-xs">
-            <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
-            <span className="text-muted-foreground">0-39%: {t('dashboard.criticalStatus')}</span>
-          </div>
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center border-t pt-4">
+          {data.slice(0, 4).map((item) => {
+            const color = item.score >= 80 ? 'text-green-500' : item.score >= 60 ? 'text-primary' : item.score >= 40 ? 'text-warning' : 'text-destructive';
+            return (
+              <div key={item.subject}>
+                <p className={`text-lg font-bold ${color}`}>{item.score}%</p>
+                <p className="text-xs text-muted-foreground">{item.subject}</p>
+              </div>
+            );
+          })}
         </div>
       </CardContent>
     </Card>
