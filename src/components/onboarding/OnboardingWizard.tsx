@@ -157,7 +157,7 @@ export function OnboardingWizard() {
               <div>
                 <DialogTitle className="text-xl">Configure sua plataforma</DialogTitle>
                 <DialogDescription>
-                  Complete os passos abaixo para aproveitar ao máximo o GovernAII
+                  Complete os passos abaixo para aproveitar ao máximo o Akuris
                 </DialogDescription>
               </div>
             </div>

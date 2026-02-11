@@ -180,7 +180,7 @@ export function SlackConfigDialog({
             Configurar Slack
           </DialogTitle>
           <DialogDescription>
-            Receba notificações do GovernAII diretamente no seu canal do Slack.
+            Receba notificações do Akuris diretamente no seu canal do Slack.
           </DialogDescription>
         </DialogHeader>
 

@@ -63,7 +63,7 @@ export function ExecutiveSummaryAI() {
 
       doc.setFontSize(20);
       doc.setTextColor(13, 148, 136);
-      doc.text(`GovernAII - ${t('dashboard.summary')}`, margin, y);
+      doc.text(`Akuris - ${t('dashboard.summary')}`, margin, y);
       y += 10;
 
       doc.setFontSize(10);
@@ -136,7 +136,7 @@ export function ExecutiveSummaryAI() {
         });
       }
 
-      doc.save('resumo-executivo-governaii.pdf');
+      doc.save('resumo-executivo-akuris.pdf');
     });
   };
 

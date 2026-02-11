@@ -36,7 +36,7 @@ export function CreditsExhaustedDialog({
                 Para continuar utilizando funcionalidades de IA:
               </p>
               <ul className="space-y-1.5 text-sm">
-                <li>• Entre em contato com a GovernAII</li>
+                <li>• Entre em contato com a Akuris</li>
                 <li>• Solicite upgrade de plano ou créditos extras</li>
               </ul>
             </div>

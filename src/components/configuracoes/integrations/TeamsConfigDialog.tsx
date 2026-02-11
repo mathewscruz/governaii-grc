@@ -180,7 +180,7 @@ export function TeamsConfigDialog({
             Configurar Microsoft Teams
           </DialogTitle>
           <DialogDescription>
-            Receba notificações do GovernAII diretamente no seu canal do Teams.
+            Receba notificações do Akuris diretamente no seu canal do Teams.
           </DialogDescription>
         </DialogHeader>
 
@@ -195,7 +195,7 @@ export function TeamsConfigDialog({
               <li>Abra o canal do Teams onde deseja receber notificações</li>
               <li>Clique em "..." → "Conectores"</li>
               <li>Busque por "Incoming Webhook" e configure</li>
-              <li>Dê um nome (ex: GovernAII) e copie a URL</li>
+              <li>Dê um nome (ex: Akuris) e copie a URL</li>
               <li>Cole a URL abaixo e teste a conexão</li>
             </ol>
           </div>

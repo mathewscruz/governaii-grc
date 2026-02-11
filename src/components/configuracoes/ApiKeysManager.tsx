@@ -172,7 +172,7 @@ export function ApiKeysManager() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">API Keys</h3>
-          <p className="text-sm text-muted-foreground">Gerencie as chaves de acesso à API pública do GovernAII.</p>
+          <p className="text-sm text-muted-foreground">Gerencie as chaves de acesso à API pública do Akuris.</p>
         </div>
         <Button onClick={() => setDialogOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" /> Nova API Key

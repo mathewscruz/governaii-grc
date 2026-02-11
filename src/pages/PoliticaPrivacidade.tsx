@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Shield, Mail, MapPin, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import akurisLogo from "@/assets/akuris-logo.png";
 
 const PoliticaPrivacidade = () => {
   return (
@@ -14,8 +15,8 @@ const PoliticaPrivacidade = () => {
               <span>Voltar ao site</span>
             </Link>
             <img
-              src="https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/empresa-logos/Governiaa%20(500%20x%20200%20px).png"
-              alt="GovernAII"
+              src={akurisLogo}
+              alt="Akuris"
               className="h-10 w-auto"
             />
           </div>
@@ -44,7 +45,7 @@ const PoliticaPrivacidade = () => {
             <section>
               <h2 className="text-xl font-semibold text-white mb-4">1. Introdução</h2>
               <p className="leading-relaxed">
-                A GovernAII ("nós", "nosso" ou "Empresa") está comprometida em proteger a privacidade e os dados pessoais de nossos usuários. Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e protegemos suas informações pessoais quando você utiliza nossa plataforma de gestão de governança, riscos e conformidade.
+                A Akuris ("nós", "nosso" ou "Empresa") está comprometida em proteger a privacidade e os dados pessoais de nossos usuários. Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e protegemos suas informações pessoais quando você utiliza nossa plataforma de gestão de governança, riscos e conformidade.
               </p>
               <p className="leading-relaxed mt-4">
                 Ao utilizar nossos serviços, você concorda com as práticas descritas nesta política, em conformidade com a Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 - LGPD) e demais legislações aplicáveis.
@@ -55,7 +56,7 @@ const PoliticaPrivacidade = () => {
             <section>
               <h2 className="text-xl font-semibold text-white mb-4">2. Controlador dos Dados</h2>
               <p className="leading-relaxed mb-4">
-                A GovernAII é a controladora dos dados pessoais coletados através de sua plataforma. Para questões relacionadas ao tratamento de dados pessoais, você pode entrar em contato através dos canais abaixo:
+                A Akuris é a controladora dos dados pessoais coletados através de sua plataforma. Para questões relacionadas ao tratamento de dados pessoais, você pode entrar em contato através dos canais abaixo:
               </p>
               <div className="bg-white/5 rounded-xl p-6 space-y-3 border border-white/10">
                 <div className="flex items-center gap-3">
@@ -243,7 +244,7 @@ const PoliticaPrivacidade = () => {
       <footer className="border-t border-white/5 py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} GovernAII. Todos os direitos reservados.
+            © {new Date().getFullYear()} Akuris. Todos os direitos reservados.
           </p>
         </div>
       </footer>

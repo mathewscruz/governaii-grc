@@ -374,7 +374,7 @@ export const exportNISTPDF = async (
       { align: 'right' }
     );
     doc.text(
-      'GovernAII - Gestão de Governança',
+      'Akuris - Gestão de Governança',
       margin,
       pageHeight - 10
     );

@@ -248,7 +248,7 @@ const LandingPage = () => {
     },
   ];
 
-  // Problemas das planilhas vs GovernAII
+  // Problemas das planilhas vs Akuris
   const spreadsheetProblems = [
     { icon: XCircle, problem: "Informações espalhadas em dezenas de arquivos", solution: "Tudo centralizado em um único lugar" },
     { icon: XCircle, problem: "Sem controle de versão e histórico", solution: "Versionamento automático completo" },
@@ -601,12 +601,12 @@ const LandingPage = () => {
                   <span className="text-[10px] sm:text-xs text-blue-400 font-medium">TRANSFORME</span>
                 </div>
 
-                {/* GovernAII System */}
+                {/* Akuris System */}
                 <div className="relative">
                   <div className="w-40 h-48 sm:w-48 sm:h-56 lg:w-52 lg:h-60 bg-gradient-to-br from-blue-900/40 to-cyan-800/30 rounded-2xl border border-blue-500/50 p-3 sm:p-4 shadow-2xl shadow-blue-500/20">
                     <div className="flex items-center gap-2 mb-3 sm:mb-4">
                       <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
-                      <span className="text-[10px] sm:text-xs text-blue-400 font-medium">GovernAII</span>
+                      <span className="text-[10px] sm:text-xs text-blue-400 font-medium">Akuris</span>
                     </div>
                     <div className="space-y-2 sm:space-y-3">
                       <div className="flex items-center gap-2">
@@ -659,7 +659,7 @@ const LandingPage = () => {
                   Mais de 500 horas economizadas por ano
                 </p>
                 <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
-                  Empresas que migram de planilhas para o GovernAII relatam redução significativa 
+                  Empresas que migram de planilhas para o Akuris relatam redução significativa 
                   no tempo gasto com gestão manual e retrabalho.
                 </p>
               </div>
@@ -821,7 +821,7 @@ const LandingPage = () => {
             <div className="w-full lg:flex-1 space-y-6 sm:space-y-8">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
                 Por que escolher o{" "}
-                <span className="landing-gradient-text">GovernAII</span>?
+                <span className="landing-gradient-text">Akuris</span>?
               </h2>
               <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
                 Desenvolvido por especialistas em governança para atender às demandas
@@ -876,7 +876,7 @@ const LandingPage = () => {
                 <span className="landing-gradient-text">Governança</span>?
               </h2>
               <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
-                Entre em contato com nossa equipe e descubra como o GovernAII pode
+                Entre em contato com nossa equipe e descubra como o Akuris pode
                 ajudar sua empresa a atingir excelência em compliance e gestão de riscos.
               </p>
 
@@ -1071,7 +1071,7 @@ const LandingPage = () => {
 
           <div className="pt-6 sm:pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-gray-500 text-xs sm:text-sm text-center sm:text-left">
-              © {new Date().getFullYear()} GovernAII. Todos os direitos reservados.
+              © {new Date().getFullYear()} Akuris. Todos os direitos reservados.
             </p>
           </div>
         </div>
@@ -1088,7 +1088,7 @@ const LandingPage = () => {
           </DialogHeader>
           <div className="text-center space-y-4 py-4">
             <p className="text-gray-300">
-              Não vá embora sem conhecer como o GovernAII pode{" "}
+              Não vá embora sem conhecer como o Akuris pode{" "}
               <span className="text-blue-400 font-semibold">transformar a governança</span> da sua empresa!
             </p>
             <p className="text-sm text-gray-400">

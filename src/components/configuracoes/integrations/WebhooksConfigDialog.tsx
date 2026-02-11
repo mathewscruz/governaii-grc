@@ -221,7 +221,7 @@ export function WebhooksConfigDialog({
             Configurar Webhooks
           </DialogTitle>
           <DialogDescription>
-            Receba eventos do GovernAII via HTTP POST em qualquer sistema.
+            Receba eventos do Akuris via HTTP POST em qualquer sistema.
           </DialogDescription>
         </DialogHeader>
 

@@ -109,7 +109,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-white">Período de Teste Expirado</h1>
             <p className="text-muted-foreground">
-              Seu período de teste de 14 dias chegou ao fim. Entre em contato para ativar sua licença e continuar usando o GovernAII.
+              Seu período de teste de 14 dias chegou ao fim. Entre em contato para ativar sua licença e continuar usando o Akuris.
             </p>
           </div>
           <div className="space-y-3">

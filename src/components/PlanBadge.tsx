@@ -30,7 +30,7 @@ export function PlanBadge({ planCode, planName, size = 'md', showName = true }: 
       color: 'bg-amber-500',
       textColor: 'text-amber-500',
       borderColor: 'border-amber-500',
-      label: 'GovernAII Enterprise'
+      label: 'Akuris Enterprise'
     }
   };
 

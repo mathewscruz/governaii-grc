@@ -417,7 +417,7 @@ export function IntegrationHub() {
               <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border flex-1">
                 <Info className="h-5 w-5 text-primary shrink-0" />
                 <p className="text-sm text-muted-foreground">
-                  Conecte o GovernAII com suas ferramentas favoritas para automatizar processos e receber notificações em tempo real.
+                  Conecte o Akuris com suas ferramentas favoritas para automatizar processos e receber notificações em tempo real.
                 </p>
               </div>
               <Button variant="outline" className="ml-4" onClick={() => setLogViewerOpen(true)}>
