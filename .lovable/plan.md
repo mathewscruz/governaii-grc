@@ -1,35 +1,42 @@
 
-
-# Correcao de Overflow dos Cards no Dashboard
+# Correção: Planos de Ação visível para todos os usuários
 
 ## Problema
-Em monitores menores, os conteudos dos cards do dashboard (Maturidade GRC, Evolucao dos Riscos, Atividades Recentes) ultrapassam os limites dos cards ao inves de se ajustarem ao espaco disponivel. Isso ocorre porque os containers dos graficos e textos nao possuem restricoes de overflow adequadas.
+O módulo "Planos de Ação" só aparece para super_admin porque:
+1. O módulo `planos-acao` **não existe** na tabela `system_modules` do banco de dados, então nenhum perfil de permissão consegue incluí-lo
+2. A rota usa `fallbackToRoleCheck={false}`, bloqueando o acesso via sistema de roles tradicional
 
-## Causa Raiz
-Os cards dentro do grid CSS nao possuem `min-w-0` (necessario para impedir que flex/grid children expandam alem do container) e alguns containers internos nao tem `overflow-hidden`.
+## Correções
 
-## Correcoes
+### 1. Adicionar módulo na tabela `system_modules` (migração SQL)
+Inserir o registro `planos-acao` na tabela `system_modules` para que ele apareça na gestão de perfis de permissão:
 
-### 1. Dashboard.tsx (grid principal)
-- Adicionar `min-w-0` em cada celula do grid para que os cards respeitem os limites da coluna
+```sql
+INSERT INTO system_modules (name, display_name, description, icon, route_path, order_index, is_active)
+VALUES ('planos-acao', 'Planos de Ação', 'Gestão de planos de ação e tarefas', 'ListTodo', '/planos-acao', 2, true);
+```
 
-### 2. MultiDimensionalRadar.tsx
-- Adicionar `overflow-hidden` e `min-w-0` no Card raiz
-- Garantir que o container do `ResponsiveContainer` tenha `overflow-hidden`
+### 2. Habilitar fallback de role na rota (`src/App.tsx`)
+Alterar `fallbackToRoleCheck={false}` para `fallbackToRoleCheck={true}` (ou remover o prop, já que `true` é o padrão). Isso permite que usuários com roles admin/user acessem o módulo mesmo sem permissão granular configurada.
 
-### 3. RiskScoreTimeline.tsx
-- Adicionar `overflow-hidden` e `min-w-0` no Card raiz
-- Tornar o header com titulo e tabs mais responsivo com `flex-wrap` e `gap` adequado
-- Adicionar `overflow-hidden` no container do grafico
+### 3. Conceder permissões padrão aos usuários existentes (migração SQL)
+Inserir permissões de acesso ao módulo `planos-acao` para todos os usuários que já possuem permissões em outros módulos:
 
-### 4. RecentActivities.tsx
-- Adicionar `min-w-0` no Card raiz
+```sql
+INSERT INTO user_module_permissions (user_id, module_id, can_access, can_create, can_read, can_update, can_delete)
+SELECT DISTINCT ump.user_id, sm.id, true, true, true, true, false
+FROM user_module_permissions ump
+CROSS JOIN system_modules sm
+WHERE sm.name = 'planos-acao'
+AND NOT EXISTS (
+  SELECT 1 FROM user_module_permissions existing
+  WHERE existing.user_id = ump.user_id AND existing.module_id = sm.id
+);
+```
 
-## Detalhes Tecnicos
+## Arquivos a editar
+- `src/App.tsx` -- alterar `fallbackToRoleCheck` na rota `/planos-acao`
 
-Arquivos a editar:
-- `src/pages/Dashboard.tsx` -- adicionar `min-w-0` nos wrappers das celulas do grid (linha 118)
-- `src/components/dashboard/MultiDimensionalRadar.tsx` -- adicionar `overflow-hidden min-w-0` no Card (linha 121)
-- `src/components/dashboard/RiskScoreTimeline.tsx` -- adicionar `overflow-hidden min-w-0` no Card (linha 125) e `overflow-hidden` no container do chart
-- `src/components/dashboard/RecentActivities.tsx` -- adicionar `min-w-0` no Card (linha 238)
-
+## Migração SQL
+- Inserir módulo `planos-acao` em `system_modules`
+- Conceder permissões padrão aos usuários existentes
