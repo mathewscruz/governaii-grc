@@ -56,9 +56,10 @@ serve(async (req) => {
 <html><head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f7fa;">
 <div style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden;">
-  <div style="text-align: center; padding: 32px 32px 16px; border-bottom: 1px solid #e2e8f0;">
-    <p style="font-size: 24px; font-weight: 700; color: #7552ff; margin: 0;">Akuris</p>
+  <div style="background-color: #0a1628; text-align: center; padding: 32px;">
+    <img src="https://governaii-grc.lovable.app/akuris-logo-email.png" alt="Akuris" width="200" height="60" style="display: block; margin: 0 auto;" />
   </div>
+  <div style="height: 3px; background: linear-gradient(90deg, #7552ff, #5a3fd6, #7552ff);"></div>
   <div style="padding: 32px;">
     <h2 style="color: #0a1628; margin: 0 0 16px;">Alerta de Rotação de Chave Criptográfica</h2>
     <p>Olá ${admin.nome},</p>

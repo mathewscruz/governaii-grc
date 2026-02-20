@@ -44,7 +44,6 @@ const handler = async (req: Request): Promise<Response> => {
       .from('empresas').select('nome, logo_url').eq('id', document.empresa_id).single();
 
     const companyName = empresa?.nome || "Akuris";
-    const logoUrl = empresa?.logo_url || 'https://akuris.com.br/akuris-logo.png';
 
     const emailResponse = await resend.emails.send({
       from: 'Akuris <noreply@akuris.com.br>',
@@ -56,10 +55,10 @@ const handler = async (req: Request): Promise<Response> => {
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #0a1628; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f7fa;">
   <div style="background-color: #ffffff; border-radius: 12px; padding: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden;">
-    <div style="text-align: center; padding: 32px 32px 16px; border-bottom: 1px solid #e2e8f0;">
-      <img src="${logoUrl}" alt="${companyName}" style="max-height: 50px; max-width: 200px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-      <p style="display: none; font-size: 20px; font-weight: 600; color: #0a1628; margin: 0;">${companyName}</p>
+    <div style="background-color: #0a1628; text-align: center; padding: 32px 32px 16px;">
+      <img src="https://governaii-grc.lovable.app/akuris-logo-email.png" alt="Akuris" width="200" height="60" style="display: block; margin: 0 auto;" />
     </div>
+    <div style="height: 3px; background: linear-gradient(90deg, #7552ff, #5a3fd6, #7552ff);"></div>
     <div style="padding: 32px;">
       <h1 style="font-size: 22px; color: #0a1628; margin: 0 0 24px; font-weight: 600;">📄 Solicitação de Aprovação</h1>
       <p style="font-size: 15px; color: #3c4149; margin: 0 0 20px;">Olá <strong>${aprovador.nome}</strong>,</p>
