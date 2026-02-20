@@ -1,57 +1,35 @@
 
+# Correcao Definitiva do Logo nos E-mails
 
-# Correcao do Logotipo nos E-mails
-
-## Problema
-O logo Akuris nao renderiza nos e-mails. A imagem aparece quebrada no header escuro. Causas identificadas:
-
-1. **`Img` sem `width`/`height` explicitos**: Clientes de e-mail (Gmail, Outlook) ignoram `max-width`/`max-height` em CSS e precisam de atributos HTML `width` e `height` diretamente na tag `<img>`.
-2. **Parametro `?v=1` na URL**: Alguns clientes de e-mail bloqueiam URLs com query strings.
-3. **Templates com HTML inline usam URLs erradas**: Varios edge functions (incidentes, denuncias, auditorias) usam `https://akuris.com.br/akuris-logo.png` como fallback — URL que nao existe.
+## Causa Raiz
+O bucket `email-assets` no Supabase Storage **nao existe** (retorna 404). Todas as templates de e-mail referenciam `https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/email-assets/akuris-logo.png` que esta inacessivel.
 
 ## Solucao
 
-### 1. BaseEmailTemplate.tsx — Corrigir tag Img
-- Adicionar `width="160"` e `height="48"` como atributos HTML na tag `<Img>`
-- Remover `?v=1` da URL do logo
-- Manter `style` apenas para `margin: '0 auto'`
+### Passo 1: Criar Edge Function para upload do logo
+Criar uma Edge Function temporaria `upload-email-logo` que:
+1. Cria o bucket `email-assets` como publico no Supabase Storage
+2. Faz download do logo de `public/akuris-logo.png` (da URL do preview do projeto)
+3. Faz upload para o bucket como `akuris-logo.png`
+4. Retorna a URL publica confirmando sucesso
 
-### 2. constants.ts — Remover query string
-- Alterar `SYSTEM_LOGO_URL` removendo `?v=1`
+### Passo 2: Executar a funcao
+- Deploy e chamada da funcao para garantir que o bucket e o arquivo existam
+- Verificar que a URL `https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/email-assets/akuris-logo.png` retorna a imagem corretamente
 
-### 3. Edge Functions com HTML inline — Corrigir fallback URL
-Substituir `https://akuris.com.br/akuris-logo.png` pela URL correta do storage em:
-- `send-denuncia-notification/index.ts`
-- `send-incidente-notification/index.ts`
-- `send-auditoria-item-notification/index.ts`
-- `send-due-diligence-email/index.ts`
-- Adicionar `width` e `height` nos `<img>` inline tambem
+### Passo 3: Limpar
+- Deletar a edge function temporaria apos o upload bem-sucedido
 
-### 4. Deploy
-Fazer deploy de todas as funcoes afetadas para aplicar as correcoes.
+**Nenhuma alteracao nos templates e necessaria** — todos ja referenciam a URL correta, o problema e somente que o bucket/arquivo nao existe no storage.
 
 ## Secao Tecnica
 
-**URL correta do logo (sem query string):**
-```
-https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/email-assets/akuris-logo.png
-```
+**Edge Function `upload-email-logo/index.ts`:**
+- Usa `supabaseAdmin` com `SUPABASE_SERVICE_ROLE_KEY` para criar o bucket publico
+- Faz fetch do logo de `https://id-preview--e64d00f7-1631-421a-bcc8-86aa27d8fb2a.lovable.app/akuris-logo.png`
+- Upload via `supabase.storage.from('email-assets').upload('akuris-logo.png', blob, { contentType: 'image/png', upsert: true })`
+- Funcao sera deletada apos execucao
 
-**Img tag corrigida no BaseEmailTemplate:**
-```tsx
-<Img
-  src={logoUrl}
-  alt={companyName}
-  width="160"
-  height="48"
-  style={{ margin: '0 auto', display: 'block' }}
-/>
-```
-
-**Arquivos modificados:**
-- `supabase/functions/_shared/constants.ts`
-- `supabase/functions/_shared/email-templates/BaseEmailTemplate.tsx`
-- `supabase/functions/send-denuncia-notification/index.ts`
-- `supabase/functions/send-incidente-notification/index.ts`
-- `supabase/functions/send-auditoria-item-notification/index.ts`
-- `supabase/functions/send-due-diligence-email/index.ts`
+**Arquivos envolvidos:**
+- `supabase/functions/upload-email-logo/index.ts` (criar, executar, deletar)
+- Nenhum template precisa ser alterado
