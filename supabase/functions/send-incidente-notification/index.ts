@@ -22,9 +22,8 @@ const handler = async (req: Request): Promise<Response> => {
     const { incidente_id, titulo, descricao, gravidade, tipo, responsavel_id, empresa_id }: NotificationRequest = await req.json();
 
     let companyName = "Akuris";
-    let companyLogoUrl = "https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/email-assets/akuris-logo.png";
-    const { data: empresaData } = await supabase.from("empresas").select("nome, logo_url").eq("id", empresa_id).single();
-    if (empresaData) { companyName = empresaData.nome || companyName; if (empresaData.logo_url) companyLogoUrl = empresaData.logo_url; }
+    const { data: empresaData } = await supabase.from("empresas").select("nome").eq("id", empresa_id).single();
+    if (empresaData) { companyName = empresaData.nome || companyName; }
 
     const emailList = new Set<string>();
     const { data: admins } = await supabase.from("profiles").select("email, nome").eq("empresa_id", empresa_id).in("role", ["admin", "super_admin"]);
@@ -58,8 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
       <span style="color: #ffffff; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">⚠️ Incidente ${config.text}</span>
     </div>
     <div style="text-align: center; padding: 24px 32px 16px;">
-      <img src="${companyLogoUrl}" alt="${companyName}" width="200" height="50" style="max-height: 50px; max-width: 200px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-      <p style="display: none; font-size: 20px; font-weight: 600; color: #0a1628; margin: 0;">${companyName}</p>
+      <p style="font-size: 28px; font-weight: 800; color: #0a1628; letter-spacing: 3px; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"><span style="color: #7552ff;">&#9679;</span> AKURIS</p>
     </div>
     <div style="padding: 0 32px 32px;">
       <h1 style="font-size: 22px; color: #0a1628; margin: 0 0 24px; font-weight: 600;">Novo Incidente Registrado</h1>

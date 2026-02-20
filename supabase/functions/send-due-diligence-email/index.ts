@@ -29,8 +29,7 @@ const handler = async (req: Request): Promise<Response> => {
     const sysName = 'Akuris';
     let emailContent: { subject: string; html: string };
 
-    const logoSrc = empresa_logo_url || 'https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/email-assets/akuris-logo.png';
-    const headerHtml = `<div style="text-align: center; margin-bottom: 30px;"><img src="${logoSrc}" alt="${sysName}" width="200" height="60" style="max-height: 80px; max-width: 200px;"></div>`;
+    const headerHtml = `<div style="text-align: center; margin-bottom: 30px;"><p style="font-size: 28px; font-weight: 800; color: #0a1628; letter-spacing: 3px; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"><span style="color: #7552ff;">&#9679;</span> AKURIS</p></div>`;
     const footerHtml = `<hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;"><p style="color: #64748b; font-size: 14px;">Este é um e-mail automático da <strong>Akuris</strong>. Em caso de dúvidas, entre em contato conosco.</p><p style="color: #8898aa; font-size: 12px;">© ${new Date().getFullYear()} Akuris. Todos os direitos reservados.</p>`;
 
     switch (type) {
