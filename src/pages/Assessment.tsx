@@ -64,8 +64,6 @@ interface AssessmentData {
   };
 }
 
-// ETAPA 1: Função de requisição Supabase com token de segurança
-// SECURITY FIX: Passa o token de assessment no header x-assessment-token para RLS
 const createSupabaseRequest = (assessmentToken: string | undefined) => {
   return async (endpoint: string, options: any = {}) => {
     const url = `https://lnlkahtugwmkznasapfd.supabase.co/rest/v1/${endpoint}`;
@@ -76,7 +74,6 @@ const createSupabaseRequest = (assessmentToken: string | undefined) => {
       ...options.headers
     };
 
-    // SECURITY: Include assessment token in header for RLS policy validation
     if (assessmentToken) {
       headers['x-assessment-token'] = assessmentToken;
     }
@@ -105,13 +102,33 @@ const createSupabaseRequest = (assessmentToken: string | undefined) => {
   };
 };
 
+// Wrapper component for consistent navy background
+const AssessmentShell = ({ children }: { children: React.ReactNode }) => (
+  <div className="min-h-screen bg-[hsl(230,25%,7%)] relative overflow-hidden">
+    {/* Radial neon glow */}
+    <div className="pointer-events-none absolute inset-0">
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[radial-gradient(ellipse_at_center,hsl(250,80%,55%,0.15),transparent_70%)]" />
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,hsl(220,80%,40%,0.08),transparent_70%)]" />
+    </div>
+    {/* Akuris logo header */}
+    <div className="relative z-10 flex justify-center pt-8 pb-4">
+      <img src="/akuris-logo.png" alt="Akuris" className="h-10 w-auto opacity-90" />
+    </div>
+    <div className="relative z-10">
+      {children}
+    </div>
+    {/* Footer */}
+    <div className="relative z-10 text-center pb-6 pt-8">
+      <p className="text-xs text-white/30">Powered by <span className="font-semibold text-white/50">Akuris</span></p>
+    </div>
+  </div>
+);
+
 export default function Assessment() {
   const { token } = useParams();
   
-  // SECURITY: Create request function with token for RLS validation
   const supabaseRequest = useMemo(() => createSupabaseRequest(token), [token]);
   
-  // Estados principais
   const [assessment, setAssessment] = useState<AssessmentData | null>(null);
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [responses, setResponses] = useState<Record<string, any>>({});
@@ -130,7 +147,6 @@ export default function Assessment() {
     (currentPage + 1) * questionsPerPage
   );
 
-  // Calcular progresso baseado em respostas preenchidas
   const calculateProgress = () => {
     if (questions.length === 0) return 0;
     const answeredQuestions = questions.filter(q => 
@@ -139,21 +155,17 @@ export default function Assessment() {
     return (answeredQuestions / questions.length) * 100;
   };
 
-  // ETAPA 2: Validação de status no código
   const validateStatusTransition = useCallback((currentStatus: string, newStatus: string): boolean => {
     const validTransitions = {
       'enviado': ['em_andamento', 'concluido'],
       'em_andamento': ['concluido'],
       'concluido': []
     };
-
     assessmentLogger.info(`Validando transição de status: ${currentStatus} -> ${newStatus}`);
-    
     if (currentStatus === newStatus) return true;
     return validTransitions[currentStatus as keyof typeof validTransitions]?.includes(newStatus) || false;
   }, []);
 
-  // ETAPA 3: Função melhorada para carregamento do logo
   const handleLogoLoad = useCallback(() => {
     assessmentLogger.info('Logo carregado com sucesso');
     setLogoLoading(false);
@@ -166,7 +178,6 @@ export default function Assessment() {
     setLogoError(true);
   }, []);
 
-  // PLANO IMPLEMENTADO: Queries separadas para evitar problemas de RLS
   const fetchAssessment = useCallback(async () => {
     if (!token) {
       assessmentLogger.error('Token não fornecido');
@@ -177,7 +188,6 @@ export default function Assessment() {
       setLoading(true);
       assessmentLogger.info('Iniciando busca do assessment', { token });
 
-      // ETAPA 1: Query simples para assessment básico
       const assessmentData = await supabaseRequest(
         `due_diligence_assessments?select=*&link_token=eq.${token}`,
         { method: 'GET' }
@@ -191,7 +201,6 @@ export default function Assessment() {
       const assessment = assessmentData[0];
       assessmentLogger.info('Assessment básico carregado', { id: assessment.id, status: assessment.status });
 
-      // ETAPA 2: Query separada para dados da empresa (com fallback)
       let empresaData = { nome: 'Empresa', logo_url: null };
       try {
         assessmentLogger.info('Buscando dados da empresa');
@@ -207,7 +216,6 @@ export default function Assessment() {
         assessmentLogger.warn('Erro ao carregar dados da empresa, usando fallback:', error);
       }
 
-      // ETAPA 3: Query separada para dados do template (com fallback)
       let templateData = { nome: 'Assessment', descricao: null };
       try {
         assessmentLogger.info('Buscando dados do template');
@@ -223,7 +231,6 @@ export default function Assessment() {
         assessmentLogger.warn('Erro ao carregar dados do template, usando fallback:', error);
       }
 
-      // Verificar se já está concluído
       if (assessment.status === 'concluido') {
         assessmentLogger.info('Assessment já concluído');
         setIsFinished(true);
@@ -241,7 +248,6 @@ export default function Assessment() {
         return;
       }
 
-      // Marcar como em andamento se ainda não estiver
       if (assessment.status === 'enviado') {
         assessmentLogger.info('Marcando assessment como em andamento');
         try {
@@ -259,7 +265,6 @@ export default function Assessment() {
         }
       }
 
-      // ETAPA 4: Queries em paralelo para perguntas e respostas
       assessmentLogger.info('Buscando perguntas e respostas em paralelo');
       const [questionsData, responsesData] = await Promise.all([
         supabaseRequest(
@@ -267,7 +272,7 @@ export default function Assessment() {
           { method: 'GET' }
         ).catch(error => {
           assessmentLogger.error('Erro ao carregar perguntas:', error);
-          throw error; // Re-throw para ser capturado no try/catch externo
+          throw error;
         }),
         supabaseRequest(
           `due_diligence_responses?select=question_id,resposta,pontuacao,evidencia,justificativa,arquivo_url&assessment_id=eq.${assessment.id}`,
@@ -278,17 +283,14 @@ export default function Assessment() {
         })
       ]);
 
-      // Validar se perguntas foram carregadas
       if (!questionsData || questionsData.length === 0) {
         assessmentLogger.error('Nenhuma pergunta encontrada para o template');
         throw new Error('Este questionário não possui perguntas configuradas. Por favor, entre em contato com o remetente.');
       }
 
-      // Montar respostas em objeto
       const responsesMap: Record<string, any> = {};
       responsesData.forEach((response: any) => {
         responsesMap[response.question_id] = response.resposta || response.pontuacao;
-        // Adicionar evidências e justificativas se existirem
         if (response.evidencia) {
           responsesMap[`${response.question_id}_evidencia`] = response.evidencia;
         }
@@ -300,7 +302,6 @@ export default function Assessment() {
         }
       });
 
-      // ETAPA 5: Montar objeto final do assessment
       setAssessment({
         id: assessment.id,
         fornecedor_nome: assessment.fornecedor_nome,
@@ -340,14 +341,12 @@ export default function Assessment() {
     }
   }, [token, supabaseRequest]);
 
-  // Função para salvar resposta
   const saveResponse = useCallback(async (questionId: string, value: any) => {
     if (!assessment) return;
 
     try {
       assessmentLogger.info('Salvando resposta', { questionId, value });
 
-      // Verificar se é uma evidência, justificativa ou arquivo
       const isEvidencia = questionId.endsWith('_evidencia');
       const isJustificativa = questionId.endsWith('_justificativa');
       const isArquivo = questionId.endsWith('_arquivo');
@@ -360,7 +359,6 @@ export default function Assessment() {
         question_id: baseQuestionId
       };
 
-      // Se for evidência, justificativa ou arquivo, buscar resposta existente para atualizar
       if (isEvidencia || isJustificativa || isArquivo) {
         try {
           const existingResponse = await supabaseRequest(
@@ -369,35 +367,21 @@ export default function Assessment() {
           );
           
           if (existingResponse && existingResponse.length > 0) {
-            // Atualizar campo específico
             const updateData: any = {};
-            if (isEvidencia) {
-              updateData.evidencia = value;
-            } else if (isJustificativa) {
-              updateData.justificativa = value;
-            } else if (isArquivo) {
-              updateData.arquivo_url = value;
-            }
+            if (isEvidencia) updateData.evidencia = value;
+            else if (isJustificativa) updateData.justificativa = value;
+            else if (isArquivo) updateData.arquivo_url = value;
 
             await supabaseRequest(
               `due_diligence_responses?assessment_id=eq.${assessment.id}&question_id=eq.${baseQuestionId}`,
-              {
-                method: 'PATCH',
-                body: JSON.stringify(updateData)
-              }
+              { method: 'PATCH', body: JSON.stringify(updateData) }
             );
           } else {
-            // Criar nova resposta com evidência/justificativa/arquivo
-            if (isEvidencia) {
-              responseData.evidencia = value;
-            } else if (isJustificativa) {
-              responseData.justificativa = value;
-            } else if (isArquivo) {
-              responseData.arquivo_url = value;
-            }
+            if (isEvidencia) responseData.evidencia = value;
+            else if (isJustificativa) responseData.justificativa = value;
+            else if (isArquivo) responseData.arquivo_url = value;
             await supabaseRequest('due_diligence_responses', {
-              method: 'POST',
-              body: JSON.stringify(responseData)
+              method: 'POST', body: JSON.stringify(responseData)
             });
           }
         } catch (error) {
@@ -406,42 +390,31 @@ export default function Assessment() {
         return;
       }
 
-      // Salvar resposta principal
       if (question?.tipo === 'numerico') {
         responseData.pontuacao = parseFloat(value) || 0;
       } else {
         responseData.resposta = value;
       }
 
-      // Fazer upsert manual
       try {
-        // Tentar atualizar primeiro
         const existingResponse = await supabaseRequest(
           `due_diligence_responses?assessment_id=eq.${assessment.id}&question_id=eq.${questionId}`,
           { method: 'GET' }
         );
         
         if (existingResponse && existingResponse.length > 0) {
-          // Atualizar existente
           await supabaseRequest(
             `due_diligence_responses?assessment_id=eq.${assessment.id}&question_id=eq.${questionId}`,
-            {
-              method: 'PATCH',
-              body: JSON.stringify(responseData)
-            }
+            { method: 'PATCH', body: JSON.stringify(responseData) }
           );
         } else {
-          // Inserir novo
           await supabaseRequest('due_diligence_responses', {
-            method: 'POST',
-            body: JSON.stringify(responseData)
+            method: 'POST', body: JSON.stringify(responseData)
           });
         }
       } catch (error) {
-        // Se falhar, tentar inserir
         await supabaseRequest('due_diligence_responses', {
-          method: 'POST',
-          body: JSON.stringify(responseData)
+          method: 'POST', body: JSON.stringify(responseData)
         });
       }
 
@@ -451,19 +424,14 @@ export default function Assessment() {
     }
   }, [assessment, questions, supabaseRequest]);
 
-  // Handler para mudança de resposta
   const handleResponseChange = useCallback((questionId: string, value: any) => {
     setResponses(prev => ({ ...prev, [questionId]: value }));
-    
-    // Salvar automaticamente após 1 segundo
     const timeoutId = setTimeout(() => {
       saveResponse(questionId, value);
     }, 1000);
-
     return () => clearTimeout(timeoutId);
   }, [saveResponse]);
 
-  // ETAPA 4: Função de finalização mais robusta
   const submitAssessment = useCallback(async () => {
     if (!assessment) return;
 
@@ -471,14 +439,12 @@ export default function Assessment() {
       setSubmitting(true);
       assessmentLogger.info('Iniciando finalização do assessment');
 
-      // Verificar status atual
       if (assessment.status === 'concluido') {
         assessmentLogger.warn('Assessment já está concluído');
         setIsFinished(true);
         return;
       }
 
-      // Verificar perguntas obrigatórias de forma simplificada
       const requiredQuestions = questions.filter(q => q.obrigatoria);
       const missingRequired = requiredQuestions.filter(q => !responses[q.id] || !responses[q.id].toString().trim());
 
@@ -489,7 +455,6 @@ export default function Assessment() {
         return;
       }
 
-      // Salvar todas as respostas pendentes
       assessmentLogger.info('Salvando respostas finais');
       for (const [questionId, value] of Object.entries(responses)) {
         if (value && value.toString().trim()) {
@@ -497,7 +462,6 @@ export default function Assessment() {
         }
       }
 
-      // Finalizar assessment usando Supabase client
       assessmentLogger.info('Finalizando assessment', { assessmentId: assessment.id, token });
       const { data: updateData, error: updateError } = await supabase
         .from('due_diligence_assessments')
@@ -516,13 +480,11 @@ export default function Assessment() {
 
       assessmentLogger.info('Assessment atualizado com sucesso:', updateData);
 
-      // Calcular score com IA
       assessmentLogger.info('Iniciando cálculo de score com IA...');
       try {
         const { error: scoreError } = await supabase.functions.invoke('calculate-assessment-score', {
           body: { assessment_id: assessment.id }
         });
-
         if (scoreError) {
           assessmentLogger.warn('Erro no cálculo de score:', scoreError);
         } else {
@@ -530,10 +492,8 @@ export default function Assessment() {
         }
       } catch (scoreError) {
         assessmentLogger.warn('Erro ao calcular score:', scoreError);
-        // Não falhar o envio se o cálculo de score falhar
       }
 
-      // Atualizar estado local
       setAssessment(prev => prev ? {
         ...prev,
         status: 'concluido',
@@ -553,152 +513,160 @@ export default function Assessment() {
     }
   }, [assessment, questions, responses, saveResponse, token]);
 
-  // Carregar assessment ao montar o componente
   useEffect(() => {
     fetchAssessment();
   }, [fetchAssessment]);
 
-  // Renderizar loading
+  // === RENDER: Loading ===
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white/80">Carregando questionário...</p>
+      <AssessmentShell>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(250,80%,60%)] mx-auto mb-4"></div>
+            <p className="text-white/60 text-sm">Carregando questionário...</p>
+          </div>
         </div>
-      </div>
+      </AssessmentShell>
     );
   }
 
-  // Renderizar erro se assessment não encontrado
+  // === RENDER: Error ===
   if (!assessment) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-card border-border shadow-xl">
-          <CardContent className="pt-6 text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2 text-foreground">Questionário não encontrado</h2>
-            <p className="text-muted-foreground">
-              O link pode ter expirado ou ser inválido.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <AssessmentShell>
+        <div className="flex items-center justify-center min-h-[60vh] p-4">
+          <Card className="w-full max-w-md bg-white/5 backdrop-blur-sm border-white/10 shadow-2xl">
+            <CardContent className="pt-6 text-center">
+              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2 text-white">Questionário não encontrado</h2>
+              <p className="text-white/50">
+                O link pode ter expirado ou ser inválido.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </AssessmentShell>
     );
   }
 
-  // Se já concluído, mostrar tela de sucesso
+  // === RENDER: Completed (status === 'concluido') ===
   if (assessment.status === 'concluido') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
-        <div className="text-center max-w-lg mx-auto">
-          <div className="relative mb-8 animate-scale-in">
-            <div className="w-24 h-24 bg-gradient-to-br from-success to-success/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <Check className="w-12 h-12 text-white animate-fade-in" />
+      <AssessmentShell>
+        <div className="flex items-center justify-center min-h-[60vh] p-4">
+          <div className="text-center max-w-lg mx-auto">
+            <div className="relative mb-8 animate-scale-in">
+              <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/30">
+                <Check className="w-12 h-12 text-white animate-fade-in" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] rounded-full animate-pulse"></div>
             </div>
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-primary to-primary/80 rounded-full animate-pulse"></div>
-          </div>
-          
-          <div className="space-y-4 animate-fade-in">
-            <h2 className="text-3xl font-bold text-foreground">
-              Questionário Enviado!
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
-              Obrigado por responder ao questionário. Suas respostas foram enviadas com sucesso e estão sendo analisadas.
-            </p>
             
-            <div className="mt-8 p-6 bg-card border border-border rounded-lg shadow-sm">
-              <div className="flex items-center justify-center space-x-2 text-success">
-                <CheckCircle className="w-5 h-5" />
-                <span className="font-medium">Concluído com sucesso</span>
+            <div className="space-y-4 animate-fade-in">
+              <h2 className="text-3xl font-bold text-white">
+                Questionário Enviado!
+              </h2>
+              <p className="text-lg text-white/60 max-w-md mx-auto leading-relaxed">
+                Obrigado por responder ao questionário. Suas respostas foram enviadas com sucesso e estão sendo analisadas.
+              </p>
+              
+              <div className="mt-8 p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
+                <div className="flex items-center justify-center space-x-2 text-emerald-400">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-medium">Concluído com sucesso</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </AssessmentShell>
     );
   }
 
-  // Renderizar se já concluído
+  // === RENDER: Finished (isFinished) ===
   if (isFinished) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
-        <div className="text-center max-w-lg mx-auto">
-          {/* Header com logo da empresa melhorado */}
-          <div className="mb-8 animate-fade-in">
-            <div className="flex items-center justify-center mb-6">
-              {assessment.empresa.logo_url && !logoError ? (
-                <div className="relative p-4 bg-card rounded-2xl shadow-lg border border-border">
-                  {logoLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  )}
-                  <img
-                    src={assessment.empresa.logo_url}
-                    alt={`Logo ${assessment.empresa.nome}`}
-                    className={`h-16 w-auto object-contain ${logoLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
-                    onLoad={handleLogoLoad}
-                    onError={handleLogoError}
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-20 w-20 bg-gradient-to-br from-muted to-muted/80 rounded-2xl shadow-lg">
-                  <Building2 className="h-10 w-10 text-muted-foreground" />
-                </div>
-              )}
-            </div>
-            <p className="text-muted-foreground text-lg font-medium">Due Diligence - {assessment.template.nome}</p>
-          </div>
-
-          <div className="relative mb-8 animate-scale-in">
-            <div className="w-24 h-24 bg-gradient-to-br from-success to-success/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <CheckCircle className="w-12 h-12 text-white animate-fade-in" />
-            </div>
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-primary to-primary/80 rounded-full animate-pulse"></div>
-          </div>
-          
-          <div className="space-y-6 animate-fade-in">
-            <h2 className="text-3xl font-bold text-foreground">
-              Questionário Concluído!
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
-              Obrigado por responder ao nosso questionário de due diligence. 
-              Suas respostas foram enviadas com sucesso e estão sendo analisadas.
-            </p>
-            
-            <div className="mt-8 p-6 bg-card border border-border rounded-xl shadow-sm">
-              <div className="flex items-center justify-center space-x-3 text-success mb-3">
-                <CheckCircle className="w-5 h-5" />
-                <span className="font-medium">Concluído com sucesso</span>
+      <AssessmentShell>
+        <div className="flex items-center justify-center min-h-[60vh] p-4">
+          <div className="text-center max-w-lg mx-auto">
+            {/* Company logo */}
+            <div className="mb-8 animate-fade-in">
+              <div className="flex items-center justify-center mb-6">
+                {assessment.empresa.logo_url && !logoError ? (
+                  <div className="relative p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10">
+                    {logoLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(250,80%,60%)]"></div>
+                      </div>
+                    )}
+                    <img
+                      src={assessment.empresa.logo_url}
+                      alt={`Logo ${assessment.empresa.nome}`}
+                      className={`h-16 w-auto object-contain ${logoLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+                      onLoad={handleLogoLoad}
+                      onError={handleLogoError}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-20 w-20 bg-white/10 rounded-2xl border border-white/10">
+                    <Building2 className="h-10 w-10 text-white/40" />
+                  </div>
+                )}
               </div>
-              <p className="text-sm text-muted-foreground">
-                <strong>Concluído em:</strong> {assessment.data_conclusao ? 
-                  new Date(assessment.data_conclusao).toLocaleString('pt-BR') : 
-                  'Agora'
-                }
+              <p className="text-white/50 text-lg font-medium">Due Diligence - {assessment.template.nome}</p>
+            </div>
+
+            <div className="relative mb-8 animate-scale-in">
+              <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/30">
+                <CheckCircle className="w-12 h-12 text-white animate-fade-in" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] rounded-full animate-pulse"></div>
+            </div>
+            
+            <div className="space-y-6 animate-fade-in">
+              <h2 className="text-3xl font-bold text-white">
+                Questionário Concluído!
+              </h2>
+              <p className="text-lg text-white/60 max-w-md mx-auto leading-relaxed">
+                Obrigado por responder ao nosso questionário de due diligence. 
+                Suas respostas foram enviadas com sucesso e estão sendo analisadas.
               </p>
+              
+              <div className="mt-8 p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
+                <div className="flex items-center justify-center space-x-3 text-emerald-400 mb-3">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="font-medium">Concluído com sucesso</span>
+                </div>
+                <p className="text-sm text-white/40">
+                  <strong className="text-white/60">Concluído em:</strong> {assessment.data_conclusao ? 
+                    new Date(assessment.data_conclusao).toLocaleString('pt-BR') : 
+                    'Agora'
+                  }
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </AssessmentShell>
     );
   }
 
+  // === RENDER: Main form ===
   const progress = calculateProgress();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header com logo da empresa melhorado */}
+    <AssessmentShell>
+      <div className="container mx-auto px-4 py-4 max-w-4xl">
+        {/* Header with company logo */}
         <div className="mb-8 text-center animate-fade-in">
-          <Card className="inline-block p-6 shadow-lg border-border bg-card">
+          <Card className="inline-block p-6 shadow-2xl border-white/10 bg-white/5 backdrop-blur-sm">
             <div className="flex items-center justify-center mb-4">
               {assessment.empresa.logo_url && !logoError ? (
-                <div className="relative p-3 bg-card rounded-xl shadow-sm">
+                <div className="relative p-3 bg-white/10 rounded-xl">
                   {logoLoading && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(250,80%,60%)]"></div>
                     </div>
                   )}
                   <img
@@ -710,44 +678,43 @@ export default function Assessment() {
                   />
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-20 w-20 bg-gradient-to-br from-muted to-muted/80 rounded-xl shadow-sm">
-                  <Building2 className="h-10 w-10 text-muted-foreground" />
+                <div className="flex items-center justify-center h-20 w-20 bg-white/10 rounded-xl">
+                  <Building2 className="h-10 w-10 text-white/40" />
                 </div>
-                )}
-              </div>
-              <h1 className="text-xl font-semibold text-foreground">
-                Due Diligence - {assessment.template.nome}
-              </h1>
-            </Card>
-          </div>
+              )}
+            </div>
+            <h1 className="text-xl font-semibold text-white">
+              Due Diligence - {assessment.template.nome}
+            </h1>
+          </Card>
+        </div>
 
         {/* Progress bar */}
         <div className="mb-8 animate-fade-in">
-          <Card className="p-6 shadow-sm border-border bg-card">
+          <Card className="p-6 shadow-lg border-white/10 bg-white/5 backdrop-blur-sm">
             <div className="flex justify-between items-center mb-4">
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-white/50">
                 Página {currentPage + 1} de {totalPages}
               </span>
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-white/50">
                 {Math.round(progress)}% das perguntas respondidas
               </span>
             </div>
             <div className="relative">
-              <Progress value={progress} className="w-full h-3 bg-muted/50" />
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent rounded-full pointer-events-none"></div>
+              <Progress value={progress} className="w-full h-3 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(250,80%,60%)] [&>div]:to-[hsl(250,80%,50%)]" />
             </div>
           </Card>
         </div>
 
-        {/* Perguntas */}
-        <Card className="mb-8 shadow-lg border-border bg-card animate-fade-in">
-          <CardHeader className="bg-card border-b border-border">
-            <CardTitle className="text-xl flex items-center space-x-3">
+        {/* Questions */}
+        <Card className="mb-8 shadow-2xl border-white/10 bg-white/5 backdrop-blur-sm animate-fade-in">
+          <CardHeader className="border-b border-white/10">
+            <CardTitle className="text-xl flex items-center space-x-3 text-white">
               {assessment.empresa.logo_url && !logoError ? (
                 <div className="relative flex-shrink-0">
                   {logoLoading && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[hsl(250,80%,60%)]"></div>
                     </div>
                   )}
                   <img
@@ -759,8 +726,8 @@ export default function Assessment() {
                   />
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-8 w-8 bg-gradient-to-br from-muted to-muted/80 rounded-lg flex-shrink-0">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center justify-center h-8 w-8 bg-white/10 rounded-lg flex-shrink-0">
+                  <Building2 className="h-4 w-4 text-white/40" />
                 </div>
               )}
               <span>Questionário</span>
@@ -768,14 +735,14 @@ export default function Assessment() {
           </CardHeader>
           <CardContent className="p-8 space-y-8">
             {currentQuestions.map((question, index) => (
-              <div key={question.id} className="space-y-4 p-6 bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
+              <div key={question.id} className="space-y-4 p-6 bg-white/[0.03] rounded-xl border border-white/10 hover:border-white/20 transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground block">
+                  <Label className="text-sm font-medium text-white/50 block">
                     {question.titulo}
-                    {question.obrigatoria && <span className="text-destructive ml-2">*</span>}
+                    {question.obrigatoria && <span className="text-red-400 ml-2">*</span>}
                   </Label>
                   {question.descricao && (
-                    <p className="text-lg font-semibold text-foreground leading-relaxed">
+                    <p className="text-lg font-semibold text-white leading-relaxed">
                       {question.descricao}
                     </p>
                   )}
@@ -786,7 +753,7 @@ export default function Assessment() {
                     value={responses[question.id] || ''}
                     onChange={(e) => handleResponseChange(question.id, e.target.value)}
                     placeholder="Digite sua resposta..."
-                    className="min-h-[120px] bg-white border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    className="min-h-[120px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
                   />
                 )}
 
@@ -796,10 +763,10 @@ export default function Assessment() {
                     onValueChange={(value) => handleResponseChange(question.id, value)}
                     className="space-y-3"
                   >
-                    {question.opcoes.map((opcao, index) => (
-                      <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white transition-colors duration-200">
-                        <RadioGroupItem value={opcao} id={`${question.id}-${index}`} className="border-border/50" />
-                        <Label htmlFor={`${question.id}-${index}`} className="text-sm font-medium cursor-pointer flex-1">{opcao}</Label>
+                    {question.opcoes.map((opcao, idx) => (
+                      <div key={idx} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors duration-200">
+                        <RadioGroupItem value={opcao} id={`${question.id}-${idx}`} className="border-white/30 text-[hsl(250,80%,60%)]" />
+                        <Label htmlFor={`${question.id}-${idx}`} className="text-sm font-medium cursor-pointer flex-1 text-white/80">{opcao}</Label>
                       </div>
                     ))}
                   </RadioGroup>
@@ -811,7 +778,7 @@ export default function Assessment() {
                     value={responses[question.id] || ''}
                     onChange={(e) => handleResponseChange(question.id, e.target.value)}
                     placeholder="Digite um número..."
-                     className="bg-white border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
                   />
                 )}
 
@@ -821,13 +788,13 @@ export default function Assessment() {
                     onValueChange={(value) => handleResponseChange(question.id, value)}
                     className="flex space-x-6"
                   >
-                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white transition-colors duration-200">
-                      <RadioGroupItem value="sim" id={`${question.id}-sim`} className="border-border/50" />
-                      <Label htmlFor={`${question.id}-sim`} className="text-sm font-medium cursor-pointer">Sim</Label>
+                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors duration-200">
+                      <RadioGroupItem value="sim" id={`${question.id}-sim`} className="border-white/30 text-[hsl(250,80%,60%)]" />
+                      <Label htmlFor={`${question.id}-sim`} className="text-sm font-medium cursor-pointer text-white/80">Sim</Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white transition-colors duration-200">
-                      <RadioGroupItem value="nao" id={`${question.id}-nao`} className="border-border/50" />
-                      <Label htmlFor={`${question.id}-nao`} className="text-sm font-medium cursor-pointer">Não</Label>
+                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors duration-200">
+                      <RadioGroupItem value="nao" id={`${question.id}-nao`} className="border-white/30 text-[hsl(250,80%,60%)]" />
+                      <Label htmlFor={`${question.id}-nao`} className="text-sm font-medium cursor-pointer text-white/80">Não</Label>
                     </div>
                   </RadioGroup>
                 )}
@@ -837,12 +804,12 @@ export default function Assessment() {
                     value={responses[question.id] || ''}
                     onValueChange={(value) => handleResponseChange(question.id, value)}
                   >
-                    <SelectTrigger className="bg-white border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200">
                       <SelectValue placeholder="Selecione uma opção..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {question.opcoes.map((opcao, index) => (
-                        <SelectItem key={index} value={opcao}>
+                      {question.opcoes.map((opcao, idx) => (
+                        <SelectItem key={idx} value={opcao}>
                           {opcao}
                         </SelectItem>
                       ))}
@@ -852,14 +819,14 @@ export default function Assessment() {
 
                 {question.tipo === 'arquivo' && (
                   <div className="space-y-3">
-                    <div className="border-2 border-dashed border-border/50 hover:border-primary/50 rounded-xl p-8 text-center transition-colors duration-200 bg-white">
-                      <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground mb-3">
+                    <div className="border-2 border-dashed border-white/10 hover:border-[hsl(250,80%,60%)]/30 rounded-xl p-8 text-center transition-colors duration-200 bg-white/[0.02]">
+                      <Upload className="h-10 w-10 text-white/30 mx-auto mb-3" />
+                      <p className="text-sm text-white/40 mb-3">
                         Arraste um arquivo ou clique para selecionar
                       </p>
                       <Input
                         type="file"
-                        className="bg-white border-border/50"
+                        className="bg-white/5 border-white/10 text-white/70"
                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
@@ -890,11 +857,11 @@ export default function Assessment() {
                       />
                     </div>
                     {responses[question.id] && (
-                      <div className="flex items-center space-x-3 text-sm text-muted-foreground p-3 bg-white rounded-lg border border-success/20">
-                        <FileText className="h-4 w-4 text-success" />
+                      <div className="flex items-center space-x-3 text-sm text-white/60 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                        <FileText className="h-4 w-4 text-emerald-400" />
                         <span className="font-medium">{responses[question.id]}</span>
                         {responses[`${question.id}_arquivo`] && (
-                          <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs ml-auto">
+                          <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,60%)] underline text-xs ml-auto">
                             Ver arquivo
                           </a>
                         )}
@@ -903,38 +870,34 @@ export default function Assessment() {
                   </div>
                 )}
 
-                {/* Campos condicionais para evidência e justificativa */}
+                {/* Conditional evidence and justification fields */}
                 {question.configuracoes && responses[question.id] && (
                   <>
-                    {/* Campo de evidência */}
-                     {question.configuracoes.mostrar_evidencia_quando && 
+                    {question.configuracoes.mostrar_evidencia_quando && 
                      question.configuracoes.mostrar_evidencia_quando.split(',').includes(responses[question.id]) && (
-                      <div className="mt-4 p-4 bg-success/5 border border-success/20 rounded-lg animate-fade-in">
-                        <Label className="text-sm font-medium text-success mb-3 block">
+                      <div className="mt-4 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-lg animate-fade-in">
+                        <Label className="text-sm font-medium text-emerald-400 mb-3 block">
                           {question.configuracoes.label_evidencia || 'Evidência:'}
                         </Label>
-                        
-                        {/* Campo de texto para evidência */}
                         <Textarea
                           value={responses[`${question.id}_evidencia`] || ''}
                           onChange={(e) => handleResponseChange(`${question.id}_evidencia`, e.target.value)}
                           placeholder="Descreva as evidências que comprovam sua resposta..."
-                          className="min-h-[100px] bg-white border-border/50 focus:border-success/50 focus:ring-2 focus:ring-success/20 transition-all duration-200 mb-4"
+                          className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 mb-4"
                         />
                         
-                        {/* Campo de upload de arquivo para evidência */}
                         <div className="space-y-3">
-                          <Label className="text-sm font-medium text-success block">
+                          <Label className="text-sm font-medium text-emerald-400 block">
                             Anexar documento (opcional):
                           </Label>
-                        <div className="border-2 border-dashed border-success/30 hover:border-success/50 rounded-lg p-4 text-center transition-colors duration-200 bg-white">
-                            <Upload className="h-6 w-6 text-success/60 mx-auto mb-2" />
-                            <p className="text-xs text-success/60 mb-2">
+                          <div className="border-2 border-dashed border-emerald-500/20 hover:border-emerald-500/40 rounded-lg p-4 text-center transition-colors duration-200 bg-white/[0.02]">
+                            <Upload className="h-6 w-6 text-emerald-400/40 mx-auto mb-2" />
+                            <p className="text-xs text-emerald-400/40 mb-2">
                               Clique para selecionar um arquivo
                             </p>
                             <Input
                               type="file"
-                              className="text-xs bg-white border-success/30 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-success/10 file:text-success"
+                              className="text-xs bg-white/5 border-white/10 text-white/70 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-emerald-500/10 file:text-emerald-400"
                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                               onChange={async (e) => {
                                 const file = e.target.files?.[0];
@@ -964,10 +927,10 @@ export default function Assessment() {
                             />
                           </div>
                           {responses[`${question.id}_arquivo`] && (
-                            <div className="flex items-center space-x-2 text-xs text-success bg-success/10 p-2 rounded border border-success/20">
+                            <div className="flex items-center space-x-2 text-xs text-emerald-400 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
                               <FileText className="h-3 w-3" />
                               <span>Evidência anexada</span>
-                              <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-primary underline ml-auto">
+                              <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,60%)] underline ml-auto">
                                 Ver
                               </a>
                             </div>
@@ -976,18 +939,17 @@ export default function Assessment() {
                       </div>
                     )}
 
-                    {/* Campo de justificativa */}
                     {question.configuracoes.mostrar_justificativa_quando && 
                      question.configuracoes.mostrar_justificativa_quando.split(',').includes(responses[question.id]) && (
-                      <div className="mt-4 p-4 bg-warning/5 border border-warning/20 rounded-lg animate-fade-in">
-                        <Label className="text-sm font-medium text-warning mb-2 block">
+                      <div className="mt-4 p-4 bg-amber-500/5 border border-amber-500/20 rounded-lg animate-fade-in">
+                        <Label className="text-sm font-medium text-amber-400 mb-2 block">
                           {question.configuracoes.label_justificativa || 'Justificativa:'}
                         </Label>
                         <Textarea
                           value={responses[`${question.id}_justificativa`] || ''}
                           onChange={(e) => handleResponseChange(`${question.id}_justificativa`, e.target.value)}
                           placeholder="Explique o motivo e planos futuros..."
-                          className="min-h-[100px] bg-white border-border/50 focus:border-warning/50 focus:ring-2 focus:ring-warning/20 transition-all duration-200"
+                          className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all duration-200"
                         />
                       </div>
                     )}
@@ -998,14 +960,14 @@ export default function Assessment() {
           </CardContent>
         </Card>
 
-        {/* Navegação */}
+        {/* Navigation */}
         <div className="flex justify-between items-center animate-fade-in">
           <Button
             variant="outline"
             onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
             disabled={currentPage === 0}
             size="lg"
-            className="shadow-sm hover:shadow-md transition-all duration-200 bg-background/50 backdrop-blur-sm border-border/50"
+            className="shadow-sm border-white/10 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 hover:text-white"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Anterior
@@ -1016,7 +978,7 @@ export default function Assessment() {
               onClick={() => setShowConfirmDialog(true)}
               disabled={submitting}
               size="lg"
-              className="shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 px-8"
+              className="shadow-lg shadow-[hsl(250,80%,60%)]/20 bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] hover:from-[hsl(250,80%,55%)] hover:to-[hsl(250,80%,45%)] text-white px-8"
             >
               {submitting ? (
                 <>
@@ -1035,7 +997,7 @@ export default function Assessment() {
               onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
               disabled={currentPage === totalPages - 1}
               size="lg"
-              className="shadow-md hover:shadow-lg transition-all duration-200 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80"
+              className="shadow-md shadow-[hsl(250,80%,60%)]/20 bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] hover:from-[hsl(250,80%,55%)] hover:to-[hsl(250,80%,45%)] text-white"
             >
               Próxima
               <ArrowRight className="h-4 w-4 ml-2" />
@@ -1043,15 +1005,15 @@ export default function Assessment() {
           )}
         </div>
 
-        {/* Dialog de confirmação */}
+        {/* Confirmation dialog */}
         <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-          <AlertDialogContent className="bg-card/95 backdrop-blur-sm border-border/50 shadow-xl">
+          <AlertDialogContent className="bg-[hsl(230,25%,12%)] backdrop-blur-sm border-white/10 shadow-2xl">
             <AlertDialogHeader className="space-y-4">
-              <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full mx-auto">
-                <CheckCircle className="w-6 h-6 text-primary" />
+              <div className="flex items-center justify-center w-12 h-12 bg-[hsl(250,80%,60%)]/10 rounded-full mx-auto">
+                <CheckCircle className="w-6 h-6 text-[hsl(250,80%,60%)]" />
               </div>
-              <AlertDialogTitle className="text-center text-xl">Finalizar Questionário</AlertDialogTitle>
-              <AlertDialogDescription className="text-center text-muted-foreground leading-relaxed">
+              <AlertDialogTitle className="text-center text-xl text-white">Finalizar Questionário</AlertDialogTitle>
+              <AlertDialogDescription className="text-center text-white/50 leading-relaxed">
                 Tem certeza que deseja finalizar e enviar o questionário? 
                 Após o envio, não será possível fazer alterações.
               </AlertDialogDescription>
@@ -1061,14 +1023,14 @@ export default function Assessment() {
                 variant="outline" 
                 onClick={() => setShowConfirmDialog(false)}
                 disabled={submitting}
-                className="flex-1 bg-background/50 border-border/50 hover:bg-background/80"
+                className="flex-1 bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white"
               >
                 Cancelar
               </Button>
               <AlertDialogAction 
                 onClick={submitAssessment} 
                 disabled={submitting}
-                className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 shadow-lg"
+                className="flex-1 bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] hover:from-[hsl(250,80%,55%)] hover:to-[hsl(250,80%,45%)] text-white shadow-lg shadow-[hsl(250,80%,60%)]/20"
               >
                 {submitting ? (
                   <>
@@ -1086,6 +1048,6 @@ export default function Assessment() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </div>
+    </AssessmentShell>
   );
 }

@@ -11,6 +11,7 @@ export function HealthScoreGauge({ score }: HealthScoreGaugeProps) {
   };
 
   const getLabel = (s: number) => {
+    if (s === 0) return 'Sem dados';
     if (s >= 80) return 'Excelente';
     if (s >= 60) return 'Bom';
     if (s >= 40) return 'Atenção';

@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRadarChartData } from '@/hooks/useRadarChartData';
 
 export default function Dashboard() {
   const { profile } = useAuth();
@@ -37,6 +38,7 @@ export default function Dashboard() {
   const gapStats = useGapAnalysisStats();
   const { data: dashboardData, isLoading: dashboardLoading, refetch: refetchDashboard, dataUpdatedAt } = useDashboardStats();
   const { data: trends } = useTrendData();
+  const { data: radarData } = useRadarChartData();
 
   const isLoading = ativosStats.isLoading || controlesStats.isLoading || incidentesStats.isLoading || dashboardLoading;
 
@@ -57,7 +59,9 @@ export default function Dashboard() {
     );
   }
 
-  const healthScore = 72; // Default score - will be calculated by AI summary when generated
+  const healthScore = radarData && radarData.length > 0
+    ? Math.round(radarData.reduce((sum, d) => sum + d.score, 0) / radarData.length)
+    : 0;
   const activeIncidents = (incidentesStats.data?.abertos || 0) + (incidentesStats.data?.investigacao || 0);
 
   return (
