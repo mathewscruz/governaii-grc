@@ -5551,6 +5551,7 @@ export type Database = {
           data_avaliacao: string | null
           data_envio_aprovacao: string | null
           data_identificacao: string
+          data_proxima_revisao: string | null
           descricao: string | null
           empresa_id: string
           historico_aprovacao: Json | null
@@ -5584,6 +5585,7 @@ export type Database = {
           data_avaliacao?: string | null
           data_envio_aprovacao?: string | null
           data_identificacao?: string
+          data_proxima_revisao?: string | null
           descricao?: string | null
           empresa_id: string
           historico_aprovacao?: Json | null
@@ -5617,6 +5619,7 @@ export type Database = {
           data_avaliacao?: string | null
           data_envio_aprovacao?: string | null
           data_identificacao?: string
+          data_proxima_revisao?: string | null
           descricao?: string | null
           empresa_id?: string
           historico_aprovacao?: Json | null
@@ -5847,6 +5850,60 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      riscos_historico_avaliacoes: {
+        Row: {
+          avaliado_por: string | null
+          created_at: string
+          empresa_id: string
+          id: string
+          impacto: string
+          nivel_risco: string
+          observacoes: string | null
+          probabilidade: string
+          risco_id: string
+          tipo: string
+        }
+        Insert: {
+          avaliado_por?: string | null
+          created_at?: string
+          empresa_id: string
+          id?: string
+          impacto: string
+          nivel_risco: string
+          observacoes?: string | null
+          probabilidade: string
+          risco_id: string
+          tipo?: string
+        }
+        Update: {
+          avaliado_por?: string | null
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          impacto?: string
+          nivel_risco?: string
+          observacoes?: string | null
+          probabilidade?: string
+          risco_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "riscos_historico_avaliacoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "riscos_historico_avaliacoes_risco_id_fkey"
+            columns: ["risco_id"]
+            isOneToOne: false
+            referencedRelation: "riscos"
             referencedColumns: ["id"]
           },
         ]

@@ -36,7 +36,8 @@ const riscoSchema = z.object({
   impacto_residual: z.string().optional(),
   aceito: z.boolean().default(false),
   justificativa_aceite: z.string().optional(),
-  ativos_vinculados: z.array(z.string()).default([])
+  ativos_vinculados: z.array(z.string()).default([]),
+  data_proxima_revisao: z.string().optional()
 });
 
 type RiscoForm = z.infer<typeof riscoSchema>;
@@ -109,7 +110,8 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
       consequencias: '',
       aceito: false,
       justificativa_aceite: '',
-      ativos_vinculados: []
+      ativos_vinculados: [],
+      data_proxima_revisao: ''
     }
   });
 
@@ -144,7 +146,8 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         consequencias: risco.consequencias || '',
         aceito: risco.aceito || false,
         justificativa_aceite: risco.justificativa_aceite || '',
-        ativos_vinculados: []
+        ativos_vinculados: [],
+        data_proxima_revisao: risco.data_proxima_revisao || ''
       });
 
       // Forçar seleção da matriz após reset do form
@@ -337,7 +340,8 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         causas: data.causas || null,
         consequencias: data.consequencias || null,
         aceito: data.aceito,
-        justificativa_aceite: data.justificativa_aceite || null
+        justificativa_aceite: data.justificativa_aceite || null,
+        data_proxima_revisao: data.data_proxima_revisao || null
       };
 
       let riscoId: string;
@@ -741,6 +745,23 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
                           <SelectItem value="aceito">Aceito</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="data_proxima_revisao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data Próxima Revisão</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Agende quando este risco deve ser reavaliado
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
