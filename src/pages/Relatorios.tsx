@@ -11,15 +11,16 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { RelatorioDialog } from '@/components/relatorios/RelatorioDialog';
+import { RelatorioPreviewDialog } from '@/components/relatorios/RelatorioPreviewDialog';
+import { generateTemplatePDF } from '@/components/relatorios/generateTemplatePDF';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
 import { 
-  Plus, FileText, Download, Calendar, Pencil, Trash2, Eye, 
-  FileBarChart, BarChart3, Shield, AlertTriangle, BookOpen, Clock
+  Plus, FileText, Download, Pencil, Trash2, Eye, 
+  FileBarChart, BarChart3, Shield, AlertTriangle, BookOpen, Clock, Loader2
 } from 'lucide-react';
-import jsPDF from 'jspdf';
 
 const templateConfigs: Record<string, { nome: string; descricao: string; icon: any; cor: string }> = {
   lgpd_anpd: { nome: 'Relatório LGPD para ANPD', descricao: 'Relatório completo de conformidade com a LGPD para apresentação à ANPD', icon: Shield, cor: 'text-emerald-600' },
@@ -36,8 +37,11 @@ export default function Relatorios() {
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editRelatorio, setEditRelatorio] = useState<any>(null);
+  const [previewRelatorio, setPreviewRelatorio] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('meus');
 
   const { data: relatorios = [], isLoading } = useQuery({
@@ -97,28 +101,50 @@ export default function Relatorios() {
     }
   };
 
-  const handleExportPDF = (relatorio: any) => {
+  const handleExportPDF = async (relatorio: any) => {
+    if (!empresaId) return;
+    setExporting(relatorio.id);
     try {
-      const doc = new jsPDF();
-      doc.setFontSize(20);
-      doc.text(relatorio.nome, 20, 30);
-      doc.setFontSize(12);
-      doc.setTextColor(100);
-      doc.text(relatorio.descricao || 'Sem descrição', 20, 45);
-      doc.setFontSize(10);
-      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 20, 60);
-      doc.text(`Status: ${relatorio.status}`, 20, 70);
-      
       if (relatorio.template_base && templateConfigs[relatorio.template_base]) {
-        doc.setFontSize(14);
-        doc.text(`Template: ${templateConfigs[relatorio.template_base].nome}`, 20, 90);
+        await generateTemplatePDF(relatorio, empresaId);
+      } else {
+        // Relatório customizado sem template - exportar básico
+        const jsPDF = (await import('jspdf')).default;
+        const doc = new jsPDF();
+        doc.setFontSize(20);
+        doc.text(relatorio.nome, 20, 30);
+        doc.setFontSize(12);
+        doc.setTextColor(100);
+        doc.text(relatorio.descricao || 'Sem descrição', 20, 45);
+        doc.setFontSize(10);
+        doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 20, 60);
+        doc.text(`Status: ${relatorio.status}`, 20, 70);
+        doc.save(`${relatorio.nome.replace(/\s+/g, '_')}.pdf`);
       }
-
-      doc.save(`${relatorio.nome.replace(/\s+/g, '_')}.pdf`);
       toast.success('PDF exportado com sucesso');
     } catch (error) {
       logger.error('Erro ao exportar PDF', error);
       toast.error('Erro ao exportar PDF');
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const handleEdit = async (data: any) => {
+    if (!editRelatorio) return;
+    try {
+      const { error } = await supabase.from('relatorios_customizados').update({
+        nome: data.nome,
+        descricao: data.descricao,
+        template_base: data.template_base,
+      }).eq('id', editRelatorio.id);
+      if (error) throw error;
+      toast.success('Relatório atualizado');
+      queryClient.invalidateQueries({ queryKey: ['relatorios-customizados'] });
+      setEditRelatorio(null);
+    } catch (error) {
+      logger.error('Erro ao editar relatório', error);
+      toast.error('Erro ao editar relatório');
     }
   };
 
@@ -223,13 +249,31 @@ export default function Relatorios() {
                     </p>
                     <TooltipProvider>
                       <div className="flex gap-1">
+                        {rel.template_base && templateConfigs[rel.template_base] && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setPreviewRelatorio(rel)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Visualizar</TooltipContent>
+                          </Tooltip>
+                        )}
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleExportPDF(rel)}>
-                              <Download className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleExportPDF(rel)} disabled={exporting === rel.id}>
+                              {exporting === rel.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>Exportar PDF</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditRelatorio(rel)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Editar</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -281,6 +325,23 @@ export default function Relatorios() {
         onSave={handleCreate}
         loading={saving}
       />
+
+      <RelatorioDialog
+        open={!!editRelatorio}
+        onOpenChange={(open) => !open && setEditRelatorio(null)}
+        onSave={handleEdit}
+        relatorio={editRelatorio}
+        loading={saving}
+      />
+
+      {previewRelatorio && empresaId && (
+        <RelatorioPreviewDialog
+          open={!!previewRelatorio}
+          onOpenChange={(open) => !open && setPreviewRelatorio(null)}
+          relatorio={previewRelatorio}
+          empresaId={empresaId}
+        />
+      )}
 
       <ConfirmDialog
         open={!!deleteId}

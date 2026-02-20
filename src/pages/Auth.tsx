@@ -65,7 +65,7 @@ const Auth = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(216,60%,8%)] via-[hsl(216,45%,12%)] to-[hsl(216,60%,8%)]">
+      <div className="min-h-screen flex items-center justify-center bg-[hsl(230,25%,7%)]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
           <p className="mt-4 text-muted-foreground">Carregando...</p>
@@ -169,13 +169,13 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* ===== BRAND PANEL (desktop only) ===== */}
-      <div className="hidden lg:flex lg:w-[60%] relative flex-col items-center justify-center bg-gradient-to-br from-[hsl(216,60%,8%)] via-[hsl(216,45%,10%)] to-[hsl(216,60%,8%)] overflow-hidden">
+      <div className="hidden lg:flex lg:w-[60%] relative flex-col items-center justify-center sidebar-gradient overflow-hidden">
         {/* Grid background */}
         <div className="landing-grid-bg absolute inset-0 opacity-30" />
 
         {/* Glow orbs */}
-        <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-primary/10 rounded-full blur-[100px] glow-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/8 rounded-full blur-[120px] glow-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-[hsl(252,100%,66%,0.08)] rounded-full blur-[100px] glow-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[hsl(252,100%,66%,0.06)] rounded-full blur-[120px] glow-pulse" style={{ animationDelay: '1s' }} />
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center gap-10 px-12 max-w-lg landing-fade-in-1">
@@ -209,7 +209,7 @@ const Auth = () => {
       </div>
 
       {/* ===== LOGIN PANEL ===== */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[hsl(216,50%,10%)] to-[hsl(216,45%,12%)] px-6 py-12 relative overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[hsl(230,25%,7%)] to-[hsl(228,20%,9%)] px-6 py-12 relative overflow-hidden">
         {/* Language selector */}
         <div className="absolute top-4 right-4 z-20">
           <LanguageSelector variant="dark" />
