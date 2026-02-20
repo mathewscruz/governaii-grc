@@ -15,7 +15,7 @@ import GapAnalysis from '@/pages/GapAnalysis';
 import GapAnalysisFrameworks from '@/pages/GapAnalysisFrameworks';
 import GapAnalysisFrameworkDetail from '@/pages/GapAnalysisFrameworkDetail';
 import GapAnalysisAderencia from '@/pages/GapAnalysisAderencia';
-import GapAnalysisNIST from '@/pages/GapAnalysisNIST';
+
 import Contratos from '@/pages/Contratos';
 import Governanca from '@/pages/Governanca';
 import Sistemas from '@/pages/Sistemas';
@@ -147,13 +147,6 @@ function App() {
               <Layout>
                 <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
                   <GapAnalysisAderencia />
-                </ProtectedRoute>
-              </Layout>
-            } />
-            <Route path="/gap-analysis/nist" element={
-              <Layout>
-                <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
-                  <GapAnalysisNIST />
                 </ProtectedRoute>
               </Layout>
             } />
