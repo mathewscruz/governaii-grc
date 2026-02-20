@@ -547,41 +547,6 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {/* StatCards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Total de Avaliações"
-            value={assessments.length}
-            description="Avaliações criadas"
-            icon={<Users className="h-4 w-4" />}
-            loading={statsLoading}
-          />
-          <StatCard
-            title="Concluídas"
-            value={assessments.filter(a => a.status === 'concluido').length}
-            description={`${assessments.filter(a => a.status !== 'concluido').length} pendentes`}
-            icon={<CheckCircle className="h-4 w-4" />}
-            loading={statsLoading}
-            variant="success"
-          />
-          <StatCard
-            title="Expiradas"
-            value={assessments.filter(a => isExpired(a.data_expiracao) && a.status !== 'concluido').length}
-            description="Requerem atenção"
-            icon={<AlertTriangle className="h-4 w-4" />}
-            loading={statsLoading}
-            variant="destructive"
-          />
-          <StatCard
-            title="Score Médio"
-            value={`${calcularScoreMedio().toFixed(1)}%`}
-            description="Média das avaliações concluídas"
-            icon={<TrendingUp className="h-4 w-4" />}
-            loading={statsLoading}
-            variant={calcularScoreMedio() >= 80 ? 'success' : calcularScoreMedio() >= 60 ? 'warning' : 'destructive'}
-          />
-        </div>
-
         <Card className="rounded-lg border overflow-hidden">
           <CardContent className="p-0">
             <div className="p-6 pb-4">
