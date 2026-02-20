@@ -1,38 +1,66 @@
 
-# Restaurar Bordas Arredondadas e Efeito de Iluminacao
 
-## Problemas
+# Correcao de Cores e Efeito de Iluminacao do Sidebar
 
-1. O ultimo ajuste removeu o arredondamento e margem do lado esquerdo do painel de conteudo (`rounded-r-2xl my-2 mr-2 border-l-0`), quando a referencia mostra arredondamento em todos os lados
-2. Falta o efeito de iluminacao/brilho sutil no fundo do sidebar, como mostrado no anexo 2
+## Analise da Imagem de Referencia
+
+A imagem mostra:
+- **Fundo do sidebar**: Preto quase puro com leve tom azul escuro (~`#0d0f1a` / `hsl(230, 30%, 8%)`)
+- **Efeito de iluminacao**: Um brilho difuso azul/violeta vindo da parte inferior do sidebar, como uma luz neon refletida. Isso nao e apenas um gradiente linear simples — e um `radial-gradient` posicionado no bottom-center
+- **Borda do conteudo**: Borda muito sutil, quase invisivel, com tom azulado escuro
 
 ## Mudancas
 
-### 1. Restaurar arredondamento completo do painel (Layout.tsx)
-- Trocar `rounded-r-2xl my-2 mr-2 border border-border/20 border-l-0` por `rounded-2xl m-2 border border-border/20`
-- Isso restaura as bordas arredondadas em todos os 4 cantos e o espaco uniforme ao redor
+### 1. Sidebar: Fundo mais escuro + efeito de luz neon (index.css)
 
-### 2. Adicionar efeito de iluminacao no sidebar (index.css)
-- Ajustar o gradiente do sidebar para incluir um leve brilho azulado/violeta na parte inferior, simulando o efeito de iluminacao visivel no anexo 2
-- Gradiente: navy escuro no topo, transicao suave, e um toque de brilho azulado embaixo
+O gradiente atual esta claro demais. A referencia mostra um fundo quase preto com um brilho azul/violeta difuso na parte inferior.
+
+Nova implementacao com camadas:
+- Camada base: cor solida muito escura (`hsl(230, 25%, 7%)`)
+- Camada de iluminacao: `radial-gradient` azul/violeta posicionado no bottom-center, simulando a luz neon
+
+### 2. Borda do painel de conteudo (Layout.tsx)
+
+A borda precisa ser mais sutil e com tom azulado, nao branca/cinza.
+
+### 3. Fundo do shell (index.css)
+
+O `--layout-shell` tambem precisa ser mais escuro para combinar com o sidebar.
 
 ## Secao Tecnica
 
-**Arquivo: `src/components/Layout.tsx` (linha 149)**
-- De: `bg-background rounded-r-2xl my-2 mr-2 border border-border/20 border-l-0`
-- Para: `bg-background rounded-2xl m-2 border border-border/20`
-
 **Arquivo: `src/index.css`**
-- Atualizar `.sidebar-gradient` para incluir efeito de iluminacao:
+
+Atualizar `.sidebar-gradient`:
 ```css
 .sidebar-gradient {
-  background: linear-gradient(180deg, 
-    hsl(225, 45%, 10%) 0%, 
-    hsl(228, 40%, 13%) 60%, 
-    hsl(235, 35%, 17%) 100%);
+  background: 
+    radial-gradient(ellipse at 50% 100%, hsl(230, 60%, 25%, 0.4) 0%, transparent 60%),
+    linear-gradient(180deg, hsl(230, 25%, 7%) 0%, hsl(228, 20%, 9%) 100%);
+}
+
+.dark .sidebar-gradient {
+  background: 
+    radial-gradient(ellipse at 50% 100%, hsl(230, 60%, 22%, 0.4) 0%, transparent 60%),
+    linear-gradient(180deg, hsl(230, 25%, 5%) 0%, hsl(228, 20%, 7%) 100%);
 }
 ```
 
+Atualizar `--layout-shell` para combinar:
+- Light: `230 25% 7%`
+- Dark: `230 25% 5%`
+
+Atualizar variaveis do sidebar:
+- `--sidebar-background: 230 25% 7%` (light)
+- `--sidebar-background: 230 25% 5%` (dark)
+- `--sidebar-accent: 230 20% 12%` (light)
+- `--sidebar-border: 230 15% 15%`
+
+**Arquivo: `src/components/Layout.tsx` (linha 149)**
+
+Trocar `border border-border/20` por `border border-[hsl(230,20%,20%)]/30` para borda com tom azulado sutil.
+
 **Arquivos modificados:**
-- `src/components/Layout.tsx`
-- `src/index.css`
+- `src/index.css` — gradiente com efeito de iluminacao neon + variaveis escurecidas
+- `src/components/Layout.tsx` — borda com tom azulado
+
