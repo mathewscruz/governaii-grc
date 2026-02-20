@@ -116,29 +116,43 @@ serve(async (req) => {
       throw new Error('Documento não contém texto suficiente para análise (mínimo 100 caracteres)');
     }
 
-    // 4. Montar prompt com mais contexto e qualidade
-    const docTextForAnalysis = documentText.substring(0, 20000);
+    // 4. Montar prompt com comparação auditor-like incluindo descrição completa dos requisitos
+    const docTextForAnalysis = documentText.substring(0, 30000);
     const reqsForAnalysis = requirements.slice(0, 60);
 
-    const prompt = `Você é um auditor sênior de conformidade regulatória com experiência em frameworks como ISO 27001, LGPD, NIST CSF, SOC 2, GDPR e outros.
+    // Montar requisitos com descrição completa + orientações de implementação
+    const reqsText = reqsForAnalysis.map((r: any, i: number) => {
+      let entry = `${i+1}. ID:${r.id} | ${r.codigo || 'N/A'}: ${r.titulo}`;
+      if (r.descricao) entry += `\n   Descrição: ${r.descricao.substring(0, 300)}`;
+      if (r.orientacao_implementacao) entry += `\n   O que a norma exige: ${r.orientacao_implementacao.substring(0, 200)}`;
+      if (r.exemplos_evidencias) entry += `\n   Evidências esperadas: ${r.exemplos_evidencias.substring(0, 150)}`;
+      return entry;
+    }).join('\n\n');
 
-TAREFA: Analise o documento abaixo e avalie sua conformidade com os requisitos do framework ${framework.nome} (${framework.versao || ''}).
+    const prompt = `Você é um AUDITOR SÊNIOR de conformidade regulatória com 15+ anos de experiência em frameworks como ISO 27001, LGPD, NIST CSF, SOC 2, GDPR, PCI DSS e outros.
 
-INSTRUÇÕES DETALHADAS:
-1. Leia o documento inteiro com atenção
-2. Para CADA requisito listado, determine se o documento aborda, menciona ou implementa o que é exigido
-3. Seja criterioso: "conforme" significa que o documento cobre adequadamente o requisito; "parcial" significa cobertura incompleta; "nao_conforme" significa ausência ou inadequação
-4. Forneça evidências textuais específicas encontradas no documento (citações ou referências a seções)
-5. Identifique gaps concretos e acionáveis
-6. O percentual geral deve refletir a média ponderada real dos requisitos avaliados
+TAREFA PRINCIPAL: Analise o documento corporativo abaixo e compare ITEM A ITEM com os requisitos do framework ${framework.nome} (${framework.versao || ''}). Você deve agir exatamente como um auditor que recebe um documento (ex: Política de Mesa e Tela Limpa) e precisa verificar se ele atende a todos os pontos exigidos pela norma.
+
+MÉTODO DE ANÁLISE (siga rigorosamente):
+1. IDENTIFIQUE o tipo e escopo do documento (política, procedimento, manual, etc.)
+2. Para CADA requisito do framework, verifique se o documento contém cláusulas, parágrafos ou seções que atendem ao que é exigido
+3. CITE trechos específicos do documento como evidência de conformidade (entre aspas)
+4. Quando o documento NÃO abordar um requisito, indique claramente o GAP e o que deveria conter
+5. Marque como "nao_aplicavel" APENAS requisitos que genuinamente não se relacionam com o escopo do documento
+6. Seja CRITERIOSO: "conforme" = cobre adequadamente; "parcial" = menciona mas incompleto; "nao_conforme" = ausente ou inadequado
+
+EXEMPLO DE ANÁLISE:
+- Se o documento é uma "Política de Mesa e Tela Limpa", encontre no framework o requisito que trata de proteção de informações em áreas de trabalho
+- Verifique se a política cobre: bloqueio de tela, armazenamento de documentos, destruição segura, etc.
+- Cite o trecho: "Conforme seção 3.2 do documento: 'Todos os colaboradores devem bloquear suas estações...'"
 
 DOCUMENTO ANALISADO:
 ---
-${docTextForAnalysis}${documentText.length > 20000 ? '\n\n[... documento continua - ' + (documentText.length - 20000) + ' caracteres adicionais ...]' : ''}
+${docTextForAnalysis}${documentText.length > 30000 ? '\n\n[... documento continua - ' + (documentText.length - 30000) + ' caracteres adicionais ...]' : ''}
 ---
 
 REQUISITOS DO FRAMEWORK ${framework.nome} (${reqsForAnalysis.length} de ${requirements.length}):
-${reqsForAnalysis.map((r, i) => `${i+1}. ID:${r.id} | ${r.codigo || 'N/A'}: ${r.titulo}${r.descricao ? ' - ' + r.descricao.substring(0, 80) : ''}`).join('\n')}
+${reqsText}
 
 FORMATO JSON OBRIGATÓRIO (retorne APENAS JSON válido, sem markdown):
 {
@@ -187,7 +201,7 @@ FORMATO JSON OBRIGATÓRIO (retorne APENAS JSON válido, sem markdown):
           },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 16000,
+        max_completion_tokens: 20000,
         response_format: { type: 'json_object' }
       }),
     });

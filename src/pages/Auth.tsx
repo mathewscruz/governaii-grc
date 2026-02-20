@@ -134,8 +134,20 @@ const Auth = () => {
             } else {
               toast.error('Erro ao autenticar. Tente novamente.');
             }
+          } else if (mfaResponse.data?.success && mfaResponse.data?.skipped) {
+            // Sessão MFA válida encontrada - pular verificação e re-autenticar
+            console.log('MFA skipped - sessão válida encontrada');
+            mfaInProgressRef.current = false;
+            setMfaPending(false);
+            setMfaPassword('');
+            const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+            if (!reAuthError) {
+              setLoginSuccess(true);
+              toast.success('Login realizado com sucesso!');
+            } else {
+              toast.error('Erro ao autenticar. Tente novamente.');
+            }
           } else if (mfaResponse.data?.success) {
-            toast.info('Código de verificação enviado para seu e-mail');
           } else {
             if (mfaResponse.data?.error) {
               toast.warning(mfaResponse.data.error);

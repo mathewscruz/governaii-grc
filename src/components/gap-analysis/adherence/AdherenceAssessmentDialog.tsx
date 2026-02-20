@@ -18,9 +18,11 @@ interface AdherenceAssessmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  preSelectedFrameworkId?: string;
+  preSelectedFrameworkNome?: string;
 }
 
-export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: AdherenceAssessmentDialogProps) {
+export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSelectedFrameworkId, preSelectedFrameworkNome }: AdherenceAssessmentDialogProps) {
   const { toast } = useToast();
   const { empresaId, loading: loadingEmpresa } = useEmpresaId();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,8 +31,15 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess }: Adh
   const [formData, setFormData] = useState({
     nome_analise: '',
     descricao: '',
-    framework_id: ''
+    framework_id: preSelectedFrameworkId || ''
   });
+
+  // Atualizar framework_id quando preSelectedFrameworkId mudar
+  useEffect(() => {
+    if (preSelectedFrameworkId) {
+      setFormData(prev => ({ ...prev, framework_id: preSelectedFrameworkId }));
+    }
+  }, [preSelectedFrameworkId]);
 
   // Estado para controlar o progresso da análise
   const [analysisState, setAnalysisState] = useState<{

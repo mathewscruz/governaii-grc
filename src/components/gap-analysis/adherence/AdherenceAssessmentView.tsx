@@ -16,9 +16,11 @@ import type { AdherenceAssessment } from './types';
 
 interface AdherenceAssessmentViewProps {
   onViewResult: (assessment: AdherenceAssessment) => void;
+  frameworkId?: string;
+  frameworkNome?: string;
 }
 
-export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentViewProps) {
+export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNome }: AdherenceAssessmentViewProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [assessmentToDelete, setAssessmentToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -26,16 +28,23 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
 
   const { data: assessments, loading: isLoading, refetch } = useOptimizedQuery(
     async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('gap_analysis_adherence_assessments')
         .select('*')
         .order('created_at', { ascending: false });
 
+      // Filtrar por framework se informado
+      if (frameworkId) {
+        query = query.eq('framework_id', frameworkId);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
       return { data, error: null };
     },
-    [],
-    { cacheKey: 'adherence-assessments', cacheDuration: 0 }
+    [frameworkId],
+    { cacheKey: `adherence-assessments-${frameworkId || 'all'}`, cacheDuration: 0 }
   );
 
   const getStatusColor = (status: string): string => {
@@ -270,6 +279,8 @@ export function AdherenceAssessmentView({ onViewResult }: AdherenceAssessmentVie
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         onSuccess={refetch}
+        preSelectedFrameworkId={frameworkId}
+        preSelectedFrameworkNome={frameworkNome}
       />
       
       <ConfirmDialog

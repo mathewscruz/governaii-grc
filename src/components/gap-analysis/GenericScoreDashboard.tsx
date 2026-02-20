@@ -124,16 +124,30 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
             <CardTitle>Score Geral de Conformidade</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="text-4xl font-bold">{formatScore(overallScore)}</div>
-              <Badge variant={getScoreColor(overallScore, config) as any} className="text-sm">
-                {getScoreLabel(overallScore, config)}
-              </Badge>
-            </div>
-            <Progress value={getProgressValue(overallScore)} className="h-3" />
-            <p className="text-sm text-muted-foreground">
-              {evaluatedRequirements} de {totalRequirements} requisitos avaliados
-            </p>
+            {evaluatedRequirements === 0 ? (
+              <div className="space-y-3">
+                <div className="text-4xl font-bold text-muted-foreground">—</div>
+                <p className="text-sm text-muted-foreground">
+                  Nenhum requisito avaliado ainda. Comece avaliando os requisitos na tabela abaixo para ver seu score de conformidade.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {totalRequirements} requisitos disponíveis para avaliação
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-4">
+                  <div className="text-4xl font-bold">{formatScore(overallScore)}</div>
+                  <Badge variant={getScoreColor(overallScore, config) as any} className="text-sm">
+                    {getScoreLabel(overallScore, config)}
+                  </Badge>
+                </div>
+                <Progress value={getProgressValue(overallScore)} className="h-3" />
+                <p className="text-sm text-muted-foreground">
+                  {evaluatedRequirements} de {totalRequirements} requisitos avaliados
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 

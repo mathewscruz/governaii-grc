@@ -258,6 +258,8 @@ export default function GapAnalysisFrameworkDetail() {
                   setSelectedAdherenceAssessment(assessment);
                   setAdherenceView('result');
                 }}
+                frameworkId={frameworkId}
+                frameworkNome={framework.nome}
               />
             )}
           </TabsContent>
