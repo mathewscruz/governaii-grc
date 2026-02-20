@@ -57,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
       <span style="color: #ffffff; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">⚠️ Incidente ${config.text}</span>
     </div>
     <div style="text-align: center; padding: 24px 32px 16px;">
-      <p style="font-size: 28px; font-weight: 800; color: #0a1628; letter-spacing: 3px; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"><span style="color: #7552ff;">&#9679;</span> AKURIS</p>
+      <img src="https://governaii-grc.lovable.app/akuris-logo-email.png" alt="Akuris" width="200" height="60" style="display: block; margin: 0 auto;" />
     </div>
     <div style="padding: 0 32px 32px;">
       <h1 style="font-size: 22px; color: #0a1628; margin: 0 0 24px; font-weight: 600;">Novo Incidente Registrado</h1>

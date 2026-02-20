@@ -4,12 +4,12 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
   Section,
   Text,
 } from 'npm:@react-email/components@0.0.22';
-import * as React from 'npm:react@18.3.1';
 import * as React from 'npm:react@18.3.1';
 
 interface BaseEmailTemplateProps {
@@ -55,11 +55,15 @@ export const BaseEmailTemplate = ({
       <Preview>{previewText}</Preview>
       <Body style={main}>
         <Container style={container}>
-          {/* Dark Header with text logo */}
+          {/* Dark Header with logo image */}
           <Section style={headerSection}>
-            <Text style={textLogoStyle}>
-              <span style={{ color: '#a78bfa' }}>●</span> AKURIS
-            </Text>
+            <Img
+              src="https://governaii-grc.lovable.app/akuris-logo-email.png"
+              alt="Akuris"
+              width="200"
+              height="60"
+              style={{ display: 'block', margin: '0 auto' }}
+            />
           </Section>
 
           {/* Gradient accent line */}

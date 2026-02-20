@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #0a1628; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f7fa;">
   <div style="background-color: #ffffff; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
     <div style="text-align: center; margin-bottom: 24px;">
-      <p style="font-size: 28px; font-weight: 800; color: #0a1628; letter-spacing: 3px; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"><span style="color: #7552ff;">&#9679;</span> AKURIS</p>
+      <img src="https://governaii-grc.lovable.app/akuris-logo-email.png" alt="Akuris" width="200" height="60" style="display: block; margin: 0 auto;" />
     </div>
     <h1 style="font-size: 22px; color: #0a1628; text-align: center; margin-bottom: 24px; font-weight: 600;">🔐 Nova Revisão de Acesso Atribuída</h1>
     <p style="font-size: 15px; margin-bottom: 20px;">Olá <strong>${review.responsavel.nome || 'Usuário'}</strong>,</p>
