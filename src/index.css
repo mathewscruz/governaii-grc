@@ -522,11 +522,11 @@
 
   /* Sidebar gradient */
   .sidebar-gradient {
-    background: linear-gradient(180deg, hsl(228, 50%, 12%) 0%, hsl(232, 40%, 18%) 100%);
+    background: linear-gradient(180deg, hsl(225, 45%, 10%) 0%, hsl(230, 35%, 15%) 50%, hsl(235, 30%, 18%) 100%);
   }
 
   .dark .sidebar-gradient {
-    background: linear-gradient(180deg, hsl(228, 50%, 10%) 0%, hsl(232, 38%, 16%) 100%);
+    background: linear-gradient(180deg, hsl(225, 45%, 8%) 0%, hsl(230, 35%, 13%) 50%, hsl(235, 30%, 16%) 100%);
   }
 }
 
