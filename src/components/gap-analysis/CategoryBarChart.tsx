@@ -36,6 +36,7 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
 
   const chartData = categoryScores.map(cat => ({
     name: cat.category,
+    truncatedName: cat.category.length > 22 ? cat.category.substring(0, 22) + '...' : cat.category,
     score: config.scoreType === 'percentage' ? cat.score : cat.score,
     displayScore: config.scoreType === 'percentage' ? `${cat.score.toFixed(1)}%` : cat.score.toFixed(1),
     evaluated: `${cat.evaluated}/${cat.total}`,
@@ -43,6 +44,7 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
   }));
 
   const maxValue = config.scoreType === 'percentage' ? 100 : 5;
+  const dynamicHeight = Math.max(250, categoryScores.length * 45);
 
   return (
     <Card>
@@ -50,8 +52,8 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
         <CardTitle className="text-lg">Aderência por Categoria</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 10, left: 60, bottom: 5 }}>
+        <ResponsiveContainer width="100%" height={dynamicHeight}>
+          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 10, left: 145, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis 
               type="number" 
@@ -60,9 +62,9 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
             />
             <YAxis 
               type="category" 
-              dataKey="name" 
-              tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }}
-              width={55}
+              dataKey="truncatedName" 
+              tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }}
+              width={140}
             />
             <Tooltip 
               contentStyle={{
@@ -72,7 +74,7 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
               }}
               formatter={(value: any, name: string, props: any) => [
                 `${props.payload.displayScore} (${props.payload.evaluated} avaliados)`,
-                'Score'
+                props.payload.name
               ]}
             />
             <Bar dataKey="score" radius={[0, 4, 4, 0]}>
