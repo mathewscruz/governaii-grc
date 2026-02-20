@@ -14,6 +14,8 @@ export interface RiscosStats {
   tratados: number;
   scoreAtual: number;
   variacao7dias: number | null;
+  revisoes_vencidas: number;
+  revisoes_proximas: number;
 }
 
 // Função auxiliar para normalizar comparação de nível
@@ -50,7 +52,8 @@ export const useRiscosStats = () => {
           nivel_risco_residual,
           aceito,
           created_at,
-          updated_at
+          updated_at,
+          data_proxima_revisao
         `);
 
       if (riscosError) throw riscosError;
@@ -82,8 +85,21 @@ export const useRiscosStats = () => {
         aceitos: riscos?.filter(r => r.aceito).length || 0,
         tratados: riscos?.filter(r => r.nivel_risco_residual).length || 0,
         scoreAtual: 0,
-        variacao7dias: null
+        variacao7dias: null,
+        revisoes_vencidas: 0,
+        revisoes_proximas: 0
       };
+
+      // Calcular revisões vencidas e próximas
+      const hojeDate = new Date();
+      (riscos || []).forEach(r => {
+        const dataRevisao = (r as any).data_proxima_revisao;
+        if (dataRevisao) {
+          const dias = Math.ceil((new Date(dataRevisao).getTime() - hojeDate.getTime()) / (1000 * 60 * 60 * 24));
+          if (dias < 0) newStats.revisoes_vencidas++;
+          else if (dias <= 7) newStats.revisoes_proximas++;
+        }
+      });
 
       // Calcular score atual (média ponderada dos riscos)
       if (riscos && riscos.length > 0) {

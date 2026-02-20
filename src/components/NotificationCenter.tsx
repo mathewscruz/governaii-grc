@@ -331,6 +331,40 @@ const NotificationCenter: React.FC = () => {
          }
        });
 
+      // Buscar riscos com revisão vencida ou próxima
+      const { data: riscosRevisao } = await supabase
+        .from('riscos')
+        .select('id, nome, data_proxima_revisao, nivel_risco_inicial')
+        .not('data_proxima_revisao', 'is', null);
+
+      (riscosRevisao || []).forEach(risco => {
+        const diasParaRevisao = differenceInDays(new Date(risco.data_proxima_revisao!), hoje);
+        
+        if (diasParaRevisao < 0) {
+          notificacoes.push({
+            id: `risco-revisao-vencida-${risco.id}`,
+            title: 'Revisão de Risco Vencida',
+            message: `O risco "${risco.nome}" (${risco.nivel_risco_inicial || 'N/A'}) está com revisão atrasada há ${Math.abs(diasParaRevisao)} dias`,
+            type: 'error',
+            read: false,
+            link_to: '/riscos',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        } else if (diasParaRevisao <= 7) {
+          notificacoes.push({
+            id: `risco-revisao-proxima-${risco.id}`,
+            title: 'Revisão de Risco Próxima',
+            message: `O risco "${risco.nome}" precisa ser revisado em ${diasParaRevisao} dias`,
+            type: 'warning',
+            read: false,
+            link_to: '/riscos',
+            created_at: new Date().toISOString(),
+            isAutomatic: true
+          });
+        }
+      });
+
        // Processar solicitações de aprovação de documentos
        (aprovacoesDocumentos || []).forEach(aprovacao => {
          const solicitanteNome = (aprovacao as any).profiles?.nome || 'Usuário';

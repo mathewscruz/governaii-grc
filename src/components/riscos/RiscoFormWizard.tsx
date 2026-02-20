@@ -412,6 +412,34 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         await supabase.from('riscos_ativos').insert(vinculos);
       }
 
+      // Registrar histórico de avaliação automaticamente
+      try {
+        await supabase.from('riscos_historico_avaliacoes').insert([
+          {
+            risco_id: riscoId,
+            empresa_id: profile.empresa_id,
+            probabilidade: data.probabilidade_inicial,
+            impacto: data.impacto_inicial,
+            nivel_risco: nivelInicial,
+            tipo: 'inicial',
+            avaliado_por: profile.user_id,
+            observacoes: risco?.id ? 'Reavaliação do risco' : 'Avaliação inicial'
+          },
+          ...(nivelResidual ? [{
+            risco_id: riscoId,
+            empresa_id: profile.empresa_id,
+            probabilidade: data.probabilidade_residual!,
+            impacto: data.impacto_residual!,
+            nivel_risco: nivelResidual,
+            tipo: 'residual',
+            avaliado_por: profile.user_id,
+            observacoes: risco?.id ? 'Reavaliação residual' : 'Avaliação residual inicial'
+          }] : [])
+        ]);
+      } catch (histError) {
+        console.warn('Erro ao registrar histórico de avaliação:', histError);
+      }
+
       toast.success(risco?.id ? 'Risco atualizado com sucesso!' : 'Risco cadastrado com sucesso!');
       onSuccess();
     } catch (error: any) {
