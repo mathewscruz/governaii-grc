@@ -10,26 +10,33 @@ interface RiskScoreCardProps {
   loading?: boolean;
 }
 
-// Função para calcular porcentagem do score (0-100%)
-const getScorePercentage = (score: number): number => {
-  return (score / 1000) * 100;
+const getColor = (score: number): string => {
+  if (score >= 80) return "hsl(var(--success))";
+  if (score >= 60) return "hsl(var(--primary))";
+  if (score >= 40) return "hsl(var(--warning))";
+  return "hsl(var(--destructive))";
 };
 
-// Função para obter cor baseada no score
-const getScoreColor = (score: number): string => {
-  if (score <= 250) return "hsl(var(--destructive))";
-  if (score <= 500) return "hsl(var(--warning))";
-  if (score <= 750) return "hsl(var(--primary))";
-  return "hsl(var(--success))";
+const getLabel = (score: number): string => {
+  if (score === 0) return "Sem dados";
+  if (score >= 80) return "Excelente";
+  if (score >= 60) return "Bom";
+  if (score >= 40) return "Atenção";
+  return "Crítico";
 };
 
-// Dados da legenda
 const legendItems = [
   { label: "Crítico", color: "bg-destructive" },
-  { label: "Alto", color: "bg-warning" },
-  { label: "Médio", color: "bg-primary" },
-  { label: "Baixo", color: "bg-success" },
+  { label: "Atenção", color: "bg-warning" },
+  { label: "Bom", color: "bg-primary" },
+  { label: "Excelente", color: "bg-success" },
 ];
+
+const calcDisplayScore = (stats: RiscosStats): number => {
+  if (stats.total === 0) return 0;
+  const positivos = stats.baixos + stats.aceitos + stats.tratamentos_concluidos;
+  return Math.min(100, Math.round((positivos / stats.total) * 100));
+};
 
 export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
   if (loading || !stats) {
@@ -45,9 +52,9 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
     );
   }
 
-  const displayScore = Math.round((100 - stats.scoreAtual) * 10);
-  const scorePercentage = getScorePercentage(displayScore);
-  const scoreColor = getScoreColor(displayScore);
+  const displayScore = calcDisplayScore(stats);
+  const scoreColor = getColor(displayScore);
+  const label = getLabel(displayScore);
 
   const hasVariation = stats.variacao7dias !== null && stats.variacao7dias !== 0;
   const isPositiveTrend = stats.variacao7dias && stats.variacao7dias < 0;
@@ -55,7 +62,7 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
   // SVG gauge arc (semicircle)
   const radius = 60;
   const circumference = Math.PI * radius;
-  const progress = (scorePercentage / 100) * circumference;
+  const progress = (displayScore / 100) * circumference;
   const strokeWidth = 10;
 
   return (
@@ -105,11 +112,11 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
               className="transition-all duration-1000"
             />
             {/* Score text */}
-            <text x="80" y="72" textAnchor="middle" className="fill-foreground" fontSize="26" fontWeight="bold">
+            <text x="80" y="72" textAnchor="middle" className="fill-foreground" fontSize="28" fontWeight="bold">
               {displayScore}
             </text>
-            <text x="80" y="92" textAnchor="middle" className="fill-muted-foreground" fontSize="10">
-              de 1000
+            <text x="80" y="92" textAnchor="middle" className="fill-muted-foreground" fontSize="11">
+              {label}
             </text>
           </svg>
 
