@@ -252,7 +252,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar
-      className="transition-all duration-300 ease-out"
+      className="transition-all duration-300 ease-out sidebar-gradient"
       collapsible="icon"
     >
       <SidebarHeader className="border-b border-sidebar-border h-14 overflow-hidden">

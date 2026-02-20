@@ -271,14 +271,17 @@
     --table-row-hover: 252 15% 97%;
 
     /* Sidebar - Light Mode */
-    --sidebar-background: 216 60% 10%;
+    --sidebar-background: 228 50% 12%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 252 100% 66%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 216 45% 15%;
+    --sidebar-accent: 228 40% 18%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 216 40% 18%;
+    --sidebar-border: 228 35% 20%;
     --sidebar-ring: 252 100% 66%;
+
+    /* Layout shell background */
+    --layout-shell: 228 50% 12%;
   }
 
   /* Toast styling */
@@ -412,14 +415,17 @@
     --table-row-hover: 216 25% 14%;
 
     /* Sidebar - Dark Mode */
-    --sidebar-background: 216 55% 9%;
+    --sidebar-background: 228 50% 10%;
     --sidebar-foreground: 180 10% 85%;
     --sidebar-primary: 252 100% 70%;
     --sidebar-primary-foreground: 216 60% 8%;
-    --sidebar-accent: 252 25% 18%;
+    --sidebar-accent: 228 35% 16%;
     --sidebar-accent-foreground: 252 100% 75%;
-    --sidebar-border: 216 40% 18%;
+    --sidebar-border: 228 35% 18%;
     --sidebar-ring: 252 100% 70%;
+
+    /* Layout shell background */
+    --layout-shell: 228 50% 10%;
   }
 
   .dark .toaster {
@@ -512,6 +518,15 @@
   
   .glow-hover:hover {
     box-shadow: var(--shadow-glow);
+  }
+
+  /* Sidebar gradient */
+  .sidebar-gradient {
+    background: linear-gradient(180deg, hsl(228, 50%, 12%) 0%, hsl(232, 40%, 18%) 100%);
+  }
+
+  .dark .sidebar-gradient {
+    background: linear-gradient(180deg, hsl(228, 50%, 10%) 0%, hsl(232, 38%, 16%) 100%);
   }
 }
 

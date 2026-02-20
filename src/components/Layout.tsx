@@ -135,7 +135,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full bg-[hsl(var(--layout-shell))]">
         <AppSidebar />
         
         {/* Dialog modal obrigatório de troca de senha */}
@@ -146,7 +146,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           }}
         />
         
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background rounded-2xl m-2 border border-border/30">
           {/* Banner de Trial */}
           <TrialBanner />
           
