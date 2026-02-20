@@ -106,14 +106,8 @@ const Auth = () => {
       }
 
       if (userId) {
-        // Guardar credenciais e ativar MFA ANTES do signOut
-        // para que quando o re-render acontecer, a tela MFA já esteja ativa
-        setMfaPending(true);
-        setMfaUserId(userId);
-        setMfaEmail(email.trim());
-        setMfaPassword(password);
-
-        // Destruir sessão - o componente vai re-renderizar mas mfaPending já é true
+        // Destruir sessão ANTES de verificar MFA
+        // NÃO setar mfaPending aqui - só após confirmar que MFA é necessário
         await supabase.auth.signOut();
 
         // Enviar código MFA
@@ -148,6 +142,11 @@ const Auth = () => {
               toast.error('Erro ao autenticar. Tente novamente.');
             }
           } else if (mfaResponse.data?.success) {
+            // MFA realmente necessário - AGORA sim mostrar tela MFA
+            setMfaPending(true);
+            setMfaUserId(userId);
+            setMfaEmail(email.trim());
+            setMfaPassword(password);
           } else {
             if (mfaResponse.data?.error) {
               toast.warning(mfaResponse.data.error);
