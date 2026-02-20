@@ -271,17 +271,17 @@
     --table-row-hover: 252 15% 97%;
 
     /* Sidebar - Light Mode */
-    --sidebar-background: 228 50% 12%;
+    --sidebar-background: 230 25% 7%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 252 100% 66%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 228 40% 18%;
+    --sidebar-accent: 230 20% 12%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 228 35% 20%;
+    --sidebar-border: 230 15% 15%;
     --sidebar-ring: 252 100% 66%;
 
     /* Layout shell background */
-    --layout-shell: 228 50% 12%;
+    --layout-shell: 230 25% 7%;
   }
 
   /* Toast styling */
@@ -415,17 +415,17 @@
     --table-row-hover: 216 25% 14%;
 
     /* Sidebar - Dark Mode */
-    --sidebar-background: 228 50% 10%;
+    --sidebar-background: 230 25% 5%;
     --sidebar-foreground: 180 10% 85%;
     --sidebar-primary: 252 100% 70%;
     --sidebar-primary-foreground: 216 60% 8%;
-    --sidebar-accent: 228 35% 16%;
+    --sidebar-accent: 230 20% 10%;
     --sidebar-accent-foreground: 252 100% 75%;
-    --sidebar-border: 228 35% 18%;
+    --sidebar-border: 230 15% 13%;
     --sidebar-ring: 252 100% 70%;
 
     /* Layout shell background */
-    --layout-shell: 228 50% 10%;
+    --layout-shell: 230 25% 5%;
   }
 
   .dark .toaster {
@@ -522,11 +522,15 @@
 
   /* Sidebar gradient */
   .sidebar-gradient {
-    background: linear-gradient(180deg, hsl(225, 45%, 10%) 0%, hsl(228, 40%, 13%) 60%, hsl(235, 35%, 17%) 100%);
+    background: 
+      radial-gradient(ellipse at 50% 100%, hsl(230, 60%, 25%, 0.4) 0%, transparent 60%),
+      linear-gradient(180deg, hsl(230, 25%, 7%) 0%, hsl(228, 20%, 9%) 100%);
   }
 
   .dark .sidebar-gradient {
-    background: linear-gradient(180deg, hsl(225, 45%, 8%) 0%, hsl(228, 38%, 11%) 60%, hsl(235, 33%, 15%) 100%);
+    background: 
+      radial-gradient(ellipse at 50% 100%, hsl(230, 60%, 22%, 0.4) 0%, transparent 60%),
+      linear-gradient(180deg, hsl(230, 25%, 5%) 0%, hsl(228, 20%, 7%) 100%);
   }
 }
 
