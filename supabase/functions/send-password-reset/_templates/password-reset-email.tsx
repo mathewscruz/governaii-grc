@@ -18,7 +18,7 @@ export const PasswordResetEmail = ({
   companyLogoUrl,
 }: PasswordResetEmailProps) => (
   <BaseEmailTemplate
-    previewText="Redefinição de senha - Akuris"
+    previewText="Redefinição de senha — Akuris"
     title="Redefinição de Senha"
     companyLogoUrl={companyLogoUrl}
   >
@@ -27,7 +27,7 @@ export const PasswordResetEmail = ({
     </Text>
 
     <Text style={emailStyles.text}>
-      Recebemos uma solicitação para redefinir a senha da sua conta. Clique no botão abaixo para definir uma nova senha:
+      Recebemos uma solicitação para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha:
     </Text>
 
     <Section style={emailStyles.buttonSection}>
@@ -36,14 +36,12 @@ export const PasswordResetEmail = ({
       </Link>
     </Section>
 
-    <Section style={emailStyles.warningBox}>
-      <Text style={{ ...emailStyles.text, margin: '0', fontSize: '13px' }}>
-        <strong>Importante:</strong> Este link expira em 1 hora. Se expirar, solicite uma nova redefinição.
-      </Text>
-    </Section>
+    <Text style={emailStyles.textSmall}>
+      ⏳ Este link expira em <strong>1 hora</strong>. Se expirar, solicite uma nova redefinição.
+    </Text>
 
-    <Text style={emailStyles.text}>
-      Se você não solicitou esta redefinição, por favor ignore este e-mail. Sua senha permanecerá inalterada.
+    <Text style={emailStyles.textSmall}>
+      Se você não solicitou esta redefinição, ignore este e-mail. Sua senha permanecerá inalterada.
     </Text>
   </BaseEmailTemplate>
 );

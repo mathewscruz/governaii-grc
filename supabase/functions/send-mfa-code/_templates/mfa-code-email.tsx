@@ -12,7 +12,7 @@ export const MFACodeEmail = ({
   code,
 }: MFACodeEmailProps) => (
   <BaseEmailTemplate
-    previewText={`${code} - Código de verificação Akuris`}
+    previewText={`${code} — Código de verificação Akuris`}
     title="Código de Verificação"
   >
     <Text style={emailStyles.text}>
@@ -20,25 +20,18 @@ export const MFACodeEmail = ({
     </Text>
 
     <Text style={emailStyles.text}>
-      Use o código abaixo para completar seu login na plataforma Akuris:
+      Use o código abaixo para completar seu login:
     </Text>
 
     <Section style={{ textAlign: 'center' as const, margin: '32px 0' }}>
-      <Text style={{
-        ...emailStyles.code,
-        fontSize: '32px',
-        letterSpacing: '8px',
-        padding: '20px 32px',
-      }}>
+      <Text style={emailStyles.code}>
         {code}
       </Text>
     </Section>
 
-    <Section style={emailStyles.warningBox}>
-      <Text style={{ ...emailStyles.text, margin: '0', fontSize: '13px' }}>
-        Este código expira em <strong>5 minutos</strong>. Não compartilhe este código com ninguém.
-      </Text>
-    </Section>
+    <Text style={emailStyles.textSmall}>
+      ⏳ Este código expira em <strong>5 minutos</strong>. Não compartilhe com ninguém.
+    </Text>
 
     <Text style={emailStyles.textSmall}>
       Se você não tentou fazer login, sua conta pode estar comprometida. Altere sua senha imediatamente.

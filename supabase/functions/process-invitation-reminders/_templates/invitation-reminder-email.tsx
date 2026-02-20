@@ -23,7 +23,7 @@ export const InvitationReminderEmail = ({
 }: InvitationReminderEmailProps) => (
   <BaseEmailTemplate
     previewText={`Lembrete ${reminderNumber}/${maxReminders}: Complete seu cadastro`}
-    title={`Lembrete: Complete seu cadastro`}
+    title="Complete seu cadastro"
     companyName={companyName}
     companyLogoUrl={companyLogoUrl}
   >
@@ -32,34 +32,21 @@ export const InvitationReminderEmail = ({
     </Text>
 
     <Text style={emailStyles.text}>
-      Notamos que você ainda não concluiu seu primeiro acesso à plataforma <strong>{companyName}</strong>.
-    </Text>
-
-    <Section style={emailStyles.warningBox}>
-      <Text style={{ ...emailStyles.text, margin: '0 0 8px', fontSize: '13px' }}>
-        <strong>Este é o lembrete {reminderNumber} de {maxReminders}.</strong>
-      </Text>
-      <Text style={{ ...emailStyles.text, margin: '0', fontSize: '13px' }}>
-        Complete seu cadastro o quanto antes para não perder o acesso.
-      </Text>
-    </Section>
-
-    <Text style={emailStyles.text}>
-      A plataforma oferece:
+      Notamos que você ainda não concluiu seu primeiro acesso à plataforma. Este é o lembrete <strong>{reminderNumber} de {maxReminders}</strong>.
     </Text>
 
     <Section style={emailStyles.infoBox}>
-      <Text style={{ ...emailStyles.text, margin: '0 0 8px', fontSize: '13px' }}>
-        • Gestão completa de riscos e compliance
+      <Text style={{ ...emailStyles.textSmall, margin: '0 0 6px' }}>
+        ✓ Gestão completa de riscos e compliance
       </Text>
-      <Text style={{ ...emailStyles.text, margin: '0 0 8px', fontSize: '13px' }}>
-        • Controle de documentos e contratos
+      <Text style={{ ...emailStyles.textSmall, margin: '0 0 6px' }}>
+        ✓ Controle de documentos e contratos
       </Text>
-      <Text style={{ ...emailStyles.text, margin: '0 0 8px', fontSize: '13px' }}>
-        • Auditorias e gap analysis
+      <Text style={{ ...emailStyles.textSmall, margin: '0 0 6px' }}>
+        ✓ Auditorias e gap analysis
       </Text>
-      <Text style={{ ...emailStyles.text, margin: '0', fontSize: '13px' }}>
-        • Due diligence de fornecedores
+      <Text style={{ ...emailStyles.textSmall, margin: '0' }}>
+        ✓ Due diligence de fornecedores
       </Text>
     </Section>
 
@@ -70,25 +57,18 @@ export const InvitationReminderEmail = ({
     </Section>
 
     <Section style={emailStyles.infoBox}>
-      <Text style={{ ...emailStyles.text, margin: '0 0 8px', fontSize: '13px' }}>
+      <Text style={{ ...emailStyles.textSmall, margin: '0' }}>
         <strong>E-mail:</strong> {userEmail}
-      </Text>
-      <Text style={{ ...emailStyles.text, margin: '0', fontSize: '13px' }}>
-        Use a senha temporária enviada no e-mail de boas-vindas.
       </Text>
     </Section>
 
     {reminderNumber === maxReminders && (
-      <Section style={{ ...emailStyles.warningBox, backgroundColor: '#fff1f0', borderLeftColor: '#cf1322' }}>
-        <Text style={{ ...emailStyles.text, margin: '0', fontSize: '13px', color: '#cf1322' }}>
-          <strong>Atenção:</strong> Este é o último lembrete. Após este aviso, seu acesso poderá ser desativado.
+      <Section style={emailStyles.warningBox}>
+        <Text style={{ ...emailStyles.textSmall, margin: '0', color: '#975a16' }}>
+          ⚠️ <strong>Último lembrete.</strong> Após este aviso, seu acesso poderá ser desativado.
         </Text>
       </Section>
     )}
-
-    <Text style={emailStyles.text}>
-      Precisa de ajuda? Entre em contato com o suporte.
-    </Text>
   </BaseEmailTemplate>
 );
 
