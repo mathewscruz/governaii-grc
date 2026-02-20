@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { Plus, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, Edit, Trash2, X, History, Clock, FileText, Download } from 'lucide-react';
+import { Plus, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, Edit, Trash2, X, History, Clock, FileText, Download, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { StatCard } from '@/components/ui/stat-card';
@@ -99,6 +100,7 @@ export function Riscos() {
   const [auditRisco, setAuditRisco] = useState<Risco | null>(null);
   const [historicoRisco, setHistoricoRisco] = useState<Risco | null>(null);
   const [aprovacaoRisco, setAprovacaoRisco] = useState<Risco | null>(null);
+  const [matrizVisualizacaoOpen, setMatrizVisualizacaoOpen] = useState(false);
   
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -581,38 +583,33 @@ export function Riscos() {
           description="Identifique, avalie e monitore riscos organizacionais de forma estruturada"
         />
 
-        {/* KPI Cards + Matriz */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <StatCard
-              title="Total de Riscos"
-              value={stats?.total || 0}
-              description={`${stats?.criticos || 0} críticos, ${stats?.altos || 0} altos`}
-              icon={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
-              variant={stats?.criticos ? "destructive" : "default"}
-              loading={!stats}
-            />
-            <StatCard
-              title="Tratamentos Concluídos"
-              value={stats?.tratamentos_concluidos || 0}
-              description={`${stats?.tratamentos_andamento || 0} em andamento`}
-              icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
-              variant="success"
-              loading={!stats}
-            />
-            <StatCard
-              title="Riscos Aceitos"
-              value={stats?.aceitos || 0}
-              description="Aceitos formalmente"
-              icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
-              variant="warning"
-              loading={!stats}
-            />
-            <RiskScoreCard stats={stats} loading={!stats} />
-          </div>
-          <div className="lg:col-span-1">
-            <MatrizVisualizacao />
-          </div>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total de Riscos"
+            value={stats?.total || 0}
+            description={`${stats?.criticos || 0} críticos, ${stats?.altos || 0} altos`}
+            icon={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
+            variant={stats?.criticos ? "destructive" : "default"}
+            loading={!stats}
+          />
+          <StatCard
+            title="Tratamentos Concluídos"
+            value={stats?.tratamentos_concluidos || 0}
+            description={`${stats?.tratamentos_andamento || 0} em andamento`}
+            icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
+            variant="success"
+            loading={!stats}
+          />
+          <StatCard
+            title="Riscos Aceitos"
+            value={stats?.aceitos || 0}
+            description="Aceitos formalmente"
+            icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
+            variant="warning"
+            loading={!stats}
+          />
+          <RiskScoreCard stats={stats} loading={!stats} />
         </div>
 
         {/* Action Buttons */}
@@ -646,6 +643,10 @@ export function Riscos() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button variant="outline" size="sm" onClick={() => setMatrizVisualizacaoOpen(true)} className="whitespace-nowrap">
+              <Grid3X3 className="mr-2 h-4 w-4" />
+              Matriz Visual
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)} className="whitespace-nowrap">
               <Tag className="mr-2 h-4 w-4" />
               Categorias
@@ -755,6 +756,16 @@ export function Riscos() {
             onSuccess={() => { setAprovacaoRisco(null); fetchRiscos(); }}
           />
         )}
+
+        {/* Dialog Matriz Visual */}
+        <Dialog open={matrizVisualizacaoOpen} onOpenChange={setMatrizVisualizacaoOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Matriz de Risco</DialogTitle>
+            </DialogHeader>
+            <MatrizVisualizacao />
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );
