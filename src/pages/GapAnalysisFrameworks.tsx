@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FrameworkCard } from '@/components/gap-analysis/FrameworkCard';
+import { FrameworkComparisonRadar } from '@/components/gap-analysis/FrameworkComparisonRadar';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { useGapAnalysisStats } from '@/hooks/useGapAnalysisStats';
@@ -34,7 +35,7 @@ export default function GapAnalysisFrameworks() {
   const [requirementCounts, setRequirementCounts] = useState<Record<string, number>>({});
   const [frameworkProgress, setFrameworkProgress] = useState<Record<string, FrameworkProgress>>({});
   const [loading, setLoading] = useState(true);
-  
+
   const { data: stats } = useGapAnalysisStats();
 
   useEffect(() => {
@@ -44,8 +45,6 @@ export default function GapAnalysisFrameworks() {
   const loadFrameworks = async () => {
     try {
       setLoading(true);
-
-      // Buscar apenas frameworks globais (compartilhados entre todas as empresas)
       const { data: fws, error: fwError } = await supabase
         .from('gap_analysis_frameworks')
         .select('*')
@@ -54,10 +53,8 @@ export default function GapAnalysisFrameworks() {
         .order('nome', { ascending: true });
 
       if (fwError) throw fwError;
-
       setFrameworks(fws || []);
 
-      // Buscar contagem de requisitos para TODOS os frameworks de uma vez
       const frameworkIds = (fws || []).map(fw => fw.id);
       const counts: Record<string, number> = {};
       const progress: Record<string, FrameworkProgress> = {};
@@ -69,12 +66,10 @@ export default function GapAnalysisFrameworks() {
           .in('framework_id', frameworkIds);
 
         if (!reqError && allRequirements) {
-          // Agrupar requisitos por framework
           allRequirements.forEach(req => {
             counts[req.framework_id] = (counts[req.framework_id] || 0) + 1;
           });
 
-          // Buscar todas as avaliações da empresa de uma vez
           if (empresaId) {
             const { data: allEvaluations, error: evalError } = await supabase
               .from('gap_analysis_evaluations')
@@ -83,7 +78,6 @@ export default function GapAnalysisFrameworks() {
               .eq('empresa_id', empresaId);
 
             if (!evalError && allEvaluations) {
-              // Agrupar avaliações por framework
               const evalsByFramework = new Map<string, typeof allEvaluations>();
               allEvaluations.forEach(ev => {
                 const existing = evalsByFramework.get(ev.framework_id) || [];
@@ -93,11 +87,11 @@ export default function GapAnalysisFrameworks() {
 
               frameworkIds.forEach(fwId => {
                 const evals = evalsByFramework.get(fwId) || [];
-                const evaluated = evals.filter(e => 
+                const evaluated = evals.filter(e =>
                   e.conformity_status && e.conformity_status !== 'nao_avaliado'
                 );
                 const conforme = evals.filter(e => e.conformity_status === 'conforme').length;
-                
+
                 let avgScore = 0;
                 if (evaluated.length > 0) {
                   const totalScore = evaluated.reduce((acc, e) => {
@@ -129,6 +123,19 @@ export default function GapAnalysisFrameworks() {
     }
   };
 
+  // Dados para radar comparativo - apenas frameworks com avaliação iniciada
+  const comparisonData = useMemo(() => {
+    return frameworks
+      .filter(fw => {
+        const p = frameworkProgress[fw.id];
+        return p && p.evaluatedRequirements > 0;
+      })
+      .map(fw => ({
+        name: fw.nome,
+        score: frameworkProgress[fw.id]?.averageScore || 0,
+      }));
+  }, [frameworks, frameworkProgress]);
+
   const handleFrameworkClick = (framework: Framework) => {
     navigate(`/gap-analysis/framework/${framework.id}`);
   };
@@ -137,21 +144,12 @@ export default function GapAnalysisFrameworks() {
     return (
       <ErrorBoundary>
         <div className="space-y-6">
-          <PageHeader
-            title="Frameworks de Conformidade"
-            description="Selecione um framework para avaliar a conformidade organizacional"
-          />
-          {/* StatCards Skeleton */}
+          <PageHeader title="Frameworks de Conformidade" description="Selecione um framework para avaliar a conformidade organizacional" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-24 bg-muted rounded-lg"></div>
-            ))}
+            {[1, 2, 3, 4].map(i => (<div key={i} className="h-24 bg-muted rounded-lg"></div>))}
           </div>
-          {/* Framework Cards Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 animate-pulse">
-            {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="h-64 bg-muted rounded-lg"></div>
-            ))}
+            {[1, 2, 3, 4, 5].map(i => (<div key={i} className="h-64 bg-muted rounded-lg"></div>))}
           </div>
         </div>
       </ErrorBoundary>
@@ -161,40 +159,20 @@ export default function GapAnalysisFrameworks() {
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        <PageHeader
-          title="Frameworks de Conformidade"
-          description="Selecione um framework para avaliar a conformidade organizacional"
-        />
+        <PageHeader title="Frameworks de Conformidade" description="Selecione um framework para avaliar a conformidade organizacional" />
 
-        {/* StatCards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Total de Frameworks"
-            value={stats?.totalFrameworks || frameworks.length}
-            icon={<ClipboardList className="h-4 w-4" />}
-            description="Frameworks disponíveis"
-          />
-          <StatCard
-            title="Avaliações em Andamento"
-            value={stats?.assessmentsInProgress || 0}
-            icon={<Activity className="h-4 w-4" />}
-            description="Frameworks com avaliações iniciadas"
-          />
-          <StatCard
-            title="Conformidade Média"
-            value={`${stats?.averageCompliance || 0}%`}
-            icon={<TrendingUp className="h-4 w-4" />}
-            description="Média geral de conformidade"
-          />
-          <StatCard
-            title="Itens Pendentes"
-            value={stats?.pendingItems || 0}
-            icon={<AlertTriangle className="h-4 w-4" />}
-            description="Evidências pendentes"
-          />
+          <StatCard title="Total de Frameworks" value={stats?.totalFrameworks || frameworks.length} icon={<ClipboardList className="h-4 w-4" />} description="Frameworks disponíveis" />
+          <StatCard title="Avaliações em Andamento" value={stats?.assessmentsInProgress || 0} icon={<Activity className="h-4 w-4" />} description="Frameworks com avaliações iniciadas" />
+          <StatCard title="Conformidade Média" value={`${stats?.averageCompliance || 0}%`} icon={<TrendingUp className="h-4 w-4" />} description="Média geral de conformidade" />
+          <StatCard title="Itens Pendentes" value={stats?.pendingItems || 0} icon={<AlertTriangle className="h-4 w-4" />} description="Evidências pendentes" />
         </div>
 
-        {/* Framework Cards Grid */}
+        {/* Radar comparativo */}
+        {comparisonData.length >= 2 && (
+          <FrameworkComparisonRadar data={comparisonData} />
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {frameworks.map((framework) => (
             <FrameworkCard
