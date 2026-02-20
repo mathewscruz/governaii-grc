@@ -1,146 +1,101 @@
 
-
-# Avaliacao Completa do Modulo Due Diligence - Gaps e Plano de Melhorias
-
-## Diagnostico Geral
-
-O modulo tem uma base funcional solida: o fluxo completo de criar template, enviar avaliacao, fornecedor responder, e IA calcular score funciona. Porem, a experiencia do usuario e fragmentada, o visual e inconsistente entre as abas, e faltam funcionalidades criticas para uso real em producao.
+# 1. Aplicar Visual do Menu Lateral na Tela de Login + 2. Validar e Corrigir Modulo de Relatorios
 
 ---
 
-## PROBLEMAS IDENTIFICADOS
+## Parte 1 - Tela de Login com Visual do Sidebar
 
-### 1. CRITICO - Pagina Principal Sem Contexto (Layout de Abas Pobre)
+### Problema Atual
+A tela de login usa `hsl(216, ...)` como base de cor (azul-marinho generico), enquanto o sidebar e o shell do app usam `hsl(230, ...)` (navy com tom levemente roxo) com o efeito de `sidebar-gradient` (radial-gradient com brilho neon na parte inferior). Isso cria uma desconexao visual entre login e o app.
 
-**Problema:** O usuario entra e ve 3 abas genericas ("Fornecedores", "Avaliacoes", "Templates") sem nenhum dashboard, sem resumo, sem orientacao. Nao ha uma visao geral antes de clicar em qualquer aba. O componente `DueDiligenceDashboard` existe mas NAO e usado em nenhum lugar.
+### Mudancas em `src/pages/Auth.tsx`
 
-**Solucao:** Redesenhar a pagina principal para ter:
-- Dashboard com stat cards relevantes no topo (sempre visivel, fora das abas)
-- Cards de acoes rapidas: "Enviar Nova Avaliacao" (acao principal), "Criar Template", "Ver Relatorios"
-- Lista de avaliacoes recentes que precisam de atencao (expiradas, pendentes ha muito tempo)
-- Mover as 3 abas para baixo do dashboard
-
-### 2. CRITICO - Upload de Arquivos do Fornecedor NAO Funciona
-
-**Problema:** Na pagina `Assessment.tsx` (formulario do fornecedor), quando o tipo da pergunta e `arquivo`, o upload apenas salva o `file.name` como string na resposta. O arquivo NAO e realmente enviado para nenhum storage. Linha 863-868: `handleResponseChange(question.id, file.name)` - salva apenas o nome.
-
-Da mesma forma, o upload de evidencias condicionais (linhas 900-927) tambem salva apenas `file.name`, sem upload real.
-
-**Solucao:**
-- Implementar upload real para Supabase Storage (bucket `due-diligence-evidencias`)
-- Salvar a URL do arquivo na coluna `arquivo_url` da tabela `due_diligence_responses`
-- Na edge function `calculate-assessment-score`, ja existe logica para considerar `arquivo_url`, entao o score ja seria beneficiado
-
-### 3. CRITICO - Edge Function Usa OpenAI Diretamente (Deveria Usar Lovable AI)
-
-**Problema:** A edge function `calculate-assessment-score` chama diretamente `api.openai.com` com `OPENAI_API_KEY`. Deveria usar o Lovable AI Gateway para consistencia e para nao depender de chave OpenAI externa.
-
-**Solucao:** Migrar para `https://ai.gateway.lovable.dev/v1/chat/completions` com `LOVABLE_API_KEY` (ja disponivel automaticamente).
-
-### 4. IMPORTANTE - Criar Avaliacao Exige Muitos Cliques
-
-**Problema:** Para enviar uma avaliacao, o usuario precisa:
-1. Ir na aba Templates, criar um template
-2. Adicionar perguntas uma a uma
-3. Voltar, ir na aba Avaliacoes, clicar "Nova Avaliacao"
-4. Selecionar o template, digitar dados do fornecedor
-5. Enviar
-
-Nao ha templates pre-prontos para guiar o usuario iniciante. Os templates "padrao" existem na tabela mas sao criados por empresa, nao sao globais.
-
-**Solucao:**
-- Adicionar "Templates Sugeridos" na aba Templates (Seguranca da Informacao, LGPD Fornecedores, ESG Basico) que o usuario pode clonar com 1 clique
-- Simplificar o fluxo: permitir criar avaliacao diretamente da aba Fornecedores (ja existe botao, mas abre dialog generico sem template pre-selecionado)
-- Wizard de criacao de avaliacao: passo 1 escolher template, passo 2 escolher fornecedor, passo 3 configurar prazo e enviar
-
-### 5. IMPORTANTE - Perguntas Sem Agrupamento por Secao
-
-**Problema:** As perguntas do template sao uma lista plana. Em questionarios reais de due diligence, as perguntas sao agrupadas por secao (ex: "Seguranca Fisica", "Seguranca Logica", "Gestao de Incidentes"). Nao existe campo `secao` ou `categoria` nas perguntas.
-
-**Solucao:**
-- Adicionar campo `secao` (text) na tabela `due_diligence_questions`
-- No QuestionsManager, agrupar perguntas por secao
-- No formulario do fornecedor (Assessment.tsx), exibir secoes como separadores visuais
-- Na analise de score da IA, gerar breakdown por secao ao inves de "categoria generica"
-
-### 6. IMPORTANTE - Formulario do Fornecedor (Assessment.tsx) - Melhorias Visuais
-
-**Problema:**
-- O logo da empresa e repetido 3 vezes na mesma pagina (header, card do questionario, titulo)
-- Progress bar nao mostra quais secoes ja foram respondidas
-- Nao ha indicador visual de perguntas obrigatorias nao respondidas
-- Pagina de "Questionario Concluido" e duplicada (linhas 591-619 e 623-685 sao quase identicas)
-
-**Solucao:**
-- Mostrar logo apenas 1 vez no header fixo
-- Adicionar stepper lateral ou sidebar com secoes e status de cada uma
-- Marcar perguntas obrigatorias nao respondidas com borda vermelha
-- Remover duplicacao da tela de conclusao
-
-### 7. IMPORTANTE - Fornecedores Sem Historico de Avaliacoes Visivel
-
-**Problema:** Na aba Fornecedores, o card do fornecedor mostra apenas nome/email/cnpj. Nao ha indicador visual de quantas avaliacoes ele ja teve, qual o ultimo score, se tem avaliacoes pendentes. O botao "Ver Avaliacoes" muda de aba mas nao e intuitivo.
-
-**Solucao:**
-- Adicionar mini-resumo no card do fornecedor: "3 avaliacoes | Ultimo score: 78% | Status: Aprovado"
-- Badge de risco no card: Verde (score >= 80), Amarelo (60-79), Vermelho (< 60), Cinza (nunca avaliado)
-- Ao clicar no fornecedor, abrir um drawer/dialog com historico completo de avaliacoes
-
-### 8. MELHORIA - Configuracao de Prazo na Criacao de Avaliacao
-
-**Problema:** O prazo de expiracao e fixo em 30 dias (hardcoded na linha 152 do AssessmentDialog). O usuario nao pode escolher.
-
-**Solucao:** Adicionar campo "Prazo para resposta" no dialog de criacao com opcoes: 7 dias, 15 dias, 30 dias, 60 dias, 90 dias, ou data personalizada.
-
-### 9. MELHORIA - Exportacao de Relatorios Nao Funciona
-
-**Problema:** Os botoes de exportacao em `ReportsView.tsx` (PDF, Excel, CSV) nao tem funcionalidade implementada - sao apenas botoes visuais. O `ReportsSidebar` exporta apenas JSON basico.
-
-**Solucao:** Implementar exportacao PDF real usando jspdf (ja instalado) com:
-- Capa com logo e nome da empresa
-- Score geral e breakdown por categoria
-- Lista de fornecedores com scores
-- Detalhes das avaliacoes concluidas
-
-### 10. MELHORIA - Campo "Categoria" do Fornecedor Nao e Utilizavel
-
-**Problema:** O formulario de fornecedor tem campo `categoria` na tabela mas nao aparece no formulario de criacao/edicao. Nao ha como categorizar fornecedores (TI, Servicos, Financeiro, etc.).
-
-**Solucao:** Adicionar campo "Categoria" no dialog de criacao de fornecedor com opcoes pre-definidas + custom.
-
----
-
-## Secao Tecnica - Resumo de Implementacao
-
-### Migrations:
-1. `ALTER TABLE due_diligence_questions ADD COLUMN secao text DEFAULT 'Geral';` - Agrupamento por secao
-2. Criar bucket de storage: `INSERT INTO storage.buckets (id, name, public) VALUES ('due-diligence-evidencias', 'due-diligence-evidencias', false);` + RLS policies
-
-### Edge Functions:
-- `supabase/functions/calculate-assessment-score/index.ts` - Migrar de OpenAI direto para Lovable AI Gateway
-
-### Novos componentes:
-- Nenhum componente totalmente novo; todas as melhorias sao refatoracoes de componentes existentes
+1. **Brand Panel (desktop)** - Trocar o background de `from-[hsl(216,60%,8%)] via-[hsl(216,45%,10%)] to-[hsl(216,60%,8%)]` para usar a mesma classe `sidebar-gradient` ou replicar as cores `hsl(230, 25%, 7%)` / `hsl(228, 20%, 9%)` com o radial-gradient neon
+2. **Login Panel (direita)** - Trocar `from-[hsl(216,50%,10%)] to-[hsl(216,45%,12%)]` para `from-[hsl(230,25%,7%)] to-[hsl(228,20%,9%)]`
+3. **Loading state** - Trocar background para `hsl(230, 25%, 7%)`
+4. **Glow orbs** - Atualizar para usar `hsl(252, ...)` (primary do sistema) ao inves de `primary/10` generico, alinhando com o `--shadow-glow` do design system
+5. **Form card** - Manter o estilo glassmorphism mas com as bordas `white/[0.08]` ja existentes (ja consistente)
 
 ### Arquivos modificados:
-- `src/pages/DueDiligence.tsx` - Adicionar dashboard no topo, fora das abas
-- `src/pages/Assessment.tsx` - Upload real de arquivos, remover logo duplicado, validacao visual de obrigatorias
-- `src/components/due-diligence/AssessmentDialog.tsx` - Campo de prazo configuravel
-- `src/components/due-diligence/FornecedoresManager.tsx` - Mini-resumo de avaliacoes no card, campo categoria
-- `src/components/due-diligence/QuestionsManager.tsx` - Campo secao, agrupamento visual
-- `src/components/due-diligence/TemplatesManager.tsx` - Templates sugeridos
-- `src/components/due-diligence/ReportsSidebar.tsx` - Exportacao PDF real
-- `supabase/functions/calculate-assessment-score/index.ts` - Migrar para Lovable AI
+- `src/pages/Auth.tsx` - ~8 linhas de troca de cores nos backgrounds
 
-### Ordem de implementacao:
-1. Upload real de arquivos (fix critico - sem isso o score da IA e prejudicado)
-2. Migrar edge function para Lovable AI
-3. Dashboard no topo da pagina
-4. Campo secao nas perguntas + agrupamento
-5. Melhorias no formulario do fornecedor (Assessment.tsx)
-6. Mini-resumo de avaliacoes no card do fornecedor
-7. Prazo configuravel na criacao de avaliacao
-8. Categoria do fornecedor
-9. Exportacao PDF
-10. Templates sugeridos
+---
 
+## Parte 2 - Validacao e Correcao do Modulo de Relatorios
+
+### Problemas Identificados
+
+1. **PDF Export e superficial** - O `handleExportPDF` gera um PDF com apenas titulo, descricao, data e status. Nao puxa NENHUM dado real do banco. Independente do template escolhido (LGPD, ISO 27001, Riscos, etc.), o PDF sai identico e vazio.
+
+2. **Templates nao puxam dados** - Quando o usuario cria um relatorio a partir de um template (ex: "Panorama de Riscos"), o sistema apenas salva o nome e descricao do template na tabela `relatorios_customizados`. Nao existe logica para buscar dados dos modulos correspondentes (riscos, incidentes, controles, etc.).
+
+3. **Falta botao de "Visualizar"** - O card do relatorio tem apenas "Exportar PDF" e "Excluir". Nao tem como visualizar o conteudo antes de exportar.
+
+4. **Nao ha botao de editar** - O icone `Pencil` e importado mas nao e usado em nenhum lugar.
+
+### Solucao
+
+#### A. Criar funcao `generateTemplatePDF` robusta que busca dados reais por template
+
+Para cada `template_base`, buscar os dados corretos do Supabase:
+
+| Template | Dados buscados |
+|----------|---------------|
+| `lgpd_anpd` | Tabela `dados_pessoais_mapeamento`, `solicitacoes_titulares`, `incidentes` (filtro LGPD), `politicas` |
+| `iso27001_auditoria` | `gap_analysis_frameworks` (filtro ISO 27001), `gap_analysis_requirements` + `evaluations`, `controles` |
+| `executivo_trimestral` | `riscos` (resumo), `incidentes` (ultimos 90 dias), `controles` (status), `gap_analysis_frameworks` (scores) |
+| `riscos_geral` | `riscos` completo com `tratamentos_riscos`, contagens por nivel, matriz de calor |
+| `incidentes_periodo` | `incidentes` com timeline, contagens por criticidade/status |
+| `compliance_geral` | `gap_analysis_frameworks` (todos), `controles`, `politicas`, `auditorias` |
+
+#### B. Implementar `handleExportPDF` por template com secoes estruturadas
+
+Cada PDF tera:
+- Capa com logo da empresa, nome do relatorio, data de geracao
+- Sumario executivo com metricas-chave
+- Secoes especificas do template com tabelas e dados reais
+- Rodape com numero de pagina
+
+#### C. Adicionar botao "Visualizar" que abre um dialog/drawer com preview dos dados
+
+Antes de exportar, o usuario pode ver um preview dos dados que serao incluidos no PDF.
+
+### Arquivos modificados:
+- `src/pages/Relatorios.tsx` - Refatorar `handleExportPDF` com logica por template, adicionar botao Visualizar, adicionar botao Editar
+- Criar `src/components/relatorios/RelatorioPreviewDialog.tsx` - Dialog de preview com dados reais organizados por secao
+- Criar `src/components/relatorios/generateTemplatePDF.ts` - Funcao utilitaria que gera PDF com dados do Supabase por template
+
+### Secao Tecnica
+
+#### Estrutura do PDF por template (exemplo `riscos_geral`):
+
+```text
+Pagina 1: Capa
+  - Logo empresa
+  - "Panorama de Riscos"
+  - Data: 20/02/2026
+
+Pagina 2: Resumo Executivo
+  - Total de riscos: X
+  - Criticos: X | Altos: X | Medios: X | Baixos: X
+  - Tratamentos concluidos: X%
+
+Pagina 3+: Detalhamento
+  - Lista de riscos criticos/altos com nome, descricao, nivel
+  - Status dos tratamentos
+```
+
+#### Dados necessarios por template:
+
+1. **lgpd_anpd**: `dados_pessoais_mapeamento`, `solicitacoes_titulares`, `incidentes`, `politicas` - filtrando por `empresa_id`
+2. **iso27001_auditoria**: `gap_analysis_frameworks` (nome LIKE '%ISO 27001%'), `gap_analysis_requirements` + `gap_analysis_evaluations`, `controles`
+3. **executivo_trimestral**: `riscos`, `incidentes` (90 dias), `controles`, `gap_analysis_frameworks`
+4. **riscos_geral**: `riscos` com `tratamentos_riscos`
+5. **incidentes_periodo**: `incidentes` com filtro de datas
+6. **compliance_geral**: `gap_analysis_frameworks`, `controles`, `politicas`, `auditorias`
+
+#### Ordem de implementacao:
+1. Atualizar cores da tela de login (rapido, ~5 min)
+2. Criar `generateTemplatePDF.ts` com funcoes de busca por template
+3. Criar `RelatorioPreviewDialog.tsx` para preview dos dados
+4. Refatorar `Relatorios.tsx` para usar as novas funcoes e adicionar botoes Visualizar/Editar
