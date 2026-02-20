@@ -1,33 +1,31 @@
 
-
-# Alinhar Score do Modulo de Riscos com o Dashboard
+# Corrigir MFA: Nao Mostrar Tela MFA Quando Sessao 24h Valida
 
 ## Problema
-O `RiskScoreCard` usa uma escala de 0-1000 com logica invertida (`(100 - scoreAtual) * 10`), enquanto o dashboard usa uma escala de 0-100% com gauge semicircular. Visualmente sao diferentes e confundem o usuario.
+O fluxo em `Auth.tsx` define `setMfaPending(true)` (linha 111) ANTES de chamar `send-mfa-code`. Isso faz a tela de verificacao MFA aparecer imediatamente, mesmo quando a edge function retorna `skipped: true` (sessao 24h valida).
+
+O usuario ve a tela MFA piscar brevemente a cada login, mesmo que o MFA seja pulado em seguida.
+
+## Evidencia
+- A edge function `send-mfa-code` esta funcionando corretamente: retorna `{ success: true, skipped: true }` quando ha sessao valida (testado via curl)
+- A sessao MFA no banco esta valida: criada 17:03 com expiracao 2026-02-21 17:03 (24h)
+- O problema e puramente de UX no Auth.tsx
 
 ## Solucao
 
-Refatorar o `RiskScoreCard` para usar o mesmo formato visual e escala do `HealthScoreGauge`:
+**Arquivo**: `src/pages/Auth.tsx`
 
-- **Escala**: 0-100% (ao inves de 0-1000)
-- **Calculo**: Usar a mesma logica do `useRadarChartData` para Riscos -- percentual de riscos tratados/aceitos/baixos sobre o total
-- **Labels**: "Sem dados", "Critico", "Atencao", "Bom", "Excelente" (mesmos do dashboard)
-- **Cores**: Mesmas faixas do gauge do dashboard (destructive < 40, warning < 60, primary < 80, success >= 80)
-- **Texto central**: Substituir "de 1000" por label textual (ex: "Atencao"), identico ao gauge do dashboard
-- **Legenda inferior**: Atualizar de "Critico/Alto/Medio/Baixo" para "Critico/Atencao/Bom/Excelente"
+Reordenar o fluxo do `handleSignIn`:
 
-### Detalhes tecnicos
+1. Fazer signIn (como hoje)
+2. Fazer signOut (como hoje) -- mas NAO setar `mfaPending = true` ainda
+3. Chamar `send-mfa-code`
+4. Se resposta `skipped: true`: re-autenticar imediatamente, NUNCA mostrar tela MFA
+5. Se resposta `success: true` (sem skipped): AI SIM setar `mfaPending = true` para mostrar tela MFA
 
-**Arquivo**: `src/components/riscos/RiskScoreCard.tsx`
-
-Mudancas:
-1. Remover funcoes `getScorePercentage` e `getScoreColor` atuais (escala 0-1000)
-2. Criar novas funcoes alinhadas com `HealthScoreGauge`:
-   - `getColor(score)`: mesmas faixas (>=80 success, >=60 primary, >=40 warning, <40 destructive)
-   - `getLabel(score)`: mesmos labels ("Sem dados" para 0, "Critico", "Atencao", "Bom", "Excelente")
-3. Calcular `displayScore` como percentual 0-100 baseado nos dados de `stats`:
-   - Score = percentual de riscos com nivel baixo/muito baixo + riscos aceitos + riscos com tratamento concluido, sobre o total
-   - Quando `total === 0`, score = 0 (sem dados)
-4. Atualizar SVG gauge: texto central mostra score de 0-100, texto inferior mostra label
-5. Atualizar `legendItems` para: Critico / Atencao / Bom / Excelente com as cores correspondentes
-
+### Mudancas especificas:
+- Remover `setMfaPending(true)` da linha 111 (antes do signOut)
+- Remover `setMfaUserId`, `setMfaEmail`, `setMfaPassword` das linhas 112-114 (antes do signOut)
+- Mover essas atribuicoes para DENTRO do bloco `else if (mfaResponse.data?.success)` (linha 150-151), que e quando o MFA realmente e necessario
+- Manter `mfaInProgressRef.current = true` na linha 93 para evitar redirect durante o processo
+- O botao "Entrar" ja fica desabilitado via `isLoading`, entao o usuario ve "Entrando..." durante a verificacao
