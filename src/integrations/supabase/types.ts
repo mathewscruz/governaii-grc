@@ -4171,6 +4171,7 @@ export type Database = {
           id: string
           observacoes: string | null
           plano_acao: string | null
+          plano_acao_id: string | null
           pontuacao: number | null
           prazo_implementacao: string | null
           requirement_id: string
@@ -4194,6 +4195,7 @@ export type Database = {
           id?: string
           observacoes?: string | null
           plano_acao?: string | null
+          plano_acao_id?: string | null
           pontuacao?: number | null
           prazo_implementacao?: string | null
           requirement_id: string
@@ -4217,6 +4219,7 @@ export type Database = {
           id?: string
           observacoes?: string | null
           plano_acao?: string | null
+          plano_acao_id?: string | null
           pontuacao?: number | null
           prazo_implementacao?: string | null
           requirement_id?: string
@@ -4226,6 +4229,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "gap_analysis_evaluations_plano_acao_id_fkey"
+            columns: ["plano_acao_id"]
+            isOneToOne: false
+            referencedRelation: "planos_acao"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "gap_analysis_evaluations_requirement_id_fkey"
             columns: ["requirement_id"]
@@ -4337,10 +4347,12 @@ export type Database = {
           codigo: string | null
           created_at: string
           descricao: string | null
+          exemplos_evidencias: string | null
           framework_id: string
           id: string
           obrigatorio: boolean | null
           ordem: number | null
+          orientacao_implementacao: string | null
           peso: number | null
           titulo: string
           updated_at: string
@@ -4351,10 +4363,12 @@ export type Database = {
           codigo?: string | null
           created_at?: string
           descricao?: string | null
+          exemplos_evidencias?: string | null
           framework_id: string
           id?: string
           obrigatorio?: boolean | null
           ordem?: number | null
+          orientacao_implementacao?: string | null
           peso?: number | null
           titulo: string
           updated_at?: string
@@ -4365,10 +4379,12 @@ export type Database = {
           codigo?: string | null
           created_at?: string
           descricao?: string | null
+          exemplos_evidencias?: string | null
           framework_id?: string
           id?: string
           obrigatorio?: boolean | null
           ordem?: number | null
+          orientacao_implementacao?: string | null
           peso?: number | null
           titulo?: string
           updated_at?: string

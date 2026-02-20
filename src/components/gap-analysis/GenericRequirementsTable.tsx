@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { ChevronLeft, ChevronRight, Search, X, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
@@ -22,6 +25,7 @@ interface Requirement {
   categoria: string;
   area_responsavel: string | null;
   peso: number | null;
+  obrigatorio?: boolean | null;
   conformity_status?: string | null;
   evidence_status?: string | null;
   evidence_files?: any[];
@@ -29,6 +33,9 @@ interface Requirement {
   plano_acao?: string | null;
   prazo_implementacao?: string | null;
   responsavel_avaliacao?: string | null;
+  orientacao_implementacao?: string | null;
+  exemplos_evidencias?: string | null;
+  plano_acao_id?: string | null;
 }
 
 interface GenericRequirementsTableProps {
@@ -39,6 +46,16 @@ interface GenericRequirementsTableProps {
 }
 
 type StatusFilter = 'all' | 'conforme' | 'parcial' | 'nao_conforme' | 'nao_avaliado' | 'nao_aplicavel';
+
+interface CategoryStats {
+  total: number;
+  conforme: number;
+  parcial: number;
+  nao_conforme: number;
+  nao_avaliado: number;
+  nao_aplicavel: number;
+  percentage: number;
+}
 
 export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> = ({
   frameworkId,
@@ -55,17 +72,14 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  
-  // Novos filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [onlyMandatory, setOnlyMandatory] = useState(false);
 
   const loadRequirements = async () => {
     if (!empresaId) return;
-
     try {
       setLoading(true);
-
       const { data: reqs, error: reqError } = await supabase
         .from('gap_analysis_requirements')
         .select('*')
@@ -76,14 +90,14 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
 
       const { data: evals, error: evalError } = await supabase
         .from('gap_analysis_evaluations')
-        .select('id, requirement_id, conformity_status')
+        .select('id, requirement_id, conformity_status, plano_acao_id')
         .eq('framework_id', frameworkId)
         .eq('empresa_id', empresaId);
 
       if (evalError) throw evalError;
 
       const evalMap = new Map(
-        evals?.map(e => [e.requirement_id, { id: e.id, conformity_status: e.conformity_status }]) || []
+        evals?.map(e => [e.requirement_id, { id: e.id, conformity_status: e.conformity_status, plano_acao_id: e.plano_acao_id }]) || []
       );
 
       const merged = (reqs || []).map(req => {
@@ -95,6 +109,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
           categoria: req.categoria || 'Outros',
           conformity_status: evaluation?.conformity_status || 'nao_avaliado',
           evaluation_id: evaluation?.id || null,
+          plano_acao_id: evaluation?.plano_acao_id || null,
         };
       });
 
@@ -113,11 +128,9 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
 
   const handleStatusChange = async (requirementId: string, newStatus: string) => {
     if (!empresaId) {
-      console.error('❌ empresaId não disponível - usuário pode não estar autenticado corretamente');
-      toast.error('Erro: Empresa não identificada. Por favor, faça login novamente.');
+      toast.error('Erro: Empresa não identificada.');
       return;
     }
-
     try {
       const { data: existing } = await supabase
         .from('gap_analysis_evaluations')
@@ -132,29 +145,19 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
           .from('gap_analysis_evaluations')
           .update({ conformity_status: newStatus, updated_at: new Date().toISOString() })
           .eq('id', existing.id);
-
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('gap_analysis_evaluations')
-          .insert({
-            framework_id: frameworkId,
-            requirement_id: requirementId,
-            empresa_id: empresaId,
-            conformity_status: newStatus,
-          });
-
+          .insert({ framework_id: frameworkId, requirement_id: requirementId, empresa_id: empresaId, conformity_status: newStatus });
         if (error) throw error;
       }
 
       await loadRequirements();
-      
-      // Salvar histórico do score após mudança
       const totalReqs = requirements.length;
       const evaluatedReqs = requirements.filter(r => r.conformity_status && r.conformity_status !== 'nao_aplicavel').length;
       const score = calculateScore(requirements);
       await saveScoreHistory(frameworkId, empresaId, score, totalReqs, evaluatedReqs);
-      
       onStatusChange?.();
       toast.success('Status atualizado com sucesso!');
     } catch (error: any) {
@@ -163,29 +166,22 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
     }
   };
 
-  // Função auxiliar para calcular score
   const calculateScore = (reqs: Requirement[]): number => {
     const applicable = reqs.filter(r => r.conformity_status !== 'nao_aplicavel');
     if (applicable.length === 0) return 0;
-
     let totalWeight = 0;
     let weightedScore = 0;
-
     applicable.forEach(req => {
       const weight = req.peso || 1;
       const statusScore = config.statusScores[req.conformity_status || 'nao_conforme'] || 0;
       totalWeight += weight;
       weightedScore += statusScore * weight;
     });
-
     return totalWeight > 0 ? weightedScore / totalWeight : 0;
   };
 
-  // Helper para traduzir categorias (usado para NIST)
   const translateCategory = (cat: string) => {
-    if (frameworkName.toLowerCase().includes('nist')) {
-      return NIST_PILLAR_NAMES[cat] || cat;
-    }
+    if (frameworkName.toLowerCase().includes('nist')) return NIST_PILLAR_NAMES[cat] || cat;
     return cat;
   };
 
@@ -209,92 +205,88 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       nao_aplicavel: { label: 'N/A', variant: 'outline' },
       nao_avaliado: { label: 'Não Avaliado', variant: 'outline' },
     };
-
     const s = statusMap[status || 'nao_avaliado'];
     return <Badge variant={s.variant}>{s.label}</Badge>;
   };
 
-  // Filtrar por busca e status
+  const getPriorityBadge = (peso: number | null, obrigatorio?: boolean | null) => {
+    if (obrigatorio) return <Badge variant="destructive" className="text-xs">Obrigatório</Badge>;
+    if ((peso || 0) >= 3) return <Badge variant="warning" className="text-xs">Alta</Badge>;
+    if ((peso || 0) >= 2) return <Badge variant="outline" className="text-xs">Média</Badge>;
+    return <Badge variant="secondary" className="text-xs">Baixa</Badge>;
+  };
+
+  // Compute category stats
+  const categoryStatsMap = useMemo(() => {
+    const map: Record<string, CategoryStats> = {};
+    requirements.forEach(r => {
+      const cat = r.categoria || 'Outros';
+      if (!map[cat]) map[cat] = { total: 0, conforme: 0, parcial: 0, nao_conforme: 0, nao_avaliado: 0, nao_aplicavel: 0, percentage: 0 };
+      map[cat].total++;
+      const st = r.conformity_status || 'nao_avaliado';
+      if (st in map[cat]) (map[cat] as any)[st]++;
+    });
+    Object.values(map).forEach(s => {
+      const applicable = s.total - s.nao_aplicavel;
+      s.percentage = applicable > 0 ? Math.round((s.conforme / applicable) * 100) : 0;
+    });
+    return map;
+  }, [requirements]);
+
+  // Filters
   const applyFilters = (reqs: Requirement[]) => {
     let filtered = reqs;
-
-    // Filtro por busca (código, título, descrição)
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(r => 
+      filtered = filtered.filter(r =>
         r.codigo?.toLowerCase().includes(term) ||
         r.titulo?.toLowerCase().includes(term) ||
         r.descricao?.toLowerCase().includes(term)
       );
     }
-
-    // Filtro por status
     if (statusFilter !== 'all') {
       filtered = filtered.filter(r => r.conformity_status === statusFilter);
     }
-
+    if (onlyMandatory) {
+      filtered = filtered.filter(r => r.obrigatorio === true || (r.peso || 0) >= 3);
+    }
     return filtered;
   };
 
   const categories = [...new Set(requirements.map(r => r.categoria || 'Outros'))].sort();
-  
-  // Aplicar filtros de categoria, busca e status
+
   const getFilteredRequirements = (baseReqs: Requirement[]) => {
-    let filtered = activeTab === 'all' 
-      ? baseReqs 
+    let filtered = activeTab === 'all'
+      ? baseReqs
       : baseReqs.filter(r => (r.categoria || 'Outros') === activeTab);
-    
     return applyFilters(filtered);
   };
 
   const filteredRequirements = getFilteredRequirements(requirements);
-
-  // Paginação
   const totalPages = Math.ceil(filteredRequirements.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedRequirements = filteredRequirements.slice(startIndex, endIndex);
+  const paginatedRequirements = filteredRequirements.slice(startIndex, startIndex + itemsPerPage);
 
-  // Reset page quando mudar filtro ou items per page
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, activeSection, itemsPerPage, searchTerm, statusFilter]);
+  }, [activeTab, activeSection, itemsPerPage, searchTerm, statusFilter, onlyMandatory]);
 
-  const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
-  };
-
-  const hasActiveFilters = searchTerm.trim() !== '' || statusFilter !== 'all';
+  const clearFilters = () => { setSearchTerm(''); setStatusFilter('all'); setOnlyMandatory(false); };
+  const hasActiveFilters = searchTerm.trim() !== '' || statusFilter !== 'all' || onlyMandatory;
 
   const SearchAndFilterBar = () => (
     <div className="flex flex-wrap items-center gap-3 mb-4">
-      {/* Campo de Busca */}
       <div className="relative flex-1 min-w-[200px] max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por código, título ou descrição..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9 pr-9"
-        />
+        <Input placeholder="Buscar por código, título ou descrição..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 pr-9" />
         {searchTerm && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-            onClick={() => setSearchTerm('')}
-          >
+          <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setSearchTerm('')}>
             <X className="h-4 w-4" />
           </Button>
         )}
       </div>
-
-      {/* Filtro por Status */}
       <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Filtrar por status" />
-        </SelectTrigger>
+        <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filtrar por status" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos os Status</SelectItem>
           <SelectItem value="conforme">Conforme</SelectItem>
@@ -304,109 +296,107 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
           <SelectItem value="nao_aplicavel">N/A</SelectItem>
         </SelectContent>
       </Select>
-
-      {/* Botão Limpar Filtros */}
+      <div className="flex items-center gap-2">
+        <Switch id="mandatory-filter" checked={onlyMandatory} onCheckedChange={setOnlyMandatory} />
+        <Label htmlFor="mandatory-filter" className="text-sm cursor-pointer">Somente prioritários</Label>
+      </div>
       {hasActiveFilters && (
         <Button variant="outline" size="sm" onClick={clearFilters}>
-          <X className="h-4 w-4 mr-1" />
-          Limpar
+          <X className="h-4 w-4 mr-1" />Limpar
         </Button>
       )}
-
-      {/* Contagem de resultados */}
-      <span className="text-sm text-muted-foreground ml-auto">
-        {filteredRequirements.length} de {requirements.length} requisitos
-      </span>
+      <span className="text-sm text-muted-foreground ml-auto">{filteredRequirements.length} de {requirements.length} requisitos</span>
     </div>
   );
 
-  const PaginationControls = () => (
-    <div className="flex items-center justify-between mt-4 px-2">
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">Itens por página:</span>
-        <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number(v))}>
-          <SelectTrigger className="w-20">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="10">10</SelectItem>
-            <SelectItem value="20">20</SelectItem>
-            <SelectItem value="50">50</SelectItem>
-            <SelectItem value="100">100</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">
-          Página {currentPage} de {totalPages || 1} ({filteredRequirements.length} itens)
-        </span>
-        <div className="flex gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(p => Math.min(totalPages || 1, p + 1))}
-            disabled={currentPage === totalPages || totalPages === 0}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+  const PaginationControls = ({ total, filtered }: { total: number; filtered: number }) => {
+    const pages = Math.ceil(filtered / itemsPerPage);
+    return (
+      <div className="flex items-center justify-between mt-4 px-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Itens por página:</span>
+          <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number(v))}>
+            <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Página {currentPage} de {pages || 1} ({filtered} itens)</span>
+          <div className="flex gap-1">
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(pages || 1, p + 1))} disabled={currentPage === (pages || 1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  const renderTable = (reqs: Requirement[]) => {
+  const CategoryTabTrigger = ({ cat, reqs }: { cat: string; reqs: Requirement[] }) => {
+    const stats = categoryStatsMap[cat];
+    if (!stats) return <TabsTrigger value={cat}>{translateCategory(cat)}</TabsTrigger>;
+    return (
+      <TabsTrigger value={cat} className="flex flex-col items-start gap-0.5 py-2 px-3 h-auto">
+        <span className="text-xs font-medium">{translateCategory(cat)}</span>
+        <div className="flex items-center gap-1.5 w-full">
+          <Progress value={stats.percentage} className="h-1.5 flex-1 min-w-[40px]" />
+          <span className="text-[10px] text-muted-foreground whitespace-nowrap">{stats.conforme}/{stats.total - stats.nao_aplicavel}</span>
+        </div>
+      </TabsTrigger>
+    );
+  };
+
+  const renderTableContent = (reqs: Requirement[]) => {
     const filtered = applyFilters(reqs);
-    const paginated = filtered.slice(startIndex, endIndex);
     const pages = Math.ceil(filtered.length / itemsPerPage);
+    const paginated = filtered.slice(startIndex, startIndex + itemsPerPage);
 
     return (
       <>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-32">Código</TableHead>
+              <TableHead className="w-28">Código</TableHead>
               <TableHead>Requisito</TableHead>
-              <TableHead className="w-48">Área</TableHead>
-              <TableHead className="w-32">Status</TableHead>
-              <TableHead className="w-48">Avaliação</TableHead>
+              <TableHead className="w-24">Prioridade</TableHead>
+              <TableHead className="w-40">Área</TableHead>
+              <TableHead className="w-28">Status</TableHead>
+              <TableHead className="w-44">Avaliação</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  {hasActiveFilters 
-                    ? 'Nenhum requisito encontrado com os filtros aplicados'
-                    : 'Nenhum requisito disponível'
-                  }
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  {hasActiveFilters ? 'Nenhum requisito encontrado com os filtros aplicados' : 'Nenhum requisito disponível'}
                 </TableCell>
               </TableRow>
             ) : (
               paginated.map(req => (
-                <TableRow 
-                  key={req.id} 
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleRowClick(req)}
-                >
-                  <TableCell className="font-mono text-sm">{req.codigo}</TableCell>
+                <TableRow key={req.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleRowClick(req)}>
+                  <TableCell className="font-mono text-sm">
+                    <div className="flex items-center gap-1">
+                      {(req.peso || 0) >= 3 && req.conformity_status === 'nao_conforme' && (
+                        <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                      )}
+                      {req.codigo}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <div>
                       <p className="font-medium text-sm">{req.titulo}</p>
-                      {req.descricao && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {req.descricao}
-                        </p>
-                      )}
+                      {req.descricao && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{req.descricao}</p>}
                     </div>
                   </TableCell>
+                  <TableCell>{getPriorityBadge(req.peso, req.obrigatorio)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{req.area_responsavel || '-'}</TableCell>
                   <TableCell>{getStatusBadge(req.conformity_status)}</TableCell>
                   <TableCell>
@@ -431,47 +421,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
             )}
           </TableBody>
         </Table>
-        {pages > 0 && (
-          <div className="flex items-center justify-between mt-4 px-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Itens por página:</span>
-              <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number(v))}>
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                Página {currentPage} de {pages} ({filtered.length} itens)
-              </span>
-              <div className="flex gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.min(pages, p + 1))}
-                  disabled={currentPage === pages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        <PaginationControls total={reqs.length} filtered={filtered.length} />
       </>
     );
   };
@@ -493,19 +443,13 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   if (config.sections && config.sections.length > 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Requisitos do {frameworkName}</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Requisitos do {frameworkName}</CardTitle></CardHeader>
         <CardContent>
-          {/* Barra de busca e filtros */}
           <SearchAndFilterBar />
-
           <Tabs value={activeSection} onValueChange={(v) => { setActiveSection(v); setActiveTab('all'); setCurrentPage(1); }}>
             <TabsList className="mb-4">
               {config.sections.map(section => (
-                <TabsTrigger key={section.id} value={section.id}>
-                  {section.title}
-                </TabsTrigger>
+                <TabsTrigger key={section.id} value={section.id}>{section.title}</TabsTrigger>
               ))}
             </TabsList>
 
@@ -519,12 +463,11 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                     <TabsList className="mb-4 flex-wrap h-auto gap-1">
                       <TabsTrigger value="all">Todos</TabsTrigger>
                       {sectionCategories.map(cat => (
-                        <TabsTrigger key={cat} value={cat}>{translateCategory(cat)}</TabsTrigger>
+                        <CategoryTabTrigger key={cat} cat={cat} reqs={sectionReqs.filter(r => (r.categoria || 'Outros') === cat)} />
                       ))}
                     </TabsList>
-
                     <TabsContent value={activeTab}>
-                      {renderTable(activeTab === 'all' ? sectionReqs : sectionReqs.filter(r => (r.categoria || 'Outros') === activeTab))}
+                      {renderTableContent(activeTab === 'all' ? sectionReqs : sectionReqs.filter(r => (r.categoria || 'Outros') === activeTab))}
                     </TabsContent>
                   </Tabs>
                 </TabsContent>
@@ -549,91 +492,18 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   // Caso padrão: tabs por categoria
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Requisitos do {frameworkName}</CardTitle>
-      </CardHeader>
+      <CardHeader><CardTitle>Requisitos do {frameworkName}</CardTitle></CardHeader>
       <CardContent>
-        {/* Barra de busca e filtros */}
         <SearchAndFilterBar />
-
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setCurrentPage(1); }}>
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
             <TabsTrigger value="all">Todos ({requirements.length})</TabsTrigger>
-            {categories.map(cat => {
-              const count = requirements.filter(r => (r.categoria || 'Outros') === cat).length;
-              return (
-                <TabsTrigger key={cat} value={cat}>
-                  {translateCategory(cat)} ({count})
-                </TabsTrigger>
-              );
-            })}
+            {categories.map(cat => (
+              <CategoryTabTrigger key={cat} cat={cat} reqs={requirements.filter(r => (r.categoria || 'Outros') === cat)} />
+            ))}
           </TabsList>
-
           <TabsContent value={activeTab}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-32">Código</TableHead>
-                  <TableHead>Requisito</TableHead>
-                  <TableHead className="w-48">Área</TableHead>
-                  <TableHead className="w-32">Status</TableHead>
-                  <TableHead className="w-48">Avaliação</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedRequirements.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      {hasActiveFilters 
-                        ? 'Nenhum requisito encontrado com os filtros aplicados'
-                        : 'Nenhum requisito disponível'
-                      }
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedRequirements.map(req => (
-                    <TableRow 
-                      key={req.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleRowClick(req)}
-                    >
-                      <TableCell className="font-mono text-sm">{req.codigo}</TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium text-sm">{req.titulo}</p>
-                          {req.descricao && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {req.descricao}
-                            </p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{req.area_responsavel || '-'}</TableCell>
-                      <TableCell>{getStatusBadge(req.conformity_status)}</TableCell>
-                      <TableCell>
-                        <Select
-                          value={req.conformity_status || 'nao_avaliado'}
-                          onValueChange={(value) => handleStatusChange(req.id, value)}
-                          disabled={loadingEmpresa || !empresaId}
-                        >
-                          <SelectTrigger onClick={(e) => e.stopPropagation()}>
-                            <SelectValue placeholder={loadingEmpresa ? "Carregando..." : "Selecione..."} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="conforme">Conforme</SelectItem>
-                            <SelectItem value="parcial">Parcial</SelectItem>
-                            <SelectItem value="nao_conforme">Não Conforme</SelectItem>
-                            <SelectItem value="nao_aplicavel">N/A</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-            
-            <PaginationControls />
+            {renderTableContent(activeTab === 'all' ? requirements : requirements.filter(r => (r.categoria || 'Outros') === activeTab))}
           </TabsContent>
         </Tabs>
 
