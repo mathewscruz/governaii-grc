@@ -46,6 +46,27 @@ Deno.serve(async (req) => {
       throw new Error('userId e email são obrigatórios')
     }
 
+    // Verificar se existe uma sessão MFA válida (não expirada) para hoje
+    const { data: validSession } = await supabaseAdmin
+      .from('mfa_sessions')
+      .select('id, verified_at, expires_at')
+      .eq('user_id', userId)
+      .gt('expires_at', new Date().toISOString())
+      .order('verified_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (validSession) {
+      console.log('MFA session válida encontrada para userId:', userId, '- pulando MFA')
+      return new Response(JSON.stringify({ 
+        success: true, 
+        skipped: true 
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      })
+    }
+
     // Rate limiting: verificar se código foi enviado nos últimos 60s
     const { data: recentCode } = await supabaseAdmin
       .from('mfa_codes')

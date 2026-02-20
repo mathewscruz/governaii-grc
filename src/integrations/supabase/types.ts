@@ -4841,6 +4841,44 @@ export type Database = {
           },
         ]
       }
+      mfa_sessions: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          expires_at: string
+          id: string
+          ip_hint: string | null
+          user_id: string
+          verified_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          expires_at?: string
+          id?: string
+          ip_hint?: string | null
+          user_id: string
+          verified_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          expires_at?: string
+          id?: string
+          ip_hint?: string | null
+          user_id?: string
+          verified_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mfa_sessions_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
