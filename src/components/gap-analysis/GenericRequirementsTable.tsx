@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, ChevronRight, Search, X, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X, AlertTriangle, Paperclip } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
@@ -43,6 +43,7 @@ interface GenericRequirementsTableProps {
   frameworkName: string;
   config: FrameworkConfig;
   onStatusChange?: () => void;
+  initialCategoryFilter?: string;
 }
 
 type StatusFilter = 'all' | 'conforme' | 'parcial' | 'nao_conforme' | 'nao_avaliado' | 'nao_aplicavel';
@@ -62,6 +63,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   frameworkName,
   config,
   onStatusChange,
+  initialCategoryFilter,
 }) => {
   const { empresaId, loading: loadingEmpresa } = useEmpresaId();
   const [requirements, setRequirements] = useState<Requirement[]>([]);
@@ -90,14 +92,14 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
 
       const { data: evals, error: evalError } = await supabase
         .from('gap_analysis_evaluations')
-        .select('id, requirement_id, conformity_status, plano_acao_id')
+        .select('id, requirement_id, conformity_status, plano_acao_id, evidence_files')
         .eq('framework_id', frameworkId)
         .eq('empresa_id', empresaId);
 
       if (evalError) throw evalError;
 
       const evalMap = new Map(
-        evals?.map(e => [e.requirement_id, { id: e.id, conformity_status: e.conformity_status, plano_acao_id: e.plano_acao_id }]) || []
+        evals?.map(e => [e.requirement_id, { id: e.id, conformity_status: e.conformity_status, plano_acao_id: e.plano_acao_id, evidence_files: e.evidence_files }]) || []
       );
 
       const merged = (reqs || []).map(req => {
@@ -110,6 +112,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
           conformity_status: evaluation?.conformity_status || 'nao_avaliado',
           evaluation_id: evaluation?.id || null,
           plano_acao_id: evaluation?.plano_acao_id || null,
+          evidence_files: Array.isArray(evaluation?.evidence_files) ? evaluation.evidence_files : [],
         };
       });
 
@@ -125,6 +128,13 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   useEffect(() => {
     loadRequirements();
   }, [frameworkId, empresaId]);
+
+  // Sync with external category filter from CategoryStatusCards
+  useEffect(() => {
+    if (initialCategoryFilter) {
+      setActiveTab(initialCategoryFilter);
+    }
+  }, [initialCategoryFilter]);
 
   const handleStatusChange = async (requirementId: string, newStatus: string) => {
     if (!empresaId) {
@@ -369,13 +379,14 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
               <TableHead className="w-24">Prioridade</TableHead>
               <TableHead className="w-40">Área</TableHead>
               <TableHead className="w-28">Status</TableHead>
+              <TableHead className="w-20">Evidências</TableHead>
               <TableHead className="w-44">Avaliação</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   {hasActiveFilters ? 'Nenhum requisito encontrado com os filtros aplicados' : 'Nenhum requisito disponível'}
                 </TableCell>
               </TableRow>
@@ -399,6 +410,16 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                   <TableCell>{getPriorityBadge(req.peso, req.obrigatorio)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{req.area_responsavel || '-'}</TableCell>
                   <TableCell>{getStatusBadge(req.conformity_status)}</TableCell>
+                  <TableCell>
+                    {(req.evidence_files?.length || 0) > 0 ? (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Paperclip className="h-3.5 w-3.5" />
+                        <span>{req.evidence_files!.length}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/40">—</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Select
                       value={req.conformity_status || 'nao_avaliado'}

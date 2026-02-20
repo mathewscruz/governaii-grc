@@ -8,6 +8,7 @@ import { GenericScoreDashboard } from '@/components/gap-analysis/GenericScoreDas
 import { GenericRequirementsTable } from '@/components/gap-analysis/GenericRequirementsTable';
 import { CategoryBarChart } from '@/components/gap-analysis/CategoryBarChart';
 import { AreaBarChart } from '@/components/gap-analysis/AreaBarChart';
+import { CategoryStatusCards } from '@/components/gap-analysis/CategoryStatusCards';
 import { FrameworkRadarChart } from '@/components/gap-analysis/charts/FrameworkRadarChart';
 import { ISOProgressFunnel } from '@/components/gap-analysis/charts/ISOProgressFunnel';
 import { PrivacyTreemap } from '@/components/gap-analysis/charts/PrivacyTreemap';
@@ -36,6 +37,8 @@ export default function GapAnalysisFrameworkDetail() {
   const [framework, setFramework] = useState<Framework | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [categoryData, setCategoryData] = useState<any[]>([]);
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | undefined>();
 
   useEffect(() => {
     if (!frameworkId) return;
@@ -58,6 +61,36 @@ export default function GapAnalysisFrameworkDetail() {
     };
     loadFramework();
   }, [frameworkId, navigate]);
+
+  // Load category-level status data for CategoryStatusCards
+  useEffect(() => {
+    if (!frameworkId || !empresaId) return;
+    const loadCategoryData = async () => {
+      try {
+        const [reqsRes, evalsRes] = await Promise.all([
+          supabase.from('gap_analysis_requirements').select('id, categoria').eq('framework_id', frameworkId),
+          supabase.from('gap_analysis_evaluations').select('requirement_id, conformity_status').eq('framework_id', frameworkId).eq('empresa_id', empresaId),
+        ]);
+        const reqs = reqsRes.data || [];
+        const evals = evalsRes.data || [];
+        const evalMap = new Map(evals.map(e => [e.requirement_id, e.conformity_status || 'nao_avaliado']));
+        
+        const catMap: Record<string, { conforme: number; parcial: number; nao_conforme: number; nao_aplicavel: number; nao_avaliado: number; total: number }> = {};
+        reqs.forEach(r => {
+          const cat = r.categoria || 'Outros';
+          if (!catMap[cat]) catMap[cat] = { conforme: 0, parcial: 0, nao_conforme: 0, nao_aplicavel: 0, nao_avaliado: 0, total: 0 };
+          catMap[cat].total++;
+          const st = evalMap.get(r.id) || 'nao_avaliado';
+          if (st in catMap[cat]) (catMap[cat] as any)[st]++;
+          else catMap[cat].nao_avaliado++;
+        });
+        setCategoryData(Object.entries(catMap).map(([categoria, data]) => ({ categoria, ...data })).sort((a, b) => a.categoria.localeCompare(b.categoria)));
+      } catch (e) {
+        // silent
+      }
+    };
+    loadCategoryData();
+  }, [frameworkId, empresaId]);
 
   const config = useMemo(() =>
     framework ? getFrameworkConfig(framework.nome, framework.tipo_framework) : null,
@@ -214,11 +247,21 @@ export default function GapAnalysisFrameworkDetail() {
           </div>
         )}
 
+        {/* Category Status Cards */}
+        {categoryData.length > 0 && (
+          <CategoryStatusCards
+            categories={categoryData}
+            onCategoryClick={(cat) => setActiveCategoryFilter(prev => prev === cat ? undefined : cat)}
+            activeCategory={activeCategoryFilter}
+          />
+        )}
+
         <GenericRequirementsTable
           frameworkId={frameworkId!}
           frameworkName={framework.nome}
           config={config}
           onStatusChange={handleScoreChange}
+          initialCategoryFilter={activeCategoryFilter}
         />
       </div>
     </ErrorBoundary>
