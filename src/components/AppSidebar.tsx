@@ -16,7 +16,7 @@ import {
   AlertCircle,
   HardDrive,
   MessageSquare,
-  Search,
+  
   LogOut,
   LayoutDashboard,
   BarChart3,
@@ -78,11 +78,9 @@ const getMenuItems = (t: (key: string) => string) => [
   },
   {
     title: t('sidebar.gapAnalysis'),
+    url: '/gap-analysis/frameworks',
     icon: BarChart3,
-    subItems: [
-      { title: t('sidebar.frameworks'), url: '/gap-analysis/frameworks', icon: FileText, moduleName: 'gap-analysis' },
-      { title: t('sidebar.adherenceAssessment'), url: '/gap-analysis/avaliacao-aderencia', icon: Search, moduleName: 'gap-analysis' },
-    ],
+    moduleName: 'gap-analysis',
   },
   {
     title: t('sidebar.governance'),

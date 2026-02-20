@@ -6,10 +6,11 @@ import { StatCard } from '@/components/ui/stat-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FrameworkCard } from '@/components/gap-analysis/FrameworkCard';
 import { FrameworkComparisonRadar } from '@/components/gap-analysis/FrameworkComparisonRadar';
+import { WelcomeHero } from '@/components/gap-analysis/WelcomeHero';
+import { FrameworkCatalog } from '@/components/gap-analysis/FrameworkCatalog';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
-import { useGapAnalysisStats } from '@/hooks/useGapAnalysisStats';
-import { ClipboardList, Activity, TrendingUp, AlertTriangle, Shield } from 'lucide-react';
+import { Activity, TrendingUp, AlertTriangle, Shield, Target } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 interface Framework {
@@ -35,6 +36,9 @@ interface StatusCounts {
   nao_avaliado: number;
 }
 
+// Popular frameworks for suggestions
+const SUGGESTED_NAMES = ['ISO 27001', 'LGPD', 'NIST CSF 2.0'];
+
 export default function GapAnalysisFrameworks() {
   const navigate = useNavigate();
   const { empresaId } = useEmpresaId();
@@ -43,8 +47,7 @@ export default function GapAnalysisFrameworks() {
   const [frameworkProgress, setFrameworkProgress] = useState<Record<string, FrameworkProgress>>({});
   const [frameworkStatusCounts, setFrameworkStatusCounts] = useState<Record<string, StatusCounts>>({});
   const [loading, setLoading] = useState(true);
-
-  const { data: stats } = useGapAnalysisStats();
+  const [showCatalog, setShowCatalog] = useState(false);
 
   useEffect(() => {
     loadFrameworks();
@@ -140,7 +143,6 @@ export default function GapAnalysisFrameworks() {
     }
   };
 
-  // Split active vs available
   const { activeFrameworks, availableFrameworks } = useMemo(() => {
     const active: Framework[] = [];
     const available: Framework[] = [];
@@ -155,6 +157,41 @@ export default function GapAnalysisFrameworks() {
     return { activeFrameworks: active, availableFrameworks: available };
   }, [frameworks, frameworkProgress]);
 
+  const hasActiveFrameworks = activeFrameworks.length > 0;
+
+  // Stats relevantes
+  const relevantStats = useMemo(() => {
+    if (!hasActiveFrameworks) return null;
+
+    // Conformidade geral (média ponderada)
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+    activeFrameworks.forEach(fw => {
+      const p = frameworkProgress[fw.id];
+      if (p && p.evaluatedRequirements > 0) {
+        totalWeightedScore += p.averageScore * p.evaluatedRequirements;
+        totalWeight += p.evaluatedRequirements;
+      }
+    });
+    const overallCompliance = totalWeight > 0 ? Math.round(totalWeightedScore / totalWeight) : 0;
+
+    // Requisitos críticos (não conformes)
+    let criticalCount = 0;
+    activeFrameworks.forEach(fw => {
+      const sc = frameworkStatusCounts[fw.id];
+      if (sc) criticalCount += sc.nao_conforme;
+    });
+
+    // Total avaliados este mês (simplificado)
+    let totalEvaluated = 0;
+    activeFrameworks.forEach(fw => {
+      const p = frameworkProgress[fw.id];
+      if (p) totalEvaluated += p.evaluatedRequirements;
+    });
+
+    return { overallCompliance, criticalCount, totalEvaluated };
+  }, [activeFrameworks, frameworkProgress, frameworkStatusCounts]);
+
   // Radar data
   const comparisonData = useMemo(() => {
     return activeFrameworks.map(fw => ({
@@ -162,6 +199,13 @@ export default function GapAnalysisFrameworks() {
       score: frameworkProgress[fw.id]?.averageScore || 0,
     }));
   }, [activeFrameworks, frameworkProgress]);
+
+  // Suggested frameworks for welcome hero
+  const suggestedFrameworks = useMemo(() => {
+    return SUGGESTED_NAMES
+      .map(name => frameworks.find(fw => fw.nome === name))
+      .filter(Boolean) as Framework[];
+  }, [frameworks]);
 
   const handleFrameworkClick = (framework: Framework) => {
     navigate(`/gap-analysis/framework/${framework.id}`);
@@ -171,9 +215,9 @@ export default function GapAnalysisFrameworks() {
     return (
       <ErrorBoundary>
         <div className="space-y-6">
-          <PageHeader title="Frameworks de Conformidade" description="Selecione um framework para avaliar a conformidade organizacional" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
-            {[1, 2, 3, 4].map(i => (<div key={i} className="h-24 bg-muted rounded-lg" />))}
+          <PageHeader title="Gap Analysis" description="Avalie a conformidade da sua organização com frameworks regulatórios" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-pulse">
+            {[1, 2, 3].map(i => (<div key={i} className="h-24 bg-muted rounded-lg" />))}
           </div>
         </div>
       </ErrorBoundary>
@@ -183,71 +227,87 @@ export default function GapAnalysisFrameworks() {
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        <PageHeader title="Frameworks de Conformidade" description="Selecione um framework para avaliar a conformidade organizacional" />
+        <PageHeader title="Gap Analysis" description="Avalie a conformidade da sua organização com frameworks regulatórios" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Total de Frameworks" value={stats?.totalFrameworks || frameworks.length} icon={<ClipboardList className="h-4 w-4" />} description="Frameworks disponíveis" />
-          <StatCard title="Avaliações em Andamento" value={activeFrameworks.length} icon={<Activity className="h-4 w-4" />} description="Frameworks com avaliações iniciadas" />
-          <StatCard title="Conformidade Média" value={`${stats?.averageCompliance || 0}%`} icon={<TrendingUp className="h-4 w-4" />} description="Média geral de conformidade" />
-          <StatCard title="Itens Pendentes" value={stats?.pendingItems || 0} icon={<AlertTriangle className="h-4 w-4" />} description="Evidências pendentes" />
-        </div>
-
-        {/* Radar comparativo */}
-        {comparisonData.length >= 2 && (
-          <FrameworkComparisonRadar data={comparisonData} />
-        )}
-
-        {/* Frameworks Ativos */}
-        {activeFrameworks.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
-              Frameworks Ativos
-              <span className="text-sm font-normal text-muted-foreground">({activeFrameworks.length})</span>
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {activeFrameworks.map((framework) => (
-                <FrameworkCard
-                  key={framework.id}
-                  id={framework.id}
-                  nome={framework.nome}
-                  versao={framework.versao}
-                  tipo_framework={framework.tipo_framework}
-                  descricao={framework.descricao}
-                  requirementCount={requirementCounts[framework.id] || 0}
-                  progress={frameworkProgress[framework.id]}
-                  statusCounts={frameworkStatusCounts[framework.id]}
-                  variant="active"
-                  onClick={() => handleFrameworkClick(framework)}
+        {/* Conditional Hero */}
+        {!hasActiveFrameworks ? (
+          <WelcomeHero
+            suggestedFrameworks={suggestedFrameworks}
+            onFrameworkClick={(id) => navigate(`/gap-analysis/framework/${id}`)}
+            onShowCatalog={() => setShowCatalog(true)}
+          />
+        ) : (
+          <>
+            {/* Relevant Stats */}
+            {relevantStats && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <StatCard
+                  title="Conformidade Geral"
+                  value={`${relevantStats.overallCompliance}%`}
+                  icon={<TrendingUp className="h-4 w-4" />}
+                  description="Média ponderada dos frameworks ativos"
                 />
-              ))}
+                <StatCard
+                  title="Requisitos Críticos"
+                  value={relevantStats.criticalCount}
+                  icon={<AlertTriangle className="h-4 w-4" />}
+                  description="Marcados como Não Conforme"
+                />
+                <StatCard
+                  title="Total Avaliados"
+                  value={relevantStats.totalEvaluated}
+                  icon={<Target className="h-4 w-4" />}
+                  description="Requisitos avaliados nos frameworks ativos"
+                />
+              </div>
+            )}
+
+            {/* Radar comparativo */}
+            {comparisonData.length >= 2 && (
+              <FrameworkComparisonRadar data={comparisonData} />
+            )}
+
+            {/* Active frameworks */}
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                Frameworks Ativos
+                <span className="text-sm font-normal text-muted-foreground">({activeFrameworks.length})</span>
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activeFrameworks.map((framework) => (
+                  <FrameworkCard
+                    key={framework.id}
+                    id={framework.id}
+                    nome={framework.nome}
+                    versao={framework.versao}
+                    tipo_framework={framework.tipo_framework}
+                    descricao={framework.descricao}
+                    requirementCount={requirementCounts[framework.id] || 0}
+                    progress={frameworkProgress[framework.id]}
+                    statusCounts={frameworkStatusCounts[framework.id]}
+                    variant="active"
+                    onClick={() => handleFrameworkClick(framework)}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         )}
 
-        {/* Frameworks Disponíveis */}
-        {availableFrameworks.length > 0 && (
+        {/* Available frameworks - catalog by category */}
+        {(hasActiveFrameworks || showCatalog) && availableFrameworks.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Shield className="h-5 w-5 text-muted-foreground" />
               Frameworks Disponíveis
               <span className="text-sm font-normal text-muted-foreground">({availableFrameworks.length})</span>
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {availableFrameworks.map((framework) => (
-                <FrameworkCard
-                  key={framework.id}
-                  id={framework.id}
-                  nome={framework.nome}
-                  versao={framework.versao}
-                  tipo_framework={framework.tipo_framework}
-                  descricao={framework.descricao}
-                  requirementCount={requirementCounts[framework.id] || 0}
-                  variant="available"
-                  onClick={() => handleFrameworkClick(framework)}
-                />
-              ))}
-            </div>
+            <FrameworkCatalog
+              frameworks={availableFrameworks}
+              requirementCounts={requirementCounts}
+              onFrameworkClick={handleFrameworkClick}
+            />
           </div>
         )}
 

@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Shield, Lock, Scale, Building2 } from "lucide-react";
 import { FrameworkLogo } from "./FrameworkLogos";
 import { StatusBlocks, StatusBlocksLegend } from "./StatusBlocks";
 
@@ -34,9 +34,46 @@ interface FrameworkCardProps {
   onClick: () => void;
 }
 
+const CATEGORY_MAP: Record<string, { label: string; color: string; icon: React.ElementType }> = {
+  seguranca: { label: 'Segurança', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Shield },
+  privacidade: { label: 'Privacidade', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: Lock },
+  qualidade: { label: 'Qualidade', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Scale },
+  governanca: { label: 'Governança', color: 'bg-purple-100 text-purple-700 border-purple-200', icon: Building2 },
+};
+
+const FRAMEWORK_AUDIENCES: Record<string, string> = {
+  'ISO 27001': 'Gestão de segurança da informação',
+  'LGPD': 'Proteção de dados pessoais no Brasil',
+  'NIST CSF 2.0': 'Maturidade em cibersegurança',
+  'ISO 27701': 'Gestão de privacidade (extensão ISO 27001)',
+  'PCI DSS': 'Segurança de dados de cartões',
+  'SOC 2': 'Controles de segurança para empresas de TI',
+  'GDPR': 'Proteção de dados pessoais na Europa',
+  'ISO 22301': 'Continuidade de negócios',
+  'COBIT': 'Governança de TI corporativa',
+  'CIS Controls': 'Controles críticos de segurança',
+  'ISO 9001': 'Gestão de qualidade',
+  'HIPAA': 'Proteção de dados de saúde (EUA)',
+};
+
+function getCategory(tipo: string): string {
+  const t = tipo?.toLowerCase() || '';
+  if (t.includes('privacidade') || t.includes('privacy') || t.includes('lgpd') || t.includes('gdpr')) return 'privacidade';
+  if (t.includes('governanca') || t.includes('governance') || t.includes('cobit') || t.includes('sox')) return 'governanca';
+  if (t.includes('qualidade') || t.includes('quality') || t.includes('iso 9') || t.includes('itil')) return 'qualidade';
+  return 'seguranca';
+}
+
+function getEffortLevel(count: number): { label: string; color: string } {
+  if (count <= 30) return { label: 'Baixo', color: 'bg-emerald-100 text-emerald-700' };
+  if (count <= 100) return { label: 'Médio', color: 'bg-amber-100 text-amber-700' };
+  return { label: 'Alto', color: 'bg-red-100 text-red-700' };
+}
+
 export const FrameworkCard: React.FC<FrameworkCardProps> = ({
   nome,
   versao,
+  tipo_framework,
   descricao,
   requirementCount,
   progress,
@@ -123,18 +160,29 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
     );
   }
 
-  // Available variant - compact card
+  // Available variant - compact card with category tag and effort
+  const cat = getCategory(tipo_framework);
+  const catCfg = CATEGORY_MAP[cat];
+  const effort = getEffortLevel(requirementCount);
+  const audience = FRAMEWORK_AUDIENCES[nome];
+
   return (
     <Card 
       className="group hover:shadow-lg transition-all duration-300 cursor-pointer h-full flex flex-col"
       onClick={onClick}
     >
-      <div className="flex justify-center pt-6 pb-3">
-        <FrameworkLogo nome={nome} className="h-12 w-12" />
+      <div className="p-3 pb-0">
+        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 border ${catCfg.color}`}>
+          {catCfg.label}
+        </Badge>
+      </div>
+
+      <div className="flex justify-center pt-3 pb-2">
+        <FrameworkLogo nome={nome} className="h-10 w-10" />
       </div>
       
-      <div className="text-center px-3 pb-2">
-        <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
+      <div className="text-center px-3 pb-1">
+        <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
           {nome}
         </h3>
         <span className="text-xs text-muted-foreground">{versao}</span>
@@ -142,17 +190,19 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
       
       <div className="flex-1 px-3 py-1">
         <p className="text-xs text-muted-foreground text-center line-clamp-2">
-          {descricao || 'Framework de conformidade para avaliação organizacional'}
+          {audience || descricao || 'Framework de conformidade organizacional'}
         </p>
       </div>
 
-      <div className="px-3 py-2">
-        <div className="flex items-center justify-center text-xs text-muted-foreground">
-          <span>{requirementCount} requisitos</span>
-        </div>
+      <div className="px-3 py-2 flex items-center justify-center gap-2">
+        <span className="text-xs text-muted-foreground">{requirementCount} requisitos</span>
+        <span className="text-muted-foreground">·</span>
+        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${effort.color}`}>
+          Esforço {effort.label}
+        </Badge>
       </div>
       
-      <div className="flex justify-center p-3">
+      <div className="flex justify-center p-3 pt-0">
         <Button 
           variant="outline" 
           size="sm"

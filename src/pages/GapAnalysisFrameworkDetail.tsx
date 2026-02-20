@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GenericScoreDashboard } from '@/components/gap-analysis/GenericScoreDashboard';
 import { GenericRequirementsTable } from '@/components/gap-analysis/GenericRequirementsTable';
@@ -14,6 +15,9 @@ import { ISOProgressFunnel } from '@/components/gap-analysis/charts/ISOProgressF
 import { PrivacyTreemap } from '@/components/gap-analysis/charts/PrivacyTreemap';
 import { GovernanceGauge } from '@/components/gap-analysis/charts/GovernanceGauge';
 import { ComplianceStackedBar } from '@/components/gap-analysis/charts/ComplianceStackedBar';
+import { FrameworkHistoryTab } from '@/components/gap-analysis/FrameworkHistoryTab';
+import { AdherenceAssessmentView } from '@/components/gap-analysis/adherence/AdherenceAssessmentView';
+import { AdherenceResultView } from '@/components/gap-analysis/adherence/AdherenceResultView';
 import { exportFrameworkPDF } from '@/components/gap-analysis/ExportFrameworkPDF';
 import { supabase } from '@/integrations/supabase/client';
 import { getFrameworkConfig } from '@/lib/framework-configs';
@@ -39,6 +43,11 @@ export default function GapAnalysisFrameworkDetail() {
   const [exporting, setExporting] = useState(false);
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | undefined>();
+  const [activeTab, setActiveTab] = useState('avaliacao');
+
+  // Adherence sub-view state
+  const [selectedAdherenceAssessment, setSelectedAdherenceAssessment] = useState<any>(null);
+  const [adherenceView, setAdherenceView] = useState<'list' | 'result'>('list');
 
   useEffect(() => {
     if (!frameworkId) return;
@@ -62,7 +71,6 @@ export default function GapAnalysisFrameworkDetail() {
     loadFramework();
   }, [frameworkId, navigate]);
 
-  // Load category-level status data for CategoryStatusCards
   useEffect(() => {
     if (!frameworkId || !empresaId) return;
     const loadCategoryData = async () => {
@@ -108,7 +116,6 @@ export default function GapAnalysisFrameworkDetail() {
     if (!framework || !config) return;
     setExporting(true);
     try {
-      // Fetch requirements with status for PDF
       const { data: reqs } = await supabase
         .from('gap_analysis_requirements')
         .select('id, codigo, titulo, categoria, peso, area_responsavel')
@@ -132,7 +139,6 @@ export default function GapAnalysisFrameworkDetail() {
         area_responsavel: r.area_responsavel,
       }));
 
-      // Get empresa name
       const { data: empresa } = await supabase
         .from('empresas')
         .select('nome')
@@ -196,73 +202,112 @@ export default function GapAnalysisFrameworkDetail() {
           }
         />
 
-        <GenericScoreDashboard
-          overallScore={overallScore}
-          pillarScores={pillarScores}
-          domainScores={domainScores}
-          areaScores={areaScores}
-          sectionScores={sectionScores}
-          categoryScores={categoryScores}
-          totalRequirements={totalRequirements}
-          evaluatedRequirements={evaluatedRequirements}
-          config={config}
-          loading={scoreLoading}
-          frameworkId={frameworkId!}
-        />
+        {/* Tabs: Avaliação Manual | Análise de Documentos | Histórico */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="avaliacao">Avaliação Manual</TabsTrigger>
+            <TabsTrigger value="documentos">Análise de Documentos</TabsTrigger>
+            <TabsTrigger value="historico">Histórico e Evolução</TabsTrigger>
+          </TabsList>
 
-        {/* Charts - Dynamic by framework type */}
-        {config?.chartType === 'radar' && pillarScores.length > 0 && (
-          <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-            <FrameworkRadarChart pillarScores={pillarScores} maxScore={config.scoreType === 'percentage' ? 100 : 5} />
-            {categoryScores.length > 0 && <CategoryBarChart categoryScores={categoryScores} config={config} />}
-            {areaScores.length > 0 && <AreaBarChart areaScores={areaScores} config={config} />}
-          </div>
-        )}
+          <TabsContent value="avaliacao" className="space-y-6">
+            <GenericScoreDashboard
+              overallScore={overallScore}
+              pillarScores={pillarScores}
+              domainScores={domainScores}
+              areaScores={areaScores}
+              sectionScores={sectionScores}
+              categoryScores={categoryScores}
+              totalRequirements={totalRequirements}
+              evaluatedRequirements={evaluatedRequirements}
+              config={config}
+              loading={scoreLoading}
+              frameworkId={frameworkId!}
+            />
 
-        {config?.chartType === 'funnel' && sectionScores.length > 0 && (
-          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-            <ISOProgressFunnel sectionScores={sectionScores} />
-            {categoryScores.length > 0 && <CategoryBarChart categoryScores={categoryScores} config={config} />}
-          </div>
-        )}
+            {/* Charts */}
+            {config?.chartType === 'radar' && pillarScores.length > 0 && (
+              <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+                <FrameworkRadarChart pillarScores={pillarScores} maxScore={config.scoreType === 'percentage' ? 100 : 5} />
+                {categoryScores.length > 0 && <CategoryBarChart categoryScores={categoryScores} config={config} />}
+                {areaScores.length > 0 && <AreaBarChart areaScores={areaScores} config={config} />}
+              </div>
+            )}
 
-        {config?.chartType === 'treemap' && categoryScores.length > 0 && (
-          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-            <PrivacyTreemap categoryScores={categoryScores} />
-            {areaScores.length > 0 && <AreaBarChart areaScores={areaScores} config={config} />}
-          </div>
-        )}
+            {config?.chartType === 'funnel' && sectionScores.length > 0 && (
+              <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+                <ISOProgressFunnel sectionScores={sectionScores} />
+                {categoryScores.length > 0 && <CategoryBarChart categoryScores={categoryScores} config={config} />}
+              </div>
+            )}
 
-        {config?.chartType === 'gauge' && (
-          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-            <GovernanceGauge overallScore={overallScore} maxScore={config.scoreType === 'percentage' ? 100 : 5} />
-            {categoryScores.length > 0 && <CategoryBarChart categoryScores={categoryScores} config={config} />}
-          </div>
-        )}
+            {config?.chartType === 'treemap' && categoryScores.length > 0 && (
+              <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+                <PrivacyTreemap categoryScores={categoryScores} />
+                {areaScores.length > 0 && <AreaBarChart areaScores={areaScores} config={config} />}
+              </div>
+            )}
 
-        {config?.chartType === 'stacked' && categoryScores.length > 0 && (
-          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-            <ComplianceStackedBar categoryScores={categoryScores} />
-            {areaScores.length > 0 && <AreaBarChart areaScores={areaScores} config={config} />}
-          </div>
-        )}
+            {config?.chartType === 'gauge' && (
+              <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+                <GovernanceGauge overallScore={overallScore} maxScore={config.scoreType === 'percentage' ? 100 : 5} />
+                {categoryScores.length > 0 && <CategoryBarChart categoryScores={categoryScores} config={config} />}
+              </div>
+            )}
 
-        {/* Category Status Cards */}
-        {categoryData.length > 0 && (
-          <CategoryStatusCards
-            categories={categoryData}
-            onCategoryClick={(cat) => setActiveCategoryFilter(prev => prev === cat ? undefined : cat)}
-            activeCategory={activeCategoryFilter}
-          />
-        )}
+            {config?.chartType === 'stacked' && categoryScores.length > 0 && (
+              <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+                <ComplianceStackedBar categoryScores={categoryScores} />
+                {areaScores.length > 0 && <AreaBarChart areaScores={areaScores} config={config} />}
+              </div>
+            )}
 
-        <GenericRequirementsTable
-          frameworkId={frameworkId!}
-          frameworkName={framework.nome}
-          config={config}
-          onStatusChange={handleScoreChange}
-          initialCategoryFilter={activeCategoryFilter}
-        />
+            {categoryData.length > 0 && (
+              <CategoryStatusCards
+                categories={categoryData}
+                onCategoryClick={(cat) => setActiveCategoryFilter(prev => prev === cat ? undefined : cat)}
+                activeCategory={activeCategoryFilter}
+              />
+            )}
+
+            <GenericRequirementsTable
+              frameworkId={frameworkId!}
+              frameworkName={framework.nome}
+              config={config}
+              onStatusChange={handleScoreChange}
+              initialCategoryFilter={activeCategoryFilter}
+            />
+          </TabsContent>
+
+          <TabsContent value="documentos">
+            {adherenceView === 'result' && selectedAdherenceAssessment ? (
+              <AdherenceResultView
+                assessment={selectedAdherenceAssessment}
+                onBack={() => setAdherenceView('list')}
+              />
+            ) : (
+              <AdherenceAssessmentView
+                onViewResult={(assessment) => {
+                  setSelectedAdherenceAssessment(assessment);
+                  setAdherenceView('result');
+                }}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="historico">
+            <FrameworkHistoryTab
+              frameworkId={frameworkId!}
+              frameworkName={framework.nome}
+              frameworkVersion={framework.versao}
+              frameworkType={framework.tipo_framework}
+              scoreType={config.scoreType}
+              currentScore={overallScore}
+              totalRequirements={totalRequirements}
+              evaluatedRequirements={evaluatedRequirements}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </ErrorBoundary>
   );

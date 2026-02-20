@@ -14,7 +14,7 @@ import { Riscos } from '@/pages/Riscos';
 import GapAnalysis from '@/pages/GapAnalysis';
 import GapAnalysisFrameworks from '@/pages/GapAnalysisFrameworks';
 import GapAnalysisFrameworkDetail from '@/pages/GapAnalysisFrameworkDetail';
-import GapAnalysisAderencia from '@/pages/GapAnalysisAderencia';
+// GapAnalysisAderencia removed - unified into framework detail
 
 import Contratos from '@/pages/Contratos';
 import Governanca from '@/pages/Governanca';
@@ -143,13 +143,8 @@ function App() {
                 </ProtectedRoute>
               </Layout>
             } />
-            <Route path="/gap-analysis/avaliacao-aderencia" element={
-              <Layout>
-                <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
-                  <GapAnalysisAderencia />
-                </ProtectedRoute>
-              </Layout>
-            } />
+            {/* Redirect antiga rota de aderência para frameworks */}
+            <Route path="/gap-analysis/avaliacao-aderencia" element={<Navigate to="/gap-analysis/frameworks" replace />} />
             <Route path="/governanca" element={
               <Layout>
                 <ProtectedRoute moduleName="controles" fallbackToRoleCheck={false}>
