@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CategoryScore {
   category: string;
@@ -16,35 +16,19 @@ interface CategoryBarChartProps {
 }
 
 export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScores, config }) => {
+  const maxValue = config.scoreType === 'percentage' ? 100 : 5;
+
   const getScoreColor = (score: number) => {
-    // Cores sóbrias em tons de azul
-    if (config.scoreType === 'percentage') {
-      if (score >= 80) return "#2563eb"; // Azul forte
-      if (score >= 60) return "#3b82f6"; // Azul médio
-      if (score >= 40) return "#60a5fa"; // Azul claro
-      if (score >= 20) return "#93c5fd"; // Azul muito claro
-      return "#dbeafe"; // Azul pálido
-    } else {
-      // decimal (0-5) or scale_0_5
-      if (score >= 4.5) return "#2563eb"; // Azul forte
-      if (score >= 3.5) return "#3b82f6"; // Azul médio
-      if (score >= 2.5) return "#60a5fa"; // Azul claro
-      if (score >= 1.5) return "#93c5fd"; // Azul muito claro
-      return "#dbeafe"; // Azul pálido
-    }
+    const ratio = score / maxValue;
+    if (ratio >= 0.8) return "bg-blue-600";
+    if (ratio >= 0.6) return "bg-blue-500";
+    if (ratio >= 0.4) return "bg-blue-400";
+    if (ratio >= 0.2) return "bg-blue-300";
+    return "bg-blue-200";
   };
 
-  const chartData = categoryScores.map(cat => ({
-    name: cat.category,
-    truncatedName: cat.category.length > 15 ? cat.category.substring(0, 15) + '...' : cat.category,
-    score: config.scoreType === 'percentage' ? cat.score : cat.score,
-    displayScore: config.scoreType === 'percentage' ? `${cat.score.toFixed(1)}%` : cat.score.toFixed(1),
-    evaluated: `${cat.evaluated}/${cat.total}`,
-    fill: getScoreColor(cat.score)
-  }));
-
-  const maxValue = config.scoreType === 'percentage' ? 100 : 5;
-  const innerHeight = Math.max(250, categoryScores.length * 40);
+  const formatScore = (score: number) =>
+    config.scoreType === 'percentage' ? `${score.toFixed(1)}%` : score.toFixed(1);
 
   return (
     <Card>
@@ -52,39 +36,36 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
         <CardTitle className="text-lg">Aderência por Categoria</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="max-h-[300px] overflow-y-auto">
-          <ResponsiveContainer width="100%" height={innerHeight}>
-            <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis 
-                type="number" 
-                domain={[0, maxValue]}
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-              />
-              <YAxis 
-                type="category" 
-                dataKey="truncatedName" 
-                tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }}
-                width={100}
-              />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '6px'
-                }}
-                formatter={(value: any, name: string, props: any) => [
-                  `${props.payload.displayScore} (${props.payload.evaluated} avaliados)`,
-                  props.payload.name
-                ]}
-              />
-              <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+          <TooltipProvider>
+            {categoryScores.map((cat, i) => {
+              const pct = (cat.score / maxValue) * 100;
+              return (
+                <Tooltip key={i}>
+                  <TooltipTrigger asChild>
+                    <div className="space-y-1 cursor-default">
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-xs text-foreground leading-tight">{cat.category}</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatScore(cat.score)}
+                        </span>
+                      </div>
+                      <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
+                        <div
+                          className={`h-full rounded-full transition-all ${getScoreColor(cat.score)}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="font-medium">{cat.category}</p>
+                    <p className="text-xs">{formatScore(cat.score)} — {cat.evaluated}/{cat.total} avaliados</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </TooltipProvider>
         </div>
       </CardContent>
     </Card>
