@@ -43,7 +43,7 @@ export const useContratosStats = () => {
         return dataFim >= hoje && dataFim <= em30Dias;
       }).length || 0;
       
-      const valorTotal = contratos?.reduce((sum, c) => sum + (c.valor || 0), 0) || 0;
+      const valorTotal = contratos?.filter(c => c.status === 'ativo').reduce((sum, c) => sum + (c.valor || 0), 0) || 0;
       const renovacaoAutomatica = contratos?.filter(c => c.renovacao_automatica).length || 0;
       const fornecedoresAtivos = fornecedores?.length || 0;
 

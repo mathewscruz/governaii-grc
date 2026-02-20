@@ -493,14 +493,9 @@ export default function Documentos() {
                   >
                     <Filter className="h-4 w-4 mr-2" />
                     Filtros
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setBuscaAvancada(true)}
-                  >
-                    <Filter className="h-4 w-4 mr-2" />
-                    Busca Avançada
+                    {showFilters && (
+                      <span className="ml-1 text-xs text-muted-foreground">▲</span>
+                    )}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -590,6 +585,10 @@ export default function Documentos() {
                       Limpar
                     </Button>
                   )}
+                  <Button variant="ghost" size="sm" onClick={() => setBuscaAvancada(true)}>
+                    <Search className="h-3 w-3 mr-1" />
+                    Busca Avançada
+                  </Button>
                 </div>
               )}
 

@@ -6,12 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { Plus, Search, FileText, DollarSign, Users, AlertCircle, Edit, TrendingUp, Trash2, Building2, FileStack, Milestone, FilePlus2 } from 'lucide-react';
+import { Plus, Search, FileText, DollarSign, Users, AlertCircle, Edit, TrendingUp, Trash2, Building2, FileStack, Milestone, FilePlus2, Download, MoreHorizontal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ContratoDialogWizard } from '@/components/contratos/ContratoDialogWizard';
@@ -265,6 +266,32 @@ export default function Contratos() {
     return null;
   };
 
+  const handleExportCSV = () => {
+    const headers = ["Número", "Nome", "Fornecedor", "Tipo", "Status", "Valor", "Início", "Fim"];
+    const rows = filteredContratos.map(c => [
+      c.numero_contrato,
+      c.nome,
+      c.fornecedores?.nome || '',
+      c.tipo,
+      c.status,
+      c.valor || 0,
+      c.data_inicio ? formatDateOnly(c.data_inicio) : '',
+      c.data_fim ? formatDateOnly(c.data_fim) : ''
+    ]);
+
+    const csvContent = [
+      headers.join(";"),
+      ...rows.map(row => row.join(";"))
+    ].join("\n");
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `contratos_${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    toast({ title: "Exportação concluída", description: "O arquivo CSV foi baixado com sucesso." });
+  };
+
   // Categorias únicas de fornecedores
   const categoriasFornecedor = useMemo(() => {
     const cats = new Set(fornecedores.map(f => f.categoria).filter(Boolean));
@@ -390,6 +417,14 @@ export default function Contratos() {
                       />
                     </div>
                     <div className="flex gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="icon" onClick={handleExportCSV}>
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Exportar CSV</TooltipContent>
+                      </Tooltip>
                       <RelatoriosContratos />
                       <TemplatesContratos />
                       <Button size="sm" onClick={() => { setSelectedContrato(null); setDialogOpen(true); }}>
@@ -490,67 +525,41 @@ export default function Contratos() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center justify-end gap-1">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => { setSelectedContrato(contrato); setDocumentosDialogOpen(true); }}
-                                  >
-                                    <FileStack className="h-4 w-4" />
+                            <div className="flex items-center justify-end">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <MoreHorizontal className="h-4 w-4" />
                                   </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Documentos</TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => { setSelectedContrato(contrato); setMarcosDialogOpen(true); }}
-                                  >
-                                    <Milestone className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Marcos</TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => { setSelectedContrato(contrato); setAditivosDialogOpen(true); }}
-                                  >
-                                    <FilePlus2 className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Aditivos</TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleEdit(contrato, 'contrato')}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Editar</TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleEdit(contrato, 'contrato')}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => { setSelectedContrato(contrato); setDocumentosDialogOpen(true); }}>
+                                    <FileStack className="mr-2 h-4 w-4" />
+                                    Documentos
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => { setSelectedContrato(contrato); setMarcosDialogOpen(true); }}>
+                                    <Milestone className="mr-2 h-4 w-4" />
+                                    Marcos
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => { setSelectedContrato(contrato); setAditivosDialogOpen(true); }}>
+                                    <FilePlus2 className="mr-2 h-4 w-4" />
+                                    Aditivos
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
                                     onClick={() => handleDelete(contrato.id, 'contrato')}
+                                    className="text-red-600"
                                   >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Excluir</TooltipContent>
-                              </Tooltip>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Excluir
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </TableCell>
                         </TableRow>

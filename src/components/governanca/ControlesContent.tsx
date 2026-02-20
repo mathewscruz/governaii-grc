@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2, Filter, TestTube } from "lucide-react";
+import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2, Filter, TestTube, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -602,6 +602,32 @@ export default function ControlesContent() {
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex-1"></div>
         <div className="flex gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" onClick={() => {
+                const headers = ["Código", "Nome", "Tipo", "Status", "Criticidade", "Responsável", "Testes"];
+                const rows = sortedControles.map(c => [
+                  c.codigo || '',
+                  c.nome,
+                  c.tipo,
+                  c.status,
+                  c.criticidade,
+                  c.responsavel_nome || '',
+                  c.testesCount || 0
+                ]);
+                const csvContent = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
+                const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `controles_${new Date().toISOString().split("T")[0]}.csv`;
+                link.click();
+                toast({ title: "Exportação concluída", description: "O arquivo CSV foi baixado." });
+              }}>
+                <Download className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Exportar CSV</TooltipContent>
+          </Tooltip>
           <Button 
             variant="outline" 
             size="sm"

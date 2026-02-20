@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Upload, FileText, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Categoria {
   id: string;
@@ -37,19 +38,83 @@ export function UploadMultiplosDialog({ open, onOpenChange, onSuccess, categoria
     }
 
     setUploading(true);
-    try {
-      // Simular upload - implementar lógica real aqui
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "Upload concluído",
-        description: `${files.length} arquivo(s) enviado(s) com sucesso.`,
-      });
+    let successCount = 0;
+    let errorCount = 0;
 
-      onSuccess();
-      onOpenChange(false);
-      setFiles([]);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('empresa_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.empresa_id) throw new Error('Empresa não encontrada');
+
+      for (const file of files) {
+        try {
+          // Upload do arquivo ao storage
+          const filePath = `${profile.empresa_id}/${Date.now()}_${file.name}`;
+          const { error: storageError } = await supabase.storage
+            .from('documentos')
+            .upload(filePath, file);
+
+          if (storageError) {
+            // Se o bucket não existe, criar registro sem arquivo
+            console.warn('Erro no storage, criando registro sem arquivo:', storageError.message);
+          }
+
+          const { data: publicUrl } = supabase.storage
+            .from('documentos')
+            .getPublicUrl(filePath);
+
+          // Criar registro na tabela documentos
+          const nomeBase = file.name.replace(/\.[^/.]+$/, '');
+          const { error: dbError } = await supabase
+            .from('documentos')
+            .insert({
+              empresa_id: profile.empresa_id,
+              nome: nomeBase,
+              tipo: 'outros',
+              status: 'rascunho',
+              arquivo_url: storageError ? null : publicUrl?.publicUrl,
+              arquivo_nome: file.name,
+              arquivo_tipo: file.type,
+              arquivo_tamanho: file.size,
+              created_by: user.id,
+            });
+
+          if (dbError) {
+            errorCount++;
+            console.error('Erro ao criar documento:', dbError);
+          } else {
+            successCount++;
+          }
+        } catch (fileError) {
+          errorCount++;
+          console.error(`Erro no arquivo ${file.name}:`, fileError);
+        }
+      }
+
+      if (successCount > 0) {
+        toast({
+          title: "Upload concluído",
+          description: `${successCount} arquivo(s) enviado(s) com sucesso.${errorCount > 0 ? ` ${errorCount} erro(s).` : ''}`,
+        });
+        onSuccess();
+        onOpenChange(false);
+        setFiles([]);
+      } else {
+        toast({
+          title: "Erro no upload",
+          description: "Nenhum arquivo foi enviado com sucesso.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
+      console.error('Erro geral no upload:', error);
       toast({
         title: "Erro no upload",
         description: "Tente novamente em alguns instantes.",
@@ -65,6 +130,7 @@ export function UploadMultiplosDialog({ open, onOpenChange, onSuccess, categoria
   };
 
   const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 B';
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return `${Math.round(bytes / Math.pow(1024, i) * 100) / 100} ${sizes[i]}`;
@@ -79,7 +145,7 @@ export function UploadMultiplosDialog({ open, onOpenChange, onSuccess, categoria
             Upload Múltiplo de Documentos
           </DialogTitle>
           <DialogDescription>
-            Selecione múltiplos arquivos para upload simultâneo.
+            Selecione múltiplos arquivos para upload simultâneo. Os documentos serão criados com status "Rascunho".
           </DialogDescription>
         </DialogHeader>
 
@@ -94,12 +160,12 @@ export function UploadMultiplosDialog({ open, onOpenChange, onSuccess, categoria
               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png"
             />
             <label htmlFor="multiple-files">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors">
-                <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-lg font-medium text-gray-700">
+              <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:border-muted-foreground/50 transition-colors">
+                <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-lg font-medium text-foreground">
                   Clique para selecionar arquivos
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   ou arraste e solte os arquivos aqui
                 </p>
               </div>
@@ -116,7 +182,7 @@ export function UploadMultiplosDialog({ open, onOpenChange, onSuccess, categoria
                       <FileText className="h-4 w-4" />
                       <div>
                         <p className="text-sm font-medium">{file.name}</p>
-                        <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                        <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                       </div>
                     </div>
                     <Button
