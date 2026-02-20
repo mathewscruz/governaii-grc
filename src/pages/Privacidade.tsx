@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { logger } from '@/lib/logger';
-import { Plus, Database, Users, AlertTriangle, Edit, Trash2, Link2, FileText, Eye } from "lucide-react";
+import { Plus, Database, Users, AlertTriangle, Edit, Trash2, Link2, FileText, Eye, Clock, ShieldAlert } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,10 +24,13 @@ import { formatStatus, getSensibilidadeColor, getItemStatusColor, getWorkflowSta
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function Privacidade() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("catalogo");
   const [dadosPessoais, setDadosPessoais] = useState<any[]>([]);
   const [ropaRegistros, setRopaRegistros] = useState<any[]>([]);
   const [solicitacoes, setSolicitacoes] = useState<any[]>([]);
+  const [incidentesPrivacidade, setIncidentesPrivacidade] = useState(0);
+  const [solicitacoesForaPrazo, setSolicitacoesForaPrazo] = useState(0);
   const [stats, setStats] = useState({
     totalDados: 0,
     dadosSensiveis: 0,
@@ -81,13 +85,15 @@ export default function Privacidade() {
   const loadData = async () => {
     try {
       // Query with aggregated counts for catalog
-      const [dadosRes, mapeamentosRes, ropaRes, solicitacoesRes, ropaDadosRes] = await Promise.all([
-        supabase.from('dados_pessoais').select('*').order('nome'),
-        supabase.from('dados_mapeamento').select('id, dados_pessoais_id'),
-        supabase.from('ropa_registros').select('*').order('nome_tratamento'),
-        supabase.from('dados_solicitacoes_titular').select('*, dados_pessoais(nome)').order('data_solicitacao', { ascending: false }),
-        supabase.from('ropa_dados_vinculados').select('id, dados_pessoais_id')
-      ]);
+      const dadosRes = await supabase.from('dados_pessoais').select('*').order('nome');
+      const mapeamentosRes = await supabase.from('dados_mapeamento').select('id, dados_pessoais_id');
+      const ropaRes = await supabase.from('ropa_registros').select('*').order('nome_tratamento');
+      const solicitacoesRes = await supabase.from('dados_solicitacoes_titular').select('*').order('data_solicitacao', { ascending: false });
+      const ropaDadosRes = await supabase.from('ropa_dados_vinculados').select('id, dados_pessoais_id');
+      const incidentesRes = await (supabase.from('incidentes').select('id') as any).eq('tipo', 'privacidade');
+
+      const incidentesAbertos = (incidentesRes.data || []).length;
+      setIncidentesPrivacidade(incidentesAbertos);
 
       // Aggregate counts per dados_pessoais_id
       const mapeamentosCounts: Record<string, number> = {};
@@ -114,8 +120,18 @@ export default function Privacidade() {
       // Calcular estatísticas
       const dados = dadosRes.data || [];
       const sensiveis = dados.filter((d: any) => d.tipo_dados === 'sensivel' || d.sensibilidade === 'muito_sensivel').length;
-      const pendentes = (solicitacoesRes.data || []).filter((s: any) => s.status === 'pendente').length;
+      const allSolicitacoes = solicitacoesRes.data || [];
+      const pendentes = allSolicitacoes.filter((s: any) => s.status === 'pendente').length;
       
+      // Calcular solicitações fora do prazo LGPD (15 dias)
+      const hoje = new Date();
+      const foraPrazo = allSolicitacoes.filter((s: any) => {
+        if (s.status === 'atendida' || s.status === 'rejeitada') return false;
+        const prazo = s.prazo_resposta ? new Date(s.prazo_resposta) : null;
+        return prazo && prazo < hoje;
+      }).length;
+      setSolicitacoesForaPrazo(foraPrazo);
+
       setStats({
         totalDados: dados.length,
         dadosSensiveis: sensiveis,
@@ -562,7 +578,7 @@ export default function Privacidade() {
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <StatCard
           title="Total de Dados"
           value={stats.totalDados}
@@ -587,6 +603,21 @@ export default function Privacidade() {
           value={stats.solicitacoesPendentes}
           description="De titulares"
           icon={<Users className="h-4 w-4" />}
+        />
+        <StatCard
+          title="Fora do Prazo LGPD"
+          value={solicitacoesForaPrazo}
+          description="Excederam 15 dias"
+          icon={<Clock className="h-4 w-4" />}
+          variant={solicitacoesForaPrazo > 0 ? "destructive" : "default"}
+        />
+        <StatCard
+          title="Incidentes Privacidade"
+          value={incidentesPrivacidade}
+          description={incidentesPrivacidade > 0 ? "Em aberto" : "Nenhum ativo"}
+          icon={<ShieldAlert className="h-4 w-4" />}
+          variant={incidentesPrivacidade > 0 ? "warning" : "default"}
+          onClick={() => navigate('/incidentes')}
         />
       </div>
 

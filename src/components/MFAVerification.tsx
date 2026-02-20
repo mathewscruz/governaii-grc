@@ -50,7 +50,6 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
 
       const data = response.data;
       if (data.success) {
-        toast.success('Verificação concluída!');
         onVerified();
       } else {
         toast.error(data.error || 'Código inválido');

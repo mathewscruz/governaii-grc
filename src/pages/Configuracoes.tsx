@@ -3,7 +3,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
-import { Users, Building2, Settings, Shield, Plug, MessageSquare, CreditCard } from 'lucide-react';
+import { Users, Building2, Settings, Shield, Plug, MessageSquare, CreditCard, Sparkles } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
@@ -15,6 +15,7 @@ import { IntegrationHub } from '@/components/configuracoes/IntegrationHub';
 import { ConfiguracoesDenuncia } from '@/components/denuncia/ConfiguracoesDenuncia';
 import { CategoriasDenuncia } from '@/components/denuncia/CategoriasDenuncia';
 import { AssinaturaTab } from '@/components/configuracoes/AssinaturaTab';
+import { CreditosIAManager } from '@/components/configuracoes/CreditosIAManager';
 
 const Configuracoes = () => {
   const { user } = useAuth();
@@ -68,7 +69,7 @@ const Configuracoes = () => {
       />
 
       <Tabs defaultValue={defaultTab} className="space-y-6">
-        <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-7' : isAdmin ? 'grid-cols-6' : 'grid-cols-4'}`}>
+        <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-8' : isAdmin ? 'grid-cols-6' : 'grid-cols-4'}`}>
           {isSuperAdmin && (
             <TabsTrigger value="empresas" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
@@ -95,6 +96,12 @@ const Configuracoes = () => {
             <TabsTrigger value="denuncia" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               <span className="hidden sm:inline">Denúncia</span>
+            </TabsTrigger>
+          )}
+          {isSuperAdmin && (
+            <TabsTrigger value="creditos-ia" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">Créditos IA</span>
             </TabsTrigger>
           )}
           <TabsTrigger value="assinatura" className="flex items-center gap-2">
@@ -165,6 +172,22 @@ const Configuracoes = () => {
               <ConfiguracoesDenuncia />
               <CategoriasDenuncia />
             </div>
+          </TabsContent>
+        )}
+
+        {isSuperAdmin && (
+          <TabsContent value="creditos-ia">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  Gestão de Créditos IA
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CreditosIAManager />
+              </CardContent>
+            </Card>
           </TabsContent>
         )}
 
