@@ -93,9 +93,7 @@ const Auth = () => {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
       
-      // Credenciais válidas - destruir sessão IMEDIATAMENTE antes do MFA
       const userId = data.user?.id;
-      await supabase.auth.signOut();
 
       if (rememberMe) {
         localStorage.setItem('akuris_remember_email', email.trim());
@@ -105,8 +103,18 @@ const Auth = () => {
         localStorage.removeItem('akuris_remember_me');
       }
 
-      // Iniciar fluxo MFA (usuário NÃO tem sessão ativa)
       if (userId) {
+        // Guardar credenciais e ativar MFA ANTES do signOut
+        // para que quando o re-render acontecer, a tela MFA já esteja ativa
+        setMfaPending(true);
+        setMfaUserId(userId);
+        setMfaEmail(email.trim());
+        setMfaPassword(password);
+
+        // Destruir sessão - o componente vai re-renderizar mas mfaPending já é true
+        await supabase.auth.signOut();
+
+        // Enviar código MFA
         try {
           const mfaResponse = await supabase.functions.invoke('send-mfa-code', {
             body: { userId, email: email.trim() },
@@ -114,7 +122,8 @@ const Auth = () => {
 
           if (mfaResponse.error) {
             console.error('Erro ao enviar MFA, login direto:', mfaResponse.error);
-            // Se falhar MFA, autenticar diretamente
+            setMfaPending(false);
+            setMfaPassword('');
             const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
             if (!reAuthError) {
               setLoginSuccess(true);
@@ -123,17 +132,13 @@ const Auth = () => {
               toast.error('Erro ao autenticar. Tente novamente.');
             }
           } else if (mfaResponse.data?.success) {
-            // MFA enviado - guardar credenciais em memória para re-auth após verificação
-            setMfaPending(true);
-            setMfaUserId(userId);
-            setMfaEmail(email.trim());
-            setMfaPassword(password);
             toast.info('Código de verificação enviado para seu e-mail');
           } else {
-            // Rate limited ou outro erro não-fatal
             if (mfaResponse.data?.error) {
               toast.warning(mfaResponse.data.error);
             }
+            setMfaPending(false);
+            setMfaPassword('');
             const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
             if (!reAuthError) {
               setLoginSuccess(true);
@@ -141,6 +146,8 @@ const Auth = () => {
           }
         } catch (mfaError) {
           console.error('Exceção MFA:', mfaError);
+          setMfaPending(false);
+          setMfaPassword('');
           const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
           if (!reAuthError) {
             setLoginSuccess(true);
