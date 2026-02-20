@@ -1,20 +1,46 @@
 
 
-# Corrigir Grafico "Aderencia por Categoria"
+# Substituir Grafico de Barras por Lista de Progress Bars
 
 ## Problema
 
-A mudanca anterior deixou o card enorme (altura dinamica) e as barras comecam apenas do meio para a direita devido a margem esquerda excessiva (145px) e largura do YAxis (140px).
+O grafico de barras horizontais do Recharts tem limitacoes intrinsecas para exibir nomes longos de categorias: o eixo Y trunca nomes, a area do grafico fica comprimida, e os labels se sobrepoem. Nenhum ajuste de margem/largura resolve bem todos os cenarios.
 
 ## Solucao
 
-**Arquivo**: `src/components/gap-analysis/CategoryBarChart.tsx`
+Substituir o `BarChart` do Recharts por uma **lista estilizada com Progress bars nativas** (componente `Progress` que ja existe no projeto). Cada categoria vira uma linha com:
 
-1. **Voltar altura fixa para 300px** -- remover calculo dinamico
-2. **Reduzir margem esquerda** de 145px para 10px
-3. **Reduzir largura do YAxis** de 140px para 100px
-4. **Truncar nomes** em 15 caracteres (em vez de 22) para caber no espaco menor
-5. **Adicionar scroll vertical interno** com `overflow-y: auto` e `max-height: 300px` no container, renderizando o grafico com altura proporcional ao numero de categorias internamente -- assim o card mantem tamanho fixo mas o conteudo rola se houver muitas categorias
+- Nome completo da categoria (sem truncar, com texto que quebra linha se necessario)
+- Barra de progresso colorida proporcional ao score
+- Valor do score e contagem de avaliados a direita
 
-Resultado: card com tamanho compacto, barras ocupando toda a largura disponivel, nomes truncados legiveis, scroll interno se necessario.
+Esse padrao ja e usado em outros lugares do sistema (ex: `ScoreVisualization`, `ReportsView`) e resolve todos os problemas de sobreposicao, pois cada item ocupa sua propria linha com espaco suficiente.
+
+## Arquivo
+
+`src/components/gap-analysis/CategoryBarChart.tsx`
+
+### Mudancas
+
+1. **Remover imports do Recharts** (BarChart, Bar, XAxis, YAxis, etc.)
+2. **Importar `Progress`** de `@/components/ui/progress`
+3. **Importar `Tooltip`** de `@/components/ui/tooltip` para mostrar detalhes ao hover
+4. **Renderizar lista scrollavel** com `max-h-[320px] overflow-y-auto` e cada item contendo:
+   - Nome completo da categoria (text-sm, sem truncar)
+   - `Progress` bar com cor baseada no score (usando CSS variable ou className)
+   - Badge/texto com score e "X/Y avaliados"
+5. **Manter a mesma logica de cores** (tons de azul baseados no score)
+6. **Manter a mesma interface** (`CategoryBarChartProps`) para nao quebrar nada externamente
+
+### Resultado visual
+
+Cada categoria sera uma linha legivel assim:
+
+```
+Contexto Organizacional          [=========-------] 2.3  3/7
+Estrategia de Gestao de Riscos   [================] 4.8  7/7
+Papeis e Responsabilidades       [===-------------] 1.2  2/5
+```
+
+Compacto, legivel, sem sobreposicao, nomes completos visiveis.
 
