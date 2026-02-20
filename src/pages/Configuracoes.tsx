@@ -69,7 +69,7 @@ const Configuracoes = () => {
       />
 
       <Tabs defaultValue={defaultTab} className="space-y-6">
-        <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-8' : isAdmin ? 'grid-cols-6' : 'grid-cols-4'}`}>
+        <TabsList className="flex flex-wrap w-full gap-0 overflow-x-auto">
           {isSuperAdmin && (
             <TabsTrigger value="empresas" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />

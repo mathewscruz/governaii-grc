@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
+import { StatCard } from "@/components/ui/stat-card"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { Bell, Mail, Clock, Users, TrendingUp } from "lucide-react"
@@ -198,46 +198,31 @@ export function ReminderSettings() {
   return (
     <div className="space-y-6">
       {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="flex items-center p-4">
-            <Users className="h-8 w-8 text-blue-600 mr-3" />
-            <div>
-              <p className="text-sm text-muted-foreground">Usuários Convidados</p>
-              <p className="text-2xl font-bold">{stats.total_invited}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex items-center p-4">
-            <Clock className="h-8 w-8 text-orange-600 mr-3" />
-            <div>
-              <p className="text-sm text-muted-foreground">Lembretes Pendentes</p>
-              <p className="text-2xl font-bold">{stats.pending_reminders}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex items-center p-4">
-            <Mail className="h-8 w-8 text-green-600 mr-3" />
-            <div>
-              <p className="text-sm text-muted-foreground">Convites Aceitos</p>
-              <p className="text-2xl font-bold">{stats.completed_invitations}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex items-center p-4">
-            <TrendingUp className="h-8 w-8 text-purple-600 mr-3" />
-            <div>
-              <p className="text-sm text-muted-foreground">Taxa de Conversão</p>
-              <p className="text-2xl font-bold">{stats.reminder_effectiveness}%</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Usuários Convidados"
+          value={stats.total_invited}
+          icon={<Users className="h-4 w-4" />}
+          variant="info"
+        />
+        <StatCard
+          title="Lembretes Pendentes"
+          value={stats.pending_reminders}
+          icon={<Clock className="h-4 w-4" />}
+          variant="warning"
+        />
+        <StatCard
+          title="Convites Aceitos"
+          value={stats.completed_invitations}
+          icon={<Mail className="h-4 w-4" />}
+          variant="success"
+        />
+        <StatCard
+          title="Taxa de Conversão"
+          value={`${stats.reminder_effectiveness}%`}
+          icon={<TrendingUp className="h-4 w-4" />}
+          variant="primary"
+        />
       </div>
 
       {/* Configurações */}
