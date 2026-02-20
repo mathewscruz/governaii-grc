@@ -51,6 +51,7 @@ const Auth = () => {
   const [mfaPending, setMfaPending] = useState(false);
   const [mfaUserId, setMfaUserId] = useState('');
   const [mfaEmail, setMfaEmail] = useState('');
+  const [mfaPassword, setMfaPassword] = useState('');
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('akuris_remember_email');
@@ -61,7 +62,7 @@ const Auth = () => {
     }
   }, []);
 
-  if (!loading && user && !mfaPending) return <Navigate to="/dashboard" replace />;
+  if (!loading && user) return <Navigate to="/dashboard" replace />;
 
   if (loading) {
     return (
@@ -92,6 +93,10 @@ const Auth = () => {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
       
+      // Credenciais válidas - destruir sessão IMEDIATAMENTE antes do MFA
+      const userId = data.user?.id;
+      await supabase.auth.signOut();
+
       if (rememberMe) {
         localStorage.setItem('akuris_remember_email', email.trim());
         localStorage.setItem('akuris_remember_me', 'true');
@@ -100,8 +105,7 @@ const Auth = () => {
         localStorage.removeItem('akuris_remember_me');
       }
 
-      // Iniciar fluxo MFA
-      const userId = data.user?.id;
+      // Iniciar fluxo MFA (usuário NÃO tem sessão ativa)
       if (userId) {
         try {
           const mfaResponse = await supabase.functions.invoke('send-mfa-code', {
@@ -110,26 +114,38 @@ const Auth = () => {
 
           if (mfaResponse.error) {
             console.error('Erro ao enviar MFA, login direto:', mfaResponse.error);
-            // Se falhar MFA, permitir login direto
-            setLoginSuccess(true);
-            toast.success('Login realizado com sucesso!');
+            // Se falhar MFA, autenticar diretamente
+            const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+            if (!reAuthError) {
+              setLoginSuccess(true);
+              toast.success('Login realizado com sucesso!');
+            } else {
+              toast.error('Erro ao autenticar. Tente novamente.');
+            }
           } else if (mfaResponse.data?.success) {
-            // MFA enviado com sucesso - mostrar tela de verificação
+            // MFA enviado - guardar credenciais em memória para re-auth após verificação
             setMfaPending(true);
             setMfaUserId(userId);
             setMfaEmail(email.trim());
+            setMfaPassword(password);
             toast.info('Código de verificação enviado para seu e-mail');
           } else {
             // Rate limited ou outro erro não-fatal
             if (mfaResponse.data?.error) {
               toast.warning(mfaResponse.data.error);
             }
-            setLoginSuccess(true);
+            const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+            if (!reAuthError) {
+              setLoginSuccess(true);
+            }
           }
         } catch (mfaError) {
           console.error('Exceção MFA:', mfaError);
-          setLoginSuccess(true);
-          toast.success('Login realizado com sucesso!');
+          const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+          if (!reAuthError) {
+            setLoginSuccess(true);
+            toast.success('Login realizado com sucesso!');
+          }
         }
       }
     } catch (error: any) {
@@ -140,17 +156,37 @@ const Auth = () => {
     }
   };
 
-  const handleMFAVerified = () => {
-    setMfaPending(false);
-    setLoginSuccess(true);
-    toast.success('Login realizado com sucesso!');
+  const handleMFAVerified = async () => {
+    // Código MFA validado - agora SIM criar a sessão real
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email: mfaEmail, 
+        password: mfaPassword 
+      });
+      // Limpar senha da memória imediatamente
+      setMfaPassword('');
+      setMfaPending(false);
+      
+      if (error) {
+        toast.error('Erro ao autenticar após verificação. Tente novamente.');
+        return;
+      }
+      
+      setLoginSuccess(true);
+      toast.success('Login realizado com sucesso!');
+    } catch (err) {
+      setMfaPassword('');
+      setMfaPending(false);
+      toast.error('Erro ao autenticar. Tente novamente.');
+    }
   };
 
-  const handleMFACancel = async () => {
+  const handleMFACancel = () => {
     setMfaPending(false);
     setMfaUserId('');
     setMfaEmail('');
-    await supabase.auth.signOut();
+    setMfaPassword('');
+    // Não precisa signOut - usuário já não tem sessão
     toast.info('Login cancelado');
   };
 
