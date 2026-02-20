@@ -516,17 +516,54 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
                 <Label className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   Evidências
+                  <span className="text-xs text-muted-foreground font-normal">(máx. 20MB por arquivo)</span>
                 </Label>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => document.getElementById('file-upload')?.click()}>
-                      {uploading ? (
-                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Enviando...</>
-                      ) : (
-                        <><Upload className="h-4 w-4 mr-2" />Anexar Arquivo</>
-                      )}
+                <div className="space-y-3">
+                  {/* Drag & Drop Zone */}
+                  <div
+                    className="relative border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+                    onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
+                      const files = e.dataTransfer.files;
+                      if (files.length > 0) {
+                        const input = document.getElementById('file-upload') as HTMLInputElement;
+                        if (input) { input.files = files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+                      }
+                    }}
+                    onClick={() => document.getElementById('file-upload')?.click()}
+                  >
+                    <Upload className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      {uploading ? 'Enviando...' : 'Arraste e solte arquivos aqui, ou clique para buscar'}
+                    </p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">PDF, DOC, DOCX, XLS, XLSX, PNG, JPG</p>
+                  </div>
+                  <input id="file-upload" type="file" multiple className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" />
+
+                  {/* Add Link Button */}
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const url = prompt('Insira a URL da evidência (ex: link do SharePoint, Google Drive, Notion):');
+                        if (url && url.trim()) {
+                          const name = prompt('Nome para identificar o link:') || new URL(url).hostname;
+                          setFormData(prev => ({
+                            ...prev,
+                            evidence_files: [...prev.evidence_files, { type: 'link', name, url: url.trim() }]
+                          }));
+                          toast.success('Link adicionado como evidência');
+                        }
+                      }}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Adicionar Link
                     </Button>
-                    <input id="file-upload" type="file" multiple className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" />
                   </div>
 
                   {formData.evidence_files.length > 0 && (
@@ -534,8 +571,18 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
                       {formData.evidence_files.map((file, index) => (
                         <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <span className="text-sm truncate">{file.name}</span>
+                            {file.type === 'link' ? (
+                              <ExternalLink className="h-4 w-4 text-blue-500 shrink-0" />
+                            ) : (
+                              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                            )}
+                            {file.type === 'link' ? (
+                              <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 dark:text-blue-400 hover:underline truncate" onClick={(e) => e.stopPropagation()}>
+                                {file.name}
+                              </a>
+                            ) : (
+                              <span className="text-sm truncate">{file.name}</span>
+                            )}
                             {file.size && <span className="text-xs text-muted-foreground">({(file.size / 1024).toFixed(0)}KB)</span>}
                           </div>
                           <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveFile(index)}>
