@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Treemap, ResponsiveContainer, Tooltip } from "recharts";
 import { FileText } from "lucide-react";
 
 interface CategoryScore {
@@ -14,80 +13,34 @@ interface PrivacyTreemapProps {
   title?: string;
 }
 
-const getScoreColor = (score: number): string => {
-  if (score >= 80) return "#16a34a"; // green
-  if (score >= 60) return "#2563eb"; // blue
-  if (score >= 40) return "#eab308"; // yellow
-  if (score >= 20) return "#f97316"; // orange
-  return "#dc2626"; // red
+const getScoreBorderColor = (score: number): string => {
+  if (score >= 80) return "border-l-green-500";
+  if (score >= 60) return "border-l-blue-500";
+  if (score >= 40) return "border-l-yellow-500";
+  if (score >= 20) return "border-l-orange-500";
+  return "border-l-red-500";
 };
 
-const CustomizedContent = (props: any) => {
-  const { x, y, width, height, name, score, total } = props;
-  
-  // Validar props antes de renderizar - crítico para evitar erros
-  if (name === undefined || name === null || score === undefined || total === undefined) {
-    return null;
-  }
-  
-  if (width < 60 || height < 40) return null;
-  
-  const displayName = String(name);
-  const displayScore = Number(score) || 0;
-  const displayTotal = Number(total) || 0;
+const getScoreBarColor = (score: number): string => {
+  if (score >= 80) return "bg-green-500";
+  if (score >= 60) return "bg-blue-500";
+  if (score >= 40) return "bg-yellow-500";
+  if (score >= 20) return "bg-orange-500";
+  return "bg-red-500";
+};
 
-  return (
-    <g>
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        style={{
-          fill: getScoreColor(displayScore),
-          stroke: 'hsl(var(--background))',
-          strokeWidth: 2,
-          fillOpacity: 0.7,
-        }}
-      />
-      <text
-        x={x + width / 2}
-        y={y + height / 2 - 10}
-        textAnchor="middle"
-        fill="white"
-        fontSize={12}
-        fontWeight="600"
-      >
-        {displayName.length > 20 ? displayName.substring(0, 20) + '...' : displayName}
-      </text>
-      <text
-        x={x + width / 2}
-        y={y + height / 2 + 8}
-        textAnchor="middle"
-        fill="white"
-        fontSize={16}
-        fontWeight="bold"
-      >
-        {displayScore.toFixed(0)}%
-      </text>
-      <text
-        x={x + width / 2}
-        y={y + height / 2 + 24}
-        textAnchor="middle"
-        fill="white"
-        fontSize={10}
-      >
-        {displayTotal} itens
-      </text>
-    </g>
-  );
+const getScoreTextColor = (score: number): string => {
+  if (score >= 80) return "text-green-600 dark:text-green-400";
+  if (score >= 60) return "text-blue-600 dark:text-blue-400";
+  if (score >= 40) return "text-yellow-600 dark:text-yellow-400";
+  if (score >= 20) return "text-orange-600 dark:text-orange-400";
+  return "text-red-600 dark:text-red-400";
 };
 
 export const PrivacyTreemap: React.FC<PrivacyTreemapProps> = ({ 
   categoryScores, 
   title = "Mapa de Conformidade por Capítulo" 
 }) => {
-  // Validar dados antes de processar
   const validScores = categoryScores?.filter(cat => cat && cat.category && cat.total > 0) || [];
   
   if (validScores.length === 0) {
@@ -107,45 +60,36 @@ export const PrivacyTreemap: React.FC<PrivacyTreemapProps> = ({
     );
   }
 
-  const data = validScores.map((cat, index) => ({
-    name: cat.category,
-    size: Math.max(cat.total, 1), // Evitar size 0
-    score: cat.score,
-    total: cat.total,
-    evaluated: cat.evaluated,
-  }));
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <Treemap
-            data={data}
-            dataKey="size"
-            stroke="hsl(var(--background))"
-            fill="hsl(var(--primary))"
-            content={<CustomizedContent />}
-          >
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'hsl(var(--background))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '6px'
-              }}
-              formatter={(value: any, name: string, props: any) => {
-                if (!props?.payload) return ['-', '-'];
-                const payload = props.payload;
-                return [
-                  `${(payload.score || 0).toFixed(1)}% (${payload.evaluated || 0}/${payload.total || 0} avaliados)`,
-                  payload.name || '-'
-                ];
-              }}
-            />
-          </Treemap>
-        </ResponsiveContainer>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[320px] overflow-y-auto pr-1">
+          {validScores.map((cat, i) => (
+            <div
+              key={i}
+              className={`border-l-4 ${getScoreBorderColor(cat.score)} rounded-md bg-muted/40 p-3 space-y-2`}
+            >
+              <p className="text-xs font-medium text-foreground leading-tight line-clamp-2">
+                {cat.category}
+              </p>
+              <p className={`text-xl font-bold ${getScoreTextColor(cat.score)}`}>
+                {cat.score.toFixed(0)}%
+              </p>
+              <div className="h-1.5 w-full rounded-full bg-secondary">
+                <div
+                  className={`h-full rounded-full ${getScoreBarColor(cat.score)} transition-all`}
+                  style={{ width: `${Math.min(cat.score, 100)}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {cat.evaluated}/{cat.total} avaliados
+              </p>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
