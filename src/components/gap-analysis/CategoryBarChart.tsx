@@ -36,7 +36,7 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
 
   const chartData = categoryScores.map(cat => ({
     name: cat.category,
-    truncatedName: cat.category.length > 22 ? cat.category.substring(0, 22) + '...' : cat.category,
+    truncatedName: cat.category.length > 15 ? cat.category.substring(0, 15) + '...' : cat.category,
     score: config.scoreType === 'percentage' ? cat.score : cat.score,
     displayScore: config.scoreType === 'percentage' ? `${cat.score.toFixed(1)}%` : cat.score.toFixed(1),
     evaluated: `${cat.evaluated}/${cat.total}`,
@@ -44,7 +44,7 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
   }));
 
   const maxValue = config.scoreType === 'percentage' ? 100 : 5;
-  const dynamicHeight = Math.max(250, categoryScores.length * 45);
+  const innerHeight = Math.max(250, categoryScores.length * 40);
 
   return (
     <Card>
@@ -52,38 +52,40 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
         <CardTitle className="text-lg">Aderência por Categoria</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={dynamicHeight}>
-          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 10, left: 145, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis 
-              type="number" 
-              domain={[0, maxValue]}
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-            />
-            <YAxis 
-              type="category" 
-              dataKey="truncatedName" 
-              tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }}
-              width={140}
-            />
-            <Tooltip 
-              contentStyle={{
-                backgroundColor: 'hsl(var(--background))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '6px'
-              }}
-              formatter={(value: any, name: string, props: any) => [
-                `${props.payload.displayScore} (${props.payload.evaluated} avaliados)`,
-                props.payload.name
-              ]}
-            />
-            <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="max-h-[300px] overflow-y-auto">
+          <ResponsiveContainer width="100%" height={innerHeight}>
+            <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis 
+                type="number" 
+                domain={[0, maxValue]}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+              />
+              <YAxis 
+                type="category" 
+                dataKey="truncatedName" 
+                tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }}
+                width={100}
+              />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '6px'
+                }}
+                formatter={(value: any, name: string, props: any) => [
+                  `${props.payload.displayScore} (${props.payload.evaluated} avaliados)`,
+                  props.payload.name
+                ]}
+              />
+              <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );
