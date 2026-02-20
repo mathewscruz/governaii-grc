@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { Plus, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, Edit, Trash2, X, History, Clock, FileText, Download, Grid3X3 } from 'lucide-react';
+import { Plus, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, Edit, Trash2, X, History, Clock, FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,7 +30,7 @@ import { MatrizDialog } from '@/components/riscos/MatrizDialog';
 import { CategoriasDialog } from '@/components/riscos/CategoriasDialog';
 import { RiscoAnexosIcone } from '@/components/riscos/RiscoAnexosIcone';
 import { RiskScoreCard } from '@/components/riscos/RiskScoreCard';
-import { MatrizVisualizacao } from '@/components/riscos/MatrizVisualizacao';
+
 import { TrilhaAuditoriaRiscos } from '@/components/riscos/TrilhaAuditoriaRiscos';
 import { HistoricoAvaliacoesDialog } from '@/components/riscos/HistoricoAvaliacoesDialog';
 import { AprovacaoRiscoDialog } from '@/components/riscos/AprovacaoRiscoDialog';
@@ -100,7 +100,7 @@ export function Riscos() {
   const [auditRisco, setAuditRisco] = useState<Risco | null>(null);
   const [historicoRisco, setHistoricoRisco] = useState<Risco | null>(null);
   const [aprovacaoRisco, setAprovacaoRisco] = useState<Risco | null>(null);
-  const [matrizVisualizacaoOpen, setMatrizVisualizacaoOpen] = useState(false);
+  
   
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -711,10 +711,6 @@ export function Riscos() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="outline" size="sm" onClick={() => setMatrizVisualizacaoOpen(true)} className="whitespace-nowrap">
-              <Grid3X3 className="mr-2 h-4 w-4" />
-              Matriz Visual
-            </Button>
             <Button variant="outline" size="sm" onClick={() => setCategoriasDialogOpen(true)} className="whitespace-nowrap">
               <Tag className="mr-2 h-4 w-4" />
               Categorias
@@ -825,15 +821,6 @@ export function Riscos() {
           />
         )}
 
-        {/* Dialog Matriz Visual */}
-        <Dialog open={matrizVisualizacaoOpen} onOpenChange={setMatrizVisualizacaoOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Matriz de Risco</DialogTitle>
-            </DialogHeader>
-            <MatrizVisualizacao />
-          </DialogContent>
-        </Dialog>
       </div>
     </TooltipProvider>
   );
