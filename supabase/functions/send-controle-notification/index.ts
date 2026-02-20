@@ -36,11 +36,10 @@ const handler = async (req: Request): Promise<Response> => {
     if (!responsavelData.email) return new Response(JSON.stringify({ error: "Responsible user has no email" }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
 
     let companyName = "Akuris";
-    let companyLogoUrl = "https://akuris.com.br/akuris-logo.png";
 
     if (responsavelData.empresa_id) {
-      const { data: empresaData } = await supabase.from("empresas").select("nome, logo_url").eq("id", responsavelData.empresa_id).single();
-      if (empresaData) { companyName = empresaData.nome || companyName; if (empresaData.logo_url) companyLogoUrl = empresaData.logo_url; }
+      const { data: empresaData } = await supabase.from("empresas").select("nome").eq("id", responsavelData.empresa_id).single();
+      if (empresaData) { companyName = empresaData.nome || companyName; }
     }
 
     const formatDate = (dateStr?: string): string => {
@@ -62,8 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #0a1628; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f7fa;">
   <div style="background-color: #ffffff; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
     <div style="text-align: center; margin-bottom: 24px;">
-      <img src="${companyLogoUrl}" alt="${companyName}" style="max-height: 50px; max-width: 200px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-      <p style="display: none; font-size: 20px; font-weight: 600; color: #0a1628; margin: 0;">${companyName}</p>
+      <p style="font-size: 28px; font-weight: 800; color: #0a1628; letter-spacing: 3px; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"><span style="color: #7552ff;">&#9679;</span> AKURIS</p>
     </div>
     <h1 style="font-size: 22px; color: #0a1628; text-align: center; margin-bottom: 24px; font-weight: 600;">📋 Você foi designado como responsável</h1>
     <p style="font-size: 15px; margin-bottom: 20px;">Olá <strong>${responsavelData.nome || "Usuário"}</strong>,</p>

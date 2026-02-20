@@ -4,12 +4,12 @@ import {
   Head,
   Heading,
   Html,
-  Img,
   Link,
   Preview,
   Section,
   Text,
 } from 'npm:@react-email/components@0.0.22';
+import * as React from 'npm:react@18.3.1';
 import * as React from 'npm:react@18.3.1';
 
 interface BaseEmailTemplateProps {
@@ -21,7 +21,7 @@ interface BaseEmailTemplateProps {
   showFooter?: boolean;
 }
 
-const AKURIS_LOGO_URL = 'https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/email-assets/akuris-logo.png';
+// Logo em texto — nunca quebra, funciona em todos os clientes de e-mail
 
 const COLORS = {
   primary: '#7552ff',
@@ -49,27 +49,17 @@ export const BaseEmailTemplate = ({
   companyLogoUrl,
   showFooter = true,
 }: BaseEmailTemplateProps) => {
-  const logoUrl = companyLogoUrl || AKURIS_LOGO_URL;
-
   return (
     <Html>
       <Head />
       <Preview>{previewText}</Preview>
       <Body style={main}>
         <Container style={container}>
-          {/* Dark Header */}
+          {/* Dark Header with text logo */}
           <Section style={headerSection}>
-            {logoUrl ? (
-              <Img
-                src={logoUrl}
-                alt={companyName}
-                width="160"
-                height="48"
-                style={{ margin: '0 auto', display: 'block' }}
-              />
-            ) : (
-              <Text style={headerFallbackName}>{companyName}</Text>
-            )}
+            <Text style={textLogoStyle}>
+              <span style={{ color: '#a78bfa' }}>●</span> AKURIS
+            </Text>
           </Section>
 
           {/* Gradient accent line */}
@@ -141,18 +131,14 @@ const headerSection = {
   textAlign: 'center' as const,
 };
 
-const logoStyle = {
-  maxHeight: '38px',
-  maxWidth: '160px',
-  margin: '0 auto',
-};
-
-const headerFallbackName = {
+const textLogoStyle = {
+  fontSize: '28px',
+  fontWeight: '800' as const,
   color: '#ffffff',
-  fontSize: '20px',
-  fontWeight: '700' as const,
+  letterSpacing: '3px',
   margin: '0',
-  letterSpacing: '1px',
+  textAlign: 'center' as const,
+  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 };
 
 const gradientLine = {

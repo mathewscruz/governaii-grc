@@ -32,7 +32,6 @@ const handler = async (req: Request): Promise<Response> => {
     if (emailList.size === 0) return new Response(JSON.stringify({ success: true, message: 'Nenhum e-mail válido' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
     const gravidadeMap: Record<string, string> = { baixa: 'Baixa', media: 'Média', alta: 'Alta', critica: 'Crítica' };
-    const logoUrl = denuncia.empresa?.logo_url || 'https://lnlkahtugwmkznasapfd.supabase.co/storage/v1/object/public/email-assets/akuris-logo.png';
     const companyName = denuncia.empresa?.nome || 'Akuris';
 
     const emailHtml = `
@@ -45,8 +44,7 @@ const handler = async (req: Request): Promise<Response> => {
       <span style="color: #ffffff; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">🚨 Nova Denúncia - ${gravidadeMap[denuncia.gravidade] || denuncia.gravidade}</span>
     </div>
     <div style="text-align: center; padding: 24px 32px 16px;">
-      <img src="${logoUrl}" alt="${companyName}" width="200" height="50" style="max-height: 50px; max-width: 200px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-      <p style="display: none; font-size: 20px; font-weight: 600; color: #0a1628; margin: 0;">${companyName}</p>
+      <p style="font-size: 28px; font-weight: 800; color: #0a1628; letter-spacing: 3px; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"><span style="color: #7552ff;">&#9679;</span> AKURIS</p>
     </div>
     <div style="padding: 0 32px 32px;">
       <h1 style="font-size: 22px; color: #0a1628; margin: 0 0 24px; font-weight: 600;">Nova Denúncia Recebida</h1>
