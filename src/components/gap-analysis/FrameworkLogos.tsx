@@ -160,6 +160,12 @@ export const FrameworkLogo: React.FC<FrameworkLogoProps> = ({ nome, className = 
       icon: Heart,
       colors: "text-green-600 dark:text-green-400"
     },
+    
+    // NIS2 - EU Cybersecurity Directive
+    "NIS2": {
+      icon: Globe,
+      colors: "text-blue-700 dark:text-blue-400"
+    },
   };
 
   // Try to find exact match first, then partial match
