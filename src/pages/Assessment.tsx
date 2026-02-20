@@ -860,10 +860,31 @@ export default function Assessment() {
                       <Input
                         type="file"
                         className="bg-white border-border/50"
-                        onChange={(e) => {
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
-                          if (file) {
+                          if (!file) return;
+                          if (file.size > 10 * 1024 * 1024) {
+                            toast.error('Arquivo deve ter no máximo 10MB.');
+                            return;
+                          }
+                          try {
+                            toast.info('Enviando arquivo...');
+                            const fileName = `${Date.now()}-${file.name}`;
+                            const filePath = `${assessment?.id || 'temp'}/${question.id}/${fileName}`;
+                            const { error: uploadError } = await supabase.storage
+                              .from('due-diligence-evidencias')
+                              .upload(filePath, file);
+                            if (uploadError) throw uploadError;
+                            const { data: { publicUrl } } = supabase.storage
+                              .from('due-diligence-evidencias')
+                              .getPublicUrl(filePath);
                             handleResponseChange(question.id, file.name);
+                            handleResponseChange(`${question.id}_arquivo`, publicUrl);
+                            toast.success('Arquivo enviado com sucesso!');
+                          } catch (err: any) {
+                            assessmentLogger.error('Erro no upload:', err);
+                            toast.error('Erro ao enviar arquivo. Tente novamente.');
                           }
                         }}
                       />
@@ -872,6 +893,11 @@ export default function Assessment() {
                       <div className="flex items-center space-x-3 text-sm text-muted-foreground p-3 bg-white rounded-lg border border-success/20">
                         <FileText className="h-4 w-4 text-success" />
                         <span className="font-medium">{responses[question.id]}</span>
+                        {responses[`${question.id}_arquivo`] && (
+                          <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs ml-auto">
+                            Ver arquivo
+                          </a>
+                        )}
                       </div>
                     )}
                   </div>
@@ -901,7 +927,7 @@ export default function Assessment() {
                           <Label className="text-sm font-medium text-success block">
                             Anexar documento (opcional):
                           </Label>
-                          <div className="border-2 border-dashed border-success/30 hover:border-success/50 rounded-lg p-4 text-center transition-colors duration-200 bg-white">
+                        <div className="border-2 border-dashed border-success/30 hover:border-success/50 rounded-lg p-4 text-center transition-colors duration-200 bg-white">
                             <Upload className="h-6 w-6 text-success/60 mx-auto mb-2" />
                             <p className="text-xs text-success/60 mb-2">
                               Clique para selecionar um arquivo
@@ -910,11 +936,29 @@ export default function Assessment() {
                               type="file"
                               className="text-xs bg-white border-success/30 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-success/10 file:text-success"
                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                 const file = e.target.files?.[0];
-                                if (file) {
-                                  handleResponseChange(`${question.id}_arquivo`, file.name);
-                                  toast.success('Arquivo anexado com sucesso!');
+                                if (!file) return;
+                                if (file.size > 10 * 1024 * 1024) {
+                                  toast.error('Arquivo deve ter no máximo 10MB.');
+                                  return;
+                                }
+                                try {
+                                  toast.info('Enviando evidência...');
+                                  const fileName = `${Date.now()}-${file.name}`;
+                                  const filePath = `${assessment?.id || 'temp'}/evidencias/${question.id}/${fileName}`;
+                                  const { error: uploadError } = await supabase.storage
+                                    .from('due-diligence-evidencias')
+                                    .upload(filePath, file);
+                                  if (uploadError) throw uploadError;
+                                  const { data: { publicUrl } } = supabase.storage
+                                    .from('due-diligence-evidencias')
+                                    .getPublicUrl(filePath);
+                                  handleResponseChange(`${question.id}_arquivo`, publicUrl);
+                                  toast.success('Evidência anexada com sucesso!');
+                                } catch (err: any) {
+                                  assessmentLogger.error('Erro no upload de evidência:', err);
+                                  toast.error('Erro ao enviar arquivo. Tente novamente.');
                                 }
                               }}
                             />
@@ -922,7 +966,10 @@ export default function Assessment() {
                           {responses[`${question.id}_arquivo`] && (
                             <div className="flex items-center space-x-2 text-xs text-success bg-success/10 p-2 rounded border border-success/20">
                               <FileText className="h-3 w-3" />
-                              <span>Arquivo: {responses[`${question.id}_arquivo`]}</span>
+                              <span>Evidência anexada</span>
+                              <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-primary underline ml-auto">
+                                Ver
+                              </a>
                             </div>
                           )}
                         </div>

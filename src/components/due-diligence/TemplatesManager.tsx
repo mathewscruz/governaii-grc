@@ -7,10 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Edit, Copy, Trash2, FileText, Settings as SettingsIcon, Star, Filter, X } from 'lucide-react';
+import { Plus, Edit, Copy, Trash2, FileText, Settings as SettingsIcon, Star, Filter, X, Sparkles, Shield, Scale, Leaf } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { TemplateDialog } from './TemplateDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
@@ -97,6 +98,58 @@ const fetchTemplates = async (): Promise<Template[]> => {
   return templatesWithCounts;
 };
 
+const SUGGESTED_TEMPLATES = [
+  {
+    nome: 'Segurança da Informação',
+    descricao: 'Avalia controles de segurança, gestão de acessos, criptografia e resposta a incidentes do fornecedor.',
+    categoria: 'Segurança',
+    icon: Shield,
+    color: 'text-blue-600 bg-blue-50 border-blue-200',
+    perguntas: [
+      { titulo: 'Política de Segurança', pergunta: 'A empresa possui uma política de segurança da informação formalizada e atualizada?', tipo: 'booleano', obrigatoria: true, peso: 3, secao: 'Governança', configuracoes: { mostrar_evidencia_quando: 'sim', label_evidencia: 'Anexe a política de segurança vigente' } },
+      { titulo: 'Controle de Acesso', pergunta: 'Existe controle de acesso baseado em papéis (RBAC) e autenticação multifator (MFA)?', tipo: 'booleano', obrigatoria: true, peso: 3, secao: 'Controle de Acesso', configuracoes: { mostrar_evidencia_quando: 'sim', label_evidencia: 'Descreva os controles implementados' } },
+      { titulo: 'Gestão de Vulnerabilidades', pergunta: 'A empresa realiza análise de vulnerabilidades e testes de penetração periodicamente?', tipo: 'radio', opcoes: ['Sim, mensalmente', 'Sim, trimestralmente', 'Sim, anualmente', 'Não realiza'], obrigatoria: true, peso: 2, secao: 'Segurança Técnica' },
+      { titulo: 'Backup e Recuperação', pergunta: 'Existem procedimentos de backup e recuperação de desastres documentados e testados?', tipo: 'booleano', obrigatoria: true, peso: 3, secao: 'Continuidade', configuracoes: { mostrar_evidencia_quando: 'sim', label_evidencia: 'Anexe evidência dos testes de restore' } },
+      { titulo: 'Resposta a Incidentes', pergunta: 'A empresa possui um plano de resposta a incidentes de segurança?', tipo: 'booleano', obrigatoria: true, peso: 3, secao: 'Incidentes', configuracoes: { mostrar_justificativa_quando: 'nao', label_justificativa: 'Quais são os planos para implementar?' } },
+      { titulo: 'Treinamento em Segurança', pergunta: 'Os colaboradores recebem treinamento periódico em segurança da informação?', tipo: 'radio', opcoes: ['Sim, trimestral', 'Sim, semestral', 'Sim, anual', 'Não há programa'], obrigatoria: true, peso: 2, secao: 'Pessoas' },
+      { titulo: 'Criptografia', pergunta: 'Dados sensíveis são criptografados em trânsito e em repouso?', tipo: 'booleano', obrigatoria: true, peso: 3, secao: 'Segurança Técnica' },
+      { titulo: 'Certificações', pergunta: 'A empresa possui certificações de segurança (ISO 27001, SOC 2, etc.)?', tipo: 'texto', obrigatoria: false, peso: 2, secao: 'Governança' },
+    ]
+  },
+  {
+    nome: 'LGPD - Proteção de Dados',
+    descricao: 'Verifica conformidade com a Lei Geral de Proteção de Dados, mapeamento de dados e direitos dos titulares.',
+    categoria: 'Privacidade',
+    icon: Scale,
+    color: 'text-purple-600 bg-purple-50 border-purple-200',
+    perguntas: [
+      { titulo: 'DPO / Encarregado', pergunta: 'A empresa possui um Encarregado de Proteção de Dados (DPO) nomeado?', tipo: 'booleano', obrigatoria: true, peso: 3, secao: 'Governança', configuracoes: { mostrar_evidencia_quando: 'sim', label_evidencia: 'Informe nome e contato do DPO' } },
+      { titulo: 'Mapeamento de Dados', pergunta: 'Existe um inventário/mapeamento dos dados pessoais tratados?', tipo: 'booleano', obrigatoria: true, peso: 3, secao: 'Mapeamento' },
+      { titulo: 'Base Legal', pergunta: 'O tratamento de dados pessoais está fundamentado em bases legais adequadas?', tipo: 'radio', opcoes: ['Sim, todas documentadas', 'Parcialmente documentadas', 'Em processo de documentação', 'Não documentado'], obrigatoria: true, peso: 3, secao: 'Conformidade' },
+      { titulo: 'Direitos dos Titulares', pergunta: 'Existem procedimentos para atender solicitações de titulares de dados?', tipo: 'booleano', obrigatoria: true, peso: 3, secao: 'Direitos', configuracoes: { mostrar_justificativa_quando: 'nao', label_justificativa: 'Como pretende implementar?' } },
+      { titulo: 'Compartilhamento com Terceiros', pergunta: 'Existe controle sobre o compartilhamento de dados pessoais com terceiros?', tipo: 'booleano', obrigatoria: true, peso: 2, secao: 'Compartilhamento' },
+      { titulo: 'Notificação de Incidentes', pergunta: 'Existe procedimento para notificação de incidentes envolvendo dados pessoais à ANPD?', tipo: 'booleano', obrigatoria: true, peso: 3, secao: 'Incidentes' },
+      { titulo: 'Política de Privacidade', pergunta: 'A empresa possui política de privacidade pública e atualizada?', tipo: 'booleano', obrigatoria: true, peso: 2, secao: 'Transparência', configuracoes: { mostrar_evidencia_quando: 'sim', label_evidencia: 'Informe o link da política' } },
+    ]
+  },
+  {
+    nome: 'ESG Básico',
+    descricao: 'Avalia práticas ambientais, sociais e de governança corporativa do parceiro.',
+    categoria: 'ESG',
+    icon: Leaf,
+    color: 'text-green-600 bg-green-50 border-green-200',
+    perguntas: [
+      { titulo: 'Política Ambiental', pergunta: 'A empresa possui política ambiental formalizada?', tipo: 'booleano', obrigatoria: true, peso: 2, secao: 'Ambiental' },
+      { titulo: 'Emissões de Carbono', pergunta: 'A empresa mensura e reporta suas emissões de gases de efeito estufa?', tipo: 'radio', opcoes: ['Sim, com metas de redução', 'Sim, sem metas', 'Em processo de implementação', 'Não'], obrigatoria: true, peso: 2, secao: 'Ambiental' },
+      { titulo: 'Diversidade e Inclusão', pergunta: 'Existem programas de diversidade e inclusão na empresa?', tipo: 'booleano', obrigatoria: true, peso: 2, secao: 'Social' },
+      { titulo: 'Trabalho Escravo/Infantil', pergunta: 'A empresa possui política contra trabalho escravo e infantil em sua cadeia?', tipo: 'booleano', obrigatoria: true, peso: 3, secao: 'Social' },
+      { titulo: 'Código de Conduta', pergunta: 'Existe um código de conduta e ética formalizado?', tipo: 'booleano', obrigatoria: true, peso: 2, secao: 'Governança', configuracoes: { mostrar_evidencia_quando: 'sim', label_evidencia: 'Anexe o código de conduta' } },
+      { titulo: 'Canal de Denúncias', pergunta: 'A empresa possui canal de denúncias independente?', tipo: 'booleano', obrigatoria: true, peso: 2, secao: 'Governança' },
+      { titulo: 'Anticorrupção', pergunta: 'Existem políticas e treinamentos anticorrupção?', tipo: 'booleano', obrigatoria: true, peso: 3, secao: 'Governança' },
+    ]
+  }
+];
+
 export function TemplatesManager() {
   const [templateDialog, setTemplateDialog] = useState<{
     open: boolean;
@@ -111,9 +164,72 @@ export function TemplatesManager() {
   const [showFilters, setShowFilters] = useState(false);
   const [categoriaFilter, setCategoriaFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [cloningTemplate, setCloningTemplate] = useState<string | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useEmpresaId();
+
+  const cloneSuggestedTemplate = async (suggested: typeof SUGGESTED_TEMPLATES[0]) => {
+    if (!empresaId) {
+      toast({ title: 'Erro', description: 'Empresa não identificada.', variant: 'destructive' });
+      return;
+    }
+    setCloningTemplate(suggested.nome);
+    try {
+      // Create the template
+      const { data: newTemplate, error: templateError } = await supabase
+        .from('due_diligence_templates')
+        .insert([{
+          nome: suggested.nome,
+          descricao: suggested.descricao,
+          categoria: suggested.categoria,
+          empresa_id: empresaId,
+          ativo: true,
+          versao: 1,
+        }])
+        .select()
+        .single();
+
+      if (templateError) throw templateError;
+
+      // Create all questions
+      const questionsToInsert = suggested.perguntas.map((p, idx) => ({
+        template_id: newTemplate.id,
+        titulo: p.titulo,
+        descricao: p.pergunta,
+        tipo: p.tipo,
+        opcoes: (p as any).opcoes || null,
+        obrigatoria: p.obrigatoria,
+        peso: p.peso,
+        ordem: idx + 1,
+        secao: p.secao,
+        configuracoes: p.configuracoes || null,
+      }));
+
+      const { error: questionsError } = await supabase
+        .from('due_diligence_questions')
+        .insert(questionsToInsert);
+
+      if (questionsError) throw questionsError;
+
+      toast({
+        title: 'Template criado!',
+        description: `"${suggested.nome}" foi adicionado com ${suggested.perguntas.length} perguntas.`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['due-diligence-templates'] });
+    } catch (error: any) {
+      console.error('Erro ao clonar template:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível criar o template.',
+        variant: 'destructive',
+      });
+    } finally {
+      setCloningTemplate(null);
+    }
+  };
 
   const {
     data: templates = [],
@@ -302,6 +418,68 @@ export function TemplatesManager() {
   return (
     <TooltipProvider>
       <div>
+        {/* Templates Sugeridos */}
+        {templates.length < 3 && (
+          <Card className="mb-6 border-dashed border-2 border-primary/20 bg-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Templates Sugeridos
+              </CardTitle>
+              <CardDescription>
+                Comece rapidamente com templates pré-configurados por especialistas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {SUGGESTED_TEMPLATES.map((suggested) => {
+                  const Icon = suggested.icon;
+                  const alreadyExists = templates.some(t => t.nome === suggested.nome);
+                  return (
+                    <Card key={suggested.nome} className={`border ${suggested.color} transition-all hover:shadow-md`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className={`p-2 rounded-lg ${suggested.color}`}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm">{suggested.nome}</h4>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {suggested.descricao}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            {suggested.perguntas.length} perguntas
+                          </span>
+                          <Button
+                            size="sm"
+                            variant={alreadyExists ? "outline" : "default"}
+                            disabled={alreadyExists || cloningTemplate === suggested.nome}
+                            onClick={() => cloneSuggestedTemplate(suggested)}
+                          >
+                            {cloningTemplate === suggested.nome ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1" />
+                            ) : alreadyExists ? (
+                              'Já adicionado'
+                            ) : (
+                              <>
+                                <Plus className="h-3 w-3 mr-1" />
+                                Usar
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="rounded-lg border overflow-hidden">
           <CardContent className="p-0">
             <div className="p-6 pb-4">
