@@ -52,7 +52,8 @@ export function AssessmentDialog({
     template_id: '',
     fornecedor_nome: '',
     fornecedor_email: '',
-    observacoes: ''
+    observacoes: '',
+    prazo_dias: '30'
   });
   const [loading, setLoading] = useState(false);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
@@ -66,14 +67,16 @@ export function AssessmentDialog({
           template_id: '',
           fornecedor_nome: '',
           fornecedor_email: '',
-          observacoes: ''
+          observacoes: '',
+          prazo_dias: '30'
         });
       } else if (mode === 'view' && assessment) {
         setFormData({
           template_id: '',
           fornecedor_nome: assessment.fornecedor_nome,
           fornecedor_email: assessment.fornecedor_email,
-          observacoes: ''
+          observacoes: '',
+          prazo_dias: '30'
         });
       }
     }
@@ -148,9 +151,9 @@ export function AssessmentDialog({
       // Gerar token único
       const linkToken = generateUniqueToken();
 
-      // Calcular data de expiração (30 dias)
+      // Calcular data de expiração baseada na seleção do usuário
       const dataExpiracao = new Date();
-      dataExpiracao.setDate(dataExpiracao.getDate() + 30);
+      dataExpiracao.setDate(dataExpiracao.getDate() + parseInt(formData.prazo_dias));
 
       // Criar avaliação
       const { data: newAssessment, error } = await supabase
@@ -430,6 +433,25 @@ export function AssessmentDialog({
                 fornecedor_email: fornecedor.email
               }))}
             />
+
+          <div className="space-y-2">
+            <Label htmlFor="prazo">Prazo para Resposta *</Label>
+            <Select
+              value={formData.prazo_dias}
+              onValueChange={(value) => setFormData({ ...formData, prazo_dias: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o prazo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">7 dias</SelectItem>
+                <SelectItem value="15">15 dias</SelectItem>
+                <SelectItem value="30">30 dias</SelectItem>
+                <SelectItem value="60">60 dias</SelectItem>
+                <SelectItem value="90">90 dias</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="observacoes">Observações</Label>

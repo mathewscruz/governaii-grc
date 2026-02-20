@@ -51,7 +51,8 @@ export function QuestionsManager({ templateId, templateName }: QuestionsManagerP
     tipo: 'text' as Question['tipo'],
     opcoes: [''],
     obrigatoria: true,
-    peso: 1
+    peso: 1,
+    secao: 'Geral'
   });
 
   useEffect(() => {
@@ -87,7 +88,8 @@ export function QuestionsManager({ templateId, templateName }: QuestionsManagerP
       tipo: 'text',
       opcoes: [''],
       obrigatoria: true,
-      peso: 1
+      peso: 1,
+      secao: 'Geral'
     });
     setEditingQuestion(null);
   };
@@ -105,7 +107,8 @@ export function QuestionsManager({ templateId, templateName }: QuestionsManagerP
           formData.opcoes.filter(o => o.trim()) : null,
         obrigatoria: formData.obrigatoria,
         peso: formData.peso,
-        ordem: editingQuestion ? editingQuestion.ordem : questions.length + 1
+        ordem: editingQuestion ? editingQuestion.ordem : questions.length + 1,
+        secao: formData.secao || 'Geral'
       };
 
       let error;
@@ -147,7 +150,8 @@ export function QuestionsManager({ templateId, templateName }: QuestionsManagerP
       tipo: question.tipo,
       opcoes: question.opcoes || [''],
       obrigatoria: question.obrigatoria,
-      peso: question.peso
+      peso: question.peso,
+      secao: (question as any).secao || 'Geral'
     });
     setShowDialog(true);
   };
@@ -321,6 +325,18 @@ export function QuestionsManager({ templateId, templateName }: QuestionsManagerP
                   />
                 </div>
                 
+                <div className="space-y-2">
+                  <Label htmlFor="secao">Seção</Label>
+                  <Input
+                    id="secao"
+                    value={formData.secao}
+                    onChange={(e) => setFormData(prev => ({ ...prev, secao: e.target.value }))}
+                    placeholder="Ex: Segurança da Informação"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="tipo">Tipo de Pergunta</Label>
                   <Select

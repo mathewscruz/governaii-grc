@@ -3550,6 +3550,7 @@ export type Database = {
           opcoes: Json | null
           ordem: number
           peso: number | null
+          secao: string | null
           template_id: string
           tipo: string
           titulo: string
@@ -3563,6 +3564,7 @@ export type Database = {
           opcoes?: Json | null
           ordem?: number
           peso?: number | null
+          secao?: string | null
           template_id: string
           tipo: string
           titulo: string
@@ -3576,6 +3578,7 @@ export type Database = {
           opcoes?: Json | null
           ordem?: number
           peso?: number | null
+          secao?: string | null
           template_id?: string
           tipo?: string
           titulo?: string

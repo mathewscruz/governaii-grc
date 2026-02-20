@@ -3,6 +3,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TemplatesManager } from '@/components/due-diligence/TemplatesManager';
 import { AssessmentsManagerEnhanced } from '@/components/due-diligence/AssessmentsManagerEnhanced';
 import { FornecedoresManager } from '@/components/due-diligence/FornecedoresManager';
+import { DueDiligenceDashboard } from '@/components/due-diligence/DueDiligenceDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/ui/page-header';
 
@@ -11,7 +12,6 @@ export default function DueDiligence() {
   const [activeTab, setActiveTab] = useState('fornecedores');
   const [assessmentFilter, setAssessmentFilter] = useState<{ fornecedorId?: string; fornecedorNome?: string } | null>(null);
 
-  // Listener para navegação entre abas com contexto
   useEffect(() => {
     const handleNavigation = (event: CustomEvent) => {
       setActiveTab(event.detail.tab);
@@ -22,7 +22,6 @@ export default function DueDiligence() {
 
     const handleCreateAssessmentFromTemplate = (event: CustomEvent) => {
       setActiveTab('assessments');
-      // Trigger assessment creation with template pre-selected
       setTimeout(() => {
         const createEvent = new CustomEvent('createAssessment', {
           detail: { templateId: event.detail.templateId, templateNome: event.detail.templateNome }
@@ -46,6 +45,9 @@ export default function DueDiligence() {
         title="Due Diligence"
         description="Gerencie avaliações digitais de fornecedores com questionários personalizados e scoring automático"
       />
+
+      {/* Dashboard always visible on top */}
+      <DueDiligenceDashboard />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">

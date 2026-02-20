@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
@@ -6,19 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-interface Question {
-  id: string;
-  texto: string;
-  tipo: string;
-  peso: number;
-}
-
-interface Response {
-  question_id: string;
-  resposta: string;
-  question: Question;
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -28,10 +14,10 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
-    if (!openaiKey) {
-      throw new Error('OpenAI API key not configured');
+    if (!lovableApiKey) {
+      throw new Error('LOVABLE_API_KEY not configured');
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -39,7 +25,6 @@ serve(async (req) => {
 
     console.log('Calculating score for assessment:', assessment_id);
 
-    // Buscar respostas, evidências, justificativas e perguntas
     const { data: responses, error: responsesError } = await supabase
       .from('due_diligence_responses')
       .select(`
@@ -52,7 +37,8 @@ serve(async (req) => {
           id,
           titulo,
           tipo,
-          peso
+          peso,
+          secao
         )
       `)
       .eq('assessment_id', assessment_id);
@@ -65,7 +51,6 @@ serve(async (req) => {
 
     console.log('Found responses:', responses.length);
 
-    // Preparar dados para análise da IA incluindo evidências e justificativas
     const analysisData = responses.map(r => ({
       question: r.question.titulo,
       answer: r.resposta,
@@ -73,23 +58,19 @@ serve(async (req) => {
       justificativa: r.justificativa || null,
       arquivo_anexado: r.arquivo_url ? true : false,
       type: r.question.tipo,
-      category: 'geral', // Categoria padrão já que removemos essa coluna
+      section: r.question.secao || 'Geral',
       weight: r.question.peso || 1
     }));
 
-    // Analisar com OpenAI
-    const aiAnalysis = await analyzeWithAI(analysisData, openaiKey);
+    const aiAnalysis = await analyzeWithAI(analysisData, lovableApiKey);
     
-    // Calcular score final em porcentagem (0-100%)
     const totalWeight = analysisData.reduce((sum, item) => sum + item.weight, 0);
-    const weightedScore = aiAnalysis.scores.reduce((sum, score, index) => {
+    const weightedScore = aiAnalysis.scores.reduce((sum: number, score: number, index: number) => {
       return sum + (score * analysisData[index].weight);
     }, 0);
     
-    // Converter para porcentagem (0-100)
-    const finalScore = (weightedScore / totalWeight) * 10; // score de 0-10 vira 0-100
+    const finalScore = (weightedScore / totalWeight) * 10;
     
-    // Determinar classificação baseada em porcentagem
     let classification = 'ruim';
     if (finalScore >= 80) classification = 'excelente';
     else if (finalScore >= 60) classification = 'bom';
@@ -97,7 +78,6 @@ serve(async (req) => {
 
     console.log('Final score calculated:', finalScore, 'Classification:', classification);
 
-    // Salvar score na tabela
     const { error: scoreError } = await supabase
       .from('due_diligence_scores')
       .upsert({
@@ -111,7 +91,6 @@ serve(async (req) => {
 
     if (scoreError) throw scoreError;
 
-    // Atualizar assessment com score final
     const { error: updateError } = await supabase
       .from('due_diligence_assessments')
       .update({ 
@@ -143,7 +122,7 @@ serve(async (req) => {
   }
 });
 
-async function analyzeWithAI(analysisData: any[], openaiKey: string) {
+async function analyzeWithAI(analysisData: any[], apiKey: string) {
   const prompt = `
 Analise as seguintes respostas de um questionário de due diligence e atribua uma pontuação de 0 a 10 para cada resposta, considerando:
 
@@ -169,22 +148,24 @@ Responda APENAS em formato JSON válido (sem markdown) com esta estrutura:
 {
   "scores": [array de números de 0-10 para cada resposta na ordem apresentada],
   "breakdown": {
-    "categoria1": score_médio,
-    "categoria2": score_médio,
+    "secao1": score_médio,
+    "secao2": score_médio,
     ...
   },
   "summary": "Resumo geral da avaliação em até 200 palavras"
 }
+
+IMPORTANTE: O breakdown deve ser agrupado pelo campo "section" de cada pergunta.
 `;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${openaiKey}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'google/gemini-2.5-flash',
       messages: [
         {
           role: 'system',
@@ -201,13 +182,18 @@ Responda APENAS em formato JSON válido (sem markdown) com esta estrutura:
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.statusText}`);
+    if (response.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again later.');
+    }
+    if (response.status === 402) {
+      throw new Error('AI credits exhausted. Please add credits.');
+    }
+    throw new Error(`AI Gateway error: ${response.statusText}`);
   }
 
   const data = await response.json();
   let aiResponse = data.choices[0].message.content;
   
-  // Limpar resposta da IA removendo possíveis markdown
   aiResponse = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
   
   try {
