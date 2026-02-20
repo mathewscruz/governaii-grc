@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Eye, EyeOff, CheckCircle2, Loader2, Shield, BarChart3, FileCheck, Mail, Lock } from 'lucide-react';
 import logoImage from '@/assets/akuris-logo.png';
 import { ForgotPasswordDialog } from '@/components/ForgotPasswordDialog';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
 
@@ -144,6 +145,10 @@ const Auth = () => {
 
       {/* ===== LOGIN PANEL ===== */}
       <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[hsl(216,50%,10%)] to-[hsl(216,45%,12%)] px-6 py-12 relative overflow-hidden">
+        {/* Language selector */}
+        <div className="absolute top-4 right-4 z-20">
+          <LanguageSelector variant="dark" />
+        </div>
         {/* Subtle orb for mobile */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
 
