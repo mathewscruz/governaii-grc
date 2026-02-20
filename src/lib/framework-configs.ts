@@ -143,6 +143,19 @@ export function getFrameworkConfig(frameworkName: string, frameworkType?: string
     };
   }
   
+  // Detectar NIS2
+  if (frameworkName.toLowerCase().includes('nis2') || frameworkName.toLowerCase().includes('nis 2')) {
+    return {
+      id: 'nis2',
+      name: frameworkName,
+      scoreType: 'percentage',
+      chartType: 'stacked',
+      pillarField: 'categoria',
+      scoreLabels: FRAMEWORK_CONFIGS['iso-27001'].scoreLabels,
+      statusScores: FRAMEWORK_CONFIGS['iso-27001'].statusScores,
+    };
+  }
+  
   // Detectar frameworks de compliance/audit (SOC 2, SOX, PCI DSS, ITIL)
   if (frameworkName.toLowerCase().includes('soc') ||
       frameworkName.toLowerCase().includes('sox') ||
