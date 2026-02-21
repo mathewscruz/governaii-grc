@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Shield, Lock, Scale, Building2 } from "lucide-react";
 import { FrameworkLogo } from "./FrameworkLogos";
-import { StatusBlocks, StatusBlocksLegend } from "./StatusBlocks";
 
 interface FrameworkProgress {
   totalRequirements: number;
@@ -87,63 +86,90 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
 
   // Active variant - larger card with status blocks
   if (variant === 'active' && statusCounts) {
+    const totalApplicable = (statusCounts.conforme + statusCounts.parcial + statusCounts.nao_conforme + statusCounts.nao_avaliado) || 1;
+    const conformePercent = Math.round((statusCounts.conforme / totalApplicable) * 100);
+    const parcialPercent = Math.round((statusCounts.parcial / totalApplicable) * 100);
+    const naoConformePercent = Math.round((statusCounts.nao_conforme / totalApplicable) * 100);
+    const pendenteCount = statusCounts.nao_avaliado;
+    
     return (
       <Card 
         className="group hover:shadow-lg transition-all duration-300 cursor-pointer h-full flex flex-col"
         onClick={onClick}
       >
-        <div className="flex items-start gap-4 p-4">
+        <div className="flex items-start gap-4 p-4 pb-3">
           <FrameworkLogo nome={nome} className="h-10 w-10 shrink-0 mt-1" />
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="font-semibold text-sm group-hover:text-primary transition-colors truncate">
-                {nome} <span className="text-xs font-normal text-muted-foreground">{versao}</span>
-              </h3>
-              {progress && (
-                <span className={`text-sm font-bold shrink-0 ${
-                  progress.averageScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
-                  progress.averageScore >= 60 ? 'text-primary' :
-                  progress.averageScore >= 40 ? 'text-amber-600 dark:text-amber-400' :
-                  'text-destructive'
-                }`}>
-                  {progress.averageScore}%
-                </span>
-              )}
-            </div>
-
-            {/* Status blocks */}
-            <div className="mt-2">
-              <StatusBlocks
-                conforme={statusCounts.conforme}
-                parcial={statusCounts.parcial}
-                nao_conforme={statusCounts.nao_conforme}
-                nao_aplicavel={statusCounts.nao_aplicavel}
-                nao_avaliado={statusCounts.nao_avaliado}
-                blockSize="md"
-              />
-            </div>
-
-            {/* Progress bar */}
-            {progress && progress.evaluatedRequirements > 0 && (
-              <div className="mt-2 flex items-center gap-2">
-                <Progress value={progressPercent} className="h-1.5 flex-1" />
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {progress.evaluatedRequirements}/{progress.totalRequirements}
-                </span>
-              </div>
-            )}
+            <h3 className="font-semibold text-sm group-hover:text-primary transition-colors truncate">
+              {nome} <span className="text-xs font-normal text-muted-foreground">{versao}</span>
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {progress ? `${progress.evaluatedRequirements} de ${progress.totalRequirements} requisitos avaliados` : `${requirementCount} requisitos`}
+            </p>
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="px-4 pb-3">
-          <StatusBlocksLegend
-            conforme={statusCounts.conforme}
-            parcial={statusCounts.parcial}
-            nao_conforme={statusCounts.nao_conforme}
-            nao_aplicavel={statusCounts.nao_aplicavel}
-            nao_avaliado={statusCounts.nao_avaliado}
-          />
+        {/* Score & Progress section */}
+        <div className="px-4 pb-3 space-y-3">
+          {/* Main score */}
+          {progress && (
+            <div className="flex items-baseline gap-2">
+              <span className={`text-2xl font-bold ${
+                progress.averageScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
+                progress.averageScore >= 60 ? 'text-primary' :
+                progress.averageScore >= 40 ? 'text-amber-600 dark:text-amber-400' :
+                'text-destructive'
+              }`}>
+                {progress.averageScore}%
+              </span>
+              <span className="text-xs text-muted-foreground">de conformidade geral</span>
+            </div>
+          )}
+
+          {/* Progress bar showing evaluation coverage */}
+          {progress && (
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Progress value={progressPercent} className="h-1.5 flex-1" />
+                <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                  {progressPercent}% avaliado
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Status summary - compact pills */}
+          <div className="flex flex-wrap gap-1.5">
+            {statusCounts.conforme > 0 && (
+              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {statusCounts.conforme} Conforme
+              </span>
+            )}
+            {statusCounts.parcial > 0 && (
+              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                {statusCounts.parcial} Parcial
+              </span>
+            )}
+            {statusCounts.nao_conforme > 0 && (
+              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                {statusCounts.nao_conforme} Não Conforme
+              </span>
+            )}
+            {pendenteCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                {pendenteCount} Pendente{pendenteCount > 1 ? 's' : ''}
+              </span>
+            )}
+            {statusCounts.nao_aplicavel > 0 && (
+              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">
+                {statusCounts.nao_aplicavel} N/A
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-end p-3 pt-0 mt-auto">
