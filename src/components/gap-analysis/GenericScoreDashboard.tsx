@@ -93,7 +93,7 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <Skeleton className="h-6 w-48" />
@@ -118,7 +118,7 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
   return (
     <div className="space-y-6">
       {/* Score Geral + Evolução do Score (lado a lado) */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Score Geral de Conformidade</CardTitle>
@@ -138,7 +138,15 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
               <>
                 <div className="flex items-center gap-4">
                   <div className="text-4xl font-bold">{formatScore(overallScore)}</div>
-                  <Badge variant={getScoreColor(overallScore, config) as any} className="text-sm">
+                  <Badge 
+                    variant={
+                      overallScore >= (config.scoreType === 'percentage' ? 80 : 4.5) ? 'default' :
+                      overallScore >= (config.scoreType === 'percentage' ? 60 : 3.5) ? 'secondary' :
+                      overallScore >= (config.scoreType === 'percentage' ? 40 : 2.5) ? 'outline' :
+                      'destructive'
+                    } 
+                    className="text-sm"
+                  >
                     {getScoreLabel(overallScore, config)}
                   </Badge>
                 </div>

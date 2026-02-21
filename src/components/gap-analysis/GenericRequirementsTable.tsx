@@ -164,9 +164,24 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       }
 
       await loadRequirements();
-      const totalReqs = requirements.length;
-      const evaluatedReqs = requirements.filter(r => r.conformity_status && r.conformity_status !== 'nao_aplicavel').length;
-      const score = calculateScore(requirements);
+      // Use fresh data for score calculation after reload
+      const { data: freshReqs } = await supabase
+        .from('gap_analysis_requirements')
+        .select('id, peso')
+        .eq('framework_id', frameworkId);
+      const { data: freshEvals } = await supabase
+        .from('gap_analysis_evaluations')
+        .select('requirement_id, conformity_status')
+        .eq('framework_id', frameworkId)
+        .eq('empresa_id', empresaId);
+      
+      const freshMerged = (freshReqs || []).map(req => {
+        const ev = freshEvals?.find(e => e.requirement_id === req.id);
+        return { ...req, conformity_status: ev?.conformity_status || 'nao_avaliado' } as Requirement;
+      });
+      const totalReqs = freshMerged.length;
+      const evaluatedReqs = freshMerged.filter(r => r.conformity_status && r.conformity_status !== 'nao_aplicavel' && r.conformity_status !== 'nao_avaliado').length;
+      const score = calculateScore(freshMerged);
       await saveScoreHistory(frameworkId, empresaId, score, totalReqs, evaluatedReqs);
       onStatusChange?.();
       toast.success('Status atualizado com sucesso!');

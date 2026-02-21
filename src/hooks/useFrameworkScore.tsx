@@ -88,7 +88,7 @@ const PILLAR_COLORS: Record<string, string> = {
   'Operações': '#ec4899',
 };
 
-export function useFrameworkScore(frameworkId: string, config: FrameworkConfig): FrameworkScore {
+export function useFrameworkScore(frameworkId: string, config: FrameworkConfig, refreshKey?: number): FrameworkScore {
   const { empresaId } = useEmpresaId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -249,8 +249,74 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig):
         calculatedAreaScores.sort((a, b) => b.score - a.score);
         
         setAreaScores(calculatedAreaScores);
-        setDomainScores([]);
-        setSectionScores([]);
+        
+        // Calculate section scores if config has sections
+        if (config.sections && config.sections.length > 0) {
+          const calculatedSectionScores: SectionScore[] = config.sections.map(section => {
+            const sectionReqs = (requirements || []).filter(req => section.filter(req.codigo));
+            let totalWeightedScore = 0;
+            let totalWeight = 0;
+            let evaluated = 0;
+            
+            sectionReqs.forEach(req => {
+              const evaluation = evalMap.get(req.id);
+              const status = evaluation?.conformity_status || 'nao_avaliado';
+              const weight = req.peso || 1;
+              if (status !== 'nao_aplicavel') {
+                const score = config.statusScores[status as keyof typeof config.statusScores] || 0;
+                totalWeightedScore += score * weight;
+                totalWeight += weight;
+                if (status !== 'nao_avaliado') evaluated++;
+              }
+            });
+            
+            return {
+              section: section.id,
+              name: section.title,
+              score: totalWeight > 0 ? totalWeightedScore / totalWeight : 0,
+              totalRequirements: sectionReqs.length,
+              evaluatedRequirements: evaluated,
+            };
+          });
+          setSectionScores(calculatedSectionScores);
+        } else {
+          setSectionScores([]);
+        }
+        
+        // Calculate domain scores if config has domains
+        if (config.domains && config.domains.length > 0) {
+          const calculatedDomainScores: DomainScore[] = config.domains.map(domain => {
+            const domainReqs = (requirements || []).filter(req => req.codigo?.startsWith(domain.id));
+            let totalWeightedScore = 0;
+            let totalWeight = 0;
+            let evaluated = 0;
+            
+            domainReqs.forEach(req => {
+              const evaluation = evalMap.get(req.id);
+              const status = evaluation?.conformity_status || 'nao_avaliado';
+              const weight = req.peso || 1;
+              if (status !== 'nao_aplicavel') {
+                const score = config.statusScores[status as keyof typeof config.statusScores] || 0;
+                totalWeightedScore += score * weight;
+                totalWeight += weight;
+                if (status !== 'nao_avaliado') evaluated++;
+              }
+            });
+            
+            return {
+              domain: domain.id,
+              name: domain.name,
+              score: totalWeight > 0 ? totalWeightedScore / totalWeight : 0,
+              totalRequirements: domainReqs.length,
+              evaluatedRequirements: evaluated,
+              color: domain.color,
+            };
+          });
+          setDomainScores(calculatedDomainScores);
+        } else {
+          setDomainScores([]);
+        }
+        
         setTotalRequirements(requirements?.length || 0);
         setEvaluatedRequirements(totalEvaluated);
       } catch (err: any) {
@@ -262,7 +328,7 @@ export function useFrameworkScore(frameworkId: string, config: FrameworkConfig):
     };
 
     loadScore();
-  }, [frameworkId, empresaId, config?.id, config?.scoreType]);
+  }, [frameworkId, empresaId, config?.id, config?.scoreType, refreshKey]);
 
   return {
     overallScore,

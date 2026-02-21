@@ -14,7 +14,7 @@ import { Riscos } from '@/pages/Riscos';
 import GapAnalysis from '@/pages/GapAnalysis';
 import GapAnalysisFrameworks from '@/pages/GapAnalysisFrameworks';
 import GapAnalysisFrameworkDetail from '@/pages/GapAnalysisFrameworkDetail';
-// GapAnalysisAderencia removed - unified into framework detail
+
 
 import Contratos from '@/pages/Contratos';
 import Governanca from '@/pages/Governanca';

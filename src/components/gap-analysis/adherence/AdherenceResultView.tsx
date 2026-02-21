@@ -22,7 +22,6 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
   const { toast } = useToast();
   const { empresaId } = useEmpresaId();
   
-  // Buscar detalhes por requisito
   const { data: details } = useOptimizedQuery(
     async () => {
       const { data, error } = await supabase
@@ -30,7 +29,6 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
         .select('*')
         .eq('assessment_id', assessment.id)
         .order('requisito_codigo');
-
       if (error) throw error;
       return { data, error: null };
     },
@@ -38,17 +36,14 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
     { cacheKey: `adherence-details-${assessment.id}`, cacheDuration: 60000 }
   );
 
-  // Buscar dados da empresa
   const { data: empresa } = useOptimizedQuery(
     async () => {
       if (!empresaId) return { data: null, error: null };
-      
       const { data, error } = await supabase
         .from('empresas')
         .select('nome, logo_url')
         .eq('id', empresaId)
         .single();
-
       if (error) throw error;
       return { data, error: null };
     },
@@ -56,61 +51,44 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
     { cacheKey: `empresa-${empresaId}`, cacheDuration: 300000 }
   );
 
-  const getResultColor = (resultado?: string) => {
-    return 'border-gray-200 bg-white';
-  };
-
   const getResultIconColor = (resultado?: string) => {
     switch (resultado) {
       case 'conforme':
-        return { bg: 'bg-green-100', icon: 'text-green-600' };
+        return { bg: 'bg-green-100 dark:bg-green-900/30', icon: 'text-green-600 dark:text-green-400' };
       case 'nao_conforme':
-        return { bg: 'bg-red-100', icon: 'text-red-600' };
+        return { bg: 'bg-red-100 dark:bg-red-900/30', icon: 'text-red-600 dark:text-red-400' };
       case 'parcial':
-        return { bg: 'bg-yellow-100', icon: 'text-yellow-600' };
+        return { bg: 'bg-yellow-100 dark:bg-yellow-900/30', icon: 'text-yellow-600 dark:text-yellow-400' };
       default:
-        return { bg: 'bg-gray-100', icon: 'text-gray-600' };
+        return { bg: 'bg-muted', icon: 'text-muted-foreground' };
     }
   };
 
   const getResultLabel = (resultado?: string) => {
     switch (resultado) {
-      case 'conforme':
-        return 'CONFORME';
-      case 'nao_conforme':
-        return 'NÃO CONFORME';
-      case 'parcial':
-        return 'PARCIALMENTE CONFORME';
-      default:
-        return 'DESCONHECIDO';
+      case 'conforme': return 'CONFORME';
+      case 'nao_conforme': return 'NÃO CONFORME';
+      case 'parcial': return 'PARCIALMENTE CONFORME';
+      default: return 'DESCONHECIDO';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'conforme':
-        return 'bg-gray-600';
-      case 'nao_conforme':
-        return 'bg-gray-400';
-      case 'parcial':
-        return 'bg-gray-500';
-      case 'nao_aplicavel':
-        return 'bg-gray-300';
-      default:
-        return 'bg-gray-300';
+      case 'conforme': return 'bg-green-500';
+      case 'nao_conforme': return 'bg-red-500';
+      case 'parcial': return 'bg-yellow-500';
+      case 'nao_aplicavel': return 'bg-muted-foreground/40';
+      default: return 'bg-muted-foreground/40';
     }
   };
 
-  const getPrioridadeColor = (prioridade: string): string => {
+  const getPrioridadeBadgeVariant = (prioridade: string) => {
     switch (prioridade) {
-      case 'alta':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'media':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'baixa':
-        return 'bg-green-100 text-green-800 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'alta': return 'destructive' as const;
+      case 'media': return 'warning' as const;
+      case 'baixa': return 'secondary' as const;
+      default: return 'outline' as const;
     }
   };
   
@@ -123,30 +101,13 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
     }
   };
 
-  // Calcular distribuição
-  const distribuicao = {
-    conforme: details?.filter((d: any) => d.status_aderencia === 'conforme').length || 0,
-    parcial: details?.filter((d: any) => d.status_aderencia === 'parcial').length || 0,
-    nao_conforme: details?.filter((d: any) => d.status_aderencia === 'nao_conforme').length || 0,
-    nao_aplicavel: details?.filter((d: any) => d.status_aderencia === 'nao_aplicavel').length || 0,
-  };
-
-  const total = distribuicao.conforme + distribuicao.parcial + distribuicao.nao_conforme + distribuicao.nao_aplicavel;
-
   const handleExportPDF = async () => {
     try {
       await exportAssessmentToPDF(assessment, details, empresa?.logo_url);
-      toast({
-        title: "PDF exportado",
-        description: "O relatório foi exportado com sucesso.",
-      });
+      toast({ title: "PDF exportado", description: "O relatório foi exportado com sucesso." });
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      toast({
-        title: "Erro ao exportar",
-        description: "Ocorreu um erro ao exportar o PDF.",
-        variant: "destructive"
-      });
+      toast({ title: "Erro ao exportar", description: "Ocorreu um erro ao exportar o PDF.", variant: "destructive" });
     }
   };
 
@@ -167,7 +128,7 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
       </div>
 
       {/* Resultado Geral */}
-      <Card className={`p-8 border ${getResultColor(assessment.resultado_geral)}`}>
+      <Card className="p-8 border">
         <div className="text-center">
           <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full ${getResultIconColor(assessment.resultado_geral).bg} mb-3`}>
             {assessment.resultado_geral === 'conforme' ? (
@@ -176,9 +137,9 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
               <AlertTriangle className={`h-6 w-6 ${getResultIconColor(assessment.resultado_geral).icon}`} />
             )}
           </div>
-          <h2 className="text-2xl font-bold mb-2 text-gray-900">{getResultLabel(assessment.resultado_geral)}</h2>
-          <p className="text-4xl font-bold mb-4 text-gray-900">{assessment.percentual_conformidade}%</p>
-          <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
+          <h2 className="text-2xl font-bold mb-2 text-foreground">{getResultLabel(assessment.resultado_geral)}</h2>
+          <p className="text-4xl font-bold mb-4 text-foreground">{assessment.percentual_conformidade}%</p>
+          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
             <div>
               <span className="font-medium">Framework:</span> {assessment.framework_nome} {assessment.framework_versao}
             </div>
@@ -187,7 +148,7 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
               <span className="font-medium">Documento:</span> {assessment.documento_nome}
             </div>
           </div>
-          <p className="text-xs mt-2 text-gray-500">
+          <p className="text-xs mt-2 text-muted-foreground">
             Análise realizada em {format(new Date(assessment.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
           </p>
         </div>
@@ -195,15 +156,15 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
 
       {/* Pontos Fortes */}
       {assessment.pontos_fortes && assessment.pontos_fortes.length > 0 && (
-        <Card className="p-6 border-gray-200 bg-white">
-          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-700">
-            <CheckCircle2 className="h-5 w-5 text-gray-500" />
+        <Card className="p-6">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-foreground">
+            <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
             Pontos Fortes ({assessment.pontos_fortes.length})
           </h3>
           <div className="space-y-3">
             {assessment.pontos_fortes.map((ponto: PontoForte, index: number) => (
-              <Card key={index} className="p-4 bg-gray-50 border-gray-200">
-                <h4 className="font-semibold text-gray-900 mb-2">{ponto.titulo}</h4>
+              <Card key={index} className="p-4 bg-muted/50">
+                <h4 className="font-semibold text-foreground mb-2">{ponto.titulo}</h4>
                 <p className="text-sm text-muted-foreground">{ponto.descricao}</p>
               </Card>
             ))}
@@ -213,17 +174,17 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
 
       {/* Pontos de Melhoria */}
       {assessment.pontos_melhoria && assessment.pontos_melhoria.length > 0 && (
-        <Card className="p-6 border-gray-200 bg-white">
-          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-700">
-            <AlertTriangle className="h-5 w-5 text-gray-500" />
+        <Card className="p-6">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-foreground">
+            <AlertTriangle className="h-5 w-5 text-muted-foreground" />
             Pontos de Melhoria ({assessment.pontos_melhoria.length})
           </h3>
           <div className="space-y-3">
             {assessment.pontos_melhoria.map((ponto: PontoMelhoria, index: number) => (
-              <Card key={index} className="p-4 bg-gray-50 border-gray-200">
+              <Card key={index} className="p-4 bg-muted/50">
                 <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-semibold text-gray-900">{ponto.titulo}</h4>
-                  <Badge className={`${getPrioridadeColor(ponto.prioridade)} border whitespace-nowrap`}>{getPrioridadeLabel(ponto.prioridade)}</Badge>
+                  <h4 className="font-semibold text-foreground">{ponto.titulo}</h4>
+                  <Badge variant={getPrioridadeBadgeVariant(ponto.prioridade)} className="whitespace-nowrap">{getPrioridadeLabel(ponto.prioridade)}</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">{ponto.descricao}</p>
               </Card>
@@ -234,12 +195,12 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
 
       {/* Recomendações */}
       {assessment.recomendacoes && assessment.recomendacoes.length > 0 && (
-        <Card className="p-6 border-gray-200 bg-white">
-          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-700">
-            <Lightbulb className="h-5 w-5 text-gray-500" />
+        <Card className="p-6">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-foreground">
+            <Lightbulb className="h-5 w-5 text-muted-foreground" />
             Recomendações
           </h3>
-          <ol className="list-decimal list-inside space-y-2 text-gray-700">
+          <ol className="list-decimal list-inside space-y-2 text-foreground">
             {assessment.recomendacoes.map((rec: string, index: number) => (
               <li key={index} className="text-sm">{rec}</li>
             ))}
@@ -273,19 +234,19 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
                   <div className="space-y-3 pt-2">
                     {detail.evidencias_encontradas && (
                       <div>
-                        <h5 className="font-semibold text-sm text-gray-700 mb-1">Evidências Encontradas:</h5>
+                        <h5 className="font-semibold text-sm text-foreground mb-1">Evidências Encontradas:</h5>
                         <p className="text-sm text-muted-foreground">{detail.evidencias_encontradas}</p>
                       </div>
                     )}
                     {detail.gaps_especificos && (
                       <div>
-                        <h5 className="font-semibold text-sm text-gray-700 mb-1">Gaps Identificados:</h5>
+                        <h5 className="font-semibold text-sm text-foreground mb-1">Gaps Identificados:</h5>
                         <p className="text-sm text-muted-foreground">{detail.gaps_especificos}</p>
                       </div>
                     )}
                     {detail.observacoes_ia && (
                       <div>
-                        <h5 className="font-semibold text-sm text-gray-700 mb-1">Observações da IA:</h5>
+                        <h5 className="font-semibold text-sm text-foreground mb-1">Observações da IA:</h5>
                         <p className="text-sm text-muted-foreground">{detail.observacoes_ia}</p>
                       </div>
                     )}
@@ -301,7 +262,7 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
       {assessment.analise_detalhada && (
         <Card className="p-6">
           <h3 className="text-xl font-semibold mb-4">Análise Completa</h3>
-          <div className="prose prose-sm max-w-none whitespace-pre-wrap">
+          <div className="prose prose-sm max-w-none whitespace-pre-wrap dark:prose-invert">
             {assessment.analise_detalhada}
           </div>
         </Card>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GenericScoreDashboard } from '@/components/gap-analysis/GenericScoreDashboard';
 import { GenericRequirementsTable } from '@/components/gap-analysis/GenericRequirementsTable';
 import { CategoryBarChart } from '@/components/gap-analysis/CategoryBarChart';
-import { AreaBarChart } from '@/components/gap-analysis/AreaBarChart';
 import { CategoryStatusCards } from '@/components/gap-analysis/CategoryStatusCards';
 import { PrivacyTreemap } from '@/components/gap-analysis/charts/PrivacyTreemap';
 import { FrameworkHistoryTab } from '@/components/gap-analysis/FrameworkHistoryTab';
@@ -40,6 +39,7 @@ export default function GapAnalysisFrameworkDetail() {
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | undefined>();
   const [activeTab, setActiveTab] = useState('avaliacao');
+  const [scoreRefreshKey, setScoreRefreshKey] = useState(0);
 
   // Adherence sub-view state
   const [selectedAdherenceAssessment, setSelectedAdherenceAssessment] = useState<any>(null);
@@ -106,7 +106,7 @@ export default function GapAnalysisFrameworkDetail() {
   const {
     overallScore, pillarScores, domainScores, areaScores, sectionScores,
     categoryScores, totalRequirements, evaluatedRequirements, loading: scoreLoading,
-  } = useFrameworkScore(frameworkId || '', config || defaultConfig);
+  } = useFrameworkScore(frameworkId || '', config || defaultConfig, scoreRefreshKey);
 
   const handleExportPDF = async () => {
     if (!framework || !config) return;
@@ -165,7 +165,34 @@ export default function GapAnalysisFrameworkDetail() {
     }
   };
 
-  const handleScoreChange = () => {};
+  const handleScoreChange = useCallback(() => {
+    setScoreRefreshKey(k => k + 1);
+    // Also reload category data
+    if (frameworkId && empresaId) {
+      const reloadCats = async () => {
+        try {
+          const [reqsRes, evalsRes] = await Promise.all([
+            supabase.from('gap_analysis_requirements').select('id, categoria').eq('framework_id', frameworkId),
+            supabase.from('gap_analysis_evaluations').select('requirement_id, conformity_status').eq('framework_id', frameworkId).eq('empresa_id', empresaId),
+          ]);
+          const reqs = reqsRes.data || [];
+          const evals = evalsRes.data || [];
+          const evalMap = new Map(evals.map(e => [e.requirement_id, e.conformity_status || 'nao_avaliado']));
+          const catMap: Record<string, { conforme: number; parcial: number; nao_conforme: number; nao_aplicavel: number; nao_avaliado: number; total: number }> = {};
+          reqs.forEach(r => {
+            const cat = r.categoria || 'Outros';
+            if (!catMap[cat]) catMap[cat] = { conforme: 0, parcial: 0, nao_conforme: 0, nao_aplicavel: 0, nao_avaliado: 0, total: 0 };
+            catMap[cat].total++;
+            const st = evalMap.get(r.id) || 'nao_avaliado';
+            if (st in catMap[cat]) (catMap[cat] as any)[st]++;
+            else catMap[cat].nao_avaliado++;
+          });
+          setCategoryData(Object.entries(catMap).map(([categoria, data]) => ({ categoria, ...data })).sort((a, b) => a.categoria.localeCompare(b.categoria)));
+        } catch (e) { /* silent */ }
+      };
+      reloadCats();
+    }
+  }, [frameworkId, empresaId]);
 
   if (loading || !framework || !config) {
     return (
