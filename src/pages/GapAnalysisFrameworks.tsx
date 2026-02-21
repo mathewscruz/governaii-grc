@@ -111,14 +111,18 @@ export default function GapAnalysisFrameworks() {
 
                 statusCountsMap[fwId] = { conforme, parcial, nao_conforme, nao_aplicavel, nao_avaliado: Math.max(0, nao_avaliado) };
 
+                // Calculate score considering ALL requirements (not just evaluated ones)
                 let avgScore = 0;
-                if (evaluated.length > 0) {
-                  const totalScore = evaluated.reduce((acc, e) => {
-                    if (e.conformity_status === 'conforme') return acc + 100;
-                    if (e.conformity_status === 'parcial') return acc + 50;
-                    return acc;
-                  }, 0);
-                  avgScore = Math.round(totalScore / evaluated.length);
+                if (totalReqs > 0) {
+                  const applicableCount = totalReqs - nao_aplicavel;
+                  if (applicableCount > 0) {
+                    const totalScore = evals.reduce((acc, e) => {
+                      if (e.conformity_status === 'conforme') return acc + 100;
+                      if (e.conformity_status === 'parcial') return acc + 50;
+                      return acc;
+                    }, 0);
+                    avgScore = Math.round(totalScore / applicableCount);
+                  }
                 }
 
                 progress[fwId] = {
