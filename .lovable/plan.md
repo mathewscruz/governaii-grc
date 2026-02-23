@@ -1,137 +1,115 @@
 
-# Auditoria Completa do Modulo Gap Analysis
 
-## 1. Componentes Orfaos (Codigo Morto)
+# Tornar o Gap Analysis um Consultor Virtual de Certificacao
 
-Os seguintes arquivos existem no projeto mas **nao sao importados por nenhuma pagina ou componente**:
+## Diagnostico: O que falta para substituir um auditor Big4?
 
-| Arquivo | Descricao |
-|---------|-----------|
-| `nist/NISTScoreDashboard.tsx` | Dashboard especifico NIST (substituido pelo GenericScoreDashboard) |
-| `nist/NISTRadarChart.tsx` | Radar chart NIST (nao usado) |
-| `nist/NISTPillarCard.tsx` | Card de pilar NIST (nao usado) |
-| `nist/NISTRequirementsTable.tsx` | Tabela de requisitos NIST (substituida pela GenericRequirementsTable) |
-| `nist/ExportNISTPDF.tsx` | Export PDF NIST (substituido pelo ExportFrameworkPDF) |
-| `charts/ComplianceStackedBar.tsx` | Grafico de barras empilhadas (nao usado) |
-| `charts/GovernanceGauge.tsx` | Gauge de governanca (nao usado) |
-| `charts/ISOProgressFunnel.tsx` | Funnel PDCA ISO (nao usado) |
-| `charts/FrameworkRadarChart.tsx` | Radar chart generico (nao usado) |
-| `ColumnVisibilityManager.tsx` | Gerenciador de colunas (nao usado) |
-| `FrameworkVisibilityDialog.tsx` | Dialog de visibilidade (nao usado) |
-| `RequirementsManagerDialog.tsx` | Dialog gerenciador de requisitos (nao usado) |
-| `pages/GapAnalysisAderencia.tsx` | Pagina de aderencia avulsa (rota redirecionada) |
+Analisei minuciosamente todo o fluxo do modulo e identifiquei **5 lacunas criticas** que impedem um usuario leigo de conduzir uma certificacao sozinho:
 
-**Acao**: Remover todos esses arquivos para reduzir complexidade e tamanho do bundle.
+### 1. Requisitos sem orientacao (0% preenchido)
+Os dados no banco mostram que **nenhum dos 298 requisitos** (ISO 27001: 117, NIST CSF: 116, LGPD: 65) possui `orientacao_implementacao` ou `exemplos_evidencias` preenchidos. Isso significa que quando o usuario abre o detalhe de um requisito, os cards "Como implementar este requisito?" e "Evidencias Sugeridas" (linhas 351-385 do `NISTRequirementDetailDialog`) **nunca aparecem**. O usuario fica sozinho diante de um titulo tecnico como "4.1 - Entendendo a organizacao e seu contexto" sem saber o que fazer.
 
----
+**Um auditor Big4 explicaria exatamente o que aquele requisito exige e daria exemplos concretos. Nosso sistema nao faz isso.**
 
-## 2. Bugs e Problemas Tecnicos
+### 2. Nenhuma orientacao contextual ao iniciar um framework
+Quando o usuario clica em um framework pela primeira vez, ele cai direto na tabela de requisitos com score 0%. Nao ha:
+- Explicacao do que e o framework e para que serve
+- Roteiro sugerido de por onde comecar
+- Estimativa de esforco ou timeline
+- Dicas de quick wins
 
-### 2.1 AreaBarChart importado mas nunca renderizado
-O `AreaBarChart` e importado no `GapAnalysisFrameworkDetail.tsx` (linha 11) mas **nunca e renderizado no JSX**. E codigo morto no import.
+**Um consultor faria uma reuniao de kick-off explicando o framework e o roadmap. Nosso sistema pula direto para a execucao.**
 
-### 2.2 Score nao atualiza em tempo real apos mudanca de status
-No `GenericRequirementsTable.tsx`, quando o usuario muda o status de um requisito:
-- Linha 167-170: O `calculateScore` usa o array `requirements` **antigo** (antes do `loadRequirements()` recarregar), entao o score salvo no historico esta sempre **1 avaliacao atrasado**.
-- `handleScoreChange` na page (linha 168) e uma funcao vazia `() => {}` que nao faz nada -- o dashboard nao recarrega apos mudanca de status.
+### 3. IA existe mas nao esta integrada no fluxo de avaliacao
+O sistema tem a AkurIA (chatbot generico) e o `ai-module-assistant` (com acoes como classify-risk, suggest-controls), mas **nenhuma IA esta integrada diretamente no fluxo de avaliacao de requisitos**. O usuario precisa avaliar cada requisito manualmente sem assistencia inteligente.
 
-### 2.3 AdherenceResultView com cores hardcoded (ignora dark mode)
-O `AdherenceResultView.tsx` usa cores fixas como `text-gray-900`, `bg-white`, `text-gray-700`, `bg-gray-50` que **quebram no dark mode**, ficando ilegivel.
+**Um auditor analisaria a situacao da empresa e diria "voce provavelmente ja atende parcialmente este requisito porque tem X implementado". Nosso sistema nao faz nenhuma inferencia.**
 
-### 2.4 getFrameworkConfig com deteccao imprecisa
-O `getFrameworkConfig` detecta "NIST CSF" pelo nome, mas o framework no banco chama-se `"NIST CSF"` e nao `"NIST CSF 2.0"`. A deteccao funciona por `.includes('nist')`, mas a config retornada tem `id: 'nist-csf-2.0'` -- pode gerar inconsistencia se houver outros NIST.
+### 4. Falta de "proximo passo" apos avaliacoes
+Apos o usuario marcar varias avaliacoes, nao ha nenhum painel que diga:
+- "Voce esta 40% conforme. Para chegar a 70%, foque nestes 5 requisitos prioritarios"
+- "Estes requisitos estao parciais e podem ser resolvidos com acoes simples"
+- Priorizacao inteligente baseada em peso/impacto
 
-### 2.5 ISO 27001 sections/domains nunca calculados
-O `useFrameworkScore` sempre seta `setDomainScores([])` e `setSectionScores([])` (linhas 252-253), ignorando completamente a configuracao de `config.sections` e `config.domains` da ISO 27001. Os cards de "Aderencia por Secao" e "Aderencia por Dominio do Anexo A" no `GenericScoreDashboard` ficam sempre vazios.
-
-### 2.6 Badge variant invalida
-No `GenericScoreDashboard.tsx` linha 141: `variant={getScoreColor(overallScore, config) as any}` -- `getScoreColor` retorna strings como `"text-green-600"` que nao sao variants validas de Badge. Sempre cai no fallback.
-
----
-
-## 3. Problemas de UX/Visual
-
-### 3.1 Grid 2 colunas no dashboard quebra em telas menores
-O `GenericScoreDashboard` usa `grid-cols-2` fixo (linha 121) sem responsividade. Em telas medias, os cards ficam espremidos.
-
-### 3.2 Falta feedback visual de progresso geral na lista de frameworks
-Ao entrar na listagem, os "Frameworks Ativos" mostram status blocks e score, mas nao ha uma **barra de progresso geral** mostrando quanto falta para completar a avaliacao de todos os frameworks.
-
-### 3.3 Falta indicacao de "ultimo acesso" nos frameworks
-O usuario nao sabe quando foi a ultima vez que avaliou um framework especifico.
-
-### 3.4 Tabs de categorias com nomes longos causam overflow horizontal
-No `GenericRequirementsTable`, as tabs de categoria com nomes longos (ex: "Estrategia de Gestao de Riscos da Cadeia de Suprimentos") causam overflow horizontal sem scroll visivel.
-
-### 3.5 Falta confirmacao ao mudar status de um requisito
-O dropdown de status muda imediatamente sem confirmacao -- um clique acidental pode alterar uma avaliacao importante.
-
----
-
-## 4. Melhorias Recomendadas
-
-### 4.1 Corrigir o refresh do dashboard apos mudanca de status
-Trocar o `handleScoreChange = () => {}` por uma funcao que recarregue os scores do `useFrameworkScore` (adicionar uma key de dependencia ou funcao de refetch).
-
-### 4.2 Calcular domainScores e sectionScores no useFrameworkScore
-Usar a configuracao `config.sections` e `config.domains` para calcular scores por secao/dominio da ISO 27001, preenchendo os cards que hoje ficam vazios.
-
-### 4.3 Corrigir cores do AdherenceResultView para dark mode
-Substituir cores hardcoded por variaveis CSS do Tailwind (ex: `text-foreground`, `bg-card`, `bg-muted`).
-
-### 4.4 Corrigir Badge variant no dashboard
-Usar uma funcao propria que mapeia o score para uma variant valida (`success`, `warning`, `destructive`, `outline`).
-
-### 4.5 Tornar o grid do dashboard responsivo
-Mudar `grid-cols-2` para `grid-cols-1 lg:grid-cols-2` no score dashboard.
-
-### 4.6 Limpar todos os componentes orfaos
-Remover os 13 arquivos listados na secao 1.
-
-### 4.7 Remover import nao usado do AreaBarChart
-Limpar import sem uso no `GapAnalysisFrameworkDetail.tsx`.
-
----
-
-## Resumo de Prioridades
-
-| Prioridade | Item | Tipo |
-|------------|------|------|
-| Alta | Score nao atualiza apos mudanca de status (2.2) | Bug |
-| Alta | ISO sections/domains nunca calculados (2.5) | Bug |
-| Alta | Badge variant invalida (2.6) | Bug |
-| Alta | AdherenceResultView quebra no dark mode (2.3) | Visual |
-| Media | Grid nao responsivo no dashboard (3.1) | Visual |
-| Media | Componentes orfaos (1) | Limpeza |
-| Media | Import nao usado AreaBarChart (2.1) | Limpeza |
-| Baixa | Falta confirmacao ao mudar status (3.5) | UX |
-| Baixa | Tabs overflow com nomes longos (3.4) | Visual |
-| Baixa | Indicacao de ultimo acesso (3.3) | UX |
+### 5. Analise de Documentos desconectada da avaliacao manual
+A aba "Analise de Documentos" analisa PDFs via IA mas **nao alimenta automaticamente** a avaliacao manual. Os resultados ficam isolados -- o usuario precisa manualmente olhar o resultado da analise de documento e ir atualizar cada requisito na aba manual.
 
 ---
 
 ## Plano de Implementacao
 
-### Fase 1 -- Corrigir Bugs Criticos
-1. Corrigir `handleScoreChange` para recarregar dados do dashboard
-2. Implementar calculo de `sectionScores` e `domainScores` no `useFrameworkScore` usando `config.sections` e `config.domains`
-3. Corrigir Badge variant no `GenericScoreDashboard`
-4. Corrigir score history salvando com dados atualizados (pos-reload)
+### Fase 1: Assistente IA por Requisito (maior impacto)
 
-### Fase 2 -- Corrigir Visual
-5. Substituir cores hardcoded no `AdherenceResultView` por variaveis CSS
-6. Tornar grid do dashboard responsivo (`grid-cols-1 lg:grid-cols-2`)
-7. Adicionar scroll horizontal nas tabs de categorias longas
+**Novo botao "Pedir ajuda a IA" no `NISTRequirementDetailDialog`**
 
-### Fase 3 -- Limpeza
-8. Remover os 13 arquivos orfaos
-9. Remover import nao usado do `AreaBarChart`
-10. Remover pagina `GapAnalysisAderencia.tsx` (ja redirecionada)
+Quando o usuario abre o detalhe de um requisito e nao sabe como avaliar, ele clica em um botao que chama o `ai-module-assistant` com uma nova action `explain-requirement`. A IA retorna:
 
-### Arquivos Afetados
-- `src/hooks/useFrameworkScore.tsx` -- adicionar calculo de sections/domains
-- `src/pages/GapAnalysisFrameworkDetail.tsx` -- corrigir handleScoreChange, remover import
-- `src/components/gap-analysis/GenericScoreDashboard.tsx` -- corrigir badge, responsividade
-- `src/components/gap-analysis/GenericRequirementsTable.tsx` -- corrigir ordem de calculo do score
-- `src/components/gap-analysis/adherence/AdherenceResultView.tsx` -- corrigir dark mode
-- 13 arquivos a remover (listados na secao 1)
+- O que este requisito exige em linguagem simples
+- Exemplos praticos de evidencias aceitas por auditores
+- Perguntas que o usuario deve fazer internamente para determinar conformidade
+- Sugestao de status baseada em praticas comuns de empresas do mesmo porte
+
+**Arquivos afetados:**
+- `supabase/functions/ai-module-assistant/index.ts` -- adicionar action `explain-requirement`
+- `src/components/gap-analysis/nist/NISTRequirementDetailDialog.tsx` -- adicionar botao e card de resposta IA
+
+### Fase 2: Painel de Recomendacoes Inteligentes
+
+**Novo componente `AIRecommendationsCard` no dashboard do framework**
+
+Apos o usuario ter avaliado ao menos 10% dos requisitos, um card aparece acima da tabela com:
+- Top 5 requisitos prioritarios para focar (baseado em peso + status nao_conforme)
+- Quick wins: requisitos parciais que precisam de pouco esforco para virar conforme
+- Estimativa de score se os top 5 forem resolvidos
+- Botao "Gerar Plano de Acao Automatico" que cria planos de acao para os itens criticos
+
+**Arquivos afetados:**
+- `src/components/gap-analysis/AIRecommendationsCard.tsx` -- novo componente
+- `src/pages/GapAnalysisFrameworkDetail.tsx` -- integrar na aba "Avaliacao Manual"
+- `supabase/functions/ai-module-assistant/index.ts` -- nova action `framework-recommendations`
+
+### Fase 3: Onboarding Guiado por Framework
+
+**Tela de boas-vindas ao entrar em um framework pela primeira vez**
+
+Se `evaluatedRequirements === 0`, ao inves de mostrar direto o dashboard vazio, mostrar:
+1. Card explicativo: "O que e a ISO 27001?", "Quanto tempo leva?", "Quanto custa tipicamente?"
+2. Roteiro sugerido: "Comece pela Lideranca (capitulo 5), depois Contexto (capitulo 4)"
+3. Checklist interativo de pre-requisitos ("Voce ja tem uma politica de seguranca?")
+4. Botao "Comecar Avaliacao Guiada" que leva ao primeiro requisito
+
+**Arquivos afetados:**
+- `src/components/gap-analysis/FrameworkOnboarding.tsx` -- novo componente
+- `src/pages/GapAnalysisFrameworkDetail.tsx` -- renderizar condicionalmente quando `evaluatedRequirements === 0`
+
+### Fase 4: Conectar Analise de Documentos com Avaliacao Manual
+
+**Botao "Aplicar resultados na avaliacao" no `AdherenceResultView`**
+
+Quando a analise de documentos termina e identifica requisitos conformes/parciais, o usuario pode clicar um botao que automaticamente atualiza os status na avaliacao manual correspondente. Isso evita trabalho duplicado e torna a analise de documentos realmente util.
+
+**Arquivos afetados:**
+- `src/components/gap-analysis/adherence/AdherenceResultView.tsx` -- adicionar botao e logica de sincronizacao
+- Logica de upsert em `gap_analysis_evaluations` baseada nos resultados de `gap_analysis_adherence_details`
+
+---
+
+## Resumo de Prioridade
+
+| Fase | Impacto | Esforco | Descricao |
+|------|---------|---------|-----------|
+| 1 | Altissimo | Medio | IA explica cada requisito e sugere como avaliar |
+| 2 | Alto | Medio | Painel de recomendacoes e priorizacao inteligente |
+| 3 | Alto | Baixo | Onboarding guiado para novos frameworks |
+| 4 | Medio | Baixo | Conectar analise de documentos com avaliacao manual |
+
+### Arquivos Novos
+- `src/components/gap-analysis/AIRecommendationsCard.tsx`
+- `src/components/gap-analysis/FrameworkOnboarding.tsx`
+
+### Arquivos Modificados
+- `supabase/functions/ai-module-assistant/index.ts` (2 novas actions)
+- `src/components/gap-analysis/nist/NISTRequirementDetailDialog.tsx`
+- `src/pages/GapAnalysisFrameworkDetail.tsx`
+- `src/components/gap-analysis/adherence/AdherenceResultView.tsx`
+
