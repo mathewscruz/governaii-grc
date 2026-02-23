@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { CheckCircle2, AlertTriangle, Lightbulb, ArrowLeft, Download, TrendingUp, FileText } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Lightbulb, ArrowLeft, Download, TrendingUp, FileText, RefreshCw, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { AdherenceAssessment, PontoForte, PontoMelhoria } from './types';
@@ -16,11 +17,14 @@ import { useEmpresaId } from '@/hooks/useEmpresaId';
 interface AdherenceResultViewProps {
   assessment: AdherenceAssessment;
   onBack: () => void;
+  frameworkId?: string;
+  onApplied?: () => void;
 }
 
-export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewProps) {
+export function AdherenceResultView({ assessment, onBack, frameworkId, onApplied }: AdherenceResultViewProps) {
   const { toast } = useToast();
   const { empresaId } = useEmpresaId();
+  const [applying, setApplying] = useState(false);
   
   const { data: details } = useOptimizedQuery(
     async () => {
@@ -111,6 +115,79 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
     }
   };
 
+  const handleApplyToEvaluation = async () => {
+    if (!details || !empresaId || !frameworkId) return;
+    setApplying(true);
+    try {
+      const applicableDetails = details.filter(
+        (d: any) => d.requirement_id && d.status_aderencia && d.status_aderencia !== 'nao_aplicavel'
+      );
+
+      if (applicableDetails.length === 0) {
+        toast({ title: "Nenhum resultado aplicável", description: "Não há requisitos com resultado para aplicar." });
+        return;
+      }
+
+      // Map adherence status to conformity_status
+      const statusMap: Record<string, string> = {
+        conforme: 'conforme',
+        parcial: 'parcial',
+        nao_conforme: 'nao_conforme',
+      };
+
+      let applied = 0;
+      for (const detail of applicableDetails) {
+        const conformityStatus = statusMap[detail.status_aderencia];
+        if (!conformityStatus) continue;
+
+        // Check if evaluation exists
+        const { data: existing } = await supabase
+          .from('gap_analysis_evaluations')
+          .select('id, conformity_status')
+          .eq('framework_id', frameworkId)
+          .eq('requirement_id', detail.requirement_id)
+          .eq('empresa_id', empresaId)
+          .maybeSingle();
+
+        if (existing) {
+          // Only update if current status is worse or not evaluated
+          const priority: Record<string, number> = { nao_avaliado: 0, pendente: 0, nao_conforme: 1, parcial: 2, conforme: 3 };
+          const currentPriority = priority[existing.conformity_status || 'nao_avaliado'] || 0;
+          const newPriority = priority[conformityStatus] || 0;
+          if (newPriority > currentPriority) {
+            await supabase.from('gap_analysis_evaluations')
+              .update({ conformity_status: conformityStatus, updated_at: new Date().toISOString() })
+              .eq('id', existing.id);
+            applied++;
+          }
+        } else {
+          await supabase.from('gap_analysis_evaluations')
+            .insert({
+              framework_id: frameworkId,
+              requirement_id: detail.requirement_id,
+              empresa_id: empresaId,
+              conformity_status: conformityStatus,
+              evidence_status: 'pendente',
+              status: 'em_andamento',
+              observacoes: `Avaliado automaticamente pela análise de documento: ${assessment.documento_nome}`,
+            });
+          applied++;
+        }
+      }
+
+      toast({
+        title: "Resultados aplicados",
+        description: `${applied} requisito(s) atualizado(s) na avaliação manual.`,
+      });
+      onApplied?.();
+    } catch (err: any) {
+      console.error('Error applying results:', err);
+      toast({ title: "Erro ao aplicar", description: "Ocorreu um erro ao sincronizar os resultados.", variant: "destructive" });
+    } finally {
+      setApplying(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -120,6 +197,15 @@ export function AdherenceResultView({ assessment, onBack }: AdherenceResultViewP
           Voltar
         </Button>
         <div className="flex gap-2">
+          {frameworkId && details && details.length > 0 && (
+            <Button variant="default" onClick={handleApplyToEvaluation} disabled={applying}>
+              {applying ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Aplicando...</>
+              ) : (
+                <><RefreshCw className="mr-2 h-4 w-4" />Aplicar na Avaliação Manual</>
+              )}
+            </Button>
+          )}
           <Button variant="outline" onClick={handleExportPDF}>
             <Download className="mr-2 h-4 w-4" />
             Exportar PDF

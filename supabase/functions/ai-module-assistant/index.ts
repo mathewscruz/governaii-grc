@@ -61,6 +61,56 @@ Data ocorrência: ${data.data_ocorrencia || ''}
 Retorne JSON: {"resumo_executivo":"string com 3-4 frases","impacto_estimado":"string","acoes_recomendadas":["string"],"classificacao_sugerida":"string","comunicacao_necessaria":"boolean","stakeholders":["string"]}`;
         break;
 
+      case 'explain-requirement':
+        systemPrompt = "Você é um auditor sênior certificado (ISO 27001 Lead Auditor, CISA, CRISC) com 15 anos de experiência em Big4. Você guia empresas na jornada de certificação. Responda APENAS com JSON válido, sem markdown.";
+        userPrompt = `Explique o seguinte requisito de framework de conformidade para um usuário que nunca trabalhou com auditoria:
+
+Framework: ${data.framework_nome || 'Não informado'}
+Código do Requisito: ${data.codigo || ''}
+Título: ${data.titulo || ''}
+Descrição oficial: ${data.descricao || 'Não disponível'}
+Categoria: ${data.categoria || ''}
+Status atual do usuário: ${data.status_atual || 'Não avaliado'}
+
+Retorne JSON: {
+  "explicacao_simples": "string com 3-4 frases explicando o que este requisito exige em linguagem acessível",
+  "exemplos_evidencias": ["string com exemplo concreto de evidência aceita por auditores"],
+  "perguntas_autoavaliacao": ["string com pergunta que o usuário deve fazer internamente para determinar se atende"],
+  "status_sugerido": "conforme|parcial|nao_conforme",
+  "justificativa_sugestao": "string com 2 frases explicando por que sugere este status",
+  "dicas_implementacao": ["string com dica prática para implementar"],
+  "nivel_esforco": "baixo|medio|alto"
+}`;
+        break;
+
+      case 'framework-recommendations':
+        systemPrompt = "Você é um consultor estratégico de GRC (Governança, Risco e Compliance) especialista em priorização de conformidade. Responda APENAS com JSON válido, sem markdown.";
+        userPrompt = `Analise o progresso atual de conformidade e recomende próximos passos prioritários:
+
+Framework: ${data.framework_nome || ''}
+Score atual: ${data.score_atual || 0}%
+Total de requisitos: ${data.total_requisitos || 0}
+Avaliados: ${data.avaliados || 0}
+Conformes: ${data.conformes || 0}
+Parciais: ${data.parciais || 0}
+Não conformes: ${data.nao_conformes || 0}
+
+Requisitos não conformes com maior peso:
+${(data.requisitos_criticos || []).map((r: any) => `- ${r.codigo}: ${r.titulo} (peso ${r.peso})`).join('\n')}
+
+Requisitos parciais (quick wins potenciais):
+${(data.requisitos_parciais || []).map((r: any) => `- ${r.codigo}: ${r.titulo} (peso ${r.peso})`).join('\n')}
+
+Retorne JSON: {
+  "analise_situacional": "string com 3-4 frases sobre a situação atual",
+  "score_estimado_apos_acoes": number (estimativa de score se top 5 forem resolvidos),
+  "top_5_prioridades": [{"codigo":"string","titulo":"string","justificativa":"string","esforco":"baixo|medio|alto"}],
+  "quick_wins": [{"codigo":"string","titulo":"string","acao_sugerida":"string"}],
+  "proximo_marco": "string com meta sugerida (ex: 'Alcançar 60% em 30 dias')",
+  "recomendacao_geral": "string com orientação estratégica"
+}`;
+        break;
+
       case 'analyze-contract':
         systemPrompt = "Você é um advogado especialista em contratos corporativos e compliance. Responda APENAS com JSON válido, sem markdown.";
         userPrompt = `Analise as cláusulas críticas deste contrato:

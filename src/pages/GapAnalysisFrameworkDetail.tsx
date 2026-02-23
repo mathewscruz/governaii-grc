@@ -13,6 +13,8 @@ import { PrivacyTreemap } from '@/components/gap-analysis/charts/PrivacyTreemap'
 import { FrameworkHistoryTab } from '@/components/gap-analysis/FrameworkHistoryTab';
 import { AdherenceAssessmentView } from '@/components/gap-analysis/adherence/AdherenceAssessmentView';
 import { AdherenceResultView } from '@/components/gap-analysis/adherence/AdherenceResultView';
+import { AIRecommendationsCard } from '@/components/gap-analysis/AIRecommendationsCard';
+import { FrameworkOnboarding } from '@/components/gap-analysis/FrameworkOnboarding';
 import { exportFrameworkPDF } from '@/components/gap-analysis/ExportFrameworkPDF';
 import { supabase } from '@/integrations/supabase/client';
 import { getFrameworkConfig } from '@/lib/framework-configs';
@@ -40,6 +42,7 @@ export default function GapAnalysisFrameworkDetail() {
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | undefined>();
   const [activeTab, setActiveTab] = useState('avaliacao');
   const [scoreRefreshKey, setScoreRefreshKey] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Adherence sub-view state
   const [selectedAdherenceAssessment, setSelectedAdherenceAssessment] = useState<any>(null);
@@ -107,6 +110,15 @@ export default function GapAnalysisFrameworkDetail() {
     overallScore, pillarScores, domainScores, areaScores, sectionScores,
     categoryScores, totalRequirements, evaluatedRequirements, loading: scoreLoading,
   } = useFrameworkScore(frameworkId || '', config || defaultConfig, scoreRefreshKey);
+
+  // Show onboarding when no evaluations exist and not loading
+  useEffect(() => {
+    if (!scoreLoading && evaluatedRequirements === 0 && totalRequirements > 0) {
+      setShowOnboarding(true);
+    } else {
+      setShowOnboarding(false);
+    }
+  }, [scoreLoading, evaluatedRequirements, totalRequirements]);
 
   const handleExportPDF = async () => {
     if (!framework || !config) return;
@@ -234,43 +246,68 @@ export default function GapAnalysisFrameworkDetail() {
           </TabsList>
 
           <TabsContent value="avaliacao" className="space-y-6">
-            <GenericScoreDashboard
-              overallScore={overallScore}
-              pillarScores={pillarScores}
-              domainScores={domainScores}
-              areaScores={areaScores}
-              sectionScores={sectionScores}
-              categoryScores={categoryScores}
-              totalRequirements={totalRequirements}
-              evaluatedRequirements={evaluatedRequirements}
-              config={config}
-              loading={scoreLoading}
-              frameworkId={frameworkId!}
-            />
-
-            {/* Charts - Mapa de Conformidade padronizado para todos os frameworks */}
-            {categoryScores.length > 0 && (
-              <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-                <PrivacyTreemap categoryScores={categoryScores} />
-                <CategoryBarChart categoryScores={categoryScores} config={config} />
-              </div>
-            )}
-
-            {categoryData.length > 0 && (
-              <CategoryStatusCards
-                categories={categoryData}
-                onCategoryClick={(cat) => setActiveCategoryFilter(prev => prev === cat ? undefined : cat)}
-                activeCategory={activeCategoryFilter}
+            {showOnboarding ? (
+              <FrameworkOnboarding
+                frameworkNome={framework.nome}
+                frameworkVersao={framework.versao}
+                frameworkTipo={framework.tipo_framework}
+                totalRequirements={totalRequirements}
+                onStart={() => setShowOnboarding(false)}
               />
-            )}
+            ) : (
+              <>
+                <GenericScoreDashboard
+                  overallScore={overallScore}
+                  pillarScores={pillarScores}
+                  domainScores={domainScores}
+                  areaScores={areaScores}
+                  sectionScores={sectionScores}
+                  categoryScores={categoryScores}
+                  totalRequirements={totalRequirements}
+                  evaluatedRequirements={evaluatedRequirements}
+                  config={config}
+                  loading={scoreLoading}
+                  frameworkId={frameworkId!}
+                />
 
-            <GenericRequirementsTable
-              frameworkId={frameworkId!}
-              frameworkName={framework.nome}
-              config={config}
-              onStatusChange={handleScoreChange}
-              initialCategoryFilter={activeCategoryFilter}
-            />
+                {/* AI Recommendations */}
+                {empresaId && evaluatedRequirements > 0 && (
+                  <AIRecommendationsCard
+                    frameworkId={frameworkId!}
+                    frameworkNome={framework.nome}
+                    empresaId={empresaId}
+                    overallScore={overallScore}
+                    totalRequirements={totalRequirements}
+                    evaluatedRequirements={evaluatedRequirements}
+                    scoreType={config.scoreType}
+                  />
+                )}
+
+                {/* Charts */}
+                {categoryScores.length > 0 && (
+                  <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+                    <PrivacyTreemap categoryScores={categoryScores} />
+                    <CategoryBarChart categoryScores={categoryScores} config={config} />
+                  </div>
+                )}
+
+                {categoryData.length > 0 && (
+                  <CategoryStatusCards
+                    categories={categoryData}
+                    onCategoryClick={(cat) => setActiveCategoryFilter(prev => prev === cat ? undefined : cat)}
+                    activeCategory={activeCategoryFilter}
+                  />
+                )}
+
+                <GenericRequirementsTable
+                  frameworkId={frameworkId!}
+                  frameworkName={framework.nome}
+                  config={config}
+                  onStatusChange={handleScoreChange}
+                  initialCategoryFilter={activeCategoryFilter}
+                />
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="documentos">
@@ -278,6 +315,8 @@ export default function GapAnalysisFrameworkDetail() {
               <AdherenceResultView
                 assessment={selectedAdherenceAssessment}
                 onBack={() => setAdherenceView('list')}
+                frameworkId={frameworkId!}
+                onApplied={handleScoreChange}
               />
             ) : (
               <AdherenceAssessmentView

@@ -9,9 +9,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
-import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle } from "lucide-react";
+import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, Sparkles, Bot, HelpCircle } from "lucide-react";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { PlanoAcaoDialog } from "@/components/planos-acao/PlanoAcaoDialog";
+
+interface AIExplanation {
+  explicacao_simples: string;
+  exemplos_evidencias: string[];
+  perguntas_autoavaliacao: string[];
+  status_sugerido: string;
+  justificativa_sugestao: string;
+  dicas_implementacao: string[];
+  nivel_esforco: string;
+}
 
 interface NISTRequirement {
   id: string;
@@ -76,6 +86,8 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
   const [planoAcaoVinculado, setPlanoAcaoVinculado] = useState<any>(null);
   const [savingPlano, setSavingPlano] = useState(false);
   const [requirementDetails, setRequirementDetails] = useState<{ orientacao_implementacao?: string | null; exemplos_evidencias?: string | null }>({});
+  const [aiExplanation, setAiExplanation] = useState<AIExplanation | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const [formData, setFormData] = useState<EvaluationData>({
     responsavel_avaliacao: '',
@@ -264,6 +276,36 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
     setPlanoAcaoDialogOpen(true);
   };
 
+  const handleAskAI = async () => {
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-module-assistant', {
+        body: {
+          action: 'explain-requirement',
+          data: {
+            framework_nome: frameworkId,
+            codigo: requirement.codigo,
+            titulo: requirement.titulo,
+            descricao: requirement.descricao,
+            categoria: requirement.categoria,
+            status_atual: requirement.conformity_status || 'Não avaliado',
+          },
+        },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      setAiExplanation(data?.data || null);
+    } catch (err: any) {
+      console.error('AI explain error:', err);
+      toast.error('Erro ao consultar a IA');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleSavePlanoAcao = async (planoData: any) => {
     setSavingPlano(true);
     try {
@@ -383,6 +425,96 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
                   </CardContent>
                 </Card>
               )}
+
+              {/* Assistente IA */}
+              <Card className="border-primary/20">
+                <CardContent className="pt-4 pb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      <p className="text-sm font-semibold">Assistente de Conformidade IA</p>
+                    </div>
+                    <Button size="sm" variant={aiExplanation ? "outline" : "default"} onClick={handleAskAI} disabled={aiLoading}>
+                      {aiLoading ? (
+                        <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Analisando...</>
+                      ) : aiExplanation ? (
+                        <><Sparkles className="h-4 w-4 mr-1" />Reanalisar</>
+                      ) : (
+                        <><Sparkles className="h-4 w-4 mr-1" />Pedir Ajuda à IA</>
+                      )}
+                    </Button>
+                  </div>
+
+                  {!aiExplanation && !aiLoading && (
+                    <p className="text-sm text-muted-foreground">
+                      Não sabe como avaliar este requisito? A IA pode explicar o que ele exige, sugerir evidências e recomendar um status.
+                    </p>
+                  )}
+
+                  {aiExplanation && (
+                    <div className="space-y-4 mt-3">
+                      {/* Explicação simples */}
+                      <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+                        <p className="text-xs font-semibold text-primary mb-1">O que este requisito exige:</p>
+                        <p className="text-sm text-foreground">{aiExplanation.explicacao_simples}</p>
+                      </div>
+
+                      {/* Evidências sugeridas */}
+                      {aiExplanation.exemplos_evidencias?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-foreground mb-1">📋 Evidências aceitas por auditores:</p>
+                          <ul className="text-sm space-y-1">
+                            {aiExplanation.exemplos_evidencias.map((ev, i) => (
+                              <li key={i} className="flex items-start gap-1.5 text-muted-foreground">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                                <span>{ev}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Perguntas de autoavaliação */}
+                      {aiExplanation.perguntas_autoavaliacao?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-foreground mb-1">❓ Pergunte-se internamente:</p>
+                          <ul className="text-sm space-y-1">
+                            {aiExplanation.perguntas_autoavaliacao.map((q, i) => (
+                              <li key={i} className="text-muted-foreground">• {q}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Dicas de implementação */}
+                      {aiExplanation.dicas_implementacao?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold text-foreground mb-1">💡 Dicas práticas:</p>
+                          <ul className="text-sm space-y-1">
+                            {aiExplanation.dicas_implementacao.map((d, i) => (
+                              <li key={i} className="text-muted-foreground">→ {d}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Status sugerido */}
+                      <div className="flex items-center gap-2 p-2 rounded bg-muted/50 border">
+                        <span className="text-xs font-medium">Sugestão de status:</span>
+                        {(() => {
+                          switch (aiExplanation.status_sugerido) {
+                            case 'conforme': return <Badge variant="success">Conforme</Badge>;
+                            case 'parcial': return <Badge variant="warning">Parcial</Badge>;
+                            case 'nao_conforme': return <Badge variant="destructive">Não Conforme</Badge>;
+                            default: return <Badge variant="outline">{aiExplanation.status_sugerido}</Badge>;
+                          }
+                        })()}
+                        <span className="text-xs text-muted-foreground flex-1">{aiExplanation.justificativa_sugestao}</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Plano de Ação Integrado */}
               {isNonCompliant && (
