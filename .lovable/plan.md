@@ -1,115 +1,148 @@
 
 
-# Tornar o Gap Analysis um Consultor Virtual de Certificacao
+# Auditoria Completa: Modulo de Integracoes
 
-## Diagnostico: O que falta para substituir um auditor Big4?
+## Resumo Executivo
 
-Analisei minuciosamente todo o fluxo do modulo e identifiquei **5 lacunas criticas** que impedem um usuario leigo de conduzir uma certificacao sozinho:
-
-### 1. Requisitos sem orientacao (0% preenchido)
-Os dados no banco mostram que **nenhum dos 298 requisitos** (ISO 27001: 117, NIST CSF: 116, LGPD: 65) possui `orientacao_implementacao` ou `exemplos_evidencias` preenchidos. Isso significa que quando o usuario abre o detalhe de um requisito, os cards "Como implementar este requisito?" e "Evidencias Sugeridas" (linhas 351-385 do `NISTRequirementDetailDialog`) **nunca aparecem**. O usuario fica sozinho diante de um titulo tecnico como "4.1 - Entendendo a organizacao e seu contexto" sem saber o que fazer.
-
-**Um auditor Big4 explicaria exatamente o que aquele requisito exige e daria exemplos concretos. Nosso sistema nao faz isso.**
-
-### 2. Nenhuma orientacao contextual ao iniciar um framework
-Quando o usuario clica em um framework pela primeira vez, ele cai direto na tabela de requisitos com score 0%. Nao ha:
-- Explicacao do que e o framework e para que serve
-- Roteiro sugerido de por onde comecar
-- Estimativa de esforco ou timeline
-- Dicas de quick wins
-
-**Um consultor faria uma reuniao de kick-off explicando o framework e o roadmap. Nosso sistema pula direto para a execucao.**
-
-### 3. IA existe mas nao esta integrada no fluxo de avaliacao
-O sistema tem a AkurIA (chatbot generico) e o `ai-module-assistant` (com acoes como classify-risk, suggest-controls), mas **nenhuma IA esta integrada diretamente no fluxo de avaliacao de requisitos**. O usuario precisa avaliar cada requisito manualmente sem assistencia inteligente.
-
-**Um auditor analisaria a situacao da empresa e diria "voce provavelmente ja atende parcialmente este requisito porque tem X implementado". Nosso sistema nao faz nenhuma inferencia.**
-
-### 4. Falta de "proximo passo" apos avaliacoes
-Apos o usuario marcar varias avaliacoes, nao ha nenhum painel que diga:
-- "Voce esta 40% conforme. Para chegar a 70%, foque nestes 5 requisitos prioritarios"
-- "Estes requisitos estao parciais e podem ser resolvidos com acoes simples"
-- Priorizacao inteligente baseada em peso/impacto
-
-### 5. Analise de Documentos desconectada da avaliacao manual
-A aba "Analise de Documentos" analisa PDFs via IA mas **nao alimenta automaticamente** a avaliacao manual. Os resultados ficam isolados -- o usuario precisa manualmente olhar o resultado da analise de documento e ir atualizar cada requisito na aba manual.
+O modulo de Integracoes tem uma boa estrutura base (conectores, API keys, webhooks de entrada, log viewer), mas apresenta **lacunas criticas de funcionalidade** -- varias integracoes estao apenas "cosmeticas" (UI existe, backend nao funciona) e faltam mecanismos essenciais para que dados externos realmente fluam para dentro do Akuris.
 
 ---
 
-## Plano de Implementacao
+## 1. Problemas Criticos (Funcionalidade Quebrada)
 
-### Fase 1: Assistente IA por Requisito (maior impacto)
+### 1.1 Jira: Configuracao salva mas nao faz nada
+- O `JiraConfigDialog` salva credenciais na tabela `integracoes_config`, mas:
+  - O `integration-webhook-dispatcher` **nao tem case para 'jira'** -- so suporta `slack`, `teams`, `webhooks`
+  - Nao existe nenhuma Edge Function que crie tickets no Jira
+  - O token da API e simplesmente **descartado** -- a config salva `has_token: true` mas nao armazena o token real (linha 121 do JiraConfigDialog: `has_token: true`)
+  - A coluna `credenciais_encrypted` na tabela existe mas nunca e usada
+- **Resultado**: O usuario configura tudo, testa conexao com sucesso, salva... e nada acontece. Zero funcionalidade real.
 
-**Novo botao "Pedir ajuda a IA" no `NISTRequirementDetailDialog`**
+### 1.2 Azure/Intune: Sincronizacao usa dados simulados
+- A Edge Function `azure-integration` no caso `sync` (linha ~170) usa **dados demo hardcoded** em vez dos dados reais da API do Intune
+- O teste de conexao (`action: 'test'`) funciona com a API real, mas a sincronizacao retorna dispositivos falsos
+- O campo `credenciais_encrypted` tambem nao e usado -- as credenciais Azure nao sao persistidas de forma segura
 
-Quando o usuario abre o detalhe de um requisito e nao sabe como avaliar, ele clica em um botao que chama o `ai-module-assistant` com uma nova action `explain-requirement`. A IA retorna:
+### 1.3 Denuncia: Hook importado mas nunca chamado
+- `DenunciaDialog.tsx` importa `useIntegrationNotify` e desestrutura `{ notify }`, mas **nunca chama** `await notify('denuncia_recebida', ...)` -- logo, denuncias nunca disparam notificacoes externas
 
-- O que este requisito exige em linguagem simples
-- Exemplos praticos de evidencias aceitas por auditores
-- Perguntas que o usuario deve fazer internamente para determinar conformidade
-- Sugestao de status baseada em praticas comuns de empresas do mesmo porte
+### 1.4 API Keys: Sem validacao real no backend
+- As API Keys sao geradas e armazenadas em texto plano no banco
+- O `api-inbound-webhook` valida apenas o `webhook_token`, nao API Keys
+- Nao existe **nenhuma Edge Function de API publica** que valide as API Keys geradas -- elas sao criadas mas nao servem para nada funcional
+- As permissoes (`riscos:read`, `controles:write`, etc.) nunca sao verificadas em nenhum endpoint
 
-**Arquivos afetados:**
-- `supabase/functions/ai-module-assistant/index.ts` -- adicionar action `explain-requirement`
-- `src/components/gap-analysis/nist/NISTRequirementDetailDialog.tsx` -- adicionar botao e card de resposta IA
-
-### Fase 2: Painel de Recomendacoes Inteligentes
-
-**Novo componente `AIRecommendationsCard` no dashboard do framework**
-
-Apos o usuario ter avaliado ao menos 10% dos requisitos, um card aparece acima da tabela com:
-- Top 5 requisitos prioritarios para focar (baseado em peso + status nao_conforme)
-- Quick wins: requisitos parciais que precisam de pouco esforco para virar conforme
-- Estimativa de score se os top 5 forem resolvidos
-- Botao "Gerar Plano de Acao Automatico" que cria planos de acao para os itens criticos
-
-**Arquivos afetados:**
-- `src/components/gap-analysis/AIRecommendationsCard.tsx` -- novo componente
-- `src/pages/GapAnalysisFrameworkDetail.tsx` -- integrar na aba "Avaliacao Manual"
-- `supabase/functions/ai-module-assistant/index.ts` -- nova action `framework-recommendations`
-
-### Fase 3: Onboarding Guiado por Framework
-
-**Tela de boas-vindas ao entrar em um framework pela primeira vez**
-
-Se `evaluatedRequirements === 0`, ao inves de mostrar direto o dashboard vazio, mostrar:
-1. Card explicativo: "O que e a ISO 27001?", "Quanto tempo leva?", "Quanto custa tipicamente?"
-2. Roteiro sugerido: "Comece pela Lideranca (capitulo 5), depois Contexto (capitulo 4)"
-3. Checklist interativo de pre-requisitos ("Voce ja tem uma politica de seguranca?")
-4. Botao "Comecar Avaliacao Guiada" que leva ao primeiro requisito
-
-**Arquivos afetados:**
-- `src/components/gap-analysis/FrameworkOnboarding.tsx` -- novo componente
-- `src/pages/GapAnalysisFrameworkDetail.tsx` -- renderizar condicionalmente quando `evaluatedRequirements === 0`
-
-### Fase 4: Conectar Analise de Documentos com Avaliacao Manual
-
-**Botao "Aplicar resultados na avaliacao" no `AdherenceResultView`**
-
-Quando a analise de documentos termina e identifica requisitos conformes/parciais, o usuario pode clicar um botao que automaticamente atualiza os status na avaliacao manual correspondente. Isso evita trabalho duplicado e torna a analise de documentos realmente util.
-
-**Arquivos afetados:**
-- `src/components/gap-analysis/adherence/AdherenceResultView.tsx` -- adicionar botao e logica de sincronizacao
-- Logica de upsert em `gap_analysis_evaluations` baseada nos resultados de `gap_analysis_adherence_details`
+### 1.5 Inbound Webhooks: Modulos parcialmente suportados
+- O `api-inbound-webhook` Edge Function so suporta 3 modulos: `incidentes`, `riscos`, `ativos`
+- O UI permite selecionar `controles` e `denuncias` como destino, mas o backend ignora esses casos (cai no `default` que so faz `console.log`)
 
 ---
 
-## Resumo de Prioridade
+## 2. Problemas de Seguranca
 
-| Fase | Impacto | Esforco | Descricao |
-|------|---------|---------|-----------|
-| 1 | Altissimo | Medio | IA explica cada requisito e sugere como avaliar |
-| 2 | Alto | Medio | Painel de recomendacoes e priorizacao inteligente |
-| 3 | Alto | Baixo | Onboarding guiado para novos frameworks |
-| 4 | Medio | Baixo | Conectar analise de documentos com avaliacao manual |
+### 2.1 Credenciais Jira/Azure em texto plano
+- O campo `credenciais_encrypted` na tabela `integracoes_config` existe mas nunca e usado
+- Credenciais Jira (email + API token) e Azure (client_id + client_secret) deveriam ser armazenadas como Supabase Secrets ou no campo criptografado, nao em `configuracoes` JSON
 
-### Arquivos Novos
-- `src/components/gap-analysis/AIRecommendationsCard.tsx`
-- `src/components/gap-analysis/FrameworkOnboarding.tsx`
+### 2.2 API Keys em texto plano no banco
+- A coluna `api_key` na tabela `api_keys` armazena a chave completa em texto plano
+- Qualquer usuario com acesso de leitura (via RLS da empresa) ve todas as chaves
+- Deveria armazenar apenas um hash e mostrar o prefixo
 
-### Arquivos Modificados
-- `supabase/functions/ai-module-assistant/index.ts` (2 novas actions)
-- `src/components/gap-analysis/nist/NISTRequirementDetailDialog.tsx`
-- `src/pages/GapAnalysisFrameworkDetail.tsx`
-- `src/components/gap-analysis/adherence/AdherenceResultView.tsx`
+---
+
+## 3. Lacunas de UX
+
+### 3.1 Falta indicacao clara do que cada integracao faz concretamente
+- Os cards dizem "Receba notificacoes" mas nao explicam **quais dados** sao enviados, em que formato, ou com que frequencia
+- Um usuario leigo nao sabe a diferenca pratica entre Slack Webhook, Teams Webhook e Webhook Generico
+
+### 3.2 Falta status de saude das integracoes
+- Nao ha indicacao de "ultima notificacao enviada ha X horas" ou "3 falhas nas ultimas 24h" nos cards de integracao
+- O usuario precisa abrir o Log Viewer manualmente para saber se algo esta funcionando
+
+### 3.3 Log Viewer sem filtros
+- O `IntegrationLogViewer` mostra todos os logs misturados, sem filtro por tipo de integracao, por sucesso/falha ou por periodo
+- Com muitos eventos, fica impossivel encontrar um problema especifico
+
+### 3.4 Falta documentacao/payload de exemplo nos Inbound Webhooks
+- Quando o usuario cria um webhook de entrada, nao ha exemplo de payload que o sistema externo deve enviar
+- Nao ha "Enviar evento de teste" para validar que o webhook funciona
+
+---
+
+## 4. Plano de Implementacao
+
+### Fase 1: Corrigir o que esta quebrado (Alta prioridade)
+
+**4.1 Completar Inbound Webhooks (backend)**
+- Adicionar cases para `controles` e `denuncias` no `api-inbound-webhook/index.ts`
+- Adicionar botao "Enviar evento de teste" na UI e exibir payload de exemplo
+
+**4.2 Corrigir notify no DenunciaDialog**
+- Adicionar a chamada `await notify('denuncia_recebida', {...})` no fluxo de criacao de denuncia
+
+**4.3 Corrigir Jira -- Armazenamento seguro + Dispatcher**
+- Armazenar API Token Jira como Supabase Secret (ou no campo `credenciais_encrypted`)
+- Adicionar case `jira` no `integration-webhook-dispatcher` que cria tickets via API REST do Jira
+- Remover label "Beta" quando funcional
+
+**4.4 Corrigir Azure -- Sincronizacao real**
+- Substituir dados demo por chamadas reais a API do Intune na action `sync`
+- Armazenar credenciais Azure de forma segura
+
+### Fase 2: Melhorar UX (Media prioridade)
+
+**4.5 Status de saude nos cards de integracao**
+- Mostrar "Ultima notificacao: ha 2h" e "5 envios / 1 falha (24h)" no card de cada conector
+- Buscar dados de `integracoes_webhook_logs` agrupados por `integracao_id`
+
+**4.6 Filtros no Log Viewer**
+- Adicionar filtro por tipo de integracao (Slack, Teams, etc.)
+- Adicionar filtro por sucesso/falha
+- Adicionar filtro por periodo (hoje, 7 dias, 30 dias)
+
+**4.7 Payload de exemplo nos Inbound Webhooks**
+- Ao criar um webhook, exibir o payload JSON esperado baseado no modulo destino
+- Adicionar botao "Testar Webhook" que envia um evento de teste para a propria URL
+
+**4.8 Descricoes mais claras nos cards**
+- Trocar descricoes genericas por descricoes que expliquem o fluxo concreto (ex: "Quando um incidente critico e criado, uma mensagem formatada e enviada ao canal Slack configurado com detalhes e link direto")
+
+### Fase 3: Funcionalidades novas (Baixa prioridade)
+
+**4.9 Dashboard de integracao no topo**
+- Card resumo com: "3 integracoes ativas | 47 eventos enviados hoje | 2 falhas"
+- Grafico sparkline de eventos/dia nos ultimos 7 dias
+
+**4.10 Retry automatico para falhas**
+- Quando uma notificacao falha (status_code >= 400), programar retry automatico (1x apos 5min, 1x apos 30min)
+- Marcar integracao como "erro" se 3 falhas consecutivas
+
+---
+
+## Resumo de Prioridades
+
+| Prioridade | Item | Tipo |
+|------------|------|------|
+| Critica | Inbound Webhook nao suporta controles/denuncias (4.1) | Bug |
+| Critica | DenunciaDialog nao chama notify (4.2) | Bug |
+| Critica | Jira salva config mas nao funciona (4.3) | Bug |
+| Alta | Azure sync usa dados demo (4.4) | Bug |
+| Media | Status de saude nos cards (4.5) | UX |
+| Media | Filtros no Log Viewer (4.6) | UX |
+| Media | Payload de exemplo + teste nos Inbound Webhooks (4.7) | UX |
+| Media | Descricoes mais claras nos cards (4.8) | UX |
+| Baixa | Dashboard resumo de integracoes (4.9) | UX |
+| Baixa | Retry automatico (4.10) | Feature |
+
+### Arquivos Afetados
+- `supabase/functions/api-inbound-webhook/index.ts` -- adicionar cases controles/denuncias
+- `supabase/functions/integration-webhook-dispatcher/index.ts` -- adicionar case jira
+- `src/components/denuncia/DenunciaDialog.tsx` -- adicionar chamada notify
+- `src/components/configuracoes/IntegrationHub.tsx` -- status de saude, descricoes, dashboard
+- `src/components/configuracoes/integrations/IntegrationLogViewer.tsx` -- filtros
+- `src/components/configuracoes/InboundWebhooksManager.tsx` -- payload exemplo, teste
+- `src/components/configuracoes/integrations/JiraConfigDialog.tsx` -- armazenamento seguro de credenciais
+- `supabase/functions/azure-integration/index.ts` -- implementar sync real
 
