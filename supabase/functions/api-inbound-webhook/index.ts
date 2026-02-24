@@ -84,8 +84,34 @@ serve(async (req) => {
         insertError = error;
         break;
       }
+      case 'controles': {
+        const { error } = await supabase.from('controles').insert({
+          empresa_id: empresaId,
+          nome: body.title || body.nome || body.control_name || `Controle via ${webhook.nome}`,
+          descricao: body.description || body.descricao || JSON.stringify(body),
+          tipo: body.type || body.tipo || 'preventivo',
+          status: body.status || 'ativo',
+          criticidade: mapCriticidade(body.severity || body.criticidade || body.priority),
+          frequencia_teste: body.frequency || body.frequencia || 'mensal',
+        });
+        insertError = error;
+        break;
+      }
+      case 'denuncias': {
+        const { error } = await supabase.from('denuncias').insert({
+          empresa_id: empresaId,
+          titulo: body.title || body.titulo || `Denúncia via ${webhook.nome}`,
+          descricao: body.description || body.descricao || body.message || JSON.stringify(body),
+          gravidade: mapCriticidade(body.severity || body.gravidade || body.priority),
+          status: 'nova',
+          anonima: body.anonymous !== undefined ? body.anonymous : true,
+          origem: body.source || body.origem || `webhook:${webhook.nome}`,
+          protocolo: `DEN${Date.now().toString().slice(-10)}`,
+        });
+        insertError = error;
+        break;
+      }
       default: {
-        // Log the event without inserting
         console.log(`Unsupported module: ${webhook.modulo_destino}, logging event only`);
       }
     }

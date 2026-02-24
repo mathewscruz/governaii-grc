@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RefreshCw, CheckCircle, XCircle, Clock, Filter } from 'lucide-react';
 import { formatDateOnly } from '@/lib/date-utils';
 
 interface WebhookLog {
@@ -26,6 +27,8 @@ interface IntegrationLogViewerProps {
 export function IntegrationLogViewer({ open, onOpenChange }: IntegrationLogViewerProps) {
   const [logs, setLogs] = useState<WebhookLog[]>([]);
   const [loading, setLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterPeriod, setFilterPeriod] = useState<string>('7d');
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -41,12 +44,34 @@ export function IntegrationLogViewer({ open, onOpenChange }: IntegrationLogViewe
 
       if (!profile?.empresa_id) return;
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('integracoes_webhook_logs')
         .select('*')
         .eq('empresa_id', profile.empresa_id)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
+
+      // Filtro de período
+      if (filterPeriod !== 'all') {
+        const now = new Date();
+        let since: Date;
+        switch (filterPeriod) {
+          case '1d': since = new Date(now.getTime() - 24 * 60 * 60 * 1000); break;
+          case '7d': since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); break;
+          case '30d': since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); break;
+          default: since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        }
+        query = query.gte('created_at', since.toISOString());
+      }
+
+      // Filtro de status
+      if (filterStatus === 'success') {
+        query = query.eq('sucesso', true);
+      } else if (filterStatus === 'error') {
+        query = query.eq('sucesso', false);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setLogs((data || []).map(d => ({
@@ -70,7 +95,7 @@ export function IntegrationLogViewer({ open, onOpenChange }: IntegrationLogViewe
     if (open) {
       fetchLogs();
     }
-  }, [open]);
+  }, [open, filterStatus, filterPeriod]);
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -101,10 +126,14 @@ export function IntegrationLogViewer({ open, onOpenChange }: IntegrationLogViewe
       controle_vencendo: 'Controle Vencendo',
       auditoria_criada: 'Auditoria Criada',
       auditoria_item_atribuido: 'Item de Auditoria Atribuído',
-      denuncia_recebida: 'Denúncia Recebida'
+      denuncia_recebida: 'Denúncia Recebida',
+      sync_devices: 'Sincronização Dispositivos'
     };
     return labels[evento] || evento;
   };
+
+  const successCount = logs.filter(l => l.sucesso).length;
+  const errorCount = logs.filter(l => !l.sucesso).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -119,18 +148,51 @@ export function IntegrationLogViewer({ open, onOpenChange }: IntegrationLogViewe
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex justify-end mb-4">
-          <Button variant="outline" size="sm" onClick={fetchLogs} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
+        {/* Resumo + Filtros */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-3 text-sm">
+            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-200">
+              ✓ {successCount} sucesso
+            </Badge>
+            <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-200">
+              ✗ {errorCount} falha{errorCount !== 1 ? 's' : ''}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[130px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="success">Sucesso</SelectItem>
+                <SelectItem value="error">Falhas</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterPeriod} onValueChange={setFilterPeriod}>
+              <SelectTrigger className="w-[130px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1d">Hoje</SelectItem>
+                <SelectItem value="7d">7 dias</SelectItem>
+                <SelectItem value="30d">30 dias</SelectItem>
+                <SelectItem value="all">Tudo</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" onClick={fetchLogs} disabled={loading} className="h-8">
+              <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+          </div>
         </div>
 
         <ScrollArea className="h-[500px] pr-4">
           {logs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Clock className="h-12 w-12 mb-4 opacity-50" />
-              <p>Nenhum log de integração encontrado</p>
+              <p>Nenhum log encontrado</p>
               <p className="text-sm">Os logs aparecerão aqui quando eventos forem disparados</p>
             </div>
           ) : (
@@ -167,7 +229,7 @@ export function IntegrationLogViewer({ open, onOpenChange }: IntegrationLogViewe
 
                   {!log.sucesso && log.resposta && (
                     <div className="mt-2 p-2 bg-red-50 dark:bg-red-950 rounded text-xs text-red-600 dark:text-red-400">
-                      <strong>Erro:</strong> {log.resposta.substring(0, 200)}
+                      <strong>Erro:</strong> {typeof log.resposta === 'string' ? log.resposta.substring(0, 200) : JSON.stringify(log.resposta).substring(0, 200)}
                     </div>
                   )}
                 </div>

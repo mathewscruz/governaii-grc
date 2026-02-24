@@ -51,7 +51,7 @@ async function getAzureAccessToken(tenantId: string, clientId: string, clientSec
 
 async function getIntuneDevices(accessToken: string): Promise<ManagedDevice[]> {
   const devices: ManagedDevice[] = [];
-  let nextLink = 'https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$top=100';
+  let nextLink: string | null = 'https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$top=100';
 
   while (nextLink) {
     const response = await fetch(nextLink, {
@@ -71,36 +71,7 @@ async function getIntuneDevices(accessToken: string): Promise<ManagedDevice[]> {
   return devices;
 }
 
-async function getAzureADDevices(accessToken: string): Promise<any[]> {
-  const devices: any[] = [];
-  let nextLink = 'https://graph.microsoft.com/v1.0/devices?$top=100';
-
-  while (nextLink) {
-    const response = await fetch(nextLink, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Falha ao buscar dispositivos Azure AD');
-    }
-
-    const data = await response.json();
-    devices.push(...(data.value || []));
-    nextLink = data['@odata.nextLink'] || null;
-  }
-
-  return devices;
-}
-
 function mapIntuneDeviceToAtivo(device: ManagedDevice, empresaId: string) {
-  const tipoMap: Record<string, string> = {
-    'Windows': 'tecnologia',
-    'iOS': 'tecnologia',
-    'Android': 'tecnologia',
-    'macOS': 'tecnologia',
-  };
-
   const statusMap: Record<string, string> = {
     'compliant': 'ativo',
     'noncompliant': 'em_manutencao',
@@ -114,7 +85,7 @@ function mapIntuneDeviceToAtivo(device: ManagedDevice, empresaId: string) {
   return {
     empresa_id: empresaId,
     nome: device.deviceName || 'Dispositivo sem nome',
-    tipo: tipoMap[device.operatingSystem] || 'tecnologia',
+    tipo: 'tecnologia',
     descricao: `${device.manufacturer || ''} ${device.model || ''} - ${device.operatingSystem} ${device.osVersion || ''}`.trim(),
     proprietario: device.userDisplayName || device.userPrincipalName || null,
     status: statusMap[device.complianceState] || 'ativo',
@@ -136,7 +107,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, tenant_id, client_id, client_secret, empresa_id, sync_options } = await req.json();
+    const { action, tenant_id, client_id, client_secret, empresa_id } = await req.json();
 
     console.log(`Azure integration action: ${action}`);
 
@@ -146,7 +117,6 @@ serve(async (req) => {
 
     switch (action) {
       case 'test': {
-        // Testar conexão com Azure
         if (!tenant_id || !client_id || !client_secret) {
           return new Response(
             JSON.stringify({ success: false, error: 'Credenciais incompletas' }),
@@ -157,7 +127,6 @@ serve(async (req) => {
         try {
           const accessToken = await getAzureAccessToken(tenant_id, client_id, client_secret);
           
-          // Verificar se consegue acessar a API
           const response = await fetch('https://graph.microsoft.com/v1.0/organization', {
             headers: { 'Authorization': `Bearer ${accessToken}` }
           });
@@ -168,9 +137,6 @@ serve(async (req) => {
 
           const orgData = await response.json();
           const tenantName = orgData.value?.[0]?.displayName || tenant_id;
-
-          // Salvar credenciais criptografadas (simplificado - em produção usar Vault)
-          // Por enquanto apenas validamos
 
           return new Response(
             JSON.stringify({ success: true, tenant_name: tenantName }),
@@ -208,93 +174,95 @@ serve(async (req) => {
           );
         }
 
-        // Em produção, buscar client_secret do Vault/Secrets
-        // Por enquanto retornamos erro pois não salvamos o secret
+        // Buscar credenciais armazenadas
         const storedTenantId = config.configuracoes?.tenant_id;
         const storedClientId = config.configuracoes?.client_id;
+        const storedClientSecret = config.credenciais_encrypted?.client_secret;
 
-        // Para demo, vamos simular uma sincronização
-        // Em produção, você precisaria armazenar o client_secret de forma segura
-
-        // Simular dispositivos sincronizados
-        const simulatedDevices = [
-          {
-            empresa_id,
-            nome: 'DESKTOP-ABC123',
-            tipo: 'tecnologia',
-            descricao: 'Dell Latitude 5520 - Windows 11 Pro',
-            proprietario: 'João Silva',
-            status: 'ativo',
-            tags: ['SN:ABC123', 'Intune:sync'],
-            criticidade: 'medio',
-            fornecedor: 'Dell',
-          },
-          {
-            empresa_id,
-            nome: 'LAPTOP-XYZ789',
-            tipo: 'tecnologia',
-            descricao: 'HP EliteBook 840 G8 - Windows 11 Enterprise',
-            proprietario: 'Maria Santos',
-            status: 'ativo',
-            tags: ['SN:XYZ789', 'Intune:sync'],
-            criticidade: 'medio',
-            fornecedor: 'HP',
-          }
-        ];
-
-        // Inserir ou atualizar ativos
-        let syncedCount = 0;
-        for (const device of simulatedDevices) {
-          // Verificar se já existe
-          const { data: existing } = await supabase
-            .from('ativos')
-            .select('id')
-            .eq('empresa_id', empresa_id)
-            .eq('nome', device.nome)
-            .single();
-
-          if (existing) {
-            // Atualizar
-            await supabase
-              .from('ativos')
-              .update({
-                ...device,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', existing.id);
-          } else {
-            // Inserir
-            await supabase
-              .from('ativos')
-              .insert(device);
-          }
-          syncedCount++;
+        if (!storedTenantId || !storedClientId || !storedClientSecret) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: 'Credenciais Azure incompletas. Reconfigure a integração informando o Client Secret.' 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
-        // Atualizar última sincronização
-        await supabase
-          .from('integracoes_config')
-          .update({ ultima_sincronizacao: new Date().toISOString() })
-          .eq('id', config.id);
+        try {
+          // Obter token de acesso real
+          const accessToken = await getAzureAccessToken(storedTenantId, storedClientId, storedClientSecret);
+          
+          // Buscar dispositivos reais do Intune
+          const intuneDevices = await getIntuneDevices(accessToken);
+          console.log(`Fetched ${intuneDevices.length} devices from Intune`);
 
-        // Registrar log
-        await supabase.from('integracoes_webhook_logs').insert({
-          integracao_id: config.id,
-          evento: 'sync_devices',
-          payload: { sync_options, devices_count: syncedCount },
-          status_code: 200,
-          sucesso: true,
-          empresa_id
-        });
+          // Sincronizar cada dispositivo
+          let syncedCount = 0;
+          for (const device of intuneDevices) {
+            const ativo = mapIntuneDeviceToAtivo(device, empresa_id);
+            
+            // Verificar se já existe pelo tag Intune:ID
+            const { data: existing } = await supabase
+              .from('ativos')
+              .select('id')
+              .eq('empresa_id', empresa_id)
+              .contains('tags', [`Intune:${device.id}`])
+              .maybeSingle();
 
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            devices_synced: syncedCount,
-            message: 'Sincronização concluída (modo demonstração)'
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+            if (existing) {
+              await supabase
+                .from('ativos')
+                .update({ ...ativo, updated_at: new Date().toISOString() })
+                .eq('id', existing.id);
+            } else {
+              await supabase.from('ativos').insert(ativo);
+            }
+            syncedCount++;
+          }
+
+          // Atualizar última sincronização
+          await supabase
+            .from('integracoes_config')
+            .update({ ultima_sincronizacao: new Date().toISOString() })
+            .eq('id', config.id);
+
+          // Registrar log
+          await supabase.from('integracoes_webhook_logs').insert({
+            integracao_id: config.id,
+            evento: 'sync_devices',
+            payload: { devices_count: syncedCount },
+            status_code: 200,
+            sucesso: true,
+            empresa_id
+          });
+
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              devices_synced: syncedCount,
+              message: `${syncedCount} dispositivos sincronizados do Intune`
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        } catch (syncError) {
+          console.error('Azure sync error:', syncError);
+          
+          // Registrar erro no log
+          await supabase.from('integracoes_webhook_logs').insert({
+            integracao_id: config.id,
+            evento: 'sync_devices',
+            payload: { error: syncError.message },
+            status_code: 500,
+            sucesso: false,
+            empresa_id
+          });
+
+          return new Response(
+            JSON.stringify({ success: false, error: syncError.message }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
 
       default:

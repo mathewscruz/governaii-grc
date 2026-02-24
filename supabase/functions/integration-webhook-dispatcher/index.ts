@@ -214,6 +214,75 @@ serve(async (req) => {
             responseStatus = webhookResponse.status;
             break;
           }
+
+          case 'jira': {
+            // Criar ticket no Jira via API REST
+            const jiraConfig = integration.configuracoes || {};
+            const jiraInstanceUrl = (integration.webhook_url || '').replace(/\/+$/, '');
+            const jiraEmail = jiraConfig.email as string;
+            const jiraProjectKey = (jiraConfig.project_key as string) || 'GRC';
+            const jiraIssueType = (jiraConfig.issue_type as string) || 'Task';
+            
+            // Buscar credenciais do campo credenciais_encrypted
+            const { data: fullConfig } = await supabase
+              .from('integracoes_config')
+              .select('credenciais_encrypted')
+              .eq('id', integration.id)
+              .single();
+            
+            let parsedCreds: any = null;
+            try {
+              parsedCreds = typeof fullConfig?.credenciais_encrypted === 'string' 
+                ? JSON.parse(fullConfig.credenciais_encrypted) 
+                : fullConfig?.credenciais_encrypted;
+            } catch { parsedCreds = null; }
+            
+            const jiraToken = parsedCreds?.api_token;
+            
+            if (!jiraInstanceUrl || !jiraEmail || !jiraToken) {
+              console.error('Jira credentials incomplete');
+              success = false;
+              responseStatus = 0;
+              break;
+            }
+
+            const gravidadeLabel = gravidade === 'critica' ? '🔴 CRÍTICA' : 
+                                   gravidade === 'alta' ? '🟠 ALTA' : 
+                                   gravidade === 'media' ? '🟡 MÉDIA' : '🟢 BAIXA';
+
+            const jiraPayload = {
+              fields: {
+                project: { key: jiraProjectKey },
+                summary: `[Akuris] ${titulo}`,
+                description: `${descricao || ''}\n\n*Evento:* ${evento}\n*Gravidade:* ${gravidadeLabel}\n*Timestamp:* ${new Date(timestamp || Date.now()).toLocaleString('pt-BR')}${link ? `\n*Link:* ${link}` : ''}`,
+                issuetype: { name: jiraIssueType },
+                ...(gravidade === 'critica' || gravidade === 'alta' ? { priority: { name: 'High' } } : {})
+              }
+            };
+
+            const jiraAuth = btoa(`${jiraEmail}:${jiraToken}`);
+            const jiraResponse = await fetch(`${jiraInstanceUrl}/rest/api/3/issue`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Basic ${jiraAuth}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify(jiraPayload)
+            });
+            
+            success = jiraResponse.ok;
+            responseStatus = jiraResponse.status;
+            
+            if (success) {
+              const jiraData = await jiraResponse.json();
+              console.log(`Jira ticket created: ${jiraData.key}`);
+            } else {
+              const errBody = await jiraResponse.text();
+              console.error(`Jira API error: ${errBody}`);
+            }
+            break;
+          }
         }
 
         // Registrar log

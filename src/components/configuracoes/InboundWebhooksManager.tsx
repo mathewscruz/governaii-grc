@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
-import { Webhook, Plus, Copy, Trash2, Loader2 } from 'lucide-react';
+import { Webhook, Plus, Copy, Trash2, Loader2, Send, Code } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
 interface InboundWebhook {
@@ -45,6 +45,44 @@ const TIPOS_EVENTO = [
   { value: 'custom', label: 'Evento Customizado' },
 ];
 
+const PAYLOAD_EXAMPLES: Record<string, object> = {
+  incidentes: {
+    title: "Alerta de Intrusão Detectado",
+    description: "Tentativa de acesso não autorizado ao servidor de produção",
+    severity: "critical",
+    type: "seguranca",
+    source: "SIEM-Splunk"
+  },
+  riscos: {
+    title: "Vulnerabilidade CVE-2024-1234",
+    description: "Vulnerabilidade crítica detectada no componente X",
+    severity: "high",
+    category: "Tecnologia",
+    probability: "Possível",
+    impact: "Alto"
+  },
+  ativos: {
+    name: "DESKTOP-NEW001",
+    type: "Servidor",
+    description: "Novo servidor detectado na rede",
+    hostname: "srv-prod-05"
+  },
+  controles: {
+    title: "Verificação de Firewall",
+    description: "Controle de monitoramento de regras de firewall",
+    type: "detectivo",
+    severity: "medium",
+    frequency: "diario"
+  },
+  denuncias: {
+    title: "Relato de Irregularidade",
+    description: "Relato recebido pelo canal externo de denúncias",
+    severity: "high",
+    anonymous: true,
+    source: "canal-externo"
+  }
+};
+
 function generateToken(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let token = 'wh_';
@@ -61,6 +99,8 @@ export function InboundWebhooksManager() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [payloadDialogOpen, setPayloadDialogOpen] = useState<string | null>(null);
+  const [testingWebhook, setTestingWebhook] = useState<string | null>(null);
 
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -140,6 +180,35 @@ export function InboundWebhooksManager() {
     toast({ title: 'URL copiada!' });
   };
 
+  const handleTestWebhook = async (wh: InboundWebhook) => {
+    setTestingWebhook(wh.id);
+    try {
+      const payload = PAYLOAD_EXAMPLES[wh.modulo_destino] || { title: 'Evento de teste', description: 'Teste via Akuris' };
+      
+      const response = await fetch(`${baseUrl}?token=${wh.webhook_token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        toast({ title: 'Teste enviado!', description: `Evento de teste processado com sucesso no módulo ${wh.modulo_destino}.` });
+        fetchWebhooks();
+      } else {
+        const err = await response.json();
+        toast({ title: 'Erro no teste', description: err.error || 'Falha ao processar evento', variant: 'destructive' });
+      }
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+    } finally {
+      setTestingWebhook(null);
+    }
+  };
+
+  const getPayloadForModule = (modulo: string) => {
+    return JSON.stringify(PAYLOAD_EXAMPLES[modulo] || {}, null, 2);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -177,7 +246,7 @@ export function InboundWebhooksManager() {
                 <TableHead>URL</TableHead>
                 <TableHead>Recebidos</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-[80px]">Ações</TableHead>
+                <TableHead className="w-[140px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -190,7 +259,7 @@ export function InboundWebhooksManager() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="soft" className="text-xs">
+                    <Badge variant="secondary" className="text-xs">
                       {MODULOS_DESTINO.find(m => m.value === wh.modulo_destino)?.label || wh.modulo_destino}
                     </Badge>
                   </TableCell>
@@ -209,9 +278,34 @@ export function InboundWebhooksManager() {
                     <Switch checked={wh.ativo} onCheckedChange={v => handleToggle(wh.id, v)} />
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteConfirm(wh.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title="Ver payload de exemplo"
+                        onClick={() => setPayloadDialogOpen(wh.modulo_destino)}
+                      >
+                        <Code className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title="Enviar evento de teste"
+                        disabled={testingWebhook === wh.id || !wh.ativo}
+                        onClick={() => handleTestWebhook(wh)}
+                      >
+                        {testingWebhook === wh.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Send className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteConfirm(wh.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -257,12 +351,51 @@ export function InboundWebhooksManager() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Payload de exemplo baseado no módulo selecionado */}
+            {moduloDestino && (
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Payload JSON esperado para {MODULOS_DESTINO.find(m => m.value === moduloDestino)?.label}</Label>
+                <pre className="text-xs bg-muted p-3 rounded-lg overflow-x-auto font-mono">
+                  {getPayloadForModule(moduloDestino)}
+                </pre>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleCreate} disabled={!nome.trim() || !tipoEvento || !moduloDestino || saving}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Criar Webhook
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payload Example Dialog */}
+      <Dialog open={!!payloadDialogOpen} onOpenChange={() => setPayloadDialogOpen(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Payload de Exemplo</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mb-2">
+            Envie um JSON com esta estrutura via POST para a URL do webhook:
+          </p>
+          <pre className="text-xs bg-muted p-4 rounded-lg overflow-x-auto font-mono">
+            {payloadDialogOpen ? getPayloadForModule(payloadDialogOpen) : ''}
+          </pre>
+          <p className="text-xs text-muted-foreground">
+            Os campos <code className="bg-muted px-1 rounded">title</code>/<code className="bg-muted px-1 rounded">nome</code> e <code className="bg-muted px-1 rounded">description</code>/<code className="bg-muted px-1 rounded">descricao</code> são aceitos em inglês ou português.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(payloadDialogOpen ? getPayloadForModule(payloadDialogOpen) : '');
+                toast({ title: 'Payload copiado!' });
+              }}
+            >
+              <Copy className="h-4 w-4 mr-2" /> Copiar
             </Button>
           </DialogFooter>
         </DialogContent>

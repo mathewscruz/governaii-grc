@@ -108,7 +108,7 @@ export function JiraConfigDialog({
     try {
       const configData = {
         empresa_id: empresaId,
-        tipo_integracao: 'jira',
+        tipo_integracao: 'jira' as const,
         nome_exibicao: 'Jira Service Management',
         webhook_url: instanceUrl,
         status: 'conectado',
@@ -117,9 +117,9 @@ export function JiraConfigDialog({
           email,
           project_key: projectKey,
           issue_type: issueType,
-          // Armazena token criptografado em campo separado se precisar
           has_token: true
-        }
+        },
+        ...(apiToken ? { credenciais_encrypted: JSON.stringify({ api_token: apiToken }) } : {}),
       };
 
       if (existingConfig?.id) {
@@ -189,14 +189,14 @@ export function JiraConfigDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Aviso de disponibilidade */}
-          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2">
-            <h4 className="font-medium text-sm flex items-center gap-2 text-amber-600">
+          {/* Informação sobre o que a integração faz */}
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
+            <h4 className="font-medium text-sm flex items-center gap-2 text-primary">
               <AlertCircle className="h-4 w-4" />
-              Integração em fase beta
+              Como funciona
             </h4>
             <p className="text-xs text-muted-foreground">
-              Esta integração está em desenvolvimento. A criação automática de tickets estará disponível em breve.
+              Quando incidentes críticos, riscos ou denúncias forem criados no Akuris, um ticket será automaticamente criado no projeto Jira configurado com todos os detalhes e link direto.
             </p>
           </div>
 

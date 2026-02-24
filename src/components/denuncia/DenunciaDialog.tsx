@@ -172,6 +172,19 @@ export function DenunciaDialog({
         if (movError) throw movError;
       }
 
+      // Notificar integrações externas sobre atualização da denúncia
+      try {
+        await notify('denuncia_recebida', {
+          titulo: `Denúncia ${denuncia.protocolo} atualizada para ${statusNovo}`,
+          descricao: `A denúncia "${denuncia.titulo}" teve seu status alterado de ${statusAnterior} para ${statusNovo}.${formData.observacoes ? ` Observação: ${formData.observacoes}` : ''}`,
+          link: `${window.location.origin}/denuncias`,
+          gravidade: denuncia.gravidade === 'critica' ? 'critica' : denuncia.gravidade === 'alta' ? 'alta' : 'media',
+          dados: { protocolo: denuncia.protocolo, status_anterior: statusAnterior, status_novo: statusNovo }
+        });
+      } catch (notifyErr) {
+        console.error('Erro ao notificar integrações:', notifyErr);
+      }
+
       toast({
         title: "Sucesso",
         description: "Denúncia atualizada com sucesso"
