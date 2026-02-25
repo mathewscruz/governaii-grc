@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,15 @@ const EVENTOS_DISPONIVEIS = [
   { id: 'denuncia_recebida', label: 'Nova denúncia recebida', modulo: 'Denúncias' },
 ];
 
+const TeamsLogoInline = () => (
+  <svg viewBox="0 0 48 48" className="h-6 w-6">
+    <path fill="#5059C9" d="M44 22v10c0 2.2-1.8 4-4 4h-4V18h4C42.2 18 44 19.8 44 22z"/>
+    <circle fill="#5059C9" cx="36" cy="12" r="4"/>
+    <circle fill="#7B83EB" cx="28" cy="10" r="6"/>
+    <path fill="#7B83EB" d="M36 18H20c-2.2 0-4 1.8-4 4v14c0 5.5 4.5 10 10 10s10-4.5 10-10V22C36 19.8 34.2 18 32 18z"/>
+  </svg>
+);
+
 export function TeamsConfigDialog({
   open,
   onOpenChange,
@@ -48,13 +57,24 @@ export function TeamsConfigDialog({
   existingConfig,
   onSaved
 }: TeamsConfigDialogProps) {
-  const [webhookUrl, setWebhookUrl] = useState(existingConfig?.webhook_url || '');
-  const [selectedEvents, setSelectedEvents] = useState<string[]>(
-    (existingConfig?.configuracoes?.eventos as string[]) || EVENTOS_DISPONIVEIS.map(e => e.id)
-  );
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [selectedEvents, setSelectedEvents] = useState<string[]>(EVENTOS_DISPONIVEIS.map(e => e.id));
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+
+  // Reset state when dialog opens or existingConfig changes
+  useEffect(() => {
+    if (open) {
+      setWebhookUrl(existingConfig?.webhook_url || '');
+      setSelectedEvents(
+        (existingConfig?.configuracoes?.eventos as string[]) || EVENTOS_DISPONIVEIS.map(e => e.id)
+      );
+      setTestResult(null);
+      setSaving(false);
+      setTesting(false);
+    }
+  }, [open, existingConfig]);
 
   const handleTestConnection = async () => {
     if (!webhookUrl) {
@@ -172,11 +192,7 @@ export function TeamsConfigDialog({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Microsoft_Office_Teams_%282018%E2%80%93present%29.svg"
-              alt="Teams"
-              className="h-6 w-6"
-            />
+            <TeamsLogoInline />
             Configurar Microsoft Teams
           </DialogTitle>
           <DialogDescription>
@@ -212,13 +228,14 @@ export function TeamsConfigDialog({
                   setWebhookUrl(e.target.value);
                   setTestResult(null);
                 }}
+                disabled={saving}
                 className="flex-1"
               />
               <Button
                 variant="outline"
                 size="icon"
                 onClick={handleTestConnection}
-                disabled={testing || !webhookUrl}
+                disabled={testing || !webhookUrl || saving}
               >
                 {testing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -252,6 +269,7 @@ export function TeamsConfigDialog({
                     id={`teams-${evento.id}`}
                     checked={selectedEvents.includes(evento.id)}
                     onCheckedChange={() => toggleEvent(evento.id)}
+                    disabled={saving}
                   />
                   <div className="flex-1">
                     <label

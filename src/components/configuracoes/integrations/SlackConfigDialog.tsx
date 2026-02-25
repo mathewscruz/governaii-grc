@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -48,13 +48,24 @@ export function SlackConfigDialog({
   existingConfig,
   onSaved
 }: SlackConfigDialogProps) {
-  const [webhookUrl, setWebhookUrl] = useState(existingConfig?.webhook_url || '');
-  const [selectedEvents, setSelectedEvents] = useState<string[]>(
-    (existingConfig?.configuracoes?.eventos as string[]) || EVENTOS_DISPONIVEIS.map(e => e.id)
-  );
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [selectedEvents, setSelectedEvents] = useState<string[]>(EVENTOS_DISPONIVEIS.map(e => e.id));
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+
+  // Reset state when dialog opens or existingConfig changes
+  useEffect(() => {
+    if (open) {
+      setWebhookUrl(existingConfig?.webhook_url || '');
+      setSelectedEvents(
+        (existingConfig?.configuracoes?.eventos as string[]) || EVENTOS_DISPONIVEIS.map(e => e.id)
+      );
+      setTestResult(null);
+      setSaving(false);
+      setTesting(false);
+    }
+  }, [open, existingConfig]);
 
   const handleTestConnection = async () => {
     if (!webhookUrl) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -65,16 +65,28 @@ export function WebhooksConfigDialog({
   existingConfig,
   onSaved
 }: WebhooksConfigDialogProps) {
-  const [webhookUrl, setWebhookUrl] = useState(existingConfig?.webhook_url || '');
-  const [selectedEvents, setSelectedEvents] = useState<string[]>(
-    (existingConfig?.configuracoes?.eventos as string[]) || []
-  );
-  const [customHeaders, setCustomHeaders] = useState<{ key: string; value: string }[]>(
-    (existingConfig?.configuracoes?.headers as { key: string; value: string }[]) || []
-  );
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+  const [customHeaders, setCustomHeaders] = useState<{ key: string; value: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+
+  // Reset state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setWebhookUrl(existingConfig?.webhook_url || '');
+      setSelectedEvents(
+        (existingConfig?.configuracoes?.eventos as string[]) || []
+      );
+      setCustomHeaders(
+        (existingConfig?.configuracoes?.headers as { key: string; value: string }[]) || []
+      );
+      setTestResult(null);
+      setSaving(false);
+      setTesting(false);
+    }
+  }, [open, existingConfig]);
 
   const handleTestConnection = async () => {
     if (!webhookUrl) {
