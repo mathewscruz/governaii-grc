@@ -314,6 +314,12 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         data.impacto_inicial,
         (selectedMatriz?.configuracao as any)?.metodo_calculo || 'multiplicacao'
       );
+
+      if (!nivelInicial) {
+        toast.error('Não foi possível calcular o nível de risco. Verifique se a matriz está configurada corretamente com os níveis de risco.');
+        setLoading(false);
+        return;
+      }
       const nivelResidual = data.probabilidade_residual && data.impacto_residual 
         ? calcularNivelRisco(
             data.probabilidade_residual, 
