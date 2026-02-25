@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { UserSelect } from '@/components/riscos/UserSelect';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -147,8 +148,8 @@ export function IncidenteDialog({ incidente, onSuccess, trigger }: IncidenteDial
         criticidade: data.criticidade!,
         data_ocorrencia: data.data_ocorrencia?.toISOString(),
         origem_deteccao: data.origem_deteccao,
-        responsavel_deteccao: data.responsavel_deteccao,
-        responsavel_tratamento: data.responsavel_tratamento,
+        responsavel_deteccao: data.responsavel_deteccao || null,
+        responsavel_tratamento: data.responsavel_tratamento || null,
         impacto_estimado: data.impacto_estimado,
         dados_afetados: data.dados_afetados,
         sistemas_afetados: data.sistemas_afetados,
@@ -412,7 +413,11 @@ export function IncidenteDialog({ incidente, onSuccess, trigger }: IncidenteDial
                   <FormItem>
                     <FormLabel>Responsável pela Detecção</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome ou email de quem detectou" {...field} />
+                      <UserSelect
+                        value={field.value || ''}
+                        onValueChange={field.onChange}
+                        placeholder="Selecionar responsável..."
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -426,7 +431,11 @@ export function IncidenteDialog({ incidente, onSuccess, trigger }: IncidenteDial
                   <FormItem>
                     <FormLabel>Responsável pelo Tratamento</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome ou email do responsável" {...field} />
+                      <UserSelect
+                        value={field.value || ''}
+                        onValueChange={field.onChange}
+                        placeholder="Selecionar responsável..."
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
