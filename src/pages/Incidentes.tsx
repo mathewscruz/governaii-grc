@@ -215,7 +215,7 @@ export default function Incidentes() {
       key: "titulo" as keyof Incidente,
       label: "Título",
       sortable: true,
-      render: (item: Incidente) => (
+      render: (_v: any, item: Incidente) => (
         <div className="font-medium">{item.titulo}</div>
       )
     },
@@ -223,7 +223,7 @@ export default function Incidentes() {
       key: "tipo_incidente" as keyof Incidente,
       label: "Tipo",
       sortable: true,
-      render: (item: Incidente) => (
+      render: (_v: any, item: Incidente) => (
         <Badge variant="outline" className="whitespace-nowrap">{formatStatus(item.tipo_incidente)}</Badge>
       )
     },
@@ -231,7 +231,7 @@ export default function Incidentes() {
       key: "criticidade" as keyof Incidente,
       label: "Criticidade",
       sortable: true,
-      render: (item: Incidente) => (
+      render: (_v: any, item: Incidente) => (
         <Badge className={`${getCriticidadeColor(item.criticidade)} whitespace-nowrap`}>
           {formatStatus(item.criticidade)}
         </Badge>
@@ -241,7 +241,7 @@ export default function Incidentes() {
       key: "status" as keyof Incidente,
       label: "Status",
       sortable: true,
-      render: (item: Incidente) => {
+      render: (_v: any, item: Incidente) => {
         const StatusIcon = getStatusIcon(item.status);
         return (
           <div className="flex items-center gap-2">
@@ -257,12 +257,12 @@ export default function Incidentes() {
       key: "data_deteccao" as keyof Incidente,
       label: "Data Detecção",
       sortable: true,
-      render: (item: Incidente) => formatDateOnly(item.data_deteccao)
+      render: (_v: any, item: Incidente) => formatDateOnly(item.data_deteccao)
     },
     {
       key: "actions" as keyof Incidente,
       label: "Ações",
-      render: (item: Incidente) => (
+      render: (_v: any, item: Incidente) => (
         <TooltipProvider>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
