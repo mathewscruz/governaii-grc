@@ -46,10 +46,18 @@ interface EvidenciaDialogProps {
   evidencia?: any;
   onSuccess?: () => void;
   trigger?: React.ReactNode;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
-export function EvidenciaDialog({ incidenteId, evidencia, onSuccess, trigger }: EvidenciaDialogProps) {
-  const [open, setOpen] = useState(false);
+export function EvidenciaDialog({ incidenteId, evidencia, onSuccess, trigger, externalOpen, onExternalOpenChange }: EvidenciaDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (isControlled) onExternalOpenChange?.(v);
+    else setInternalOpen(v);
+  };
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

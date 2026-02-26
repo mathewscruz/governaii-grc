@@ -54,10 +54,18 @@ interface ComunicacaoDialogProps {
   comunicacao?: any;
   onSuccess?: () => void;
   trigger?: React.ReactNode;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
-export function ComunicacaoDialog({ incidenteId, comunicacao, onSuccess, trigger }: ComunicacaoDialogProps) {
-  const [open, setOpen] = useState(false);
+export function ComunicacaoDialog({ incidenteId, comunicacao, onSuccess, trigger, externalOpen, onExternalOpenChange }: ComunicacaoDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (isControlled) onExternalOpenChange?.(v);
+    else setInternalOpen(v);
+  };
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 

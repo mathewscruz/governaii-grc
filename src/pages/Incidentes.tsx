@@ -420,15 +420,33 @@ export default function Incidentes() {
         </CardContent>
       </Card>
 
-      {/* Dialog de Comunicação */}
-      <ComunicacaoDialog
-        incidenteId={selectedIncidente?.id || ''}
-      />
+      {/* Dialog de Comunicação - controlado pelo dropdown */}
+      {selectedIncidente && (
+        <ComunicacaoDialog
+          incidenteId={selectedIncidente.id}
+          onSuccess={loadIncidentes}
+          trigger={<span className="hidden" />}
+          externalOpen={comunicacaoDialogOpen}
+          onExternalOpenChange={(open) => {
+            setComunicacaoDialogOpen(open);
+            if (!open) setSelectedIncidente(null);
+          }}
+        />
+      )}
 
-      {/* Dialog de Evidências */}
-      <EvidenciaDialog
-        incidenteId={selectedIncidente?.id || ''}
-      />
+      {/* Dialog de Evidências - controlado pelo dropdown */}
+      {selectedIncidente && (
+        <EvidenciaDialog
+          incidenteId={selectedIncidente.id}
+          onSuccess={loadIncidentes}
+          trigger={<span className="hidden" />}
+          externalOpen={evidenciaDialogOpen}
+          onExternalOpenChange={(open) => {
+            setEvidenciaDialogOpen(open);
+            if (!open) setSelectedIncidente(null);
+          }}
+        />
+      )}
 
       <ConfirmDialog
         open={deleteConfirm.open}
