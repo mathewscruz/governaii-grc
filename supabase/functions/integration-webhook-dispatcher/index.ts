@@ -17,23 +17,240 @@ interface IntegrationConfig {
   status: string;
 }
 
+// Formata evento bruto para texto legível
+function formatEvento(evento: string): string {
+  return evento
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Extrai módulo do nome do evento
+function extrairModulo(evento: string): string {
+  const map: Record<string, string> = {
+    'incidente': 'Incidentes',
+    'risco': 'Riscos',
+    'controle': 'Controles',
+    'ativo': 'Ativos',
+    'documento': 'Documentos',
+    'auditoria': 'Auditorias',
+    'contrato': 'Contratos',
+    'denuncia': 'Denúncias',
+    'politica': 'Políticas',
+    'chave': 'Chaves Criptográficas',
+    'licenca': 'Licenças',
+    'conta': 'Contas Privilegiadas',
+    'revisao': 'Revisão de Acessos',
+    'plano': 'Planos de Ação',
+    'due_diligence': 'Due Diligence',
+    'gap': 'Gap Analysis',
+  };
+  const lower = evento.toLowerCase();
+  for (const [key, label] of Object.entries(map)) {
+    if (lower.includes(key)) return label;
+  }
+  return 'GovernAII';
+}
+
+// Formata gravidade para exibição
+function formatGravidade(gravidade: string | undefined): { label: string; emoji: string; color: string } {
+  switch (gravidade?.toLowerCase()) {
+    case 'critica': return { label: 'Crítica', emoji: '🔴', color: 'FF0000' };
+    case 'alta': return { label: 'Alta', emoji: '🟠', color: 'FFA500' };
+    case 'media': return { label: 'Média', emoji: '🟡', color: 'FFD700' };
+    case 'baixa': return { label: 'Baixa', emoji: '🟢', color: '00C853' };
+    default: return { label: gravidade || 'Não definida', emoji: 'ℹ️', color: '607D8B' };
+  }
+}
+
+function buildSlackPayload(titulo: string, descricao: string | undefined, evento: string, gravidade: string | undefined, link: string | undefined, dados: any, timestamp: string | undefined) {
+  const grav = formatGravidade(gravidade);
+  const modulo = extrairModulo(evento);
+  const eventoFormatado = formatEvento(evento);
+  const ts = new Date(timestamp || Date.now()).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+  const blocks: any[] = [
+    {
+      type: "header",
+      text: { type: "plain_text", text: `${grav.emoji} ${titulo}`, emoji: true }
+    },
+    { type: "divider" },
+  ];
+
+  if (descricao) {
+    blocks.push({
+      type: "section",
+      text: { type: "mrkdwn", text: descricao }
+    });
+  }
+
+  // Campos estruturados
+  const fields: any[] = [
+    { type: "mrkdwn", text: `*📦 Módulo:*\n${modulo}` },
+    { type: "mrkdwn", text: `*📋 Evento:*\n${eventoFormatado}` },
+    { type: "mrkdwn", text: `*⚠️ Gravidade:*\n${grav.emoji} ${grav.label}` },
+    { type: "mrkdwn", text: `*🕐 Data/Hora:*\n${ts}` },
+  ];
+
+  if (dados?.responsavel) {
+    fields.push({ type: "mrkdwn", text: `*👤 Responsável:*\n${dados.responsavel}` });
+  }
+  if (dados?.status) {
+    fields.push({ type: "mrkdwn", text: `*📊 Status:*\n${dados.status}` });
+  }
+
+  blocks.push({ type: "section", fields });
+
+  // Dados adicionais relevantes
+  const extras: string[] = [];
+  if (dados?.id) extras.push(`*ID:* ${dados.id}`);
+  if (dados?.categoria) extras.push(`*Categoria:* ${dados.categoria}`);
+  if (dados?.prazo) extras.push(`*Prazo:* ${dados.prazo}`);
+  if (dados?.impacto) extras.push(`*Impacto:* ${dados.impacto}`);
+
+  if (extras.length > 0) {
+    blocks.push({ type: "divider" });
+    blocks.push({
+      type: "context",
+      elements: [{ type: "mrkdwn", text: extras.join(' | ') }]
+    });
+  }
+
+  if (link) {
+    blocks.push({
+      type: "actions",
+      elements: [{
+        type: "button",
+        text: { type: "plain_text", text: "📎 Ver no GovernAII", emoji: true },
+        url: link,
+        style: "primary"
+      }]
+    });
+  }
+
+  blocks.push({
+    type: "context",
+    elements: [{ type: "mrkdwn", text: `_Enviado por GovernAII GRC Platform_` }]
+  });
+
+  return { blocks };
+}
+
+function buildTeamsPayload(titulo: string, descricao: string | undefined, evento: string, gravidade: string | undefined, link: string | undefined, dados: any, timestamp: string | undefined) {
+  const grav = formatGravidade(gravidade);
+  const modulo = extrairModulo(evento);
+  const eventoFormatado = formatEvento(evento);
+  const ts = new Date(timestamp || Date.now()).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+  const facts = [
+    { name: "Módulo", value: modulo },
+    { name: "Evento", value: eventoFormatado },
+    { name: "Gravidade", value: `${grav.emoji} ${grav.label}` },
+    { name: "Data/Hora", value: ts },
+  ];
+
+  if (dados?.responsavel) facts.push({ name: "Responsável", value: dados.responsavel });
+  if (dados?.status) facts.push({ name: "Status", value: dados.status });
+  if (dados?.categoria) facts.push({ name: "Categoria", value: dados.categoria });
+  if (dados?.id) facts.push({ name: "ID do Registro", value: dados.id });
+  if (dados?.prazo) facts.push({ name: "Prazo", value: dados.prazo });
+
+  return {
+    "@type": "MessageCard",
+    "@context": "http://schema.org/extensions",
+    "themeColor": grav.color,
+    "summary": titulo,
+    "sections": [{
+      "activityTitle": `${grav.emoji} ${titulo}`,
+      "activitySubtitle": `${modulo} • ${ts}`,
+      "activityImage": "https://governaii-grc.lovable.app/akuris-logo.png",
+      "facts": facts,
+      "text": descricao || '',
+      "markdown": true
+    }],
+    ...(link ? {
+      "potentialAction": [{
+        "@type": "OpenUri",
+        "name": "📎 Ver no GovernAII",
+        "targets": [{ "os": "default", "uri": link }]
+      }]
+    } : {})
+  };
+}
+
+function buildJiraPayload(titulo: string, descricao: string | undefined, evento: string, gravidade: string | undefined, link: string | undefined, dados: any, timestamp: string | undefined, jiraProjectKey: string, jiraIssueType: string) {
+  const grav = formatGravidade(gravidade);
+  const modulo = extrairModulo(evento);
+  const eventoFormatado = formatEvento(evento);
+  const ts = new Date(timestamp || Date.now()).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+  let fullDescription = `*Descrição:*\n${descricao || 'Sem descrição'}\n\n`;
+  fullDescription += `----\n\n`;
+  fullDescription += `*Detalhes do Evento GovernAII:*\n`;
+  fullDescription += `||Campo||Valor||\n`;
+  fullDescription += `|Módulo|${modulo}|\n`;
+  fullDescription += `|Evento|${eventoFormatado}|\n`;
+  fullDescription += `|Gravidade|${grav.emoji} ${grav.label}|\n`;
+  fullDescription += `|Data/Hora|${ts}|\n`;
+
+  if (dados?.responsavel) fullDescription += `|Responsável|${dados.responsavel}|\n`;
+  if (dados?.status) fullDescription += `|Status|${dados.status}|\n`;
+  if (dados?.categoria) fullDescription += `|Categoria|${dados.categoria}|\n`;
+  if (dados?.id) fullDescription += `|ID Registro|${dados.id}|\n`;
+  if (dados?.prazo) fullDescription += `|Prazo|${dados.prazo}|\n`;
+  if (dados?.impacto) fullDescription += `|Impacto|${dados.impacto}|\n`;
+
+  if (link) fullDescription += `\n*Link:* [Ver no GovernAII|${link}]\n`;
+
+  const labels = ['governaii', 'grc', modulo.toLowerCase().replace(/\s+/g, '-').replace(/[áàã]/g, 'a').replace(/[éê]/g, 'e').replace(/[íî]/g, 'i').replace(/[óôõ]/g, 'o').replace(/[úû]/g, 'u').replace(/ç/g, 'c')];
+
+  return {
+    fields: {
+      project: { key: jiraProjectKey },
+      summary: `[GovernAII] ${titulo}`,
+      description: fullDescription,
+      issuetype: { name: jiraIssueType },
+      labels: labels,
+      ...(gravidade === 'critica' || gravidade === 'alta' ? { priority: { name: 'High' } } : {})
+    }
+  };
+}
+
+function buildWebhookPayload(titulo: string, descricao: string | undefined, evento: string, gravidade: string | undefined, link: string | undefined, dados: any, timestamp: string | undefined, empresa_id: string) {
+  const grav = formatGravidade(gravidade);
+  const modulo = extrairModulo(evento);
+
+  return {
+    fonte: 'GovernAII',
+    versao: '2.0',
+    evento,
+    evento_label: formatEvento(evento),
+    modulo,
+    timestamp: timestamp || new Date().toISOString(),
+    titulo,
+    descricao,
+    link,
+    gravidade: gravidade || null,
+    gravidade_label: grav.label,
+    gravidade_emoji: grav.emoji,
+    dados: dados || {},
+    empresa_id,
+    metadata: {
+      responsavel: dados?.responsavel || null,
+      status: dados?.status || null,
+      categoria: dados?.categoria || null,
+      prazo: dados?.prazo || null,
+      impacto: dados?.impacto || null,
+    }
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { 
-      empresa_id, 
-      evento, 
-      titulo, 
-      descricao, 
-      link, 
-      dados, 
-      gravidade,
-      triggered_by,
-      timestamp 
-    } = await req.json();
+    const { empresa_id, evento, titulo, descricao, link, dados, gravidade, triggered_by, timestamp } = await req.json();
 
     if (!empresa_id || !evento) {
       return new Response(
@@ -44,12 +261,10 @@ serve(async (req) => {
 
     console.log(`Dispatching event: ${evento} for empresa: ${empresa_id}`);
 
-    // Criar cliente Supabase
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Buscar integrações ativas da empresa
     const { data: integrations, error: fetchError } = await supabase
       .from('integracoes_config')
       .select('*')
@@ -72,7 +287,6 @@ serve(async (req) => {
     const results: { tipo: string; success: boolean; error?: string }[] = [];
 
     for (const integration of integrations as IntegrationConfig[]) {
-      // Verificar se evento está na lista de eventos configurados
       const eventosConfigurados = integration.configuracoes?.eventos || [];
       if (eventosConfigurados.length > 0 && !eventosConfigurados.includes(evento)) {
         console.log(`Evento ${evento} não configurado para ${integration.tipo_integracao}`);
@@ -90,155 +304,67 @@ serve(async (req) => {
 
         switch (integration.tipo_integracao) {
           case 'slack': {
-            const gravidadeEmoji = gravidade === 'critica' ? '🔴' : 
-                                   gravidade === 'alta' ? '🟠' : 
-                                   gravidade === 'media' ? '🟡' : '🟢';
-            
-            const slackPayload = {
-              blocks: [
-                {
-                  type: "header",
-                  text: {
-                    type: "plain_text",
-                    text: `${gravidadeEmoji} ${titulo}`,
-                    emoji: true
-                  }
-                },
-                ...(descricao ? [{
-                  type: "section",
-                  text: {
-                    type: "mrkdwn",
-                    text: descricao
-                  }
-                }] : []),
-                {
-                  type: "context",
-                  elements: [
-                    {
-                      type: "mrkdwn",
-                      text: `📋 *Evento:* ${evento} | 🕐 ${new Date(timestamp || Date.now()).toLocaleString('pt-BR')}`
-                    }
-                  ]
-                },
-                ...(link ? [{
-                  type: "actions",
-                  elements: [{
-                    type: "button",
-                    text: {
-                      type: "plain_text",
-                      text: "Ver no Akuris",
-                      emoji: true
-                    },
-                    url: link
-                  }]
-                }] : [])
-              ]
-            };
-
+            const slackPayload = buildSlackPayload(titulo, descricao, evento, gravidade, link, dados, timestamp);
             const slackResponse = await fetch(integration.webhook_url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(slackPayload)
             });
-            
             success = slackResponse.ok;
             responseStatus = slackResponse.status;
             break;
           }
 
           case 'teams': {
-            const themeColor = gravidade === 'critica' ? 'FF0000' : 
-                              gravidade === 'alta' ? 'FFA500' : 
-                              gravidade === 'media' ? 'FFFF00' : '00FF00';
-
-            const teamsPayload = {
-              "@type": "MessageCard",
-              "@context": "http://schema.org/extensions",
-              "themeColor": themeColor,
-              "summary": titulo,
-              "sections": [{
-                "activityTitle": titulo,
-                "activitySubtitle": new Date(timestamp || Date.now()).toLocaleString('pt-BR'),
-                "activityImage": "https://akuris.com.br/akuris-logo.png",
-                "facts": [
-                  { "name": "Evento", "value": evento },
-                  ...(gravidade ? [{ "name": "Gravidade", "value": gravidade }] : [])
-                ],
-                "text": descricao || '',
-                "markdown": true
-              }],
-              ...(link ? {
-                "potentialAction": [{
-                  "@type": "OpenUri",
-                  "name": "Ver no Akuris",
-                  "targets": [{ "os": "default", "uri": link }]
-                }]
-              } : {})
-            };
-
+            const teamsPayload = buildTeamsPayload(titulo, descricao, evento, gravidade, link, dados, timestamp);
             const teamsResponse = await fetch(integration.webhook_url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(teamsPayload)
             });
-            
             success = teamsResponse.ok;
             responseStatus = teamsResponse.status;
             break;
           }
 
           case 'webhooks': {
-            const webhookPayload = {
-              evento,
-              timestamp: timestamp || new Date().toISOString(),
-              titulo,
-              descricao,
-              link,
-              gravidade,
-              dados: dados || {},
-              empresa_id
-            };
-
+            const webhookPayload = buildWebhookPayload(titulo, descricao, evento, gravidade, link, dados, timestamp, empresa_id);
             const webhookHeaders: Record<string, string> = {
               'Content-Type': 'application/json',
               ...(integration.configuracoes?.headers || {})
             };
-
             const webhookResponse = await fetch(integration.webhook_url, {
               method: 'POST',
               headers: webhookHeaders,
               body: JSON.stringify(webhookPayload)
             });
-            
             success = webhookResponse.status >= 200 && webhookResponse.status < 400;
             responseStatus = webhookResponse.status;
             break;
           }
 
           case 'jira': {
-            // Criar ticket no Jira via API REST
             const jiraConfig = integration.configuracoes || {};
             const jiraInstanceUrl = (integration.webhook_url || '').replace(/\/+$/, '');
             const jiraEmail = jiraConfig.email as string;
             const jiraProjectKey = (jiraConfig.project_key as string) || 'GRC';
             const jiraIssueType = (jiraConfig.issue_type as string) || 'Task';
-            
-            // Buscar credenciais do campo credenciais_encrypted
+
             const { data: fullConfig } = await supabase
               .from('integracoes_config')
               .select('credenciais_encrypted')
               .eq('id', integration.id)
               .single();
-            
+
             let parsedCreds: any = null;
             try {
-              parsedCreds = typeof fullConfig?.credenciais_encrypted === 'string' 
-                ? JSON.parse(fullConfig.credenciais_encrypted) 
+              parsedCreds = typeof fullConfig?.credenciais_encrypted === 'string'
+                ? JSON.parse(fullConfig.credenciais_encrypted)
                 : fullConfig?.credenciais_encrypted;
             } catch { parsedCreds = null; }
-            
+
             const jiraToken = parsedCreds?.api_token;
-            
+
             if (!jiraInstanceUrl || !jiraEmail || !jiraToken) {
               console.error('Jira credentials incomplete');
               success = false;
@@ -246,19 +372,7 @@ serve(async (req) => {
               break;
             }
 
-            const gravidadeLabel = gravidade === 'critica' ? '🔴 CRÍTICA' : 
-                                   gravidade === 'alta' ? '🟠 ALTA' : 
-                                   gravidade === 'media' ? '🟡 MÉDIA' : '🟢 BAIXA';
-
-            const jiraPayload = {
-              fields: {
-                project: { key: jiraProjectKey },
-                summary: `[Akuris] ${titulo}`,
-                description: `${descricao || ''}\n\n*Evento:* ${evento}\n*Gravidade:* ${gravidadeLabel}\n*Timestamp:* ${new Date(timestamp || Date.now()).toLocaleString('pt-BR')}${link ? `\n*Link:* ${link}` : ''}`,
-                issuetype: { name: jiraIssueType },
-                ...(gravidade === 'critica' || gravidade === 'alta' ? { priority: { name: 'High' } } : {})
-              }
-            };
+            const jiraPayload = buildJiraPayload(titulo, descricao, evento, gravidade, link, dados, timestamp, jiraProjectKey, jiraIssueType);
 
             const jiraAuth = btoa(`${jiraEmail}:${jiraToken}`);
             const jiraResponse = await fetch(`${jiraInstanceUrl}/rest/api/3/issue`, {
@@ -270,10 +384,10 @@ serve(async (req) => {
               },
               body: JSON.stringify(jiraPayload)
             });
-            
+
             success = jiraResponse.ok;
             responseStatus = jiraResponse.status;
-            
+
             if (success) {
               const jiraData = await jiraResponse.json();
               console.log(`Jira ticket created: ${jiraData.key}`);
@@ -285,7 +399,6 @@ serve(async (req) => {
           }
         }
 
-        // Registrar log
         await supabase.from('integracoes_webhook_logs').insert({
           integracao_id: integration.id,
           evento,
@@ -295,17 +408,12 @@ serve(async (req) => {
           empresa_id
         });
 
-        results.push({ 
-          tipo: integration.tipo_integracao, 
-          success 
-        });
-
+        results.push({ tipo: integration.tipo_integracao, success });
         console.log(`Dispatched to ${integration.tipo_integracao}: ${success ? 'SUCCESS' : 'FAILED'}`);
 
       } catch (integrationError) {
         console.error(`Error dispatching to ${integration.tipo_integracao}:`, integrationError);
-        
-        // Registrar erro no log
+
         await supabase.from('integracoes_webhook_logs').insert({
           integracao_id: integration.id,
           evento,
@@ -316,26 +424,21 @@ serve(async (req) => {
           empresa_id
         });
 
-        results.push({ 
-          tipo: integration.tipo_integracao, 
-          success: false, 
-          error: integrationError.message 
-        });
+        results.push({ tipo: integration.tipo_integracao, success: false, error: integrationError.message });
       }
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         dispatched: results.filter(r => r.success).length,
         total: results.length,
-        results 
+        results
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Dispatcher error:', error);
-    
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }

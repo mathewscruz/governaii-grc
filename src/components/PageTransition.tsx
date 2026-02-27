@@ -9,7 +9,7 @@ const PageTransition: React.FC<PageTransitionProps> = ({ children, routeKey }) =
   return (
     <div 
       key={routeKey}
-      className="animate-fade-in"
+      className="animate-fade-in will-change-[opacity,transform]"
     >
       {children}
     </div>

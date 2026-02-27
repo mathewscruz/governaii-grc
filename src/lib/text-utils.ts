@@ -189,6 +189,91 @@ const STATUS_LABELS: Record<string, string> = {
   'erradicacao': 'Erradicação',
   'recuperacao': 'Recuperação',
   'licoes_aprendidas': 'Lições Aprendidas',
+  
+  // Chaves e Certificados
+  'api_key': 'API Key',
+  'certificado_ssl': 'Certificado SSL',
+  'ssh_key': 'SSH Key',
+  'token_acesso': 'Token de Acesso',
+  'secret_key': 'Secret Key',
+  'certificado_digital': 'Certificado Digital',
+  'chave_simetrica': 'Chave Simétrica',
+  'chave_assimetrica': 'Chave Assimétrica',
+  
+  // Bases Legais LGPD
+  'legitimo_interesse': 'Legítimo Interesse',
+  'execucao_contrato': 'Execução de Contrato',
+  'cumprimento_obrigacao': 'Cumprimento de Obrigação Legal',
+  'protecao_vida': 'Proteção da Vida',
+  'exercicio_direitos': 'Exercício de Direitos',
+  'politicas_publicas': 'Políticas Públicas',
+  'consentimento': 'Consentimento',
+  'tutela_saude': 'Tutela da Saúde',
+  'protecao_credito': 'Proteção ao Crédito',
+  'estudo_pesquisa': 'Estudo e Pesquisa',
+  
+  // Coleta e Compartilhamento
+  'diretamente_titular': 'Diretamente do Titular',
+  'nao_compartilha': 'Não Compartilha',
+  'autorizacao_anpd': 'Autorização ANPD',
+  'revogacao_consentimento': 'Revogação de Consentimento',
+  'formulario_web': 'Formulário Web',
+  
+  // Infraestrutura
+  'servidor_local': 'Servidor Local',
+  'cloud_publica': 'Cloud Pública',
+  'cloud_privada': 'Cloud Privada',
+  'cloud_hibrida': 'Cloud Híbrida',
+  'data_center': 'Data Center',
+  
+  // Dimensões e Volumes
+  'muito_grande': 'Muito Grande',
+  'tempo_real': 'Tempo Real',
+  
+  // Pessoas e Entidades
+  'pessoa_juridica': 'Pessoa Jurídica',
+  'pessoa_fisica': 'Pessoa Física',
+  
+  // Contratos
+  'contrato_principal': 'Contrato Principal',
+  'aditivo_contrato': 'Aditivo de Contrato',
+  'termo_aditivo': 'Termo Aditivo',
+  
+  // Segurança da Informação
+  'seguranca_informacao': 'Segurança da Informação',
+  'gestao_riscos': 'Gestão de Riscos',
+  'gestao_incidentes': 'Gestão de Incidentes',
+  'gestao_mudancas': 'Gestão de Mudanças',
+  'gestao_vulnerabilidades': 'Gestão de Vulnerabilidades',
+  'controle_acesso': 'Controle de Acesso',
+  'backup_restauracao': 'Backup e Restauração',
+  
+  // Categorias gerais
+  'disponibilidade': 'Disponibilidade',
+  'privacidade': 'Privacidade',
+  'integridade': 'Integridade',
+  'confidencialidade': 'Confidencialidade',
+  'conformidade': 'Conformidade',
+  'governanca': 'Governança',
+  
+  // Tipos de Incidentes
+  'vazamento_dados': 'Vazamento de Dados',
+  'acesso_nao_autorizado': 'Acesso Não Autorizado',
+  'indisponibilidade': 'Indisponibilidade',
+  'violacao_politica': 'Violação de Política',
+  'phishing': 'Phishing',
+  'malware': 'Malware',
+  'ransomware': 'Ransomware',
+  
+  // Denúncias
+  'assedio_moral': 'Assédio Moral',
+  'assedio_sexual': 'Assédio Sexual',
+  'discriminacao': 'Discriminação',
+  'fraude': 'Fraude',
+  'corrupcao': 'Corrupção',
+  'conflito_interesses': 'Conflito de Interesses',
+  'desvio_conduta': 'Desvio de Conduta',
+  'violacao_normas': 'Violação de Normas',
 };
 
 // Palavras que devem permanecer em maiúsculas
