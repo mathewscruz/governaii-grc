@@ -1,86 +1,113 @@
 
 
-# Validacao e Melhorias do Modulo Gap Analysis — "Consultor Virtual de Certificacao"
+# Plano: Reforma dos Relatórios PDF + Substituição GovernAII → Akuris
 
-## Diagnostico Atual
+## Problemas Identificados
 
-Apos varredura completa dos arquivos, o modulo ja possui uma base solida:
-- Onboarding com roteiro especifico por framework (ISO, NIST, LGPD)
-- Assistente IA por requisito (explicacao, evidencias, status sugerido)
-- Dashboard de score com evolucao temporal
-- Analise de documentos por IA (aderencia automatica)
-- Plano de acao integrado por requisito nao-conforme
-- Historico e exportacao PDF
-
-**Porem, para substituir uma consultoria Big4, faltam elementos criticos de guia, contexto e acao que um usuario leigo precisaria:**
+1. **Tipo exibido como string bruta**: No PDF do framework (ExportFrameworkPDF.tsx), linha 124 exibe `frameworkType` sem formatar (ex: `seguranca_informacao`). Mesmo problema nos relatórios de Riscos, Documentos e templates.
+2. **"GovernAI" ainda presente** em 29+ arquivos: rodapés de PDFs, edge functions, CSS, logger, integration dispatcher, due diligence dialogs.
+3. **PDFs sem logo, sem gráficos, visuais pobres**: O PDF do framework não tem logotipo Akuris, não tem gráficos visuais (apenas tabelas e texto plano), rodapé ainda diz "GovernAI".
 
 ---
 
-## Lacunas Identificadas
+## Tarefa 1: Criar helper centralizado de formatação para PDFs
 
-### 1. Falta um "Mapa de Progresso" visivel e motivacional
-O usuario nao tem nocao clara de onde esta na jornada. O score existe mas nao ha um indicador visual tipo "etapa 1 de 5" ou "voce esta aqui". Sem isso, o leigo desiste.
+**Arquivo**: `src/lib/pdf-utils.ts` (novo)
 
-### 2. Framework Detail: descripcao do framework esta ausente ou generica
-Na pagina de detalhe (`GapAnalysisFrameworkDetail`), o `PageHeader` mostra apenas `"Avaliacao de conformidade {tipo}"` quando nao ha `descricao`. Nao contextualiza *por que* o usuario deveria se importar.
-
-### 3. Onboarding nao explica os status de avaliacao
-O usuario ve "Conforme / Parcial / Nao Conforme / N/A" na tabela mas nao sabe o que cada um significa no contexto do framework. Nenhum tooltip ou legenda.
-
-### 4. Tab "Analise de Documentos" nao orienta o que enviar
-O usuario leigo nao sabe *quais documentos* enviar. A aba abre direto o formulario sem contexto.
-
-### 5. Quick Actions ausentes apos score calculado
-Apos avaliar varios requisitos, nao ha um CTA claro tipo "Proximos passos recomendados" visivel no dashboard (o AI Recommendations so aparece apos avaliar, mas fica escondido abaixo dos graficos).
-
-### 6. FrameworkCard (available) nao indica "por onde comecar"
-Os cards de frameworks disponiveis mostram esforco mas nao indicam qual e mais relevante para o perfil da empresa.
+Centralizar:
+- `formatLabel(text: string): string` — reutiliza `STATUS_LABELS` de `text-utils.ts` + fallback capitalize
+- `loadAkurisLogo(): Promise<HTMLImageElement | null>` — carrega `/akuris-logo.png` para uso em todos PDFs
+- `addAkurisHeader(doc: jsPDF, y: number): number` — header padrão com logo + linha gradiente simulada
+- `addAkurisFooter(doc: jsPDF)` — rodapé "Akuris - Plataforma GRC" em todas as páginas
+- Cores da marca: primary `#7552ff`, dark `#0a1628`
 
 ---
 
-## Plano de Implementacao
+## Tarefa 2: Reformar ExportFrameworkPDF.tsx (relatório principal)
 
-### Tarefa 1: Adicionar Barra de Progresso da Jornada no Framework Detail
-**Arquivo**: `src/pages/GapAnalysisFrameworkDetail.tsx`
-- Criar componente `JourneyProgressBar` com 4 etapas: Conhecer o Framework → Avaliar Requisitos → Tratar Gaps → Certificar
-- Posicionar entre o PageHeader e as Tabs
-- Calcular etapa automaticamente: 0 avaliados = etapa 1, <50% = etapa 2, >50% e com planos = etapa 3, >80% conforme = etapa 4
-- Visual: barra horizontal com dots, label da etapa atual, e dica contextual
+**Arquivo**: `src/components/gap-analysis/ExportFrameworkPDF.tsx`
 
-### Tarefa 2: Enriquecer descricoes e contexto dos frameworks
-**Arquivos**: `src/components/gap-analysis/FrameworkOnboarding.tsx`, `src/pages/GapAnalysisFrameworkDetail.tsx`
-- Adicionar ao Onboarding uma secao "Para quem e este framework?" e "O que voce ganha com a certificacao?" com textos especificos para ISO 27001, NIST, LGPD e generico
-- No PageHeader do Detail, usar descricoes enriquecidas do FRAMEWORK_AUDIENCES quando `framework.descricao` estiver vazio
-
-### Tarefa 3: Adicionar legenda de status com tooltips na tabela de requisitos
-**Arquivo**: `src/components/gap-analysis/GenericRequirementsTable.tsx`
-- Inserir acima da tabela uma legenda horizontal compacta com os 4 status e suas definicoes (tooltip ou popover)
-- Ex: "Conforme = Voce ja atende 100% deste requisito e tem evidencias", "Parcial = Voce atende parcialmente mas falta documentacao ou processo"
-
-### Tarefa 4: Adicionar orientacao contextual na aba "Analise de Documentos"
-**Arquivo**: `src/components/gap-analysis/adherence/AdherenceAssessmentView.tsx`
-- Antes da lista de assessments, adicionar um Card informativo explicando: "Envie documentos como politicas, procedimentos, registros ou relatorios. A IA analisa automaticamente a aderencia ao framework."
-- Incluir exemplos de documentos por tipo de framework (ISO → Politica de Seguranca, RACI, Relatorio de Riscos; LGPD → Politica de Privacidade, ROPA, Termo de Consentimento)
-
-### Tarefa 5: Reposicionar AI Recommendations para maior visibilidade
-**Arquivo**: `src/pages/GapAnalysisFrameworkDetail.tsx`
-- Mover o `AIRecommendationsCard` para ANTES dos graficos (logo apos o ScoreDashboard)
-- Quando `evaluatedRequirements >= 5 && evaluatedRequirements < totalRequirements`, mostrar um banner motivacional: "Voce ja avaliou X requisitos! Gere recomendacoes da IA para priorizar os proximos passos."
-
-### Tarefa 6: Adicionar "Guia Rapido" no WelcomeHero para usuarios novos
-**Arquivo**: `src/components/gap-analysis/WelcomeHero.tsx`
-- Adicionar abaixo da descricao uma secao "Como funciona?" com 3 passos visuais: 
-  1. "Escolha um framework" 
-  2. "Avalie cada requisito com ajuda da IA" 
-  3. "Acompanhe seu progresso e trate os gaps"
-- Manter conciso, com icones
+Mudanças:
+- Importar helpers de `pdf-utils.ts`
+- **Capa**: Adicionar logo Akuris no topo, fundo dark navy, título centralizado
+- **Tipo**: Formatar `frameworkType` com `formatLabel()` (linha 124)
+- **Score geral**: Adicionar barra de progresso visual mais elaborada com cores da marca
+- **Categorias**: Desenhar mini barras horizontais coloridas ao lado de cada score (simular gráfico de barras)
+- **Tabelas**: Usar zebra striping com cores da marca, headers violeta
+- **Rodapé**: Trocar "GovernAI - Gestão de Conformidade" por "Akuris - Plataforma GRC" (linha 298)
+- **Status**: Já formata bem, manter
 
 ---
 
-## Arquivos afetados
-1. `src/pages/GapAnalysisFrameworkDetail.tsx` — JourneyProgressBar + reorder AI card
-2. `src/components/gap-analysis/FrameworkOnboarding.tsx` — secoes "Para quem" e "Beneficios"
-3. `src/components/gap-analysis/GenericRequirementsTable.tsx` — legenda de status
-4. `src/components/gap-analysis/adherence/AdherenceAssessmentView.tsx` — guia de documentos
-5. `src/components/gap-analysis/WelcomeHero.tsx` — "Como funciona?"
+## Tarefa 3: Reformar generateTemplatePDF.ts (relatórios customizados)
+
+**Arquivo**: `src/components/relatorios/generateTemplatePDF.ts`
+
+Mudanças:
+- Capa: usar logo Akuris + cores da marca (substituir fundo navy genérico)
+- Seções: usar header violeta (#7552ff) nos títulos
+- Tabelas: formatar valores de status/tipo/criticidade com `formatLabel()`
+- Rodapé: já diz "Akuris GRC" ✓, manter
+- Métricas: adicionar mini barras visuais horizontais ao lado dos valores numéricos
+
+---
+
+## Tarefa 4: Reformar ExportRiscosPDF.tsx
+
+**Arquivo**: `src/components/riscos/ExportRiscosPDF.tsx`
+
+Mudanças:
+- Adicionar header com logo Akuris
+- Formatar `nivel_risco_inicial`, `nivel_risco_residual`, `status` com `formatLabel()`
+- Adicionar rodapé padrão Akuris
+- Melhorar visual da tabela com cores da marca
+
+---
+
+## Tarefa 5: Reformar DocumentosRelatorios.tsx
+
+**Arquivo**: `src/components/documentos/DocumentosRelatorios.tsx`
+
+Mudanças:
+- Adicionar header com logo no PDF
+- Formatar `tipo` e `status` com `formatLabel()` (linhas 106-107)
+- Adicionar rodapé padrão
+- CSV: também formatar labels no export
+
+---
+
+## Tarefa 6: Substituir TODAS as referências "GovernAII" → "Akuris"
+
+**Arquivos afetados** (25+ arquivos):
+
+### Frontend (comentários/CSS class names — NÃO renomear classes CSS pois quebraria):
+- `src/lib/logger.ts` linha 1: comentário → "Akuris"
+- `src/App.css` linha 1: comentário → "Akuris"
+- `src/index.css` linhas 340, 472, 489: comentários → "Akuris" (classes `governaii-*` mantidas para não quebrar)
+
+### Frontend (texto visível):
+- `src/components/due-diligence/AssessmentDialog.tsx` linha 187: `'GovernAI'` → `'Akuris'`
+- `src/components/due-diligence/AssessmentsManagerEnhanced.tsx` linhas 67, 415: `'GovernAI'` → `'Akuris'`
+
+### Edge Functions (texto em payloads):
+- `integration-webhook-dispatcher/index.ts`: linhas 51, 123, 132, 173, 188 — trocar "GovernAII" por "Akuris"
+
+### Edge Functions (URLs `governaii-grc.lovable.app`):
+- Estas URLs hospedam assets reais (logo), então NÃO devem ser alteradas pois o domínio `akuris.com.br` pode não servir esses assets. Manter como estão.
+
+---
+
+## Arquivos afetados (resumo)
+
+1. `src/lib/pdf-utils.ts` — **novo** (helper centralizado)
+2. `src/components/gap-analysis/ExportFrameworkPDF.tsx` — reforma visual + formatação
+3. `src/components/relatorios/generateTemplatePDF.ts` — reforma visual + formatação
+4. `src/components/riscos/ExportRiscosPDF.tsx` — reforma visual + formatação
+5. `src/components/documentos/DocumentosRelatorios.tsx` — reforma visual + formatação
+6. `src/lib/logger.ts` — comentário
+7. `src/App.css` — comentário
+8. `src/index.css` — comentários
+9. `src/components/due-diligence/AssessmentDialog.tsx` — texto
+10. `src/components/due-diligence/AssessmentsManagerEnhanced.tsx` — texto
+11. `supabase/functions/integration-webhook-dispatcher/index.ts` — texto nos payloads
 
