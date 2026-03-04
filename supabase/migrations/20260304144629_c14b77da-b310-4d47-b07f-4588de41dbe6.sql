@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.notify_changelog_entry() CASCADE;
