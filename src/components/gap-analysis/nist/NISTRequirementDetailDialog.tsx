@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
-import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw, HelpCircle } from "lucide-react";
+import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw, HelpCircle, Building2, Settings, FileCheck, CheckSquare, Shield, Target, type LucideIcon } from "lucide-react";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { PlanoAcaoDialog } from "@/components/planos-acao/PlanoAcaoDialog";
 import { AuditTrailTimeline } from "@/components/gap-analysis/AuditTrailTimeline";
@@ -75,9 +75,27 @@ const CollapsibleSection = ({ title, icon: Icon, defaultOpen = false, badge, chi
   );
 };
 
-/** Simple Markdown renderer — handles headers, bold, lists, hr */
-const MarkdownContent = ({ content }: { content: string }) => {
-  const lines = content.split('\n');
+/** Icon mapping for section titles based on keywords */
+const getSectionIcon = (title: string): { icon: LucideIcon; color: string } => {
+  const t = title.toLowerCase();
+  if (t.includes('significa') || t.includes('conceito') || t.includes('what')) return { icon: Target, color: 'text-primary' };
+  if (t.includes('importa') || t.includes('relevância') || t.includes('why') || t.includes('negócio')) return { icon: Building2, color: 'text-amber-500' };
+  if (t.includes('implementar') || t.includes('como') || t.includes('how') || t.includes('passo')) return { icon: Settings, color: 'text-blue-500' };
+  if (t.includes('resumo') || t.includes('conclus') || t.includes('prático') || t.includes('summary')) return { icon: CheckSquare, color: 'text-emerald-500' };
+  if (t.includes('evidência') || t.includes('comprova') || t.includes('evidence') || t.includes('documento')) return { icon: FileCheck, color: 'text-violet-500' };
+  if (t.includes('risco') || t.includes('atenção') || t.includes('risk') || t.includes('cuidado')) return { icon: AlertTriangle, color: 'text-destructive' };
+  if (t.includes('controle') || t.includes('medida') || t.includes('proteção')) return { icon: Shield, color: 'text-cyan-500' };
+  return { icon: BookOpen, color: 'text-muted-foreground' };
+};
+
+const inlineMd = (text: string): string => {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong class="text-foreground font-semibold">$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+};
+
+/** Renders a list of lines into JSX elements (paragraphs, bullets, numbered lists) */
+const renderContentLines = (lines: string[]): React.ReactNode[] => {
   const elements: React.ReactNode[] = [];
   let listItems: string[] = [];
   let isNumberedList = false;
@@ -110,45 +128,19 @@ const MarkdownContent = ({ content }: { content: string }) => {
     isNumberedList = false;
   };
 
-  const inlineMd = (text: string): string => {
-    return text
-      .replace(/\*\*(.+?)\*\*/g, '<strong class="text-foreground font-semibold">$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>');
-  };
-
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
+    const trimmed = lines[i].trim();
+    if (trimmed === '' || trimmed === '---') { flushList(); continue; }
 
-    if (trimmed === '' || trimmed === '---') {
-      flushList();
-      if (trimmed === '---') elements.push(<hr key={`hr-${i}`} className="my-3 border-border/50" />);
-      continue;
-    }
-
-    // Headers
-    const h2Match = trimmed.match(/^##\s+(.+)/);
     const h3Match = trimmed.match(/^###\s+(.+)/);
-    if (h2Match) {
-      flushList();
-      elements.push(
-        <h3 key={`h2-${i}`} className="text-sm font-bold text-foreground mt-4 mb-2 first:mt-0">
-          {h2Match[1]}
-        </h3>
-      );
-      continue;
-    }
     if (h3Match) {
       flushList();
       elements.push(
-        <h4 key={`h3-${i}`} className="text-sm font-semibold text-foreground mt-3 mb-1.5">
-          {h3Match[1]}
-        </h4>
+        <h4 key={`h3-${i}`} className="text-sm font-semibold text-foreground mt-3 mb-1.5">{h3Match[1]}</h4>
       );
       continue;
     }
 
-    // Bullet list
     const bulletMatch = trimmed.match(/^[-•*]\s+(.+)/);
     if (bulletMatch) {
       if (listItems.length > 0 && isNumberedList) flushList();
@@ -157,7 +149,6 @@ const MarkdownContent = ({ content }: { content: string }) => {
       continue;
     }
 
-    // Numbered list
     const numMatch = trimmed.match(/^\d+[.)]\s+(.+)/);
     if (numMatch) {
       if (listItems.length > 0 && !isNumberedList) flushList();
@@ -166,15 +157,66 @@ const MarkdownContent = ({ content }: { content: string }) => {
       continue;
     }
 
-    // Regular paragraph
     flushList();
     elements.push(
       <p key={`p-${i}`} className="text-sm text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: inlineMd(trimmed) }} />
     );
   }
   flushList();
+  return elements;
+};
 
-  return <div className="space-y-2">{elements}</div>;
+/** Structured Markdown renderer — groups ## sections into visual cards */
+const MarkdownContent = ({ content }: { content: string }) => {
+  const lines = content.split('\n');
+
+  // Split into sections: intro (before first ##) and named sections
+  const sections: Array<{ title: string | null; lines: string[] }> = [];
+  let current: { title: string | null; lines: string[] } = { title: null, lines: [] };
+
+  for (const line of lines) {
+    const h2Match = line.trim().match(/^##\s+(.+)/);
+    if (h2Match) {
+      if (current.lines.length > 0 || current.title) sections.push(current);
+      current = { title: h2Match[1], lines: [] };
+    } else {
+      current.lines.push(line);
+    }
+  }
+  if (current.lines.length > 0 || current.title) sections.push(current);
+
+  return (
+    <div className="space-y-4">
+      {sections.map((section, idx) => {
+        // Intro text (before any ##)
+        if (!section.title) {
+          const contentElements = renderContentLines(section.lines);
+          if (contentElements.length === 0) return null;
+          return (
+            <div key={idx} className="text-sm text-foreground/80 italic leading-relaxed space-y-2">
+              {contentElements}
+            </div>
+          );
+        }
+
+        // Named section → card
+        const { icon: SectionIcon, color } = getSectionIcon(section.title);
+        return (
+          <div key={idx} className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+            <div className="flex items-center gap-2.5">
+              <div className={`flex items-center justify-center h-7 w-7 rounded-md bg-background border border-border ${color}`}>
+                <SectionIcon className="h-4 w-4" />
+              </div>
+              <h3 className="text-sm font-bold text-foreground">{section.title}</h3>
+            </div>
+            <div className="space-y-2.5 pl-[38px]">
+              {renderContentLines(section.lines)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 /** Skeleton for guidance loading */
