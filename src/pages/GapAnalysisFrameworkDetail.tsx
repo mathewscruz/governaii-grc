@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Download } from 'lucide-react';
+import { ChevronLeft, Download, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,7 +12,7 @@ import { CategoryStatusCards } from '@/components/gap-analysis/CategoryStatusCar
 import { FrameworkHistoryTab } from '@/components/gap-analysis/FrameworkHistoryTab';
 import { AdherenceAssessmentView } from '@/components/gap-analysis/adherence/AdherenceAssessmentView';
 import { AdherenceResultView } from '@/components/gap-analysis/adherence/AdherenceResultView';
-import { AIRecommendationsCard } from '@/components/gap-analysis/AIRecommendationsCard';
+import { AIRecommendationsButton } from '@/components/gap-analysis/AIRecommendationsCard';
 import { RemediationTab } from '@/components/gap-analysis/RemediationTab';
 import { FrameworkOnboarding } from '@/components/gap-analysis/FrameworkOnboarding';
 import { JourneyProgressBar } from '@/components/gap-analysis/JourneyProgressBar';
@@ -189,10 +189,23 @@ export default function GapAnalysisFrameworkDetail() {
           title={`${framework.nome} ${framework.versao}`}
           description={framework.descricao || FRAMEWORK_DESCRIPTIONS[framework.nome] || `Avaliação de conformidade ${framework.tipo_framework}`}
           actions={
-            <Button onClick={handleExportPDF} variant="outline" disabled={exporting}>
-              <Download className="h-4 w-4 mr-2" />
-              {exporting ? 'Exportando...' : 'Exportar PDF'}
-            </Button>
+            <div className="flex items-center gap-2">
+              {empresaId && evaluatedRequirements > 0 && (
+                <AIRecommendationsButton
+                  frameworkId={frameworkId!}
+                  frameworkNome={framework.nome}
+                  empresaId={empresaId}
+                  overallScore={overallScore}
+                  totalRequirements={totalRequirements}
+                  evaluatedRequirements={evaluatedRequirements}
+                  scoreType={config.scoreType}
+                />
+              )}
+              <Button onClick={handleExportPDF} variant="outline" disabled={exporting}>
+                <Download className="h-4 w-4 mr-2" />
+                {exporting ? 'Exportando...' : 'Exportar PDF'}
+              </Button>
+            </div>
           }
         />
 
@@ -239,18 +252,6 @@ export default function GapAnalysisFrameworkDetail() {
                   frameworkId={frameworkId!}
                 />
 
-                {/* AI Recommendations - compact, before charts */}
-                {empresaId && evaluatedRequirements > 0 && (
-                  <AIRecommendationsCard
-                    frameworkId={frameworkId!}
-                    frameworkNome={framework.nome}
-                    empresaId={empresaId}
-                    overallScore={overallScore}
-                    totalRequirements={totalRequirements}
-                    evaluatedRequirements={evaluatedRequirements}
-                    scoreType={config.scoreType}
-                  />
-                )}
 
                 {/* Single chart + interactive category cards */}
                 {categoryScores.length > 0 && (

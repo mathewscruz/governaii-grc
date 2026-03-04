@@ -69,10 +69,10 @@ const ScoreDonut = ({ score, config, size = 120 }: { score: number; config: Fram
   const center = size / 2;
 
   const getColor = (s: number) => {
-    if (s >= 80) return 'hsl(var(--chart-2))';
-    if (s >= 60) return 'hsl(var(--primary))';
-    if (s >= 40) return 'hsl(var(--chart-4))';
-    return 'hsl(var(--destructive))';
+    if (s >= 80) return '#22c55e';
+    if (s >= 60) return '#3b82f6';
+    if (s >= 40) return '#f59e0b';
+    return '#ef4444';
   };
 
   return (
