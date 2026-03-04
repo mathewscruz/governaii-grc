@@ -1,19 +1,26 @@
 
 
-# Ajuste Visual dos Campos de Login
+# Plano: Notificações de Versão Apenas no Ícone de Novidades (Sparkles)
 
 ## Problema
-Os inputs de e-mail e senha têm `pl-10` (2.5rem de padding esquerdo) para acomodar ícones posicionados em `left-3`. Isso cria um espaço excessivo entre o texto e a borda, além do fundo `bg-white/5` que destoa visualmente do card escuro.
+O trigger `notify_changelog_entry` insere registros na tabela `notifications` (sino) quando uma nova versão é adicionada. Isso duplica a informação, já que o `ChangelogPopover` (ícone Sparkles ✨) já exibe as novidades com indicador de "novo" via `localStorage`.
 
 ## Solução
+Remover o trigger `notify_changelog_entry` do banco de dados. O `ChangelogPopover` já cuida de:
+- Buscar entradas do `changelog_entries`
+- Mostrar indicador pulsante quando há versão não vista
+- Marcar como "visto" ao abrir o popover
 
-**Arquivo**: `src/pages/Auth.tsx`
+Nenhuma mudança no frontend é necessária — apenas a remoção do trigger SQL.
 
-- Reduzir padding esquerdo dos inputs de `pl-10` para `pl-9`
-- Mover ícones de `left-3` para `left-3.5` para centralizar melhor dentro do espaço
-- Trocar `bg-white/5` por `bg-white/[0.03]` para um fundo mais sutil e integrado ao card
-- Ajustar `border-white/10` para `border-white/[0.08]` para borda mais suave
-- Adicionar `rounded-lg` explícito para consistência visual
+## Arquivo
 
-Resultado: campos mais compactos, texto mais próximo da borda, visual mais integrado ao tema escuro.
+| Arquivo | Ação |
+|---------|------|
+| Nova migration SQL | **Novo** — `DROP TRIGGER` e `DROP FUNCTION` do `notify_changelog_entry` |
+
+## Impacto
+- Novas versões aparecem **apenas** no ícone Sparkles (ao lado do sino)
+- O sino fica reservado para notificações operacionais (aprovações, incidentes, etc.)
+- Zero mudanças no frontend
 
