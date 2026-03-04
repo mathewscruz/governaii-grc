@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Download, Building2 } from 'lucide-react';
+import { ChevronLeft, Download, Building2, FileBarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,6 +19,7 @@ import { JourneyProgressBar } from '@/components/gap-analysis/JourneyProgressBar
 import { SoATab } from '@/components/gap-analysis/SoATab';
 import { CompanyContextDialog } from '@/components/gap-analysis/CompanyContextDialog';
 import { exportFrameworkPDF } from '@/components/gap-analysis/ExportFrameworkPDF';
+import { exportBoardPDF } from '@/components/gap-analysis/ExportBoardPDF';
 import { supabase } from '@/integrations/supabase/client';
 import { getFrameworkConfig } from '@/lib/framework-configs';
 import { useFrameworkScore } from '@/hooks/useFrameworkScore';
@@ -150,42 +151,62 @@ export default function GapAnalysisFrameworkDetail() {
     setShowOnboarding(!scoreLoading && evaluatedRequirements === 0 && totalRequirements > 0);
   }, [scoreLoading, evaluatedRequirements, totalRequirements]);
 
+  const getExportData = async () => {
+    const { data: reqs } = await supabase
+      .from('gap_analysis_requirements')
+      .select('id, codigo, titulo, categoria, peso, area_responsavel')
+      .eq('framework_id', frameworkId)
+      .order('ordem', { ascending: true });
+
+    const { data: evals } = await supabase
+      .from('gap_analysis_evaluations')
+      .select('requirement_id, conformity_status')
+      .eq('framework_id', frameworkId)
+      .eq('empresa_id', empresaId);
+
+    const evalMap = new Map(evals?.map(e => [e.requirement_id, e.conformity_status]) || []);
+    const requirements = (reqs || []).map(r => ({
+      codigo: r.codigo || '', titulo: r.titulo, categoria: r.categoria || '',
+      conformity_status: evalMap.get(r.id) || 'nao_avaliado', peso: r.peso, area_responsavel: r.area_responsavel,
+    }));
+
+    const { data: empresa } = await supabase.from('empresas').select('nome').eq('id', empresaId).single();
+
+    return {
+      frameworkName: framework!.nome, frameworkVersion: framework!.versao,
+      frameworkType: framework!.tipo_framework, overallScore, totalRequirements,
+      evaluatedRequirements, pillarScores, categoryScores, requirements,
+      empresaNome: empresa?.nome || 'Empresa',
+      scoreType: config!.scoreType as 'decimal' | 'percentage',
+      maxScore: config!.scoreType === 'percentage' ? 100 : 5,
+    };
+  };
+
   const handleExportPDF = async () => {
     if (!framework || !config) return;
     setExporting(true);
     try {
-      const { data: reqs } = await supabase
-        .from('gap_analysis_requirements')
-        .select('id, codigo, titulo, categoria, peso, area_responsavel')
-        .eq('framework_id', frameworkId)
-        .order('ordem', { ascending: true });
-
-      const { data: evals } = await supabase
-        .from('gap_analysis_evaluations')
-        .select('requirement_id, conformity_status')
-        .eq('framework_id', frameworkId)
-        .eq('empresa_id', empresaId);
-
-      const evalMap = new Map(evals?.map(e => [e.requirement_id, e.conformity_status]) || []);
-      const requirements = (reqs || []).map(r => ({
-        codigo: r.codigo || '', titulo: r.titulo, categoria: r.categoria || '',
-        conformity_status: evalMap.get(r.id) || 'nao_avaliado', peso: r.peso, area_responsavel: r.area_responsavel,
-      }));
-
-      const { data: empresa } = await supabase.from('empresas').select('nome').eq('id', empresaId).single();
-
-      await exportFrameworkPDF({
-        frameworkName: framework.nome, frameworkVersion: framework.versao,
-        frameworkType: framework.tipo_framework, overallScore, totalRequirements,
-        evaluatedRequirements, pillarScores, categoryScores, requirements,
-        empresaNome: empresa?.nome || 'Empresa',
-        scoreType: config.scoreType as 'decimal' | 'percentage',
-        maxScore: config.scoreType === 'percentage' ? 100 : 5,
-      });
+      const data = await getExportData();
+      await exportFrameworkPDF(data);
       toast.success('PDF exportado com sucesso');
     } catch (error: any) {
       logger.error('Erro ao exportar PDF', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro ao exportar PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportBoard = async () => {
+    if (!framework || !config) return;
+    setExporting(true);
+    try {
+      const data = await getExportData();
+      await exportBoardPDF(data);
+      toast.success('Relatório executivo exportado com sucesso');
+    } catch (error: any) {
+      logger.error('Erro ao exportar PDF Board', { error: error instanceof Error ? error.message : String(error) });
+      toast.error('Erro ao exportar relatório executivo');
     } finally {
       setExporting(false);
     }
@@ -236,9 +257,13 @@ export default function GapAnalysisFrameworkDetail() {
                   scoreType={config.scoreType}
                 />
               )}
+              <Button onClick={handleExportBoard} variant="outline" disabled={exporting}>
+                <FileBarChart className="h-4 w-4 mr-2" />
+                Board
+              </Button>
               <Button onClick={handleExportPDF} variant="outline" disabled={exporting}>
                 <Download className="h-4 w-4 mr-2" />
-                {exporting ? 'Exportando...' : 'Exportar PDF'}
+                {exporting ? 'Exportando...' : 'PDF Técnico'}
               </Button>
             </div>
           }

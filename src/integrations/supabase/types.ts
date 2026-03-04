@@ -4418,6 +4418,7 @@ export type Database = {
           obrigatorio: boolean | null
           ordem: number | null
           orientacao_implementacao: string | null
+          perguntas_diagnostico: string | null
           peso: number | null
           titulo: string
           updated_at: string
@@ -4434,6 +4435,7 @@ export type Database = {
           obrigatorio?: boolean | null
           ordem?: number | null
           orientacao_implementacao?: string | null
+          perguntas_diagnostico?: string | null
           peso?: number | null
           titulo: string
           updated_at?: string
@@ -4450,6 +4452,7 @@ export type Database = {
           obrigatorio?: boolean | null
           ordem?: number | null
           orientacao_implementacao?: string | null
+          perguntas_diagnostico?: string | null
           peso?: number | null
           titulo?: string
           updated_at?: string

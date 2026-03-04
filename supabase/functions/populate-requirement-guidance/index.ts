@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
         .update({
           orientacao_implementacao: guidance.orientacao_implementacao,
           exemplos_evidencias: guidance.exemplos_evidencias,
+          perguntas_diagnostico: guidance.perguntas_diagnostico,
         })
         .eq("id", requirementId);
 
@@ -58,6 +59,7 @@ Deno.serve(async (req) => {
         message: "Guidance generated successfully",
         orientacao_implementacao: guidance.orientacao_implementacao,
         exemplos_evidencias: guidance.exemplos_evidencias,
+        perguntas_diagnostico: guidance.perguntas_diagnostico,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -95,6 +97,7 @@ Deno.serve(async (req) => {
           .update({
             orientacao_implementacao: guidance.orientacao_implementacao,
             exemplos_evidencias: guidance.exemplos_evidencias,
+            perguntas_diagnostico: guidance.perguntas_diagnostico,
           })
           .eq("id", r.id);
 
@@ -123,10 +126,16 @@ Deno.serve(async (req) => {
   }
 });
 
+interface GuidanceResult {
+  orientacao_implementacao: string;
+  exemplos_evidencias: string;
+  perguntas_diagnostico: string | null;
+}
+
 async function generateGuidance(
   req: { codigo: string | null; titulo: string; descricao: string | null; categoria: string | null },
   apiKey: string
-): Promise<{ orientacao_implementacao: string; exemplos_evidencias: string } | null> {
+): Promise<GuidanceResult | null> {
   const prompt = `Você é um consultor sênior de GRC (Governança, Riscos e Compliance) com 20 anos de experiência em Big4. Seu papel é explicar requisitos de conformidade para gestores que NÃO são técnicos, de forma clara, prática e acionável.
 
 Para o requisito abaixo, gere uma orientação detalhada e rica seguindo EXATAMENTE a estrutura Markdown indicada.
@@ -180,8 +189,26 @@ Exemplos bons: "Política de Controle de Acesso aprovada pela diretoria, com dat
 
 Responda APENAS com a lista, sem introdução.`;
 
+  const diagnosticoPrompt = `Você é um auditor sênior avaliando o requisito "${req.codigo} - ${req.titulo}" (${req.categoria || "Geral"}).
+
+Gere exatamente 5 perguntas de diagnóstico rápido para que um gestor avalie se sua empresa está em conformidade com este requisito. As perguntas devem ser respondíveis com "Sim", "Parcial" ou "Não".
+
+Retorne APENAS um JSON array com objetos no formato:
+[
+  {"pergunta": "A empresa possui política documentada e aprovada sobre X?", "peso": 2},
+  {"pergunta": "Existe registro de treinamentos realizados nos últimos 12 meses?", "peso": 1}
+]
+
+Regras:
+- Exatamente 5 perguntas
+- Cada pergunta deve ser específica para o requisito, não genérica
+- O "peso" indica importância: 1 (normal), 2 (alta), 3 (crítica)
+- Perguntas objetivas que possam ser respondidas com Sim/Parcial/Não
+- Português brasileiro
+- Retorne APENAS o JSON, sem markdown ou texto adicional`;
+
   try {
-    const [guidanceRes, evidenciasRes] = await Promise.all([
+    const [guidanceRes, evidenciasRes, diagnosticoRes] = await Promise.all([
       fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -206,6 +233,18 @@ Responda APENAS com a lista, sem introdução.`;
           temperature: 0.3,
         }),
       }),
+      fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [{ role: "user", content: diagnosticoPrompt }],
+          temperature: 0.2,
+        }),
+      }),
     ]);
 
     if (!guidanceRes.ok) {
@@ -225,9 +264,27 @@ Responda APENAS com a lista, sem introdução.`;
 
     if (!orientacao) return null;
 
+    // Parse diagnostic questions
+    let perguntasJson: string | null = null;
+    if (diagnosticoRes.ok) {
+      const diagnosticoData = await diagnosticoRes.json();
+      const rawContent = diagnosticoData.choices?.[0]?.message?.content || "";
+      // Extract JSON from potential markdown code blocks
+      const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        try {
+          JSON.parse(jsonMatch[0]); // validate
+          perguntasJson = jsonMatch[0];
+        } catch {
+          console.error("Failed to parse diagnostic questions JSON");
+        }
+      }
+    }
+
     return {
       orientacao_implementacao: orientacao,
       exemplos_evidencias: evidencias,
+      perguntas_diagnostico: perguntasJson,
     };
   } catch (e) {
     console.error(`AI call error for ${req.codigo}:`, e);

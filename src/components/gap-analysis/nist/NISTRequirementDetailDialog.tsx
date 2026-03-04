@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
-import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw } from "lucide-react";
+import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw, HelpCircle } from "lucide-react";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { PlanoAcaoDialog } from "@/components/planos-acao/PlanoAcaoDialog";
 import { AuditTrailTimeline } from "@/components/gap-analysis/AuditTrailTimeline";
@@ -222,6 +222,8 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
   const [guidanceText, setGuidanceText] = useState<string | null>(null);
   const [evidenciasText, setEvidenciasText] = useState<string | null>(null);
   const [generatingGuidance, setGeneratingGuidance] = useState(false);
+  const [diagnosticQuestions, setDiagnosticQuestions] = useState<Array<{pergunta: string; peso: number}>>([]);
+  const [diagnosticAnswers, setDiagnosticAnswers] = useState<Record<number, 'sim' | 'parcial' | 'nao' | null>>({});
 
   const [formData, setFormData] = useState<EvaluationData>({
     responsavel_avaliacao: '', plano_acao: '', observacoes: '',
@@ -243,6 +245,12 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
         setGuidanceText(data.orientacao_implementacao);
         setEvidenciasText(data.exemplos_evidencias || null);
       }
+      if (data?.perguntas_diagnostico) {
+        try {
+          const parsed = JSON.parse(data.perguntas_diagnostico);
+          if (Array.isArray(parsed)) setDiagnosticQuestions(parsed);
+        } catch { /* ignore parse errors */ }
+      }
     } catch (error: any) {
       console.error('Error generating guidance:', error);
       if (!forceRegenerate) {
@@ -261,20 +269,30 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
       const [usersRes, riscosRes, reqDetailsRes] = await Promise.all([
         supabase.from('profiles').select('user_id, nome, email').eq('empresa_id', empresaId).order('nome'),
         supabase.from('riscos').select('id, nome, nivel_risco_inicial').eq('empresa_id', empresaId).order('nome'),
-        supabase.from('gap_analysis_requirements').select('orientacao_implementacao, exemplos_evidencias').eq('id', requirement.id).single()
+        supabase.from('gap_analysis_requirements').select('orientacao_implementacao, exemplos_evidencias, perguntas_diagnostico').eq('id', requirement.id).single()
       ]);
       if (usersRes.error) throw usersRes.error;
       if (riscosRes.error) throw riscosRes.error;
       setUsers(usersRes.data || []);
       setRiscos(riscosRes.data || []);
 
-      const details = reqDetailsRes.data as { orientacao_implementacao?: string | null; exemplos_evidencias?: string | null } || {};
+      const details = reqDetailsRes.data as { orientacao_implementacao?: string | null; exemplos_evidencias?: string | null; perguntas_diagnostico?: string | null } || {};
       setGuidanceText(details.orientacao_implementacao || null);
       setEvidenciasText(details.exemplos_evidencias || null);
 
+      // Parse diagnostic questions
+      if (details.perguntas_diagnostico) {
+        try {
+          const parsed = JSON.parse(details.perguntas_diagnostico);
+          if (Array.isArray(parsed)) setDiagnosticQuestions(parsed);
+        } catch { /* ignore */ }
+      } else {
+        setDiagnosticQuestions([]);
+      }
+      setDiagnosticAnswers({});
+
       // Auto-trigger generation if no guidance exists
       if (!details.orientacao_implementacao) {
-        // Don't await — let it load in background
         triggerGuidanceGeneration();
       }
 
@@ -500,6 +518,77 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
                               </li>
                             ))}
                           </ul>
+                        </div>
+                      )}
+
+                      {/* Diagnostic Questions Section */}
+                      {diagnosticQuestions.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-border/50">
+                          <div className="flex items-center gap-1.5 mb-3">
+                            <HelpCircle className="h-4 w-4 text-primary" />
+                            <h4 className="text-sm font-bold text-foreground">Diagnostico Rapido</h4>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            Responda as perguntas abaixo para uma sugestao automatica de status.
+                          </p>
+                          <div className="space-y-3">
+                            {diagnosticQuestions.map((q, idx) => {
+                              const answer = diagnosticAnswers[idx] || null;
+                              return (
+                                <div key={idx} className="p-3 rounded-lg bg-card border space-y-2">
+                                  <p className="text-sm text-foreground leading-relaxed">
+                                    {q.peso >= 2 && <Badge variant="outline" className="text-[10px] mr-1.5">Peso {q.peso}</Badge>}
+                                    {q.pergunta}
+                                  </p>
+                                  <div className="flex gap-2">
+                                    {(['sim', 'parcial', 'nao'] as const).map(opt => (
+                                      <Button
+                                        key={opt}
+                                        size="sm"
+                                        variant={answer === opt ? 'default' : 'outline'}
+                                        className={`text-xs h-7 px-3 ${
+                                          answer === opt && opt === 'sim' ? 'bg-chart-2 hover:bg-chart-2/90 text-white' :
+                                          answer === opt && opt === 'parcial' ? 'bg-chart-4 hover:bg-chart-4/90 text-white' :
+                                          answer === opt && opt === 'nao' ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground' : ''
+                                        }`}
+                                        onClick={() => setDiagnosticAnswers(prev => ({ ...prev, [idx]: opt }))}
+                                      >
+                                        {opt === 'sim' ? 'Sim' : opt === 'parcial' ? 'Parcial' : 'Nao'}
+                                      </Button>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Suggested status based on answers */}
+                          {Object.keys(diagnosticAnswers).length > 0 && (
+                            <div className="mt-3 p-3 rounded-lg bg-muted/50 border">
+                              <p className="text-xs font-medium text-foreground mb-1">Status sugerido:</p>
+                              {(() => {
+                                const answered = Object.entries(diagnosticAnswers).filter(([, v]) => v !== null);
+                                if (answered.length === 0) return <p className="text-xs text-muted-foreground">Responda ao menos uma pergunta.</p>;
+                                let totalWeight = 0;
+                                let weightedScore = 0;
+                                answered.forEach(([idx, ans]) => {
+                                  const w = diagnosticQuestions[Number(idx)]?.peso || 1;
+                                  totalWeight += w;
+                                  if (ans === 'sim') weightedScore += w * 1;
+                                  else if (ans === 'parcial') weightedScore += w * 0.5;
+                                });
+                                const pct = totalWeight > 0 ? (weightedScore / totalWeight) * 100 : 0;
+                                const suggested = pct >= 80 ? 'Conforme' : pct >= 40 ? 'Parcial' : 'Nao Conforme';
+                                const color = pct >= 80 ? 'text-chart-2' : pct >= 40 ? 'text-chart-4' : 'text-destructive';
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className={`${color} font-semibold`}>{suggested}</Badge>
+                                    <span className="text-xs text-muted-foreground">({Math.round(pct)}% de aderencia)</span>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
                         </div>
                       )}
                     </>
