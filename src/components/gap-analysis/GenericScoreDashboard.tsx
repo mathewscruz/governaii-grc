@@ -129,120 +129,115 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
   const evalPct = totalRequirements > 0 ? (evaluatedRequirements / totalRequirements) * 100 : 0;
 
   return (
-    <div className="space-y-6">
-      {/* Score Geral + Evolução lado a lado */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Score Geral de Conformidade</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {evaluatedRequirements === 0 ? (
-              <div className="flex flex-col items-center justify-center py-4 space-y-2">
-                <div className="text-4xl font-bold text-muted-foreground">—</div>
-                <p className="text-sm text-muted-foreground text-center">
-                  Nenhum requisito avaliado ainda.<br />{totalRequirements} requisitos disponíveis para avaliação.
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card className="flex flex-col">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Score Geral de Conformidade</CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 space-y-4">
+          {evaluatedRequirements === 0 ? (
+            <div className="flex flex-col items-center justify-center py-4 space-y-2">
+              <div className="text-4xl font-bold text-muted-foreground">—</div>
+              <p className="text-sm text-muted-foreground text-center">
+                Nenhum requisito avaliado ainda.<br />{totalRequirements} requisitos disponíveis para avaliação.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center text-center gap-3 py-2">
+              <ScoreDonut score={overallScore} config={config} size={100} />
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                <Badge 
+                  variant={
+                    overallScore >= (config.scoreType === 'percentage' ? 80 : 4.5) ? 'default' :
+                    overallScore >= (config.scoreType === 'percentage' ? 60 : 3.5) ? 'secondary' :
+                    overallScore >= (config.scoreType === 'percentage' ? 40 : 2.5) ? 'outline' :
+                    'destructive'
+                  }
+                  className="text-xs"
+                >
+                  {getScoreLabel(overallScore, config)}
+                </Badge>
+                {(() => {
+                  const maturity = getMaturityLevel(overallScore, config);
+                  return (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${maturity.bgColor} border text-xs`}>
+                            <span>{maturity.icon}</span>
+                            <span className={`font-semibold ${maturity.color}`}>
+                              Nível {maturity.level}
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-xs">
+                          <p className="font-medium">{maturity.name}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{maturity.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })()}
+              </div>
+              <div className="w-full max-w-xs space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Progresso da avaliação</span>
+                  <span className="font-medium">{evaluatedRequirements}/{totalRequirements}</span>
+                </div>
+                <Progress value={evalPct} className="h-2" />
+              </div>
+            </div>
+          )}
+
+          {/* Aderência por Domínio */}
+          {domainScores.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2.5">
+                  Aderência por Domínio do Anexo A
                 </p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center text-center gap-3 py-2">
-                <ScoreDonut score={overallScore} config={config} size={120} />
-                <div className="flex items-center gap-2 flex-wrap justify-center">
-                  <Badge 
-                    variant={
-                      overallScore >= (config.scoreType === 'percentage' ? 80 : 4.5) ? 'default' :
-                      overallScore >= (config.scoreType === 'percentage' ? 60 : 3.5) ? 'secondary' :
-                      overallScore >= (config.scoreType === 'percentage' ? 40 : 2.5) ? 'outline' :
-                      'destructive'
-                    }
-                    className="text-xs"
-                  >
-                    {getScoreLabel(overallScore, config)}
-                  </Badge>
-                  {(() => {
-                    const maturity = getMaturityLevel(overallScore, config);
-                    return (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${maturity.bgColor} border text-xs`}>
-                              <span>{maturity.icon}</span>
-                              <span className={`font-semibold ${maturity.color}`}>
-                                Nível {maturity.level}
-                              </span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="right" className="max-w-xs">
-                            <p className="font-medium">{maturity.name}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{maturity.description}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    );
-                  })()}
-                </div>
-                <div className="w-full max-w-xs space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Progresso da avaliação</span>
-                    <span className="font-medium">{evaluatedRequirements}/{totalRequirements}</span>
-                  </div>
-                  <Progress value={evalPct} className="h-2" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {domainScores.map((domain) => (
+                    <div key={domain.domain} className="rounded-md border border-border px-2.5 py-2">
+                      <p className="text-[10px] font-medium text-muted-foreground truncate mb-1">{domain.name}</p>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold" style={{ color: domain.color }}>{formatScore(domain.score)}</span>
+                        <span className="text-[9px] text-muted-foreground">{domain.evaluatedRequirements}/{domain.totalRequirements}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </>
+          )}
 
-        <ScoreEvolutionChart frameworkId={frameworkId} scoreType={config.scoreType} />
-      </div>
-
-      {/* Aderência por Domínio - card full-width */}
-      {domainScores.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Aderência por Domínio do Anexo A
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {domainScores.map((domain) => (
-                <div key={domain.domain} className="rounded-lg border border-border px-3 py-2.5">
-                  <p className="text-[11px] font-medium text-muted-foreground truncate mb-1.5">{domain.name}</p>
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-sm font-bold" style={{ color: domain.color }}>{formatScore(domain.score)}</span>
-                    <span className="text-[10px] text-muted-foreground">{domain.evaluatedRequirements}/{domain.totalRequirements}</span>
-                  </div>
+          {/* Aderência por Seção */}
+          {sectionScores.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2.5">
+                  Aderência por Seção
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {sectionScores.map((section) => (
+                    <div key={section.section} className="rounded-md border border-border px-2.5 py-2">
+                      <p className="text-[10px] font-medium text-muted-foreground truncate mb-1">{section.name}</p>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-primary">{formatScore(section.score)}</span>
+                        <span className="text-[9px] text-muted-foreground">{section.evaluatedRequirements}/{section.totalRequirements}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Aderência por Seção - card full-width */}
-      {sectionScores.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Aderência por Seção
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {sectionScores.map((section) => (
-                <div key={section.section} className="rounded-lg border border-border px-3 py-2.5">
-                  <p className="text-[11px] font-medium text-muted-foreground truncate mb-1.5">{section.name}</p>
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-sm font-bold text-primary">{formatScore(section.score)}</span>
-                    <span className="text-[10px] text-muted-foreground">{section.evaluatedRequirements}/{section.totalRequirements}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <ScoreEvolutionChart frameworkId={frameworkId} scoreType={config.scoreType} />
     </div>
   );
 };
