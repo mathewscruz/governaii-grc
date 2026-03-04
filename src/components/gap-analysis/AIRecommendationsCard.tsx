@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, Sparkles, Target, Zap, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 
 interface AIRecommendationsDialogProps {
@@ -102,10 +103,24 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
 
   return (
     <>
-      <Button variant="outline" onClick={handleOpen} disabled={loading}>
-        <Sparkles className="h-4 w-4 mr-2" />
-        Consultor IA
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={handleOpen}
+              disabled={loading}
+              className="h-9 w-9 rounded-full bg-purple-600 hover:bg-purple-700 text-white p-0"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Consultor IA de Conformidade</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
