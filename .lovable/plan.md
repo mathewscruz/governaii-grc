@@ -1,72 +1,78 @@
 
 
-# Plano: Refinamento UX/UI do Framework Detail (Gap Analysis)
+# Plano: UX Intuitiva do Gap Analysis — Jornada Guiada + Dialog Split-Panel
 
-## Diagnóstico Visual (baseado nos screenshots e código)
+## Problemas Identificados
 
-### 1. Excesso de conteúdo antes da tabela de requisitos
-A aba "Avaliação Manual" empilha **7 blocos** antes da tabela: Score Dashboard (2 cards) → Banner motivacional → Recomendações IA → 2 gráficos → CategoryStatusCards. O usuário precisa rolar muito para chegar ao trabalho real (a tabela). Consultorias Big4 priorizam a tabela com um resumo compacto no topo.
+### 1. Jornada de Certificação pouco útil
+A barra de progresso atual é estática e genérica. Mostra 4 etapas sem orientar o usuário sobre **o que fazer agora**. Não gera ação.
 
-### 2. Visualizações redundantes
-`PrivacyTreemap`, `CategoryBarChart` e `CategoryStatusCards` mostram essencialmente os mesmos dados (conformidade por categoria) de 3 formas diferentes. Polui a tela sem agregar informação nova.
+### 2. Score card desproporcional
+O donut (96px) + texto ocupam ~30% de um card que tem 50% da largura da tela. Muito espaço vazio.
 
-### 3. Score card sem impacto visual
-O score geral é apenas um número + badge + barra de progresso. Falta um elemento visual forte (gauge/donut) que transmita gravidade e progresso de forma imediata.
+### 3. Dialog de detalhe precisa ser split-panel
+O pedido é claro: lado esquerdo = contexto educativo (descrição, orientação, exemplos, o que fazer), lado direito = formulário de avaliação. Isso elimina o botão "Assistente IA" e reduz consumo de créditos.
 
-### 4. Banner motivacional é ruído
-O card "Você já avaliou X de Y requisitos!" ocupa espaço entre o dashboard e os gráficos sem valor funcional real.
-
-### 5. Área de filtros da tabela pesada
-Search + Select de status + Switch de obrigatórios + Legenda de cores + Tabs de categorias com mini-progress bars. São 5 camadas de controles antes das rows.
-
-### 6. Dialog de detalhe muito longo
-O `NISTRequirementDetailDialog` empilha: Assistente IA + Plano de Ação + Responsável + Notas + Observações + Prazo + Riscos + Evidências + Audit Trail em um único scroll vertical.
+### 4. Orientação estática pré-carregada
+Em vez de chamar a IA a cada clique, usar os campos `orientacao_implementacao` e `exemplos_evidencias` que já existem na tabela `gap_analysis_requirements`. Para requisitos que não têm esses campos populados, gerar em batch via Edge Function (one-time) e salvar no banco.
 
 ## Mudanças Propostas
 
-### A. Consolidar dashboard em layout compacto (score + gráfico lado a lado)
-- Manter o layout atual de 2 colunas (Score + Evolução) mas adicionar um **donut/gauge mini** dentro do card de score ao lado do número
-- Remover o banner motivacional — a JourneyProgressBar já cumpre esse papel
-- Mover badge de maturidade para dentro do PageHeader (ao lado do título) para economizar espaço vertical
+### A. Substituir JourneyProgressBar por banner de ação contextual
+Em vez de uma barra de 4 etapas estática, mostrar um **banner slim de próxima ação** que muda conforme o estado:
+- 0 avaliados: "Comece avaliando os requisitos — clique em qualquer linha para iniciar"
+- <50% avaliados: "Continue avaliando — X de Y concluídos. Foque nos obrigatórios primeiro."
+- >50% sem planos de ação: "Crie planos de ação para os X itens não conformes"
+- >80% conforme: "Sua organização está pronta para auditoria externa"
 
-### B. Unificar visualizações de categoria
-- **Remover** `PrivacyTreemap` (mapa de conformidade por capítulo) — dados duplicados
-- **Manter** `CategoryBarChart` (aderência por categoria) — mais limpo e legível
-- **Manter** `CategoryStatusCards` — funcionam como filtro interativo para a tabela
-- Resultado: de 3 blocos visuais → 2, com propósitos distintos (gráfico resumo + filtro interativo)
+Compacto: 1 linha com ícone + texto + botão de ação. Sem o stepper visual pesado.
 
-### C. Compactar filtros da tabela
-- Unificar Search + Status filter em uma **única linha** (já está, mas remover espaço extra)
-- Mover a **legenda de status** para um **Popover/Tooltip** acionado por ícone `HelpCircle`, em vez de bloco fixo
-- Reduzir padding das CategoryTabs para ficarem mais compactas
+### B. Aumentar impacto visual do Score card
+- Donut maior (120px) com texto centralizado mais legível
+- Adicionar barra de progresso de avaliação (117/117) abaixo do donut
+- Reorganizar layout interno para preencher o card
 
-### D. Reorganizar Dialog de detalhe com seções colapsáveis
-- Agrupar em **Accordion/Collapsible**: 
-  - Seção 1: Status + Responsável + Prazo (sempre visível)
-  - Seção 2: Plano de Ação (colapsável, aberto se não conforme)
-  - Seção 3: Evidências (colapsável)
-  - Seção 4: Riscos Vinculados (colapsável)
-  - Seção 5: Assistente IA (colapsável)
-  - Seção 6: Histórico de Alterações (colapsável)
-- Isso reduz a altura percebida do dialog e permite foco na tarefa principal
+### C. Dialog split-panel (lado esquerdo educativo + lado direito formulário)
+Transformar o `NISTRequirementDetailDialog` de `max-w-3xl` para `max-w-6xl` com layout de 2 colunas:
 
-### E. Melhorar visual do Score com mini donut
-- Adicionar um **ring/donut SVG simples** (não Recharts, apenas SVG inline) no card de Score Geral para dar impacto visual imediato
-- Usar cores consistentes com o sistema de maturidade (verde/amarelo/vermelho)
+**Coluna esquerda (40%)** — Contexto e orientação (read-only):
+- Código + título + badge de status
+- Descrição do requisito
+- "O que este controle exige" (campo `orientacao_implementacao`)
+- "Exemplos de evidências aceitas" (campo `exemplos_evidencias`)
+- "Perguntas de autoavaliação" (lista estática por categoria/framework)
+- Tudo em linguagem simples, sem jargão técnico
+
+**Coluna direita (60%)** — Ações do usuário:
+- Responsável + Prazo + Observações (fixo no topo)
+- Plano de Ação (colapsável)
+- Evidências (colapsável)
+- Riscos Vinculados (colapsável)
+- Histórico (colapsável)
+
+**Remover** o botão "Assistente IA" e a seção colapsável de IA. As informações que ele gera (`explicacao_simples`, `exemplos_evidencias`, `dicas_implementacao`) já existem nos campos estáticos do requisito ou devem ser pré-populadas.
+
+### D. Pré-popular orientações para requisitos sem conteúdo
+Criar uma Edge Function `populate-requirement-guidance` que:
+1. Busca requisitos onde `orientacao_implementacao IS NULL`
+2. Chama a IA uma vez por requisito para gerar orientação + exemplos
+3. Salva no campo `orientacao_implementacao` e `exemplos_evidencias` da `gap_analysis_requirements`
+4. Executada uma vez pelo admin, ou automaticamente ao criar um framework
+
+Isso é um **custo único** por framework, não por empresa nem por clique.
 
 ## Arquivos Afetados
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/pages/GapAnalysisFrameworkDetail.tsx` | Remover PrivacyTreemap, remover banner motivacional, mover maturidade pro header |
-| `src/components/gap-analysis/GenericScoreDashboard.tsx` | Adicionar mini donut SVG ao card de score |
-| `src/components/gap-analysis/GenericRequirementsTable.tsx` | Legenda em Popover, compactar filtros |
-| `src/components/gap-analysis/nist/NISTRequirementDetailDialog.tsx` | Seções colapsáveis com Collapsible |
+| `src/components/gap-analysis/JourneyProgressBar.tsx` | Reescrever como banner de ação contextual slim |
+| `src/components/gap-analysis/GenericScoreDashboard.tsx` | Donut maior, layout mais preenchido |
+| `src/components/gap-analysis/nist/NISTRequirementDetailDialog.tsx` | Split-panel: esquerda educativo, direita formulário. Remover seção IA |
+| `supabase/functions/populate-requirement-guidance/index.ts` | Nova Edge Function para popular orientações em batch |
 
-## Impacto Esperado
-
-- ~40% menos scroll vertical na aba de avaliação
-- Dialog de detalhe mais organizado e menos intimidador
-- Score com impacto visual imediato (donut)
-- Interface mais limpa sem perder funcionalidade
+## Resultado Esperado
+- Usuário leigo abre um requisito e vê imediatamente **o que precisa fazer** sem gastar créditos de IA
+- Jornada de certificação se torna um guia acionável, não decorativo
+- Score card aproveita o espaço visual disponível
+- Dialog profissional estilo "consultor ao lado" — informação à esquerda, ação à direita
 
