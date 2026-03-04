@@ -4161,6 +4161,53 @@ export type Database = {
           },
         ]
       }
+      gap_analysis_audit_log: {
+        Row: {
+          campo_alterado: string
+          created_at: string
+          empresa_id: string
+          evaluation_id: string
+          framework_id: string
+          id: string
+          requirement_id: string
+          user_id: string | null
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          campo_alterado: string
+          created_at?: string
+          empresa_id: string
+          evaluation_id: string
+          framework_id: string
+          id?: string
+          requirement_id: string
+          user_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          campo_alterado?: string
+          created_at?: string
+          empresa_id?: string
+          evaluation_id?: string
+          framework_id?: string
+          id?: string
+          requirement_id?: string
+          user_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gap_analysis_audit_log_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gap_analysis_evaluations: {
         Row: {
           action_preview: string | null

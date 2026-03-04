@@ -15,6 +15,7 @@ import { FrameworkHistoryTab } from '@/components/gap-analysis/FrameworkHistoryT
 import { AdherenceAssessmentView } from '@/components/gap-analysis/adherence/AdherenceAssessmentView';
 import { AdherenceResultView } from '@/components/gap-analysis/adherence/AdherenceResultView';
 import { AIRecommendationsCard } from '@/components/gap-analysis/AIRecommendationsCard';
+import { RemediationTab } from '@/components/gap-analysis/RemediationTab';
 import { FrameworkOnboarding } from '@/components/gap-analysis/FrameworkOnboarding';
 import { JourneyProgressBar } from '@/components/gap-analysis/JourneyProgressBar';
 import { exportFrameworkPDF } from '@/components/gap-analysis/ExportFrameworkPDF';
@@ -263,6 +264,7 @@ export default function GapAnalysisFrameworkDetail() {
           <TabsList>
             <TabsTrigger value="avaliacao">Avaliação Manual</TabsTrigger>
             <TabsTrigger value="documentos">Análise de Documentos</TabsTrigger>
+            <TabsTrigger value="remediacao">Remediação</TabsTrigger>
             <TabsTrigger value="historico">Histórico e Evolução</TabsTrigger>
           </TabsList>
 
@@ -366,6 +368,13 @@ export default function GapAnalysisFrameworkDetail() {
                 frameworkNome={framework.nome}
               />
             )}
+          </TabsContent>
+
+          <TabsContent value="remediacao">
+            <RemediationTab
+              frameworkId={frameworkId!}
+              frameworkName={framework.nome}
+            />
           </TabsContent>
 
           <TabsContent value="historico">

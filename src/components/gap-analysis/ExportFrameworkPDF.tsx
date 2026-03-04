@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { loadAkurisLogo, addAkurisCover, addAkurisHeader, addAkurisFooter, addSectionTitle, drawProgressBar, drawTableHeader, formatLabel, AKURIS_COLORS } from '@/lib/pdf-utils';
+import { getFrameworkConfig, getMaturityLevel } from '@/lib/framework-configs';
 
 interface PillarScore {
   pillar: string;
@@ -153,6 +154,24 @@ export async function exportFrameworkPDF(params: ExportFrameworkPDFParams) {
   doc.setTextColor(AKURIS_COLORS.textLight);
   doc.text(`Conformes: ${conforme}  |  Parciais: ${partial}  |  Não Conformes: ${nonCompliant}`, margin + 42, yPos + 30);
   yPos += 43;
+
+  // === MATURITY LEVEL ===
+  const fwConfig = getFrameworkConfig(frameworkName, frameworkType);
+  if (fwConfig) {
+    const maturity = getMaturityLevel(overallScore, fwConfig);
+    doc.setFillColor(AKURIS_COLORS.background);
+    doc.setDrawColor(AKURIS_COLORS.border);
+    doc.roundedRect(margin, yPos, contentWidth, 14, 2, 2, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(AKURIS_COLORS.primary);
+    doc.text(`Nível de Maturidade: ${maturity.icon} Nível ${maturity.level} — ${maturity.name}`, margin + 4, yPos + 6);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(AKURIS_COLORS.textLight);
+    doc.text(maturity.description, margin + 4, yPos + 11);
+    yPos += 20;
+  }
 
   // === SCORES POR CATEGORIA (with bar charts) ===
   if (pillarScores.length > 0) {

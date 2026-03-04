@@ -224,6 +224,35 @@ export function getFrameworkConfig(frameworkName: string, frameworkType?: string
   };
 }
 
+// === Modelo de Maturidade (CMMI-like) ===
+export interface MaturityLevel {
+  level: number;
+  name: string;
+  description: string;
+  color: string;
+  bgColor: string;
+  icon: string;
+}
+
+const MATURITY_LEVELS: MaturityLevel[] = [
+  { level: 1, name: 'Inicial', description: 'Processos ad-hoc, sem controles formais', color: 'text-red-600', bgColor: 'bg-red-100 dark:bg-red-900/30', icon: '🔴' },
+  { level: 2, name: 'Gerenciado', description: 'Controles básicos implementados, mas reativos', color: 'text-orange-600', bgColor: 'bg-orange-100 dark:bg-orange-900/30', icon: '🟠' },
+  { level: 3, name: 'Definido', description: 'Processos documentados e padronizados', color: 'text-yellow-600', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', icon: '🟡' },
+  { level: 4, name: 'Otimizado', description: 'Processos medidos e controlados proativamente', color: 'text-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/30', icon: '🔵' },
+  { level: 5, name: 'Excelência', description: 'Melhoria contínua com inovação e benchmark', color: 'text-green-600', bgColor: 'bg-green-100 dark:bg-green-900/30', icon: '🟢' },
+];
+
+export function getMaturityLevel(score: number, config: FrameworkConfig): MaturityLevel {
+  // Normalizar score para 0-100
+  const normalizedScore = config.scoreType === 'percentage' ? score : (score / 5.0) * 100;
+  
+  if (normalizedScore >= 80) return MATURITY_LEVELS[4];
+  if (normalizedScore >= 60) return MATURITY_LEVELS[3];
+  if (normalizedScore >= 40) return MATURITY_LEVELS[2];
+  if (normalizedScore >= 20) return MATURITY_LEVELS[1];
+  return MATURITY_LEVELS[0];
+}
+
 export function getScoreLabel(score: number, config: FrameworkConfig): string {
   const labels = config.scoreLabels;
   if (score >= labels.excellent.min) return labels.excellent.label;

@@ -72,12 +72,105 @@ Deno.serve(async (req) => {
       }
     }
 
+    // === GAP ANALYSIS: Notificações de prazo de implementação ===
+    console.log('Verificando prazos de gap analysis...')
+    let gapNotificacoes = 0
+    try {
+      const hoje = new Date()
+      const em7dias = new Date(hoje)
+      em7dias.setDate(em7dias.getDate() + 7)
+
+      // Buscar evaluations com prazo próximo ou vencido
+      const { data: evalsPrazo, error: evalsPrazoError } = await supabase
+        .from('gap_analysis_evaluations')
+        .select('id, framework_id, requirement_id, empresa_id, prazo_implementacao, conformity_status')
+        .not('prazo_implementacao', 'is', null)
+        .not('conformity_status', 'eq', 'conforme')
+        .not('conformity_status', 'eq', 'nao_aplicavel')
+        .lte('prazo_implementacao', em7dias.toISOString().split('T')[0])
+
+      if (evalsPrazoError) {
+        console.error('Erro ao buscar prazos gap analysis:', evalsPrazoError)
+      } else if (evalsPrazo && evalsPrazo.length > 0) {
+        // Load requirement titles
+        const reqIds = [...new Set(evalsPrazo.map(e => e.requirement_id))]
+        const { data: reqs } = await supabase
+          .from('gap_analysis_requirements')
+          .select('id, codigo, titulo')
+          .in('id', reqIds)
+
+        const reqMap = new Map((reqs || []).map(r => [r.id, r]))
+
+        // Load framework names
+        const fwIds = [...new Set(evalsPrazo.map(e => e.framework_id))]
+        const { data: fws } = await supabase
+          .from('gap_analysis_frameworks')
+          .select('id, nome')
+          .in('id', fwIds)
+
+        const fwMap = new Map((fws || []).map(f => [f.id, f.nome]))
+
+        // Get admin users per empresa to notify
+        for (const eval_ of evalsPrazo) {
+          const req = reqMap.get(eval_.requirement_id)
+          const fwNome = fwMap.get(eval_.framework_id) || 'Framework'
+          const prazoDate = new Date(eval_.prazo_implementacao!)
+          const vencido = prazoDate < hoje
+          const titulo = vencido
+            ? `Prazo vencido: ${req?.codigo || ''} - ${req?.titulo || 'Requisito'}`
+            : `Prazo próximo: ${req?.codigo || ''} - ${req?.titulo || 'Requisito'}`
+          const mensagem = vencido
+            ? `O prazo de implementação do requisito ${req?.codigo} (${fwNome}) venceu em ${prazoDate.toLocaleDateString('pt-BR')}.`
+            : `O prazo de implementação do requisito ${req?.codigo} (${fwNome}) vence em ${prazoDate.toLocaleDateString('pt-BR')}.`
+
+          // Get users for this empresa
+          const { data: users } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('empresa_id', eval_.empresa_id)
+            .limit(5) // Notify first 5 users (admins)
+
+          for (const user of (users || [])) {
+            // Check if notification already sent today
+            const { data: existing } = await supabase
+              .from('notifications')
+              .select('id')
+              .eq('user_id', user.user_id)
+              .eq('type', vencido ? 'warning' : 'info')
+              .gte('created_at', hoje.toISOString().split('T')[0])
+              .ilike('title', `%${req?.codigo || ''}%`)
+              .maybeSingle()
+
+            if (!existing) {
+              await supabase.from('notifications').insert({
+                user_id: user.user_id,
+                title: titulo,
+                message: mensagem,
+                type: vencido ? 'warning' : 'info',
+                link_to: `/gap-analysis/framework/${eval_.framework_id}`,
+                metadata: {
+                  tipo: 'gap_analysis_prazo',
+                  evaluation_id: eval_.id,
+                  framework_id: eval_.framework_id,
+                  requirement_id: eval_.requirement_id,
+                }
+              })
+              gapNotificacoes++
+            }
+          }
+        }
+      }
+    } catch (gapError) {
+      console.error('Erro ao processar prazos gap analysis:', gapError)
+    }
+
     const resultado = {
       success: true,
       message: 'Processamento diário concluído',
       empresas_com_lembretes: empresasAtivas.length,
       empresas_processadas: empresasProcessadas,
       total_lembretes_enviados: totalEnviados,
+      total_gap_analysis_notificacoes: gapNotificacoes,
       total_erros: totalErros,
       timestamp: new Date().toISOString()
     }
