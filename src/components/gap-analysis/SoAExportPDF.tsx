@@ -35,9 +35,9 @@ interface ExportSoAPDFParams {
 const STATUS_LABELS: Record<string, string> = {
   conforme: 'Conforme',
   parcial: 'Parcial',
-  nao_conforme: 'Nao Conforme',
+  nao_conforme: 'Não Conforme',
   nao_aplicavel: 'N/A',
-  nao_avaliado: 'Nao Avaliado',
+  nao_avaliado: 'Não Avaliado',
 };
 
 export async function exportSoAPDF(params: ExportSoAPDFParams) {
@@ -52,7 +52,7 @@ export async function exportSoAPDF(params: ExportSoAPDFParams) {
   addAkurisCover(
     doc,
     logo,
-    'Declaracao de Aplicabilidade (SoA)',
+    'Declaração de Aplicabilidade (SoA)',
     `${frameworkName} ${frameworkVersion}`,
     { empresa: empresaNome, data: format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) }
   );
@@ -64,15 +64,15 @@ export async function exportSoAPDF(params: ExportSoAPDFParams) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(AKURIS_COLORS.text);
-  doc.text('Resumo da Declaracao de Aplicabilidade', margin, yPos + 8);
+  doc.text('Resumo da Declaração de Aplicabilidade', margin, yPos + 8);
   yPos += 16;
 
   // Stats boxes
   const boxWidth = contentWidth / 4;
   const statItems = [
     { label: 'Total de Requisitos', value: String(stats.total), color: AKURIS_COLORS.text },
-    { label: 'Aplicaveis', value: String(stats.aplicavel), color: AKURIS_COLORS.primary },
-    { label: 'Nao Aplicaveis', value: String(stats.naoAplicavel), color: AKURIS_COLORS.textLight },
+    { label: 'Aplicáveis', value: String(stats.aplicavel), color: AKURIS_COLORS.primary },
+    { label: 'Não Aplicáveis', value: String(stats.naoAplicavel), color: AKURIS_COLORS.textLight },
     { label: 'Conformes', value: String(stats.conforme), color: AKURIS_COLORS.success },
   ];
 
@@ -93,7 +93,7 @@ export async function exportSoAPDF(params: ExportSoAPDFParams) {
 
   // Table header
   const colWidths = [22, 80, 22, 30, 35, 15, contentWidth - 204];
-  const headers = ['Codigo', 'Requisito', 'Aplic.', 'Status', 'Responsavel', 'Evid.', 'Justificativa'];
+  const headers = ['Código', 'Requisito', 'Aplic.', 'Status', 'Responsável', 'Evid.', 'Justificativa'];
 
   const drawHeader = (y: number) => {
     doc.setFillColor(AKURIS_COLORS.primary);
@@ -135,7 +135,7 @@ export async function exportSoAPDF(params: ExportSoAPDFParams) {
     doc.text(truncTitle, xPos, yPos + 1);
     xPos += colWidths[1];
 
-    doc.text(item.aplicavel ? 'Sim' : 'Nao', xPos, yPos + 1);
+    doc.text(item.aplicavel ? 'Sim' : 'Não', xPos, yPos + 1);
     xPos += colWidths[2];
 
     doc.text(STATUS_LABELS[item.conformity_status] || item.conformity_status, xPos, yPos + 1);

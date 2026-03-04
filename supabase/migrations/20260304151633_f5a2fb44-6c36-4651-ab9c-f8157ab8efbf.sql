@@ -1,0 +1,1 @@
+ALTER TABLE public.gap_analysis_evaluations ADD COLUMN IF NOT EXISTS diagnostic_answers jsonb DEFAULT null;

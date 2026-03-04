@@ -46,7 +46,7 @@ export async function exportBoardPDF(params: BoardPDFParams) {
   const fwConfig = getFrameworkConfig(frameworkName, frameworkType);
 
   // ========== PAGE 1: COVER ==========
-  addAkurisCover(doc, logo, `Relatorio Executivo\n${frameworkName} ${frameworkVersion}`, 'Sumario para o Conselho / Diretoria', {
+  addAkurisCover(doc, logo, `Relatório Executivo\n${frameworkName} ${frameworkVersion}`, 'Sumário para o Conselho / Diretoria', {
     empresa: empresaNome,
     data: format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
   });
@@ -55,7 +55,7 @@ export async function exportBoardPDF(params: BoardPDFParams) {
   doc.addPage();
   let yPos = addAkurisHeader(doc, logo);
 
-  yPos = addSectionTitle(doc, 'Sumario Executivo', yPos, margin);
+  yPos = addSectionTitle(doc, 'Sumário Executivo', yPos, margin);
 
   // Score highlight box
   const scoreColor = getScoreColor(overallScore, maxScore);
@@ -75,7 +75,7 @@ export async function exportBoardPDF(params: BoardPDFParams) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(AKURIS_COLORS.text);
-  doc.text('Indice de Conformidade Geral', margin + 56, yPos + 14);
+  doc.text('Índice de Conformidade Geral', margin + 56, yPos + 14);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
@@ -92,7 +92,7 @@ export async function exportBoardPDF(params: BoardPDFParams) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(AKURIS_COLORS.primary);
-    doc.text(`Nivel de Maturidade: Nivel ${maturity.level} - ${maturity.name}`, margin + 56, yPos + 40);
+    doc.text(`Nível de Maturidade: Nível ${maturity.level} - ${maturity.name}`, margin + 56, yPos + 40);
   }
   yPos += 55;
 
@@ -103,14 +103,14 @@ export async function exportBoardPDF(params: BoardPDFParams) {
   const naoAvaliado = requirements.filter(r => r.conformity_status === 'nao_avaliado' || !r.conformity_status).length;
   const naoAplicavel = requirements.filter(r => r.conformity_status === 'nao_aplicavel').length;
 
-  yPos = addSectionTitle(doc, 'Distribuicao de Conformidade', yPos, margin);
+  yPos = addSectionTitle(doc, 'Distribuição de Conformidade', yPos, margin);
 
   const statBoxWidth = contentWidth / 5;
   const stats = [
     { label: 'Conformes', value: conforme, color: AKURIS_COLORS.success },
     { label: 'Parciais', value: parcial, color: AKURIS_COLORS.warning },
-    { label: 'Nao Conformes', value: naoConforme, color: AKURIS_COLORS.danger },
-    { label: 'Nao Avaliados', value: naoAvaliado, color: AKURIS_COLORS.textLight },
+    { label: 'Não Conformes', value: naoConforme, color: AKURIS_COLORS.danger },
+    { label: 'Não Avaliados', value: naoAvaliado, color: AKURIS_COLORS.textLight },
     { label: 'N/A', value: naoAplicavel, color: AKURIS_COLORS.border },
   ];
 
@@ -144,13 +144,13 @@ export async function exportBoardPDF(params: BoardPDFParams) {
   const scorePct = maxScore > 0 ? (overallScore / maxScore) * 100 : 0;
   let parecer = '';
   if (scorePct >= 80) {
-    parecer = `A organizacao apresenta um nivel elevado de conformidade (${formatScore(overallScore)}) com o ${frameworkName}. Os controles implementados estao majoritariamente aderentes aos requisitos do framework. Recomenda-se manter o programa de monitoramento continuo e focar nos ${naoConforme + parcial} itens que ainda requerem atencao.`;
+    parecer = `A organização apresenta um nível elevado de conformidade (${formatScore(overallScore)}) com o ${frameworkName}. Os controles implementados estão majoritariamente aderentes aos requisitos do framework. Recomenda-se manter o programa de monitoramento contínuo e focar nos ${naoConforme + parcial} itens que ainda requerem atenção.`;
   } else if (scorePct >= 60) {
-    parecer = `A organizacao apresenta um nivel intermediario de conformidade (${formatScore(overallScore)}) com o ${frameworkName}. Existem ${naoConforme} itens nao conformes e ${parcial} parcialmente conformes que necessitam de planos de acao prioritarios. Recomenda-se um programa estruturado de remediacao com prazo definido.`;
+    parecer = `A organização apresenta um nível intermediário de conformidade (${formatScore(overallScore)}) com o ${frameworkName}. Existem ${naoConforme} itens não conformes e ${parcial} parcialmente conformes que necessitam de planos de ação prioritários. Recomenda-se um programa estruturado de remediação com prazo definido.`;
   } else if (scorePct >= 40) {
-    parecer = `A organizacao apresenta lacunas significativas na conformidade (${formatScore(overallScore)}) com o ${frameworkName}. Com ${naoConforme} nao conformidades e ${parcial} conformidades parciais, e necessario um plano de acao abrangente e investimento em controles. Risco regulatorio e operacional elevado.`;
+    parecer = `A organização apresenta lacunas significativas na conformidade (${formatScore(overallScore)}) com o ${frameworkName}. Com ${naoConforme} não conformidades e ${parcial} conformidades parciais, é necessário um plano de ação abrangente e investimento em controles. Risco regulatório e operacional elevado.`;
   } else {
-    parecer = `A organizacao apresenta um nivel critico de conformidade (${formatScore(overallScore)}) com o ${frameworkName}. A maioria dos requisitos nao esta sendo atendida. Recomenda-se tratamento emergencial com alocacao de recursos dedicados e acompanhamento executivo semanal.`;
+    parecer = `A organização apresenta um nível crítico de conformidade (${formatScore(overallScore)}) com o ${frameworkName}. A maioria dos requisitos não está sendo atendida. Recomenda-se tratamento emergencial com alocação de recursos dedicados e acompanhamento executivo semanal.`;
   }
 
   const parecerLines = doc.splitTextToSize(parecer, contentWidth - 8);
@@ -161,7 +161,7 @@ export async function exportBoardPDF(params: BoardPDFParams) {
   doc.addPage();
   yPos = addAkurisHeader(doc, logo);
 
-  yPos = addSectionTitle(doc, 'Conformidade por Dominio/Categoria', yPos, margin);
+  yPos = addSectionTitle(doc, 'Conformidade por Domínio/Categoria', yPos, margin);
 
   if (pillarScores.length > 0) {
     // Horizontal bar chart
@@ -203,7 +203,7 @@ export async function exportBoardPDF(params: BoardPDFParams) {
   doc.addPage();
   yPos = addAkurisHeader(doc, logo);
 
-  yPos = addSectionTitle(doc, 'Top Nao Conformidades - Atencao Prioritaria', yPos, margin);
+  yPos = addSectionTitle(doc, 'Top Não Conformidades - Atenção Prioritária', yPos, margin);
 
   const nonCompliant = requirements
     .filter(r => r.conformity_status === 'nao_conforme')
@@ -214,7 +214,7 @@ export async function exportBoardPDF(params: BoardPDFParams) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(AKURIS_COLORS.success);
-    doc.text('Nenhuma nao conformidade identificada.', margin, yPos + 5);
+    doc.text('Nenhuma não conformidade identificada.', margin, yPos + 5);
     yPos += 15;
   } else {
     // Table header
@@ -224,7 +224,7 @@ export async function exportBoardPDF(params: BoardPDFParams) {
     doc.setFontSize(8);
     doc.setTextColor('#FFFFFF');
     doc.text('#', margin + 3, yPos + 5.5);
-    doc.text('Codigo', margin + 10, yPos + 5.5);
+    doc.text('Código', margin + 10, yPos + 5.5);
     doc.text('Requisito', margin + 35, yPos + 5.5);
     doc.text('Categoria', margin + 120, yPos + 5.5);
     doc.text('Peso', margin + contentWidth - 15, yPos + 5.5);
@@ -276,7 +276,7 @@ export async function exportBoardPDF(params: BoardPDFParams) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor('#FFFFFF');
-    doc.text('Codigo', margin + 3, yPos + 5.5);
+    doc.text('Código', margin + 3, yPos + 5.5);
     doc.text('Requisito', margin + 28, yPos + 5.5);
     doc.text('Categoria', margin + 120, yPos + 5.5);
     yPos += 10;
@@ -302,18 +302,18 @@ export async function exportBoardPDF(params: BoardPDFParams) {
   doc.addPage();
   yPos = addAkurisHeader(doc, logo);
 
-  yPos = addSectionTitle(doc, 'Recomendacoes Estrategicas', yPos, margin);
+  yPos = addSectionTitle(doc, 'Recomendações Estratégicas', yPos, margin);
 
   const recommendations: string[] = [];
 
   if (naoConforme > 0) {
-    recommendations.push(`1. PRIORIDADE ALTA: Elaborar planos de acao para os ${naoConforme} itens nao conformes, com prazos definidos e responsaveis designados.`);
+    recommendations.push(`1. PRIORIDADE ALTA: Elaborar planos de ação para os ${naoConforme} itens não conformes, com prazos definidos e responsáveis designados.`);
   }
   if (parcial > 0) {
-    recommendations.push(`${recommendations.length + 1}. MELHORIA CONTINUA: Elevar os ${parcial} itens parcialmente conformes ao nivel completo, focando nos de maior peso.`);
+    recommendations.push(`${recommendations.length + 1}. MELHORIA CONTÍNUA: Elevar os ${parcial} itens parcialmente conformes ao nível completo, focando nos de maior peso.`);
   }
   if (naoAvaliado > 0) {
-    recommendations.push(`${recommendations.length + 1}. COMPLETAR AVALIACAO: Finalizar a avaliacao dos ${naoAvaliado} requisitos pendentes para ter uma visao completa do estado de conformidade.`);
+    recommendations.push(`${recommendations.length + 1}. COMPLETAR AVALIAÇÃO: Finalizar a avaliação dos ${naoAvaliado} requisitos pendentes para ter uma visão completa do estado de conformidade.`);
   }
 
   // Domain-specific recommendations
@@ -323,12 +323,12 @@ export async function exportBoardPDF(params: BoardPDFParams) {
     .filter(p => p.score < maxScore * 0.6);
 
   if (weakDomains.length > 0) {
-    recommendations.push(`${recommendations.length + 1}. DOMINIOS CRITICOS: Priorizar investimentos nos dominios com menor pontuacao: ${weakDomains.map(d => d.name.substring(0, 30)).join(', ')}.`);
+    recommendations.push(`${recommendations.length + 1}. DOMÍNIOS CRÍTICOS: Priorizar investimentos nos domínios com menor pontuação: ${weakDomains.map(d => d.name.substring(0, 30)).join(', ')}.`);
   }
 
-  recommendations.push(`${recommendations.length + 1}. GOVERNANCA: Estabelecer ciclo trimestral de revisao do framework com reporte ao conselho.`);
-  recommendations.push(`${recommendations.length + 1}. EVIDENCIAS: Implementar repositorio centralizado de evidencias com controle de versao e rastreabilidade.`);
-  recommendations.push(`${recommendations.length + 1}. CAPACITACAO: Promover treinamentos periodicos para as equipes responsaveis pelos controles.`);
+  recommendations.push(`${recommendations.length + 1}. GOVERNANÇA: Estabelecer ciclo trimestral de revisão do framework com reporte ao conselho.`);
+  recommendations.push(`${recommendations.length + 1}. EVIDÊNCIAS: Implementar repositório centralizado de evidências com controle de versão e rastreabilidade.`);
+  recommendations.push(`${recommendations.length + 1}. CAPACITAÇÃO: Promover treinamentos periódicos para as equipes responsáveis pelos controles.`);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
@@ -355,13 +355,13 @@ export async function exportBoardPDF(params: BoardPDFParams) {
     doc.addPage();
     yPos = addAkurisHeader(doc, logo);
   }
-  yPos = addSectionTitle(doc, 'Proximos Passos', yPos, margin);
+  yPos = addSectionTitle(doc, 'Próximos Passos', yPos, margin);
   doc.setFillColor(AKURIS_COLORS.background);
   doc.roundedRect(margin, yPos, contentWidth, 25, 2, 2, 'F');
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(AKURIS_COLORS.text);
-  const nextSteps = `Agende uma reuniao de alinhamento com os responsaveis pelos dominios criticos para definir cronograma de remediacao. Utilize a aba "Remediacao" na plataforma Akuris para acompanhar o progresso dos planos de acao em tempo real.`;
+  const nextSteps = `Agende uma reunião de alinhamento com os responsáveis pelos domínios críticos para definir cronograma de remediação. Utilize a aba "Remediação" na plataforma Akuris para acompanhar o progresso dos planos de ação em tempo real.`;
   const nsLines = doc.splitTextToSize(nextSteps, contentWidth - 8);
   doc.text(nsLines, margin + 4, yPos + 6);
 

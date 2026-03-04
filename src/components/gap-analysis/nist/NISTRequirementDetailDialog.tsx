@@ -372,6 +372,11 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
           setPlanoAcaoVinculado(null);
         }
 
+        // Load diagnostic answers from evaluation
+        if (evalData.diagnostic_answers && typeof evalData.diagnostic_answers === 'object') {
+          setDiagnosticAnswers(evalData.diagnostic_answers as Record<number, 'sim' | 'parcial' | 'nao' | null>);
+        }
+
         setFormData({
           id: evalData.id, responsavel_avaliacao: evalData.responsavel_avaliacao || '',
           plano_acao: evalData.plano_acao || '', observacoes: evalData.observacoes || '',
@@ -439,6 +444,7 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
           plano_acao: formData.plano_acao || null, observacoes: formData.observacoes || null,
           prazo_implementacao: formData.prazo_implementacao ? parseDateForDB(formData.prazo_implementacao) : null,
           evidence_files: formData.evidence_files, plano_acao_id: formData.plano_acao_id || null,
+          diagnostic_answers: Object.keys(diagnosticAnswers).length > 0 ? diagnosticAnswers : null,
           updated_at: new Date().toISOString()
         }).eq('id', evaluationId);
         if (error) throw error;
@@ -449,6 +455,7 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
           plano_acao: formData.plano_acao || null, observacoes: formData.observacoes || null,
           prazo_implementacao: formData.prazo_implementacao ? parseDateForDB(formData.prazo_implementacao) : null,
           evidence_files: formData.evidence_files, plano_acao_id: formData.plano_acao_id || null,
+          diagnostic_answers: Object.keys(diagnosticAnswers).length > 0 ? diagnosticAnswers : null,
           conformity_status: requirement.conformity_status || 'pendente',
           evidence_status: 'pendente', status: 'em_andamento'
         }).select().single();
@@ -586,10 +593,10 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
                         <div className="mt-4 pt-4 border-t border-border/50">
                           <div className="flex items-center gap-1.5 mb-3">
                             <HelpCircle className="h-4 w-4 text-primary" />
-                            <h4 className="text-sm font-bold text-foreground">Diagnostico Rapido</h4>
+                            <h4 className="text-sm font-bold text-foreground">Diagnóstico Rápido</h4>
                           </div>
                           <p className="text-xs text-muted-foreground mb-3">
-                            Responda as perguntas abaixo para uma sugestao automatica de status.
+                            Responda as perguntas abaixo para uma sugestão automática de status.
                           </p>
                           <div className="space-y-3">
                             {diagnosticQuestions.map((q, idx) => {
@@ -613,7 +620,7 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
                                         }`}
                                         onClick={() => setDiagnosticAnswers(prev => ({ ...prev, [idx]: opt }))}
                                       >
-                                        {opt === 'sim' ? 'Sim' : opt === 'parcial' ? 'Parcial' : 'Nao'}
+                                        {opt === 'sim' ? 'Sim' : opt === 'parcial' ? 'Parcial' : 'Não'}
                                       </Button>
                                     ))}
                                   </div>
@@ -638,12 +645,12 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
                                   else if (ans === 'parcial') weightedScore += w * 0.5;
                                 });
                                 const pct = totalWeight > 0 ? (weightedScore / totalWeight) * 100 : 0;
-                                const suggested = pct >= 80 ? 'Conforme' : pct >= 40 ? 'Parcial' : 'Nao Conforme';
+                                const suggested = pct >= 80 ? 'Conforme' : pct >= 40 ? 'Parcial' : 'Não Conforme';
                                 const color = pct >= 80 ? 'text-chart-2' : pct >= 40 ? 'text-chart-4' : 'text-destructive';
                                 return (
                                   <div className="flex items-center gap-2">
                                     <Badge variant="outline" className={`${color} font-semibold`}>{suggested}</Badge>
-                                    <span className="text-xs text-muted-foreground">({Math.round(pct)}% de aderencia)</span>
+                                    <span className="text-xs text-muted-foreground">({Math.round(pct)}% de aderência)</span>
                                   </div>
                                 );
                               })()}

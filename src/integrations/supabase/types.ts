@@ -4252,6 +4252,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           data_avaliacao: string | null
+          diagnostic_answers: Json | null
           empresa_id: string
           evidence_files: Json | null
           evidence_implemented: string | null
@@ -4276,6 +4277,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_avaliacao?: string | null
+          diagnostic_answers?: Json | null
           empresa_id?: string
           evidence_files?: Json | null
           evidence_implemented?: string | null
@@ -4300,6 +4302,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_avaliacao?: string | null
+          diagnostic_answers?: Json | null
           empresa_id?: string
           evidence_files?: Json | null
           evidence_implemented?: string | null

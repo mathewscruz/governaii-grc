@@ -56,9 +56,9 @@ function statusLabel(status: string): string {
   const map: Record<string, string> = {
     conforme: 'Conforme',
     parcial: 'Parcial',
-    nao_conforme: 'Nao Conforme',
+    nao_conforme: 'Não Conforme',
     nao_aplicavel: 'N/A',
-    nao_avaliado: 'Nao Avaliado',
+    nao_avaliado: 'Não Avaliado',
   };
   return map[status] || formatLabel(status);
 }
@@ -148,7 +148,7 @@ export async function exportFrameworkPDF(params: ExportFrameworkPDFParams) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(AKURIS_COLORS.primary);
-    doc.text(`Nivel de Maturidade: Nivel ${maturity.level} - ${maturity.name}`, margin + 4, yPos + 6);
+    doc.text(`Nível de Maturidade: Nível ${maturity.level} - ${maturity.name}`, margin + 4, yPos + 6);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(AKURIS_COLORS.textLight);
