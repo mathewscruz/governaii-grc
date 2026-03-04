@@ -178,7 +178,8 @@ Passos concretos e simples que o gestor pode tomar imediatamente. 4-6 itens com 
 - Foco em ações práticas, não teóricas
 - Tom profissional mas acessível
 - Conteúdo específico para o requisito, NÃO genérico
-- Responda em português brasileiro`;
+- Responda em português brasileiro
+- NUNCA inclua frases introdutórias como "Com certeza!", "Aqui está", "Claro!" ou qualquer saudação. Comece DIRETAMENTE com o conteúdo da primeira seção (## 📋 O que este requisito significa)`;
 
   const evidenciasPrompt = `Para o mesmo requisito (${req.codigo} - ${req.titulo}), liste de 6 a 10 exemplos de evidências que um auditor aceitaria como prova de conformidade.
 

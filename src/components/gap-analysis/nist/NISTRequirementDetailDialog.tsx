@@ -166,9 +166,27 @@ const renderContentLines = (lines: string[]): React.ReactNode[] => {
   return elements;
 };
 
+/** Strips AI preamble lines (e.g. "Com certeza! Aqui está...") before the first ## */
+const sanitizeGuidanceContent = (raw: string): string => {
+  // Find first ## header
+  const firstHeaderIdx = raw.indexOf('\n##');
+  if (firstHeaderIdx === -1) {
+    // Check if it starts with ##
+    if (raw.trimStart().startsWith('##')) return raw;
+    return raw;
+  }
+  const preamble = raw.substring(0, firstHeaderIdx).trim();
+  // If preamble looks like AI chatter (no ## and short), strip it
+  if (preamble && !preamble.includes('##') && preamble.length < 300) {
+    return raw.substring(firstHeaderIdx + 1);
+  }
+  return raw;
+};
+
 /** Structured Markdown renderer — groups ## sections into visual cards */
 const MarkdownContent = ({ content }: { content: string }) => {
-  const lines = content.split('\n');
+  const sanitized = sanitizeGuidanceContent(content);
+  const lines = sanitized.split('\n');
 
   // Split into sections: intro (before first ##) and named sections
   const sections: Array<{ title: string | null; lines: string[] }> = [];
