@@ -1,53 +1,52 @@
 
 
-# Plano: Migrar Contexto para Configurações + Changelog Dinâmico
+# Plano: Melhorias Visuais na Tela de Gap Analysis Frameworks
 
-## 1. Migrar "Contexto da Organização" para Configurações
+Analisando o screenshot e o código atual, identifiquei melhorias que trariam mais clareza, hierarquia visual e experiência profissional sem alterar a funcionalidade.
 
-**Problema**: O botão "Contexto" está no `GapAnalysisFrameworkDetail.tsx` — o usuário precisa entrar em um framework específico para preencher. As informações são da empresa (globais), não do framework.
+## Melhorias Propostas
 
-**Solução**:
-- Transformar `CompanyContextDialog.tsx` em um componente inline (não dialog) chamado `CompanyContextSettings.tsx`, reutilizando a mesma lógica de campos (setor, porte, objetivo, data alvo)
-- Adicionar nova aba "Organização" na página `Configuracoes.tsx` (visível para admin/super_admin), renderizando o novo componente dentro de um Card
-- Remover o botão "Contexto" e o `CompanyContextDialog` do `GapAnalysisFrameworkDetail.tsx`
-- Manter o `CompanyContextDialog.tsx` para eventual reuso, mas o ponto de entrada principal passa a ser Configurações
+### 1. StatCards — Adicionar cor semântica e contexto visual
 
-**Arquivos**:
-| Arquivo | Ação |
-|---------|------|
-| `src/components/configuracoes/CompanyContextSettings.tsx` | **Novo** — form inline com os 4 campos (setor, porte, objetivo, data alvo) |
-| `src/pages/Configuracoes.tsx` | **Modificar** — adicionar aba "Organização" com ícone Building2 |
-| `src/pages/GapAnalysisFrameworkDetail.tsx` | **Modificar** — remover botão Contexto, import do CompanyContextDialog e state showContextDialog |
+Os 3 StatCards no topo estão todos com a mesma aparência "neutra". Proposta:
+- **Conformidade Geral**: variante `success` se >= 70%, `warning` se >= 40%, `destructive` se < 40%
+- **Requisitos Críticos**: variante `destructive` (sempre, pois são não conformes)
+- **Total Avaliados**: variante `info`
 
-## 2. Changelog Dinâmico via Tabela de Versões
+Isso dá feedback visual imediato ao usuário sobre o estado geral.
 
-**Problema**: O `ChangelogPopover.tsx` usa um array hardcoded `CHANGELOG`. O usuário quer que a cada publicação, as novidades apareçam automaticamente no sino/notificações.
+### 2. Frameworks Ativos — Card mais expressivo
 
-**Análise de viabilidade**: O Lovable não dispara webhooks ao publicar, então não é possível automatizar 100%. A solução prática é:
-- Criar uma tabela `changelog_entries` no Supabase para armazenar versões e itens
-- O `ChangelogPopover` passa a ler da tabela em vez do array hardcoded
-- Quando uma nova entrada é adicionada à tabela, uma notificação é criada automaticamente para todos os usuários da empresa via trigger
-- O administrador (ou via SQL) adiciona entradas ao publicar — processo simples e controlável
+O card ativo atual é funcional mas poderia ter:
+- **Barra de progresso colorida** segmentada (conforme/parcial/não conforme) em vez da Progress bar simples azul
+- **Ícone de seta** com hover mais visível para indicar clicabilidade
+- Grid 1-2 colunas (ao invés de 3) para dar mais espaço ao card ativo — pois geralmente haverá poucos frameworks ativos
 
-**Estrutura da tabela `changelog_entries`**:
-```sql
-id uuid PK
-version text NOT NULL
-release_date date NOT NULL
-items jsonb NOT NULL  -- [{ type: 'feature'|'improvement'|'fix', text: '...' }]
-created_at timestamptz DEFAULT now()
-```
+### 3. Catálogo de Frameworks — Melhorar hierarquia do Collapsible
 
-**Trigger**: Ao inserir um novo changelog, inserir uma notificação na tabela `notifications` para cada usuário ativo, com título "Nova versão {version}" e mensagem resumida dos itens.
+O trigger do Collapsible se confunde com o conteúdo. Proposta:
+- Adicionar **borda sutil** ao redor da seção colapsável para agrupar visualmente
+- Expandir **todas as categorias** por padrão (em vez de só "seguranca") — o usuário precisa ver o catálogo completo
+- Melhorar separação entre seções com `border-b` sutil
 
-**Arquivos**:
-| Arquivo | Ação |
-|---------|------|
-| Migration SQL | **Novo** — tabela `changelog_entries` + trigger para criar notificações |
-| `src/components/ChangelogPopover.tsx` | **Modificar** — ler de Supabase em vez de array hardcoded, marcar "visto" via localStorage |
+### 4. Seção "Frameworks Disponíveis" — Ícone de busca rápida
 
-## Impacto
-- Configurações ganha a aba "Organização" — admin preenche uma vez, todos os frameworks usam
-- Changelog passa a ser dinâmico — novas versões aparecem no popover de novidades E como notificação no sino
-- Nenhuma funcionalidade existente é perdida
+Adicionar um **campo de busca/filtro** simples acima do catálogo para encontrar frameworks rapidamente quando há 20+ opções. Input com `placeholder="Buscar framework..."` que filtra pelo nome.
+
+### 5. Framework Card (variant: available) — Micro-ajustes
+
+- Aumentar levemente o **padding** para respiração
+- Adicionar `hover:border-primary/30` para feedback visual ao hover (consistente com o design system)
+
+## Arquivos a Modificar
+
+| Arquivo | Mudança |
+|---------|---------|
+| `src/pages/GapAnalysisFrameworks.tsx` | StatCards com variantes semânticas, grid de ativos 1-2 cols, busca no catálogo |
+| `src/components/gap-analysis/FrameworkCard.tsx` | Barra segmentada no card ativo, ajuste de padding no available |
+| `src/components/gap-analysis/FrameworkCatalog.tsx` | Todas categorias abertas por padrão, borda sutil, receber filtro de busca |
+
+## Complexidade
+
+Baixa — são ajustes de CSS, props e layout. Nenhuma mudança de lógica ou banco de dados.
 
