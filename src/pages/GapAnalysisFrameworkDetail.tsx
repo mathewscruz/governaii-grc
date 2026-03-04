@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Download, Building2, FileBarChart } from 'lucide-react';
+import { ChevronLeft, Download, FileBarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,7 +17,7 @@ import { RemediationTab } from '@/components/gap-analysis/RemediationTab';
 import { FrameworkOnboarding } from '@/components/gap-analysis/FrameworkOnboarding';
 import { JourneyProgressBar } from '@/components/gap-analysis/JourneyProgressBar';
 import { SoATab } from '@/components/gap-analysis/SoATab';
-import { CompanyContextDialog } from '@/components/gap-analysis/CompanyContextDialog';
+
 import { exportFrameworkPDF } from '@/components/gap-analysis/ExportFrameworkPDF';
 import { exportBoardPDF } from '@/components/gap-analysis/ExportBoardPDF';
 import { supabase } from '@/integrations/supabase/client';
@@ -86,7 +86,7 @@ export default function GapAnalysisFrameworkDetail() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [selectedAdherenceAssessment, setSelectedAdherenceAssessment] = useState<any>(null);
   const [adherenceView, setAdherenceView] = useState<'list' | 'result'>('list');
-  const [showContextDialog, setShowContextDialog] = useState(false);
+  
 
   useEffect(() => {
     if (!frameworkId) return;
@@ -242,10 +242,6 @@ export default function GapAnalysisFrameworkDetail() {
           description={framework.descricao || FRAMEWORK_DESCRIPTIONS[framework.nome] || `Avaliação de conformidade ${framework.tipo_framework}`}
           actions={
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowContextDialog(true)}>
-                <Building2 className="h-4 w-4 mr-2" />
-                Contexto
-              </Button>
               {empresaId && evaluatedRequirements > 0 && (
                 <AIRecommendationsButton
                   frameworkId={frameworkId!}
@@ -380,7 +376,7 @@ export default function GapAnalysisFrameworkDetail() {
           </TabsContent>
         </Tabs>
 
-        <CompanyContextDialog open={showContextDialog} onOpenChange={setShowContextDialog} />
+        
       </div>
     </ErrorBoundary>
   );

@@ -1441,6 +1441,30 @@ export type Database = {
         }
         Relationships: []
       }
+      changelog_entries: {
+        Row: {
+          created_at: string | null
+          id: string
+          items: Json
+          release_date: string
+          version: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          items?: Json
+          release_date?: string
+          version: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          items?: Json
+          release_date?: string
+          version?: string
+        }
+        Relationships: []
+      }
       compliance_templates: {
         Row: {
           checklist: Json

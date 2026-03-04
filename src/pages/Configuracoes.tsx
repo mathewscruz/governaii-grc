@@ -3,7 +3,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
-import { Users, Building2, Settings, Shield, Plug, MessageSquare, CreditCard, Sparkles } from 'lucide-react';
+import { Users, Building2, Settings, Shield, Plug, MessageSquare, CreditCard, Sparkles, Landmark } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
@@ -16,6 +16,7 @@ import { ConfiguracoesDenuncia } from '@/components/denuncia/ConfiguracoesDenunc
 import { CategoriasDenuncia } from '@/components/denuncia/CategoriasDenuncia';
 import { AssinaturaTab } from '@/components/configuracoes/AssinaturaTab';
 import { CreditosIAManager } from '@/components/configuracoes/CreditosIAManager';
+import { CompanyContextSettings } from '@/components/configuracoes/CompanyContextSettings';
 
 const Configuracoes = () => {
   const { user } = useAuth();
@@ -108,6 +109,12 @@ const Configuracoes = () => {
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">Assinatura</span>
           </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="organizacao" className="flex items-center gap-2">
+              <Landmark className="h-4 w-4" />
+              <span className="hidden sm:inline">Organização</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="geral" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Geral</span>
@@ -194,6 +201,22 @@ const Configuracoes = () => {
         <TabsContent value="assinatura">
           <AssinaturaTab />
         </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="organizacao">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Landmark className="h-5 w-5" />
+                  Contexto da Organização
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CompanyContextSettings />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         <TabsContent value="geral">
           <div className="space-y-6">
