@@ -1,46 +1,44 @@
 
 
-# Plano: Redesign da Landing Page baseado na referência Anarisk
+# Plano: Remover elementos "cara de IA" e ajustar footer
 
-## Estrutura alvo (baseada na imagem de referência)
+## Elementos que denunciam geração por IA (serão removidos/ajustados)
 
-A landing page será reestruturada para seguir exatamente a mesma sequência de seções da referência, adaptando conteúdo para Akuris GRC. A seção de preços será removida conforme solicitado.
+1. **Background blobs flutuantes** (linhas 266-267) — Os dois orbs de blur gigantes (azul e cyan) são assinatura clássica de landing pages geradas por IA
+2. **Grid background animado** (linha 265) — `landing-grid-bg` com opacidade é padrão repetitivo de templates IA
+3. **Gradient dividers repetitivos** (linhas 459, 497, 567, 609, 633) — 5 separadores idênticos `bg-gradient-to-r from-transparent via-blue-500/30 to-transparent` entre cada seção
+4. **`landing-glow-btn`** com shimmer infinito nos botões (linhas 352, 625, 694) — efeito de brilho deslizante é marca registrada de IA
+5. **Badge "Plataforma GRC Completa"** no hero (linhas 331-333) — pill badge genérico no topo é padrão IA
+6. **Testimonials com nomes fictícios óbvios** e empresas genéricas ("TechSecure Brasil", "FinGroup S.A.", "DataHealth Ltda") — parecem claramente inventados
+7. **Estrelas 5/5 em todos os depoimentos** — ninguém real dá 5 estrelas em tudo
+8. **`Quote` icon gigante** antes de cada depoimento — padrão visual repetitivo de IA
+9. **Hover scale `hover:scale-[1.02]`** nos cards de ferramentas — micro-animação genérica
+10. **Connector lines** entre os cards de "Como Funciona" (linha 478) — padrão visual overused
 
-### Seções (em ordem):
+## Mudanças específicas
 
-1. **Hero** — Headline centralizado grande, subtítulo, 2 botões CTA (Solicitar Demo + Acessar Plataforma), dashboard mockup abaixo (já existe, reposicionar para centralizado)
-2. **Logos strip** — "Frameworks e regulamentações suportados" (manter carousel existente, estilizar como strip horizontal limpo)
-3. **"Ferramentas Inteligentes"** — Grid 2x2 com 4 cards grandes com ícones/ilustrações: Análise de Riscos em Tempo Real, Controles Internos Categorizados, Score de Conformidade, Gestão de Documentos
-4. **"Como o Akuris Funciona?"** — 3 cards com ícone + título + descrição (manter conteúdo existente, redesenhar visual para match)
-5. **"O que dizem nossos clientes?"** — Seção de depoimentos com 3 cards (textos placeholder profissionais)
-6. **CTA Banner** — "Veja o Akuris em Ação, Comece a Gerenciar Riscos Hoje" com botão "Solicitar Demonstração"
-7. **Contato** — Formulário (manter existente)
-8. **Footer** — Redesenhar para match com 4 colunas + social links
+### Remover/Simplificar
+- Remover os 2 blobs de blur flutuantes (background orbs)
+- Remover o grid background
+- Remover os 5 gradient dividers (substituir por espaçamento natural ou `border-t border-white/5` simples onde necessário)
+- Remover a classe `landing-glow-btn` dos botões (tirar o shimmer)
+- Remover o badge pill "Plataforma GRC Completa" do hero
+- Remover estrelas dos testimonials
+- Remover o ícone `Quote` dos testimonials
+- Remover hover scale dos cards de ferramentas
+- Remover connector lines do "Como Funciona"
 
-### Seções REMOVIDAS:
-- Preços (conforme solicitado)
-- "Esqueça as Planilhas" (substituído pelo grid 2x2 de features)
-- Benefícios (integrado nas features)
+### Ajustar Testimonials
+- Tornar mais discretos: remover estrelas, remover Quote icon, manter texto + nome/cargo simples
+- Ajustar nomes/empresas para soar mais autênticos (ou simplesmente remover a seção de testimonials se preferir manter credibilidade — mas vou mantê-la com visual mais sóbrio)
 
-## Mudanças visuais principais
-
-- Hero: texto centralizado (não split com grid), dashboard mockup abaixo centralizado
-- Cards de features: mais espaçosos, fundo glassmorphism escuro com bordas sutis, ícones maiores
-- How it works: cards escuros com ícones em destaque, badge de step number
-- Testimonials: novo — 3 cards com aspas, texto, nome e cargo
-- CTA banner: seção full-width com gradiente e texto grande
-- Footer: 4 colunas (Akuris, Produto, Recursos, Contato) + linha de social media
+### Footer — Trocar "Contato" por "Localização"
+- Remover email, telefone do footer (coluna 4)
+- Substituir por "Localização" com duas entradas:
+  - São Paulo - Brazil
+  - Porto - PT
+- Remover imports `Mail`, `Phone` (manter `MapPin`)
 
 ## Arquivo afetado
-
-`src/pages/LandingPage.tsx` — reescrita completa mantendo lógica de form/scroll/state
-
-## Elementos preservados
-- Logo Akuris
-- Form de contato (lógica Supabase)
-- Scroll behavior + header sticky
-- Dialog de detalhe de módulos
-- Carousel de frameworks
-- CSS animations (scroll-left, spin-slow)
-- Mobile responsiveness
+`src/pages/LandingPage.tsx` — ajustes pontuais (sem reescrita)
 
