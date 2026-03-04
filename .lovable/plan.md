@@ -1,97 +1,72 @@
 
 
-# Plano: Gap Analysis — Elevação ao Nível Big4
+# Plano: Refinamento UX/UI do Framework Detail (Gap Analysis)
 
-## Diagnóstico Atual
+## Diagnóstico Visual (baseado nos screenshots e código)
 
-O módulo já possui uma base sólida: frameworks globais com requisitos, avaliação manual com status por requisito, análise de aderência por IA (upload de documentos), assistente IA por requisito, plano de ação integrado, evidências (upload + links), vinculação com riscos, histórico de score, export PDF, e jornada de certificação. Isso cobre ~65% do que uma consultoria Big4 entrega. Os 35% restantes são funcionalidades que diferenciam uma ferramenta profissional de um checklist avançado.
+### 1. Excesso de conteúdo antes da tabela de requisitos
+A aba "Avaliação Manual" empilha **7 blocos** antes da tabela: Score Dashboard (2 cards) → Banner motivacional → Recomendações IA → 2 gráficos → CategoryStatusCards. O usuário precisa rolar muito para chegar ao trabalho real (a tabela). Consultorias Big4 priorizam a tabela com um resumo compacto no topo.
 
-## Gaps Identificados vs Big4
+### 2. Visualizações redundantes
+`PrivacyTreemap`, `CategoryBarChart` e `CategoryStatusCards` mostram essencialmente os mesmos dados (conformidade por categoria) de 3 formas diferentes. Polui a tela sem agregar informação nova.
 
-### 1. Avaliação em Lote (Bulk Assessment)
-**Problema**: Hoje o usuário precisa clicar requisito por requisito para mudar status. Com frameworks de 100+ requisitos (ISO 27001 tem 117), isso é improdutivo.
-**Solução**: Adicionar checkboxes na tabela de requisitos + barra de ação flutuante para aplicar status em lote ("Marcar 15 selecionados como Conforme").
+### 3. Score card sem impacto visual
+O score geral é apenas um número + badge + barra de progresso. Falta um elemento visual forte (gauge/donut) que transmita gravidade e progresso de forma imediata.
 
-### 2. Statement of Applicability (SoA) — ISO 27001
-**Problema**: Toda certificação ISO 27001 exige um SoA (documento que lista cada controle do Anexo A, se é aplicável, justificativa, e status). O sistema não gera esse artefato.
-**Solução**: Botão "Gerar SoA" que exporta um PDF/tabela com: código do controle, título, aplicável (sim/não), justificativa de exclusão (se N/A), status atual, e evidência vinculada.
+### 4. Banner motivacional é ruído
+O card "Você já avaliou X de Y requisitos!" ocupa espaço entre o dashboard e os gráficos sem valor funcional real.
 
-### 3. Relatório Executivo de Conformidade
-**Problema**: O PDF exportado atual é técnico (lista todos os requisitos). Big4s entregam relatórios executivos com: resumo gerencial, gráficos de maturidade, top risks, roadmap recomendado.
-**Solução**: Novo template de PDF "Relatório Executivo" com: sumário executivo (gerado por IA), gráfico de maturidade por domínio, top 10 gaps prioritários, e recomendações estratégicas.
+### 5. Área de filtros da tabela pesada
+Search + Select de status + Switch de obrigatórios + Legenda de cores + Tabs de categorias com mini-progress bars. São 5 camadas de controles antes das rows.
 
-### 4. Painel de Remediação (Remediation Tracker)
-**Problema**: Quando um requisito é marcado como "Não Conforme" e gera um plano de ação, não há visão consolidada dos planos de ação por framework. O usuário precisa ir ao módulo de Planos de Ação e não consegue filtrar por framework.
-**Solução**: Nova aba "Remediação" no detalhe do framework, mostrando todos os planos de ação vinculados a requisitos desse framework, com status, prazo, responsável.
+### 6. Dialog de detalhe muito longo
+O `NISTRequirementDetailDialog` empilha: Assistente IA + Plano de Ação + Responsável + Notas + Observações + Prazo + Riscos + Evidências + Audit Trail em um único scroll vertical.
 
-### 5. Comparação Cross-Framework
-**Problema**: Muitos controles se repetem entre frameworks (ISO 27001 A.5.1 ↔ NIST GV.PO). Não há mapeamento cruzado para evitar trabalho duplicado.
-**Solução**: Na tela de frameworks, adicionar card "Cobertura Cruzada" mostrando quantos % dos requisitos de um framework já são cobertos por avaliações de outro. Isso requer uma tabela de mapeamento (`gap_analysis_requirement_mappings`).
+## Mudanças Propostas
 
-### 6. Notificações de Prazo
-**Problema**: Requisitos com `prazo_implementacao` não geram alertas quando vencem. O usuário não é avisado.
-**Solução**: Adicionar lógica ao `daily-reminder-processor` para verificar prazos de implementação de gap analysis e criar notificações no sino do header.
+### A. Consolidar dashboard em layout compacto (score + gráfico lado a lado)
+- Manter o layout atual de 2 colunas (Score + Evolução) mas adicionar um **donut/gauge mini** dentro do card de score ao lado do número
+- Remover o banner motivacional — a JourneyProgressBar já cumpre esse papel
+- Mover badge de maturidade para dentro do PageHeader (ao lado do título) para economizar espaço vertical
 
-### 7. Modelo de Maturidade (Maturity Model)
-**Problema**: Big4s classificam a organização em níveis de maturidade (ex: CMMI 1-5, ou Inicial/Gerenciado/Definido/Otimizado). O sistema mostra apenas % de conformidade.
-**Solução**: Adicionar badge de maturidade no dashboard baseado no score: Nível 1 (0-20%), Nível 2 (20-40%), Nível 3 (40-60%), Nível 4 (60-80%), Nível 5 (80-100%). Mostrar no ScoreDashboard e no PDF.
+### B. Unificar visualizações de categoria
+- **Remover** `PrivacyTreemap` (mapa de conformidade por capítulo) — dados duplicados
+- **Manter** `CategoryBarChart` (aderência por categoria) — mais limpo e legível
+- **Manter** `CategoryStatusCards` — funcionam como filtro interativo para a tabela
+- Resultado: de 3 blocos visuais → 2, com propósitos distintos (gráfico resumo + filtro interativo)
 
-### 8. Trilha de Auditoria (Audit Trail)
-**Problema**: Não há registro de quem mudou o status de um requisito, quando, e de qual valor para qual. Isso é essencial para auditoria externa.
-**Solução**: Criar tabela `gap_analysis_audit_log` e trigger na `gap_analysis_evaluations` para registrar mudanças de `conformity_status`. Mostrar timeline no dialog de detalhe do requisito.
+### C. Compactar filtros da tabela
+- Unificar Search + Status filter em uma **única linha** (já está, mas remover espaço extra)
+- Mover a **legenda de status** para um **Popover/Tooltip** acionado por ícone `HelpCircle`, em vez de bloco fixo
+- Reduzir padding das CategoryTabs para ficarem mais compactas
 
-## Priorização (Impacto x Esforço)
+### D. Reorganizar Dialog de detalhe com seções colapsáveis
+- Agrupar em **Accordion/Collapsible**: 
+  - Seção 1: Status + Responsável + Prazo (sempre visível)
+  - Seção 2: Plano de Ação (colapsável, aberto se não conforme)
+  - Seção 3: Evidências (colapsável)
+  - Seção 4: Riscos Vinculados (colapsável)
+  - Seção 5: Assistente IA (colapsável)
+  - Seção 6: Histórico de Alterações (colapsável)
+- Isso reduz a altura percebida do dialog e permite foco na tarefa principal
 
-| # | Feature | Impacto | Esforço | Prioridade |
-|---|---------|---------|---------|------------|
-| 1 | Avaliação em Lote | Alto | Médio | P1 |
-| 2 | Painel de Remediação | Alto | Médio | P1 |
-| 3 | Modelo de Maturidade | Alto | Baixo | P1 |
-| 4 | Notificações de Prazo | Alto | Baixo | P1 |
-| 5 | Trilha de Auditoria | Alto | Médio | P1 |
-| 6 | Relatório Executivo | Alto | Alto | P2 |
-| 7 | Statement of Applicability | Médio | Médio | P2 |
-| 8 | Comparação Cross-Framework | Médio | Alto | P3 |
-
-## Implementação Proposta (P1 - Impacto Imediato)
-
-### A. Avaliação em Lote
-- Adicionar state `selectedRequirements: Set<string>` no `GenericRequirementsTable`
-- Checkbox na primeira coluna de cada row + "Selecionar Todos"
-- Barra flutuante no bottom quando há seleção: "X selecionados → [Conforme] [Parcial] [N/C] [N/A]"
-- `handleBulkStatusChange(ids: string[], status: string)` faz upsert em batch
-
-### B. Painel de Remediação
-- Nova aba "Remediação" no `GapAnalysisFrameworkDetail`
-- Query: `planos_acao` WHERE `id IN (SELECT plano_acao_id FROM gap_analysis_evaluations WHERE framework_id = X AND empresa_id = Y)`
-- Cards com: título do plano, requisito vinculado, status, prazo, responsável
-- Indicador de "X planos pendentes / Y em andamento / Z concluídos"
-
-### C. Modelo de Maturidade
-- Função `getMaturityLevel(score, config)` em `framework-configs.ts`
-- Badge visual no `GenericScoreDashboard` ao lado do score
-- Incluir no PDF exportado
-
-### D. Notificações de Prazo
-- Adicionar query no `daily-reminder-processor` para `gap_analysis_evaluations` com `prazo_implementacao` próximo (7 dias, vencido)
-- Inserir em `notifications` com link para `/gap-analysis/framework/:id`
-
-### E. Trilha de Auditoria
-- Migration: criar `gap_analysis_audit_log` (evaluation_id, campo_alterado, valor_anterior, valor_novo, user_id, created_at)
-- Trigger on UPDATE da `gap_analysis_evaluations` quando `conformity_status` muda
-- No `NISTRequirementDetailDialog`: seção "Histórico de Alterações" com timeline
+### E. Melhorar visual do Score com mini donut
+- Adicionar um **ring/donut SVG simples** (não Recharts, apenas SVG inline) no card de Score Geral para dar impacto visual imediato
+- Usar cores consistentes com o sistema de maturidade (verde/amarelo/vermelho)
 
 ## Arquivos Afetados
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/components/gap-analysis/GenericRequirementsTable.tsx` | Checkboxes + barra de ação em lote |
-| `src/pages/GapAnalysisFrameworkDetail.tsx` | Nova aba "Remediação" |
-| `src/components/gap-analysis/RemediationTab.tsx` | Novo componente |
-| `src/lib/framework-configs.ts` | Função `getMaturityLevel()` |
-| `src/components/gap-analysis/GenericScoreDashboard.tsx` | Badge de maturidade |
-| `src/components/gap-analysis/ExportFrameworkPDF.tsx` | Nível de maturidade no PDF |
-| `src/components/gap-analysis/nist/NISTRequirementDetailDialog.tsx` | Seção de histórico/auditoria |
-| `supabase/functions/daily-reminder-processor/index.ts` | Query de prazos gap analysis |
-| Migration SQL | Tabela `gap_analysis_audit_log` + trigger |
+| `src/pages/GapAnalysisFrameworkDetail.tsx` | Remover PrivacyTreemap, remover banner motivacional, mover maturidade pro header |
+| `src/components/gap-analysis/GenericScoreDashboard.tsx` | Adicionar mini donut SVG ao card de score |
+| `src/components/gap-analysis/GenericRequirementsTable.tsx` | Legenda em Popover, compactar filtros |
+| `src/components/gap-analysis/nist/NISTRequirementDetailDialog.tsx` | Seções colapsáveis com Collapsible |
+
+## Impacto Esperado
+
+- ~40% menos scroll vertical na aba de avaliação
+- Dialog de detalhe mais organizado e menos intimidador
+- Score com impacto visual imediato (donut)
+- Interface mais limpa sem perder funcionalidade
 
