@@ -1,50 +1,48 @@
 
 
-# Plano: Correções no Gap Analysis — Requisitos, Persistência e Acentuação
+# Plano: Legenda do Ícone de Alerta + Completar ISO 27001
 
-## 1. ISO 27001 — Verificação de Completude
+## 1. Legenda para o ícone de exclamação
 
-O framework ISO/IEC 27001:2022 possui **117 requisitos** no banco, distribuídos assim:
-- Cláusulas 4 a 10 (requisitos do SGSI): 24 itens (Contexto: 4, Liderança: 3, Planejamento: 4, Apoio: 5, Operação: 3, Avaliação: 3, Melhoria: 2)
-- Anexo A (controles): 93 itens (Pessoas: 8, Físico: 14, Tecnologia: 34, Segurança: 37)
+O ícone `AlertTriangle` (⚠️) aparece quando o requisito tem **peso ≥ 3** e status **Não Conforme** — indicando um item de alta prioridade em não conformidade. Atualmente não há nenhuma explicação visual para o usuário.
 
-A ISO 27001:2022 especifica exatamente **24 cláusulas obrigatórias + 93 controles do Anexo A = 117 itens**. O framework **está completo**.
+**Solução**: Adicionar uma barra de legenda discreta abaixo dos filtros/acima da tabela, com os indicadores visuais utilizados:
 
----
+| Ícone | Significado |
+|-------|------------|
+| ⚠️ (AlertTriangle vermelho) | Requisito de alta prioridade em não conformidade |
 
-## 2. Perguntas Diagnósticas Sem Persistência
-
-**Problema**: As respostas do "Diagnóstico Rápido" ficam apenas em `useState` e são resetadas para `{}` a cada abertura do dialog. Não são salvas no banco.
-
-**Solução**: Persistir as respostas na tabela `gap_analysis_evaluations` usando um novo campo JSON `diagnostic_answers`.
-
-| Arquivo | Ação |
-|---------|------|
-| Nova migration SQL | Adicionar coluna `diagnostic_answers jsonb DEFAULT null` em `gap_analysis_evaluations` |
-| `NISTRequirementDetailDialog.tsx` | Carregar `diagnostic_answers` no `loadData()` e salvar no `handleSave()` |
+**Arquivo**: `src/components/gap-analysis/GenericRequirementsTable.tsx` — inserir um pequeno bloco de legenda (`text-xs text-muted-foreground`) antes da tabela.
 
 ---
 
-## 3. Acentuação nos Relatórios PDF
+## 2. Completar requisitos ISO 27001:2022
 
-**Problema**: Textos em português sem acentuação em múltiplos arquivos PDF. Exemplos: "Nao Conforme", "Declaracao", "Codigo", "Responsavel", "Sumario", "Relatorio", "organizacao", "atencao", etc.
+A ISO 27001:2022 possui **28 cláusulas** (não 24) quando contamos todos os subitens numerados. Faltam 4 itens:
 
-A fonte Helvetica do jsPDF suporta caracteres acentuados — o problema são as strings hardcoded sem acento.
+| Código | Título |
+|--------|--------|
+| 6.3 | Planejamento de mudanças |
+| 9.2.1 | Generalidades (Auditoria interna) |
+| 9.2.2 | Programa de auditoria interna |
+| 9.3.1 | Generalidades (Análise crítica pela direção) |
+| 9.3.2 | Entradas da análise crítica pela direção |
+| 9.3.3 | Resultados da análise crítica pela direção |
 
-| Arquivo | Exemplos de correção |
-|---------|---------------------|
-| `SoAExportPDF.tsx` | `Nao Conforme` → `Não Conforme`, `Declaracao` → `Declaração`, `Codigo` → `Código`, `Responsavel` → `Responsável`, `Aplicaveis` → `Aplicáveis` |
-| `ExportFrameworkPDF.tsx` | `Nao Conforme` → `Não Conforme`, `Nao Avaliado` → `Não Avaliado`, `Nivel` → `Nível`, `Codigo` → `Código` |
-| `ExportBoardPDF.tsx` | `Relatorio Executivo` → `Relatório Executivo`, `Sumario` → `Sumário`, `Indice` → `Índice`, `Nao Conformes` → `Não Conformes`, `Distribuicao` → `Distribuição`, `Recomendacoes` → `Recomendações`, todo o texto do "parecer" e recomendações sem acento |
-| `NISTRequirementDetailDialog.tsx` | `Diagnostico Rapido` → `Diagnóstico Rápido`, `sugestao automatica` → `sugestão automática`, `Nao Conforme` → `Não Conforme`, `aderencia` → `aderência`, `Nao` (botão) → `Não` |
+Os itens atuais `9.2` e `9.3` devem ser **substituídos** pelos seus subitens, e `6.3` deve ser **adicionado**. Resultado: 24 - 2 (9.2, 9.3) + 6 (novos) = **28 cláusulas**.
 
-**Total**: ~60 strings a corrigir em 4 arquivos.
+**Ação**: Usar o insert tool para:
+1. Inserir os 5 novos requisitos (6.3, 9.2.1, 9.2.2, 9.3.1, 9.3.2, 9.3.3)
+2. Remover os 2 antigos (9.2, 9.3) — migrando eventuais avaliações existentes antes
+
+**Total final**: 28 cláusulas + 93 Anexo A = **121 requisitos**.
 
 ---
 
 ## Resumo de Impacto
 
-- **ISO 27001**: Nenhuma mudança necessária — já está completo
-- **Diagnóstico**: 1 migration + alteração no dialog para carregar/salvar respostas
-- **Acentuação**: Correção de strings em 4 arquivos de exportação PDF + 1 componente UI
+| Arquivo/Recurso | Ação |
+|-----------------|------|
+| `GenericRequirementsTable.tsx` | Adicionar legenda visual dos ícones |
+| Banco de dados (INSERT/DELETE) | Ajustar requisitos ISO 27001 de 24→28 cláusulas |
 
