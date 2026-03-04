@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import akurisLogo from "@/assets/akuris-logo.png";
+import flagBrazil from "@/assets/flag-brazil.png";
+import flagPortugal from "@/assets/flag-portugal.png";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -719,11 +721,11 @@ const LandingPage = () => {
               <h4 className="font-semibold text-white mb-4">Localização</h4>
               <ul className="space-y-2.5">
                 <li className="flex items-center gap-2 text-gray-400 text-sm">
-                  <span className="text-base shrink-0">🇧🇷</span>
+                  <img src={flagBrazil} alt="Brasil" className="h-3.5 w-auto shrink-0 rounded-[1px]" />
                   São Paulo - Brazil
                 </li>
                 <li className="flex items-center gap-2 text-gray-400 text-sm">
-                  <span className="text-base shrink-0">🇵🇹</span>
+                  <img src={flagPortugal} alt="Portugal" className="h-3.5 w-auto shrink-0 rounded-[1px]" />
                   Porto - PT
                 </li>
               </ul>
