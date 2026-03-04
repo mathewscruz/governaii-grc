@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -7,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
-import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, HelpCircle } from "lucide-react";
+import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw } from "lucide-react";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { PlanoAcaoDialog } from "@/components/planos-acao/PlanoAcaoDialog";
 import { AuditTrailTimeline } from "@/components/gap-analysis/AuditTrailTimeline";
@@ -74,6 +75,138 @@ const CollapsibleSection = ({ title, icon: Icon, defaultOpen = false, badge, chi
   );
 };
 
+/** Simple Markdown renderer — handles headers, bold, lists, hr */
+const MarkdownContent = ({ content }: { content: string }) => {
+  const lines = content.split('\n');
+  const elements: React.ReactNode[] = [];
+  let listItems: string[] = [];
+  let isNumberedList = false;
+
+  const flushList = () => {
+    if (listItems.length === 0) return;
+    if (isNumberedList) {
+      elements.push(
+        <ol key={`ol-${elements.length}`} className="list-decimal list-inside space-y-1.5 ml-1">
+          {listItems.map((item, i) => (
+            <li key={i} className="text-sm text-muted-foreground leading-relaxed">
+              <span dangerouslySetInnerHTML={{ __html: inlineMd(item) }} />
+            </li>
+          ))}
+        </ol>
+      );
+    } else {
+      elements.push(
+        <ul key={`ul-${elements.length}`} className="space-y-1.5 ml-1">
+          {listItems.map((item, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground leading-relaxed">
+              <span className="text-primary mt-1.5 text-[6px]">●</span>
+              <span dangerouslySetInnerHTML={{ __html: inlineMd(item) }} />
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    listItems = [];
+    isNumberedList = false;
+  };
+
+  const inlineMd = (text: string): string => {
+    return text
+      .replace(/\*\*(.+?)\*\*/g, '<strong class="text-foreground font-semibold">$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>');
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (trimmed === '' || trimmed === '---') {
+      flushList();
+      if (trimmed === '---') elements.push(<hr key={`hr-${i}`} className="my-3 border-border/50" />);
+      continue;
+    }
+
+    // Headers
+    const h2Match = trimmed.match(/^##\s+(.+)/);
+    const h3Match = trimmed.match(/^###\s+(.+)/);
+    if (h2Match) {
+      flushList();
+      elements.push(
+        <h3 key={`h2-${i}`} className="text-sm font-bold text-foreground mt-4 mb-2 first:mt-0">
+          {h2Match[1]}
+        </h3>
+      );
+      continue;
+    }
+    if (h3Match) {
+      flushList();
+      elements.push(
+        <h4 key={`h3-${i}`} className="text-sm font-semibold text-foreground mt-3 mb-1.5">
+          {h3Match[1]}
+        </h4>
+      );
+      continue;
+    }
+
+    // Bullet list
+    const bulletMatch = trimmed.match(/^[-•*]\s+(.+)/);
+    if (bulletMatch) {
+      if (listItems.length > 0 && isNumberedList) flushList();
+      isNumberedList = false;
+      listItems.push(bulletMatch[1]);
+      continue;
+    }
+
+    // Numbered list
+    const numMatch = trimmed.match(/^\d+[.)]\s+(.+)/);
+    if (numMatch) {
+      if (listItems.length > 0 && !isNumberedList) flushList();
+      isNumberedList = true;
+      listItems.push(numMatch[1]);
+      continue;
+    }
+
+    // Regular paragraph
+    flushList();
+    elements.push(
+      <p key={`p-${i}`} className="text-sm text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: inlineMd(trimmed) }} />
+    );
+  }
+  flushList();
+
+  return <div className="space-y-2">{elements}</div>;
+};
+
+/** Skeleton for guidance loading */
+const GuidanceSkeleton = () => (
+  <div className="space-y-4 p-5">
+    <div className="space-y-2">
+      <Skeleton className="h-5 w-48" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-[90%]" />
+      <Skeleton className="h-4 w-[80%]" />
+    </div>
+    <div className="space-y-2">
+      <Skeleton className="h-5 w-56" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-[85%]" />
+    </div>
+    <div className="space-y-2">
+      <Skeleton className="h-5 w-44" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-[75%]" />
+      <Skeleton className="h-4 w-[90%]" />
+    </div>
+    <div className="space-y-2">
+      <Skeleton className="h-5 w-52" />
+      <Skeleton className="h-3 w-[80%]" />
+      <Skeleton className="h-3 w-[70%]" />
+      <Skeleton className="h-3 w-[85%]" />
+      <Skeleton className="h-3 w-[65%]" />
+    </div>
+  </div>
+);
+
 export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogProps> = ({
   open, onOpenChange, requirement, frameworkId, onClose
 }) => {
@@ -86,7 +219,9 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
   const [planoAcaoDialogOpen, setPlanoAcaoDialogOpen] = useState(false);
   const [planoAcaoVinculado, setPlanoAcaoVinculado] = useState<any>(null);
   const [savingPlano, setSavingPlano] = useState(false);
-  const [requirementDetails, setRequirementDetails] = useState<{ orientacao_implementacao?: string | null; exemplos_evidencias?: string | null }>({});
+  const [guidanceText, setGuidanceText] = useState<string | null>(null);
+  const [evidenciasText, setEvidenciasText] = useState<string | null>(null);
+  const [generatingGuidance, setGeneratingGuidance] = useState(false);
 
   const [formData, setFormData] = useState<EvaluationData>({
     responsavel_avaliacao: '', plano_acao: '', observacoes: '',
@@ -96,6 +231,29 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
   useEffect(() => {
     if (open && empresaId) loadData();
   }, [open, empresaId, requirement.id]);
+
+  const triggerGuidanceGeneration = useCallback(async (forceRegenerate = false) => {
+    setGeneratingGuidance(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('populate-requirement-guidance', {
+        body: { requirement_id: requirement.id }
+      });
+      if (error) throw error;
+      if (data?.orientacao_implementacao) {
+        setGuidanceText(data.orientacao_implementacao);
+        setEvidenciasText(data.exemplos_evidencias || null);
+      }
+    } catch (error: any) {
+      console.error('Error generating guidance:', error);
+      if (!forceRegenerate) {
+        // Silent fail on auto-generation
+      } else {
+        toast.error('Erro ao gerar orientações');
+      }
+    } finally {
+      setGeneratingGuidance(false);
+    }
+  }, [requirement.id]);
 
   const loadData = async () => {
     setLoading(true);
@@ -109,7 +267,16 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
       if (riscosRes.error) throw riscosRes.error;
       setUsers(usersRes.data || []);
       setRiscos(riscosRes.data || []);
-      setRequirementDetails(reqDetailsRes.data || {});
+
+      const details = reqDetailsRes.data as { orientacao_implementacao?: string | null; exemplos_evidencias?: string | null } || {};
+      setGuidanceText(details.orientacao_implementacao || null);
+      setEvidenciasText(details.exemplos_evidencias || null);
+
+      // Auto-trigger generation if no guidance exists
+      if (!details.orientacao_implementacao) {
+        // Don't await — let it load in background
+        triggerGuidanceGeneration();
+      }
 
       if (requirement.evaluation_id) {
         const { data: evalData, error: evalError } = await supabase
@@ -270,8 +437,6 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
 
   const isNonCompliant = requirement.conformity_status === 'nao_conforme' || requirement.conformity_status === 'parcial';
 
-  const hasGuidance = !!(requirementDetails.orientacao_implementacao || requirementDetails.exemplos_evidencias || requirement.descricao);
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -298,66 +463,70 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
           ) : (
             <div className="flex flex-col md:flex-row min-h-0 flex-1">
               {/* LEFT PANEL — Educational context */}
-              {hasGuidance && (
-                <ScrollArea className="md:w-[40%] border-r bg-muted/30 max-h-[60vh]">
-                  <div className="p-5 space-y-5">
-                    {/* Description */}
-                    {requirement.descricao && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <BookOpen className="h-4 w-4 text-primary" />
-                          <h4 className="text-sm font-semibold text-foreground">Descrição do Requisito</h4>
-                        </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{requirement.descricao}</p>
-                      </div>
-                    )}
-
-                    {/* Implementation guidance */}
-                    {requirementDetails.orientacao_implementacao && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <Lightbulb className="h-4 w-4 text-chart-4" />
-                          <h4 className="text-sm font-semibold text-foreground">O que este controle exige</h4>
-                        </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-                          {requirementDetails.orientacao_implementacao}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Evidence examples */}
-                    {requirementDetails.exemplos_evidencias && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <CheckCircle2 className="h-4 w-4 text-chart-2" />
-                          <h4 className="text-sm font-semibold text-foreground">Exemplos de Evidências Aceitas</h4>
-                        </div>
-                        <ul className="space-y-1.5">
-                          {requirementDetails.exemplos_evidencias.split('\n').filter(Boolean).map((ex, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                              <CheckCircle2 className="h-3.5 w-3.5 text-chart-2 shrink-0 mt-0.5" />
-                              <span>{ex.replace(/^[-•]\s*/, '')}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Self-assessment tips */}
-                    {!requirementDetails.orientacao_implementacao && !requirementDetails.exemplos_evidencias && (
-                      <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-dashed">
-                        <HelpCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                        <p className="text-xs text-muted-foreground">
-                          Orientações detalhadas para este requisito ainda não foram geradas. Avalie com base na descrição acima e no conhecimento da sua organização.
-                        </p>
-                      </div>
-                    )}
+              <ScrollArea className="md:w-[40%] border-r bg-muted/30 max-h-[60vh]">
+                <div className="p-5 space-y-4">
+                  {/* Regenerate button */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <BookOpen className="h-4 w-4 text-primary" />
+                      <h4 className="text-sm font-semibold text-foreground">Orientação do Requisito</h4>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => triggerGuidanceGeneration(true)}
+                      disabled={generatingGuidance}
+                    >
+                      <RefreshCw className={`h-3 w-3 mr-1 ${generatingGuidance ? 'animate-spin' : ''}`} />
+                      {generatingGuidance ? 'Gerando...' : 'Regenerar'}
+                    </Button>
                   </div>
-                </ScrollArea>
-              )}
+
+                  {/* Loading state */}
+                  {generatingGuidance && !guidanceText ? (
+                    <GuidanceSkeleton />
+                  ) : guidanceText ? (
+                    <>
+                      <MarkdownContent content={guidanceText} />
+
+                      {/* Evidence examples - rendered separately if present */}
+                      {evidenciasText && (
+                        <div className="mt-4 pt-4 border-t border-border/50">
+                          <div className="flex items-center gap-1.5 mb-3">
+                            <CheckCircle2 className="h-4 w-4 text-chart-2" />
+                            <h4 className="text-sm font-bold text-foreground">Exemplos de Evidências Aceitas</h4>
+                          </div>
+                          <ul className="space-y-2">
+                            {evidenciasText.split('\n').filter(l => l.trim()).map((ex, i) => (
+                              <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-chart-2 shrink-0 mt-0.5" />
+                                <span>{ex.replace(/^[-•*]\s*/, '').trim()}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    /* Fallback: show basic description if no guidance and not generating */
+                    <div className="space-y-3">
+                      {requirement.descricao && (
+                        <p className="text-sm text-muted-foreground leading-relaxed">{requirement.descricao}</p>
+                      )}
+                      <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-dashed">
+                        <Lightbulb className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                        <p className="text-xs text-muted-foreground">
+                          Clique em "Regenerar" para gerar orientações detalhadas para este requisito.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
 
               {/* RIGHT PANEL — Form & actions */}
-              <ScrollArea className={`${hasGuidance ? 'md:w-[60%]' : 'w-full'} max-h-[60vh]`}>
+              <ScrollArea className="md:w-[60%] max-h-[60vh]">
                 <div className="p-5 space-y-1">
                   {/* Always visible: Responsável + Prazo + Observações */}
                   <div className="space-y-4 p-3 rounded-lg border bg-card">
