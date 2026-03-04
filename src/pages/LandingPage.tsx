@@ -24,15 +24,11 @@ import {
   Menu,
   X,
   CheckCircle2,
-  Zap,
+  
   ChevronRight,
   Target,
   Settings,
   BarChart3,
-  Quote,
-  Star,
-  Mail,
-  Phone,
   MapPin,
   Linkedin,
   Twitter,
@@ -224,25 +220,22 @@ const LandingPage = () => {
 
   const testimonials = [
     {
-      text: "O Akuris transformou completamente nossa gestão de conformidade. Conseguimos reduzir o tempo de auditoria em mais de 60% e ter visibilidade total dos nossos riscos.",
-      name: "Ana Carolina Mendes",
+      text: "Conseguimos reduzir o tempo de auditoria em mais de 60% e finalmente temos visibilidade real dos nossos riscos operacionais.",
+      name: "Ana C.",
       role: "CISO",
-      company: "TechSecure Brasil",
-      stars: 5,
+      company: "Empresa do setor financeiro",
     },
     {
-      text: "A integração de todos os módulos em uma única plataforma é o grande diferencial. Antes usávamos 5 ferramentas diferentes, agora tudo está centralizado no Akuris.",
-      name: "Ricardo Oliveira",
+      text: "Antes usávamos 5 ferramentas diferentes. Centralizar tudo numa única plataforma mudou completamente nossa eficiência em compliance.",
+      name: "Ricardo O.",
       role: "Diretor de Compliance",
-      company: "FinGroup S.A.",
-      stars: 5,
+      company: "Empresa do setor de tecnologia",
     },
     {
-      text: "O suporte é excepcional e a plataforma evolui constantemente. A avaliação com IA nos ajudou a identificar gaps que não tínhamos visibilidade antes.",
-      name: "Mariana Costa",
+      text: "A avaliação automatizada nos ajudou a identificar gaps que não tínhamos visibilidade antes. O retorno sobre o investimento foi rápido.",
+      name: "Mariana C.",
       role: "DPO",
-      company: "DataHealth Ltda",
-      stars: 5,
+      company: "Empresa do setor de saúde",
     },
   ];
 
@@ -261,10 +254,6 @@ const LandingPage = () => {
         Pular para o conteúdo principal
       </a>
 
-      {/* Background effects */}
-      <div className="fixed inset-0 landing-grid-bg opacity-50 pointer-events-none" aria-hidden="true" />
-      <div className="hidden md:block fixed top-1/4 -left-32 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] pointer-events-none" aria-hidden="true" />
-      <div className="hidden md:block fixed bottom-1/4 -right-32 w-96 h-96 bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none" aria-hidden="true" />
 
       {/* ===== HEADER ===== */}
       <header
@@ -327,11 +316,6 @@ const LandingPage = () => {
         {/* ===== 1. HERO — Centralizado ===== */}
         <section className="relative min-h-[90vh] flex items-center pt-24 pb-12" aria-labelledby="hero-title">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="lp-fade-up lp-visible">
-              <span className="inline-block px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-medium mb-6">
-                Plataforma GRC Completa
-              </span>
-            </div>
 
             <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight mb-6 lp-fade-up lp-visible">
               Gestão de{" "}
@@ -349,7 +333,7 @@ const LandingPage = () => {
               <Button
                 size="lg"
                 onClick={() => scrollToSection("contato")}
-                className="bg-blue-600 hover:bg-blue-700 text-white landing-glow-btn group text-base px-8 h-12"
+                className="bg-blue-600 hover:bg-blue-700 text-white group text-base px-8 h-12"
               >
                 Solicitar Demonstração
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -443,7 +427,7 @@ const LandingPage = () => {
               {smartTools.map((tool, index) => (
                 <div
                   key={index}
-                  className={`group relative rounded-2xl p-6 sm:p-8 lg:p-10 bg-gradient-to-br ${tool.gradient} backdrop-blur-sm border ${tool.border} hover:scale-[1.02] transition-all duration-300`}
+                  className={`group relative rounded-2xl p-6 sm:p-8 lg:p-10 bg-gradient-to-br ${tool.gradient} backdrop-blur-sm border ${tool.border} transition-all duration-300`}
                 >
                   <div className={`inline-flex p-3 sm:p-4 rounded-2xl bg-white/5 border border-white/10 mb-5 sm:mb-6 group-hover:scale-110 transition-transform`}>
                     <tool.icon className={`h-7 w-7 sm:h-8 sm:w-8 ${tool.iconColor}`} />
@@ -456,7 +440,6 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
         {/* ===== 4. COMO FUNCIONA — 3 cards ===== */}
         <section id="como-funciona" className="relative py-16 sm:py-20 lg:py-28 bg-[#0F2340]/50">
@@ -473,10 +456,6 @@ const LandingPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 lp-fade-up">
               {howItWorks.map((item, index) => (
                 <div key={index} className="relative">
-                  {/* Connector line */}
-                  {index < 2 && (
-                    <div className="hidden md:block absolute top-16 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-blue-500/40 to-cyan-500/40" />
-                  )}
                   <div className="relative bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-white/10 hover:border-blue-500/30 hover:bg-white/[0.06] transition-all duration-300 text-center">
                     {/* Step badge */}
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/30">
@@ -494,7 +473,6 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
         {/* ===== MÓDULOS COMPLETOS ===== */}
         <section id="modulos" className="relative py-16 sm:py-20 lg:py-28">
@@ -564,7 +542,6 @@ const LandingPage = () => {
           </DialogContent>
         </Dialog>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
         {/* ===== 5. TESTIMONIALS ===== */}
         <section className="relative py-16 sm:py-20 lg:py-28 bg-[#0F2340]/30">
@@ -584,12 +561,6 @@ const LandingPage = () => {
                   key={index}
                   className="relative bg-white/[0.03] backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-white/10 hover:border-blue-500/20 transition-all duration-300"
                 >
-                  <Quote className="h-8 w-8 text-blue-500/30 mb-4" />
-                  <div className="flex gap-1 mb-4">
-                    {Array.from({ length: t.stars }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                    ))}
-                  </div>
                   <p className="text-gray-300 text-sm leading-relaxed mb-6">"{t.text}"</p>
                   <div className="flex items-center gap-3 pt-4 border-t border-white/10">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
@@ -606,7 +577,6 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
         {/* ===== 6. CTA BANNER ===== */}
         <section className="relative py-16 sm:py-20 lg:py-24 overflow-hidden">
@@ -622,7 +592,7 @@ const LandingPage = () => {
             <Button
               size="lg"
               onClick={() => scrollToSection("contato")}
-              className="bg-blue-600 hover:bg-blue-700 text-white landing-glow-btn group text-base px-10 h-12"
+              className="bg-blue-600 hover:bg-blue-700 text-white group text-base px-10 h-12"
             >
               Solicitar Demonstração
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -630,7 +600,7 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+        
 
         {/* ===== 7. CONTATO ===== */}
         <section id="contato" className="relative py-16 sm:py-20 lg:py-28 bg-[#0F2340]/50">
@@ -691,7 +661,7 @@ const LandingPage = () => {
                     <Textarea name="message" value={formData.message} onChange={handleInputChange} required placeholder="Como podemos ajudar sua empresa?" rows={4} className="bg-white/10 border-white/20 text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500 resize-none" />
                   </div>
 
-                  <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white landing-glow-btn">
+                  <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                     {isSubmitting ? "Enviando..." : "Enviar Mensagem"}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
@@ -744,21 +714,17 @@ const LandingPage = () => {
               </ul>
             </div>
 
-            {/* Col 4 - Contato */}
+            {/* Col 4 - Localização */}
             <div>
-              <h4 className="font-semibold text-white mb-4">Contato</h4>
+              <h4 className="font-semibold text-white mb-4">Localização</h4>
               <ul className="space-y-2.5">
                 <li className="flex items-center gap-2 text-gray-400 text-sm">
-                  <Mail className="h-4 w-4 shrink-0" />
-                  contato@akuris.com.br
-                </li>
-                <li className="flex items-center gap-2 text-gray-400 text-sm">
-                  <Phone className="h-4 w-4 shrink-0" />
-                  (11) 9999-9999
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  São Paulo - Brazil
                 </li>
                 <li className="flex items-center gap-2 text-gray-400 text-sm">
                   <MapPin className="h-4 w-4 shrink-0" />
-                  São Paulo, SP
+                  Porto - PT
                 </li>
               </ul>
             </div>
