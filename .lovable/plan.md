@@ -1,113 +1,46 @@
 
 
-# Plano: Reforma dos Relatórios PDF + Substituição GovernAII → Akuris
+# Plano: Redesign da Landing Page baseado na referência Anarisk
 
-## Problemas Identificados
+## Estrutura alvo (baseada na imagem de referência)
 
-1. **Tipo exibido como string bruta**: No PDF do framework (ExportFrameworkPDF.tsx), linha 124 exibe `frameworkType` sem formatar (ex: `seguranca_informacao`). Mesmo problema nos relatórios de Riscos, Documentos e templates.
-2. **"GovernAI" ainda presente** em 29+ arquivos: rodapés de PDFs, edge functions, CSS, logger, integration dispatcher, due diligence dialogs.
-3. **PDFs sem logo, sem gráficos, visuais pobres**: O PDF do framework não tem logotipo Akuris, não tem gráficos visuais (apenas tabelas e texto plano), rodapé ainda diz "GovernAI".
+A landing page será reestruturada para seguir exatamente a mesma sequência de seções da referência, adaptando conteúdo para Akuris GRC. A seção de preços será removida conforme solicitado.
 
----
+### Seções (em ordem):
 
-## Tarefa 1: Criar helper centralizado de formatação para PDFs
+1. **Hero** — Headline centralizado grande, subtítulo, 2 botões CTA (Solicitar Demo + Acessar Plataforma), dashboard mockup abaixo (já existe, reposicionar para centralizado)
+2. **Logos strip** — "Frameworks e regulamentações suportados" (manter carousel existente, estilizar como strip horizontal limpo)
+3. **"Ferramentas Inteligentes"** — Grid 2x2 com 4 cards grandes com ícones/ilustrações: Análise de Riscos em Tempo Real, Controles Internos Categorizados, Score de Conformidade, Gestão de Documentos
+4. **"Como o Akuris Funciona?"** — 3 cards com ícone + título + descrição (manter conteúdo existente, redesenhar visual para match)
+5. **"O que dizem nossos clientes?"** — Seção de depoimentos com 3 cards (textos placeholder profissionais)
+6. **CTA Banner** — "Veja o Akuris em Ação, Comece a Gerenciar Riscos Hoje" com botão "Solicitar Demonstração"
+7. **Contato** — Formulário (manter existente)
+8. **Footer** — Redesenhar para match com 4 colunas + social links
 
-**Arquivo**: `src/lib/pdf-utils.ts` (novo)
+### Seções REMOVIDAS:
+- Preços (conforme solicitado)
+- "Esqueça as Planilhas" (substituído pelo grid 2x2 de features)
+- Benefícios (integrado nas features)
 
-Centralizar:
-- `formatLabel(text: string): string` — reutiliza `STATUS_LABELS` de `text-utils.ts` + fallback capitalize
-- `loadAkurisLogo(): Promise<HTMLImageElement | null>` — carrega `/akuris-logo.png` para uso em todos PDFs
-- `addAkurisHeader(doc: jsPDF, y: number): number` — header padrão com logo + linha gradiente simulada
-- `addAkurisFooter(doc: jsPDF)` — rodapé "Akuris - Plataforma GRC" em todas as páginas
-- Cores da marca: primary `#7552ff`, dark `#0a1628`
+## Mudanças visuais principais
 
----
+- Hero: texto centralizado (não split com grid), dashboard mockup abaixo centralizado
+- Cards de features: mais espaçosos, fundo glassmorphism escuro com bordas sutis, ícones maiores
+- How it works: cards escuros com ícones em destaque, badge de step number
+- Testimonials: novo — 3 cards com aspas, texto, nome e cargo
+- CTA banner: seção full-width com gradiente e texto grande
+- Footer: 4 colunas (Akuris, Produto, Recursos, Contato) + linha de social media
 
-## Tarefa 2: Reformar ExportFrameworkPDF.tsx (relatório principal)
+## Arquivo afetado
 
-**Arquivo**: `src/components/gap-analysis/ExportFrameworkPDF.tsx`
+`src/pages/LandingPage.tsx` — reescrita completa mantendo lógica de form/scroll/state
 
-Mudanças:
-- Importar helpers de `pdf-utils.ts`
-- **Capa**: Adicionar logo Akuris no topo, fundo dark navy, título centralizado
-- **Tipo**: Formatar `frameworkType` com `formatLabel()` (linha 124)
-- **Score geral**: Adicionar barra de progresso visual mais elaborada com cores da marca
-- **Categorias**: Desenhar mini barras horizontais coloridas ao lado de cada score (simular gráfico de barras)
-- **Tabelas**: Usar zebra striping com cores da marca, headers violeta
-- **Rodapé**: Trocar "GovernAI - Gestão de Conformidade" por "Akuris - Plataforma GRC" (linha 298)
-- **Status**: Já formata bem, manter
-
----
-
-## Tarefa 3: Reformar generateTemplatePDF.ts (relatórios customizados)
-
-**Arquivo**: `src/components/relatorios/generateTemplatePDF.ts`
-
-Mudanças:
-- Capa: usar logo Akuris + cores da marca (substituir fundo navy genérico)
-- Seções: usar header violeta (#7552ff) nos títulos
-- Tabelas: formatar valores de status/tipo/criticidade com `formatLabel()`
-- Rodapé: já diz "Akuris GRC" ✓, manter
-- Métricas: adicionar mini barras visuais horizontais ao lado dos valores numéricos
-
----
-
-## Tarefa 4: Reformar ExportRiscosPDF.tsx
-
-**Arquivo**: `src/components/riscos/ExportRiscosPDF.tsx`
-
-Mudanças:
-- Adicionar header com logo Akuris
-- Formatar `nivel_risco_inicial`, `nivel_risco_residual`, `status` com `formatLabel()`
-- Adicionar rodapé padrão Akuris
-- Melhorar visual da tabela com cores da marca
-
----
-
-## Tarefa 5: Reformar DocumentosRelatorios.tsx
-
-**Arquivo**: `src/components/documentos/DocumentosRelatorios.tsx`
-
-Mudanças:
-- Adicionar header com logo no PDF
-- Formatar `tipo` e `status` com `formatLabel()` (linhas 106-107)
-- Adicionar rodapé padrão
-- CSV: também formatar labels no export
-
----
-
-## Tarefa 6: Substituir TODAS as referências "GovernAII" → "Akuris"
-
-**Arquivos afetados** (25+ arquivos):
-
-### Frontend (comentários/CSS class names — NÃO renomear classes CSS pois quebraria):
-- `src/lib/logger.ts` linha 1: comentário → "Akuris"
-- `src/App.css` linha 1: comentário → "Akuris"
-- `src/index.css` linhas 340, 472, 489: comentários → "Akuris" (classes `governaii-*` mantidas para não quebrar)
-
-### Frontend (texto visível):
-- `src/components/due-diligence/AssessmentDialog.tsx` linha 187: `'GovernAI'` → `'Akuris'`
-- `src/components/due-diligence/AssessmentsManagerEnhanced.tsx` linhas 67, 415: `'GovernAI'` → `'Akuris'`
-
-### Edge Functions (texto em payloads):
-- `integration-webhook-dispatcher/index.ts`: linhas 51, 123, 132, 173, 188 — trocar "GovernAII" por "Akuris"
-
-### Edge Functions (URLs `governaii-grc.lovable.app`):
-- Estas URLs hospedam assets reais (logo), então NÃO devem ser alteradas pois o domínio `akuris.com.br` pode não servir esses assets. Manter como estão.
-
----
-
-## Arquivos afetados (resumo)
-
-1. `src/lib/pdf-utils.ts` — **novo** (helper centralizado)
-2. `src/components/gap-analysis/ExportFrameworkPDF.tsx` — reforma visual + formatação
-3. `src/components/relatorios/generateTemplatePDF.ts` — reforma visual + formatação
-4. `src/components/riscos/ExportRiscosPDF.tsx` — reforma visual + formatação
-5. `src/components/documentos/DocumentosRelatorios.tsx` — reforma visual + formatação
-6. `src/lib/logger.ts` — comentário
-7. `src/App.css` — comentário
-8. `src/index.css` — comentários
-9. `src/components/due-diligence/AssessmentDialog.tsx` — texto
-10. `src/components/due-diligence/AssessmentsManagerEnhanced.tsx` — texto
-11. `supabase/functions/integration-webhook-dispatcher/index.ts` — texto nos payloads
+## Elementos preservados
+- Logo Akuris
+- Form de contato (lógica Supabase)
+- Scroll behavior + header sticky
+- Dialog de detalhe de módulos
+- Carousel de frameworks
+- CSS animations (scroll-left, spin-slow)
+- Mobile responsiveness
 
