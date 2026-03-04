@@ -1,26 +1,32 @@
 
 
-# Plano: Notificações de Versão Apenas no Ícone de Novidades (Sparkles)
+# Plano: Melhorar Exibição do Conteúdo de Orientação dos Requisitos
 
 ## Problema
-O trigger `notify_changelog_entry` insere registros na tabela `notifications` (sino) quando uma nova versão é adicionada. Isso duplica a informação, já que o `ChangelogPopover` (ícone Sparkles ✨) já exibe as novidades com indicador de "novo" via `localStorage`.
+O texto de orientação é renderizado como blocos de texto corridos, sem separação visual clara entre seções. Parece conteúdo "cru" de IA — sem identidade visual da ferramenta.
 
 ## Solução
-Remover o trigger `notify_changelog_entry` do banco de dados. O `ChangelogPopover` já cuida de:
-- Buscar entradas do `changelog_entries`
-- Mostrar indicador pulsante quando há versão não vista
-- Marcar como "visto" ao abrir o popover
 
-Nenhuma mudança no frontend é necessária — apenas a remoção do trigger SQL.
+Reescrever o componente `MarkdownContent` no arquivo `src/components/gap-analysis/nist/NISTRequirementDetailDialog.tsx` para renderizar cada seção (identificada por `##`) dentro de **cards visuais** com ícone, título destacado e fundo sutil. Isso cria uma aparência de conteúdo nativo da plataforma.
+
+### Mudanças específicas:
+
+1. **Seções em Cards**: Cada `## Título` gera um card (`rounded-lg border bg-card p-4`) com ícone contextual baseado no título (ex: 🎯 para "O que este requisito significa", 🏢 para "Por que isso importa", ⚙️ para "Como implementar", ✅ para "Resumo prático")
+
+2. **Mapeamento de ícones por palavra-chave no título**: Um mapa simples (significa→BookOpen, importa→Building, implementar→Settings, resumo→CheckSquare, evidência→FileCheck, risco→AlertTriangle) para dar identidade visual sem depender do conteúdo da IA
+
+3. **Espaçamento entre seções**: `space-y-4` entre cards em vez de `space-y-2` entre parágrafos soltos
+
+4. **Parágrafos dentro dos cards**: Manter `text-sm text-muted-foreground leading-relaxed` mas com `space-y-3` para mais respiração
+
+5. **Primeiro parágrafo (antes de qualquer ##)**: Renderizar como texto introdutório com estilo levemente diferente (`text-sm text-foreground/80 italic`)
 
 ## Arquivo
 
-| Arquivo | Ação |
-|---------|------|
-| Nova migration SQL | **Novo** — `DROP TRIGGER` e `DROP FUNCTION` do `notify_changelog_entry` |
+| Arquivo | Mudança |
+|---------|---------|
+| `src/components/gap-analysis/nist/NISTRequirementDetailDialog.tsx` | Reescrever `MarkdownContent` para agrupar conteúdo por seção em cards com ícones |
 
-## Impacto
-- Novas versões aparecem **apenas** no ícone Sparkles (ao lado do sino)
-- O sino fica reservado para notificações operacionais (aprovações, incidentes, etc.)
-- Zero mudanças no frontend
+## Resultado
+O conteúdo parecerá documentação estruturada da plataforma, não output de IA.
 
