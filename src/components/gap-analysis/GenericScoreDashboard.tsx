@@ -130,12 +130,13 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Score Geral + Evolução lado a lado */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Score Geral de Conformidade</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-0">
+          <CardContent>
             {evaluatedRequirements === 0 ? (
               <div className="flex flex-col items-center justify-center py-4 space-y-2">
                 <div className="text-4xl font-bold text-muted-foreground">—</div>
@@ -189,53 +190,59 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
                 </div>
               </div>
             )}
-
-            {/* Domain scores inline */}
-            {domainScores.length > 0 && (
-              <>
-                <Separator className="my-4" />
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Aderência por Domínio do Anexo A</h4>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                    {domainScores.map((domain) => (
-                      <div key={domain.domain} className="rounded-md border border-border px-3 py-2">
-                        <p className="text-[11px] font-medium text-muted-foreground truncate mb-1">{domain.name}</p>
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-sm font-bold" style={{ color: domain.color }}>{formatScore(domain.score)}</span>
-                          <span className="text-[10px] text-muted-foreground">{domain.evaluatedRequirements}/{domain.totalRequirements}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Section scores inline */}
-            {sectionScores.length > 0 && (
-              <>
-                <Separator className="my-4" />
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Aderência por Seção</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {sectionScores.map((section) => (
-                      <div key={section.section} className="rounded-md border border-border px-3 py-2">
-                        <p className="text-[11px] font-medium text-muted-foreground truncate mb-1">{section.name}</p>
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-sm font-bold text-primary">{formatScore(section.score)}</span>
-                          <span className="text-[10px] text-muted-foreground">{section.evaluatedRequirements}/{section.totalRequirements}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
           </CardContent>
         </Card>
 
         <ScoreEvolutionChart frameworkId={frameworkId} scoreType={config.scoreType} />
       </div>
+
+      {/* Aderência por Domínio - card full-width */}
+      {domainScores.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Aderência por Domínio do Anexo A
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {domainScores.map((domain) => (
+                <div key={domain.domain} className="rounded-lg border border-border px-3 py-2.5">
+                  <p className="text-[11px] font-medium text-muted-foreground truncate mb-1.5">{domain.name}</p>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-sm font-bold" style={{ color: domain.color }}>{formatScore(domain.score)}</span>
+                    <span className="text-[10px] text-muted-foreground">{domain.evaluatedRequirements}/{domain.totalRequirements}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Aderência por Seção - card full-width */}
+      {sectionScores.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Aderência por Seção
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {sectionScores.map((section) => (
+                <div key={section.section} className="rounded-lg border border-border px-3 py-2.5">
+                  <p className="text-[11px] font-medium text-muted-foreground truncate mb-1.5">{section.name}</p>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-sm font-bold text-primary">{formatScore(section.score)}</span>
+                    <span className="text-[10px] text-muted-foreground">{section.evaluatedRequirements}/{section.totalRequirements}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
