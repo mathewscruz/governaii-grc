@@ -10,7 +10,8 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronRight, Search, X, AlertTriangle, Paperclip, CheckSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X, AlertTriangle, Paperclip, CheckSquare, HelpCircle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
@@ -364,27 +365,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   const clearFilters = () => { setSearchTerm(''); setStatusFilter('all'); setOnlyMandatory(false); };
   const hasActiveFilters = searchTerm.trim() !== '' || statusFilter !== 'all' || onlyMandatory;
 
-  const StatusLegend = () => (
-    <div className="flex flex-wrap items-center gap-3 mb-3 p-3 rounded-lg bg-muted/40 border text-xs">
-      <span className="font-medium text-foreground">Legenda:</span>
-      <div className="flex items-center gap-1.5">
-        <Badge variant="success" className="text-[10px] px-1.5 py-0">Conforme</Badge>
-        <span className="text-muted-foreground">Atende 100% e tem evidências</span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <Badge variant="warning" className="text-[10px] px-1.5 py-0">Parcial</Badge>
-        <span className="text-muted-foreground">Atende parcialmente, falta documentação</span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Não Conforme</Badge>
-        <span className="text-muted-foreground">Não atende — requer ação</span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <Badge variant="outline" className="text-[10px] px-1.5 py-0">N/A</Badge>
-        <span className="text-muted-foreground">Não se aplica ao seu contexto</span>
-      </div>
-    </div>
-  );
+  const StatusLegend = () => null; // Moved to popover in SearchAndFilterBar
 
   const SearchAndFilterBar = () => (
     <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -412,6 +393,22 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
         <Switch id="mandatory-filter" checked={onlyMandatory} onCheckedChange={setOnlyMandatory} />
         <Label htmlFor="mandatory-filter" className="text-sm cursor-pointer">Somente prioritários</Label>
       </div>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-72 text-xs space-y-2">
+          <p className="font-medium text-foreground">Legenda de Status</p>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5"><Badge variant="success" className="text-[10px] px-1.5 py-0">Conforme</Badge><span className="text-muted-foreground">Atende 100%</span></div>
+            <div className="flex items-center gap-1.5"><Badge variant="warning" className="text-[10px] px-1.5 py-0">Parcial</Badge><span className="text-muted-foreground">Atende parcialmente</span></div>
+            <div className="flex items-center gap-1.5"><Badge variant="destructive" className="text-[10px] px-1.5 py-0">Não Conforme</Badge><span className="text-muted-foreground">Não atende</span></div>
+            <div className="flex items-center gap-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0">N/A</Badge><span className="text-muted-foreground">Não aplicável</span></div>
+          </div>
+        </PopoverContent>
+      </Popover>
       {hasActiveFilters && (
         <Button variant="outline" size="sm" onClick={clearFilters}>
           <X className="h-4 w-4 mr-1" />Limpar
@@ -611,7 +608,6 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
         <CardHeader><CardTitle>Requisitos do {frameworkName}</CardTitle></CardHeader>
         <CardContent>
           <SearchAndFilterBar />
-          <StatusLegend />
           <Tabs value={activeSection} onValueChange={(v) => { setActiveSection(v); setActiveTab('all'); setCurrentPage(1); }}>
             <TabsList className="mb-4">
               {config.sections.map(section => (
@@ -661,7 +657,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       <CardHeader><CardTitle>Requisitos do {frameworkName}</CardTitle></CardHeader>
       <CardContent>
         <SearchAndFilterBar />
-        <StatusLegend />
+        
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setCurrentPage(1); }}>
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
             <TabsTrigger value="all">Todos ({requirements.length})</TabsTrigger>

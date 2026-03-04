@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Download, Sparkles } from 'lucide-react';
+import { ChevronLeft, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -10,7 +9,6 @@ import { GenericScoreDashboard } from '@/components/gap-analysis/GenericScoreDas
 import { GenericRequirementsTable } from '@/components/gap-analysis/GenericRequirementsTable';
 import { CategoryBarChart } from '@/components/gap-analysis/CategoryBarChart';
 import { CategoryStatusCards } from '@/components/gap-analysis/CategoryStatusCards';
-import { PrivacyTreemap } from '@/components/gap-analysis/charts/PrivacyTreemap';
 import { FrameworkHistoryTab } from '@/components/gap-analysis/FrameworkHistoryTab';
 import { AdherenceAssessmentView } from '@/components/gap-analysis/adherence/AdherenceAssessmentView';
 import { AdherenceResultView } from '@/components/gap-analysis/adherence/AdherenceResultView';
@@ -27,12 +25,12 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 const FRAMEWORK_DESCRIPTIONS: Record<string, string> = {
-  'ISO 27001': 'Padrão internacional para gestão de segurança da informação (SGSI). A certificação demonstra que sua empresa protege informações sensíveis de forma sistemática.',
-  'LGPD': 'Lei Geral de Proteção de Dados — conformidade obrigatória para todas as empresas que tratam dados pessoais no Brasil.',
-  'NIST CSF 2.0': 'Framework de cibersegurança do NIST que organiza práticas em 6 funções: Governar, Identificar, Proteger, Detectar, Responder e Recuperar.',
+  'ISO 27001': 'Padrão internacional para gestão de segurança da informação (SGSI).',
+  'LGPD': 'Lei Geral de Proteção de Dados — conformidade obrigatória para empresas que tratam dados pessoais no Brasil.',
+  'NIST CSF 2.0': 'Framework de cibersegurança do NIST: Governar, Identificar, Proteger, Detectar, Responder e Recuperar.',
   'ISO 27701': 'Extensão da ISO 27001 focada em gestão de privacidade, alinhada à LGPD e GDPR.',
-  'PCI DSS': 'Padrão de segurança para empresas que processam, armazenam ou transmitem dados de cartões de pagamento.',
-  'SOC 2': 'Framework de auditoria para empresas de tecnologia que demonstra controles de segurança, disponibilidade e confidencialidade.',
+  'PCI DSS': 'Padrão de segurança para empresas que processam dados de cartões de pagamento.',
+  'SOC 2': 'Framework de auditoria para controles de segurança, disponibilidade e confidencialidade.',
 };
 
 interface Framework {
@@ -55,8 +53,6 @@ export default function GapAnalysisFrameworkDetail() {
   const [activeTab, setActiveTab] = useState('avaliacao');
   const [scoreRefreshKey, setScoreRefreshKey] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
-
-  // Adherence sub-view state
   const [selectedAdherenceAssessment, setSelectedAdherenceAssessment] = useState<any>(null);
   const [adherenceView, setAdherenceView] = useState<'list' | 'result'>('list');
 
@@ -82,34 +78,30 @@ export default function GapAnalysisFrameworkDetail() {
     loadFramework();
   }, [frameworkId, navigate]);
 
-  useEffect(() => {
+  const loadCategoryData = useCallback(async () => {
     if (!frameworkId || !empresaId) return;
-    const loadCategoryData = async () => {
-      try {
-        const [reqsRes, evalsRes] = await Promise.all([
-          supabase.from('gap_analysis_requirements').select('id, categoria').eq('framework_id', frameworkId),
-          supabase.from('gap_analysis_evaluations').select('requirement_id, conformity_status').eq('framework_id', frameworkId).eq('empresa_id', empresaId),
-        ]);
-        const reqs = reqsRes.data || [];
-        const evals = evalsRes.data || [];
-        const evalMap = new Map(evals.map(e => [e.requirement_id, e.conformity_status || 'nao_avaliado']));
-        
-        const catMap: Record<string, { conforme: number; parcial: number; nao_conforme: number; nao_aplicavel: number; nao_avaliado: number; total: number }> = {};
-        reqs.forEach(r => {
-          const cat = r.categoria || 'Outros';
-          if (!catMap[cat]) catMap[cat] = { conforme: 0, parcial: 0, nao_conforme: 0, nao_aplicavel: 0, nao_avaliado: 0, total: 0 };
-          catMap[cat].total++;
-          const st = evalMap.get(r.id) || 'nao_avaliado';
-          if (st in catMap[cat]) (catMap[cat] as any)[st]++;
-          else catMap[cat].nao_avaliado++;
-        });
-        setCategoryData(Object.entries(catMap).map(([categoria, data]) => ({ categoria, ...data })).sort((a, b) => a.categoria.localeCompare(b.categoria)));
-      } catch (e) {
-        // silent
-      }
-    };
-    loadCategoryData();
+    try {
+      const [reqsRes, evalsRes] = await Promise.all([
+        supabase.from('gap_analysis_requirements').select('id, categoria').eq('framework_id', frameworkId),
+        supabase.from('gap_analysis_evaluations').select('requirement_id, conformity_status').eq('framework_id', frameworkId).eq('empresa_id', empresaId),
+      ]);
+      const reqs = reqsRes.data || [];
+      const evals = evalsRes.data || [];
+      const evalMap = new Map(evals.map(e => [e.requirement_id, e.conformity_status || 'nao_avaliado']));
+      const catMap: Record<string, { conforme: number; parcial: number; nao_conforme: number; nao_aplicavel: number; nao_avaliado: number; total: number }> = {};
+      reqs.forEach(r => {
+        const cat = r.categoria || 'Outros';
+        if (!catMap[cat]) catMap[cat] = { conforme: 0, parcial: 0, nao_conforme: 0, nao_aplicavel: 0, nao_avaliado: 0, total: 0 };
+        catMap[cat].total++;
+        const st = evalMap.get(r.id) || 'nao_avaliado';
+        if (st in catMap[cat]) (catMap[cat] as any)[st]++;
+        else catMap[cat].nao_avaliado++;
+      });
+      setCategoryData(Object.entries(catMap).map(([categoria, data]) => ({ categoria, ...data })).sort((a, b) => a.categoria.localeCompare(b.categoria)));
+    } catch (e) { /* silent */ }
   }, [frameworkId, empresaId]);
+
+  useEffect(() => { loadCategoryData(); }, [loadCategoryData]);
 
   const config = useMemo(() =>
     framework ? getFrameworkConfig(framework.nome, framework.tipo_framework) : null,
@@ -123,13 +115,8 @@ export default function GapAnalysisFrameworkDetail() {
     categoryScores, totalRequirements, evaluatedRequirements, loading: scoreLoading,
   } = useFrameworkScore(frameworkId || '', config || defaultConfig, scoreRefreshKey);
 
-  // Show onboarding when no evaluations exist and not loading
   useEffect(() => {
-    if (!scoreLoading && evaluatedRequirements === 0 && totalRequirements > 0) {
-      setShowOnboarding(true);
-    } else {
-      setShowOnboarding(false);
-    }
+    setShowOnboarding(!scoreLoading && evaluatedRequirements === 0 && totalRequirements > 0);
   }, [scoreLoading, evaluatedRequirements, totalRequirements]);
 
   const handleExportPDF = async () => {
@@ -149,37 +136,21 @@ export default function GapAnalysisFrameworkDetail() {
         .eq('empresa_id', empresaId);
 
       const evalMap = new Map(evals?.map(e => [e.requirement_id, e.conformity_status]) || []);
-
       const requirements = (reqs || []).map(r => ({
-        codigo: r.codigo || '',
-        titulo: r.titulo,
-        categoria: r.categoria || '',
-        conformity_status: evalMap.get(r.id) || 'nao_avaliado',
-        peso: r.peso,
-        area_responsavel: r.area_responsavel,
+        codigo: r.codigo || '', titulo: r.titulo, categoria: r.categoria || '',
+        conformity_status: evalMap.get(r.id) || 'nao_avaliado', peso: r.peso, area_responsavel: r.area_responsavel,
       }));
 
-      const { data: empresa } = await supabase
-        .from('empresas')
-        .select('nome')
-        .eq('id', empresaId)
-        .single();
+      const { data: empresa } = await supabase.from('empresas').select('nome').eq('id', empresaId).single();
 
       await exportFrameworkPDF({
-        frameworkName: framework.nome,
-        frameworkVersion: framework.versao,
-        frameworkType: framework.tipo_framework,
-        overallScore,
-        totalRequirements,
-        evaluatedRequirements,
-        pillarScores,
-        categoryScores,
-        requirements,
+        frameworkName: framework.nome, frameworkVersion: framework.versao,
+        frameworkType: framework.tipo_framework, overallScore, totalRequirements,
+        evaluatedRequirements, pillarScores, categoryScores, requirements,
         empresaNome: empresa?.nome || 'Empresa',
         scoreType: config.scoreType as 'decimal' | 'percentage',
         maxScore: config.scoreType === 'percentage' ? 100 : 5,
       });
-
       toast.success('PDF exportado com sucesso');
     } catch (error: any) {
       logger.error('Erro ao exportar PDF', { error: error instanceof Error ? error.message : String(error) });
@@ -191,39 +162,15 @@ export default function GapAnalysisFrameworkDetail() {
 
   const handleScoreChange = useCallback(() => {
     setScoreRefreshKey(k => k + 1);
-    // Also reload category data
-    if (frameworkId && empresaId) {
-      const reloadCats = async () => {
-        try {
-          const [reqsRes, evalsRes] = await Promise.all([
-            supabase.from('gap_analysis_requirements').select('id, categoria').eq('framework_id', frameworkId),
-            supabase.from('gap_analysis_evaluations').select('requirement_id, conformity_status').eq('framework_id', frameworkId).eq('empresa_id', empresaId),
-          ]);
-          const reqs = reqsRes.data || [];
-          const evals = evalsRes.data || [];
-          const evalMap = new Map(evals.map(e => [e.requirement_id, e.conformity_status || 'nao_avaliado']));
-          const catMap: Record<string, { conforme: number; parcial: number; nao_conforme: number; nao_aplicavel: number; nao_avaliado: number; total: number }> = {};
-          reqs.forEach(r => {
-            const cat = r.categoria || 'Outros';
-            if (!catMap[cat]) catMap[cat] = { conforme: 0, parcial: 0, nao_conforme: 0, nao_aplicavel: 0, nao_avaliado: 0, total: 0 };
-            catMap[cat].total++;
-            const st = evalMap.get(r.id) || 'nao_avaliado';
-            if (st in catMap[cat]) (catMap[cat] as any)[st]++;
-            else catMap[cat].nao_avaliado++;
-          });
-          setCategoryData(Object.entries(catMap).map(([categoria, data]) => ({ categoria, ...data })).sort((a, b) => a.categoria.localeCompare(b.categoria)));
-        } catch (e) { /* silent */ }
-      };
-      reloadCats();
-    }
-  }, [frameworkId, empresaId]);
+    loadCategoryData();
+  }, [loadCategoryData]);
 
   if (loading || !framework || !config) {
     return (
       <ErrorBoundary>
         <div className="space-y-6 animate-pulse">
-          <div className="h-24 bg-muted rounded-lg"></div>
-          <div className="h-64 bg-muted rounded-lg"></div>
+          <div className="h-24 bg-muted rounded-lg" />
+          <div className="h-64 bg-muted rounded-lg" />
         </div>
       </ErrorBoundary>
     );
@@ -249,7 +196,6 @@ export default function GapAnalysisFrameworkDetail() {
           }
         />
 
-        {/* Journey Progress Bar */}
         {!showOnboarding && totalRequirements > 0 && (
           <JourneyProgressBar
             evaluatedRequirements={evaluatedRequirements}
@@ -259,7 +205,6 @@ export default function GapAnalysisFrameworkDetail() {
           />
         )}
 
-        {/* Tabs: Avaliação Manual | Análise de Documentos | Histórico */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="avaliacao">Avaliação Manual</TabsTrigger>
@@ -293,24 +238,7 @@ export default function GapAnalysisFrameworkDetail() {
                   frameworkId={frameworkId!}
                 />
 
-                {/* Motivational banner */}
-                {empresaId && evaluatedRequirements >= 5 && evaluatedRequirements < totalRequirements && (
-                  <Card className="p-4 border-primary/20 bg-primary/5">
-                    <div className="flex items-center gap-3">
-                      <Sparkles className="h-5 w-5 text-primary shrink-0" />
-                      <div>
-                        <p className="text-sm font-medium">
-                          Você já avaliou {evaluatedRequirements} de {totalRequirements} requisitos!
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Gere recomendações da IA abaixo para priorizar os próximos passos.
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                )}
-
-                {/* AI Recommendations — positioned before charts for visibility */}
+                {/* AI Recommendations - compact, before charts */}
                 {empresaId && evaluatedRequirements > 0 && (
                   <AIRecommendationsCard
                     frameworkId={frameworkId!}
@@ -323,12 +251,9 @@ export default function GapAnalysisFrameworkDetail() {
                   />
                 )}
 
-                {/* Charts */}
+                {/* Single chart + interactive category cards */}
                 {categoryScores.length > 0 && (
-                  <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-                    <PrivacyTreemap categoryScores={categoryScores} />
-                    <CategoryBarChart categoryScores={categoryScores} config={config} />
-                  </div>
+                  <CategoryBarChart categoryScores={categoryScores} config={config} />
                 )}
 
                 {categoryData.length > 0 && (
@@ -360,10 +285,7 @@ export default function GapAnalysisFrameworkDetail() {
               />
             ) : (
               <AdherenceAssessmentView
-                onViewResult={(assessment) => {
-                  setSelectedAdherenceAssessment(assessment);
-                  setAdherenceView('result');
-                }}
+                onViewResult={(assessment) => { setSelectedAdherenceAssessment(assessment); setAdherenceView('result'); }}
                 frameworkId={frameworkId}
                 frameworkNome={framework.nome}
               />
@@ -371,10 +293,7 @@ export default function GapAnalysisFrameworkDetail() {
           </TabsContent>
 
           <TabsContent value="remediacao">
-            <RemediationTab
-              frameworkId={frameworkId!}
-              frameworkName={framework.nome}
-            />
+            <RemediationTab frameworkId={frameworkId!} frameworkName={framework.nome} />
           </TabsContent>
 
           <TabsContent value="historico">
