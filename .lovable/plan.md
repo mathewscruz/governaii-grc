@@ -1,25 +1,36 @@
 
 
-# Plano: Corrigir Donut + Transformar IA em botão com popup
+# Plano: Melhorar visibilidade do Nível de Maturidade
 
-## 1. Donut não preenche corretamente
+## Problema
 
-O componente `ScoreDonut` usa cores CSS variáveis (`hsl(var(--chart-4))`) que podem ser muito próximas da cor de fundo (`hsl(var(--muted))`), resultando no anel preenchido sendo visualmente indistinguível. Vou trocar as cores para valores mais vibrantes e contrastantes (hex/hsl fixos) para garantir que o preenchimento seja sempre visível.
+Atualmente exibe apenas "🟡 Nível 3" — o usuário precisa fazer hover no tooltip para entender o significado. Isso é pouco intuitivo.
 
-## 2. Consultor IA → Botão com ícone + popup
+## Solução
 
-Atualmente `AIRecommendationsCard` é um card inteiro renderizado abaixo do dashboard. Vou:
+Mostrar o nome e a descrição do nível diretamente no badge, sem depender do tooltip. Formato:
 
-- Remover o card `AIRecommendationsCard` da posição atual na página
-- Adicionar um botão com ícone `Sparkles` ao lado do botão "Exportar PDF" no `PageHeader`
-- Ao clicar, abrir um `Dialog` que executa a análise IA e mostra os resultados dentro do popup
-- A lógica de fetch da IA será movida para dentro do Dialog
+```text
+🟡 Nível 3 — Definido
+   Processos documentados e padronizados
+```
 
-## Arquivos
+## Mudança
 
-| Arquivo | Mudança |
+| Arquivo | Detalhe |
 |---------|---------|
-| `GenericScoreDashboard.tsx` | Corrigir cores do `ScoreDonut` para cores mais vibrantes/contrastantes |
-| `GapAnalysisFrameworkDetail.tsx` | Remover `AIRecommendationsCard`, adicionar botão IA no header, criar Dialog com resultados |
-| `AIRecommendationsCard.tsx` | Refatorar para exportar um Dialog (`AIRecommendationsDialog`) em vez de Card |
+| `GenericScoreDashboard.tsx` (linhas 160-180) | Remover `TooltipProvider/Tooltip/TooltipTrigger/TooltipContent`. Substituir por um bloco que mostra `Nível {level} — {name}` na primeira linha e `{description}` em texto menor abaixo. Manter o ícone e as cores do `maturity`. |
+
+O badge ficará assim:
+```tsx
+<div className={`inline-flex flex-col gap-0.5 px-2 py-1 rounded-md ${maturity.bgColor} border text-xs w-fit`}>
+  <div className="flex items-center gap-1">
+    <span>{maturity.icon}</span>
+    <span className={`font-semibold ${maturity.color}`}>
+      Nível {maturity.level} — {maturity.name}
+    </span>
+  </div>
+  <span className="text-[10px] text-muted-foreground">{maturity.description}</span>
+</div>
+```
 
