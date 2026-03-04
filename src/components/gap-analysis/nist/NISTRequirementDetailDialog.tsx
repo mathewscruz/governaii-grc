@@ -443,16 +443,11 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
         <DialogContent className="max-w-6xl max-h-[90vh] p-0 gap-0">
           {/* Header */}
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <DialogTitle className="flex items-start gap-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <span className="font-mono text-sm text-muted-foreground">{requirement.codigo}</span>
-                  {getStatusBadge(requirement.conformity_status)}
-                  {requirement.obrigatorio && <Badge variant="destructive" className="text-xs">Obrigatório</Badge>}
-                  {(requirement.peso || 0) >= 3 && <Badge variant="outline" className="text-xs">Peso {requirement.peso}</Badge>}
-                </div>
-                <p className="text-base font-medium">{requirement.titulo}</p>
-              </div>
+            <DialogTitle className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-sm text-muted-foreground">{requirement.codigo}</span>
+              <span className="text-base font-medium">{requirement.titulo}</span>
+              {requirement.obrigatorio && <Badge variant="destructive" className="text-xs">Obrigatório</Badge>}
+              {(requirement.peso || 0) >= 3 && <Badge variant="outline" className="text-xs">Peso {requirement.peso}</Badge>}
             </DialogTitle>
           </DialogHeader>
 
