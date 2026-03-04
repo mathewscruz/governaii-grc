@@ -8,9 +8,11 @@ import { FrameworkCard } from '@/components/gap-analysis/FrameworkCard';
 import { FrameworkComparisonRadar } from '@/components/gap-analysis/FrameworkComparisonRadar';
 import { WelcomeHero } from '@/components/gap-analysis/WelcomeHero';
 import { FrameworkCatalog } from '@/components/gap-analysis/FrameworkCatalog';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
-import { Activity, TrendingUp, AlertTriangle, Shield, Target } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { Activity, TrendingUp, AlertTriangle, Shield, Target, Search } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 interface Framework {
@@ -48,6 +50,8 @@ export default function GapAnalysisFrameworks() {
   const [frameworkStatusCounts, setFrameworkStatusCounts] = useState<Record<string, StatusCounts>>({});
   const [loading, setLoading] = useState(true);
   const [showCatalog, setShowCatalog] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 250);
 
   useEffect(() => {
     loadFrameworks();
@@ -161,6 +165,16 @@ export default function GapAnalysisFrameworks() {
     return { activeFrameworks: active, availableFrameworks: available };
   }, [frameworks, frameworkProgress]);
 
+  const filteredAvailableFrameworks = useMemo(() => {
+    if (!debouncedSearch.trim()) return availableFrameworks;
+    const term = debouncedSearch.toLowerCase();
+    return availableFrameworks.filter(fw =>
+      fw.nome.toLowerCase().includes(term) ||
+      fw.tipo_framework?.toLowerCase().includes(term) ||
+      fw.descricao?.toLowerCase().includes(term)
+    );
+  }, [availableFrameworks, debouncedSearch]);
+
   const hasActiveFrameworks = activeFrameworks.length > 0;
 
   // Stats relevantes
@@ -250,18 +264,24 @@ export default function GapAnalysisFrameworks() {
                   value={`${relevantStats.overallCompliance}%`}
                   icon={<TrendingUp className="h-4 w-4" />}
                   description="Média ponderada dos frameworks ativos"
+                  variant={
+                    relevantStats.overallCompliance >= 70 ? 'success' :
+                    relevantStats.overallCompliance >= 40 ? 'warning' : 'destructive'
+                  }
                 />
                 <StatCard
                   title="Requisitos Críticos"
                   value={relevantStats.criticalCount}
                   icon={<AlertTriangle className="h-4 w-4" />}
                   description="Marcados como Não Conforme"
+                  variant="destructive"
                 />
                 <StatCard
                   title="Total Avaliados"
                   value={relevantStats.totalEvaluated}
                   icon={<Target className="h-4 w-4" />}
                   description="Requisitos avaliados nos frameworks ativos"
+                  variant="info"
                 />
               </div>
             )}
@@ -278,7 +298,7 @@ export default function GapAnalysisFrameworks() {
                 Frameworks Ativos
                 <span className="text-sm font-normal text-muted-foreground">({activeFrameworks.length})</span>
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {activeFrameworks.map((framework) => (
                   <FrameworkCard
                     key={framework.id}
@@ -300,15 +320,26 @@ export default function GapAnalysisFrameworks() {
         )}
 
         {/* Available frameworks - catalog by category */}
-        {(hasActiveFrameworks || showCatalog) && availableFrameworks.length > 0 && (
+        {(hasActiveFrameworks || showCatalog) && filteredAvailableFrameworks.length >= 0 && availableFrameworks.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Shield className="h-5 w-5 text-muted-foreground" />
-              Frameworks Disponíveis
-              <span className="text-sm font-normal text-muted-foreground">({availableFrameworks.length})</span>
-            </h2>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Shield className="h-5 w-5 text-muted-foreground" />
+                Frameworks Disponíveis
+                <span className="text-sm font-normal text-muted-foreground">({availableFrameworks.length})</span>
+              </h2>
+              <div className="relative w-full max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar framework..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 h-9"
+                />
+              </div>
+            </div>
             <FrameworkCatalog
-              frameworks={availableFrameworks}
+              frameworks={filteredAvailableFrameworks}
               requirementCounts={requirementCounts}
               onFrameworkClick={handleFrameworkClick}
             />

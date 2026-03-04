@@ -35,7 +35,7 @@ function getCategory(tipo: string): string {
 }
 
 export function FrameworkCatalog({ frameworks, requirementCounts, onFrameworkClick }: FrameworkCatalogProps) {
-  const [openCategories, setOpenCategories] = useState<string[]>(['seguranca']);
+  const [openCategories, setOpenCategories] = useState<string[]>(['seguranca', 'privacidade', 'governanca', 'qualidade']);
 
   const grouped = useMemo(() => {
     const groups: Record<string, Framework[]> = {};
@@ -66,38 +66,42 @@ export function FrameworkCatalog({ frameworks, requirementCounts, onFrameworkCli
 
         return (
           <Collapsible key={catKey} open={isOpen} onOpenChange={() => toggleCategory(catKey)}>
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full justify-between h-auto py-3 px-4 hover:bg-accent/50"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-1.5 rounded-md border ${cfg.color}`}>
-                    <Icon className="h-4 w-4" />
+            <div className="rounded-lg border border-border/60 overflow-hidden">
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-between h-auto py-3 px-4 hover:bg-accent/50 rounded-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-1.5 rounded-md border ${cfg.color}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <span className="font-semibold text-sm">{cfg.label}</span>
+                    <Badge variant="secondary" className="text-xs">{fws.length}</Badge>
                   </div>
-                  <span className="font-semibold text-sm">{cfg.label}</span>
-                  <Badge variant="secondary" className="text-xs">{fws.length}</Badge>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="border-t border-border/40 bg-muted/20">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4">
+                    {fws.map(fw => (
+                      <FrameworkCard
+                        key={fw.id}
+                        id={fw.id}
+                        nome={fw.nome}
+                        versao={fw.versao}
+                        tipo_framework={fw.tipo_framework}
+                        descricao={fw.descricao}
+                        requirementCount={requirementCounts[fw.id] || 0}
+                        variant="available"
+                        onClick={() => onFrameworkClick(fw)}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pt-3 pb-2 px-1">
-                {fws.map(fw => (
-                  <FrameworkCard
-                    key={fw.id}
-                    id={fw.id}
-                    nome={fw.nome}
-                    versao={fw.versao}
-                    tipo_framework={fw.tipo_framework}
-                    descricao={fw.descricao}
-                    requirementCount={requirementCounts[fw.id] || 0}
-                    variant="available"
-                    onClick={() => onFrameworkClick(fw)}
-                  />
-                ))}
-              </div>
-            </CollapsibleContent>
+              </CollapsibleContent>
+            </div>
           </Collapsible>
         );
       })}

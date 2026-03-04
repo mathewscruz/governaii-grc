@@ -94,7 +94,7 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
     
     return (
       <Card 
-        className="group hover:shadow-lg transition-all duration-300 cursor-pointer h-full flex flex-col"
+        className="group hover:shadow-lg transition-all duration-300 cursor-pointer h-full flex flex-col border-l-4 border-l-primary/60"
         onClick={onClick}
       >
         <div className="flex items-start gap-4 p-4 pb-3">
@@ -126,11 +126,21 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
             </div>
           )}
 
-          {/* Progress bar showing evaluation coverage */}
+          {/* Segmented progress bar */}
           {progress && (
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Progress value={progressPercent} className="h-1.5 flex-1" />
+                <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden flex">
+                  {conformePercent > 0 && (
+                    <div className="h-full bg-emerald-500 transition-all" style={{ width: `${conformePercent}%` }} />
+                  )}
+                  {parcialPercent > 0 && (
+                    <div className="h-full bg-amber-500 transition-all" style={{ width: `${parcialPercent}%` }} />
+                  )}
+                  {naoConformePercent > 0 && (
+                    <div className="h-full bg-red-500 transition-all" style={{ width: `${naoConformePercent}%` }} />
+                  )}
+                </div>
                 <span className="text-[11px] text-muted-foreground whitespace-nowrap">
                   {progressPercent}% avaliado
                 </span>
@@ -194,7 +204,7 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
 
   return (
     <Card 
-      className="group hover:shadow-lg transition-all duration-300 cursor-pointer h-full flex flex-col"
+      className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300 cursor-pointer h-full flex flex-col"
       onClick={onClick}
     >
       <div className="p-3 pb-0">
