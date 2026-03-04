@@ -160,22 +160,15 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
                 {(() => {
                   const maturity = getMaturityLevel(overallScore, config);
                   return (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${maturity.bgColor} border text-xs w-fit`}>
-                            <span>{maturity.icon}</span>
-                            <span className={`font-semibold ${maturity.color}`}>
-                              Nível {maturity.level}
-                            </span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="max-w-xs">
-                          <p className="font-medium">{maturity.name}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{maturity.description}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div className={`inline-flex flex-col gap-0.5 px-2 py-1 rounded-md ${maturity.bgColor} border text-xs w-fit`}>
+                      <div className="flex items-center gap-1">
+                        <span>{maturity.icon}</span>
+                        <span className={`font-semibold ${maturity.color}`}>
+                          Nível {maturity.level} — {maturity.name}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">{maturity.description}</span>
+                    </div>
                   );
                 })()}
                 <div className="space-y-1">
