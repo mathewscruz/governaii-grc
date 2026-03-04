@@ -5,7 +5,6 @@ import { Progress } from "@/components/ui/progress";
 import { FrameworkConfig, getScoreLabel, getMaturityLevel } from "@/lib/framework-configs";
 import { ScoreEvolutionChart } from "./ScoreEvolutionChart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PillarScore {
   pillar: string;
@@ -127,6 +126,8 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
   }
 
   const evalPct = totalRequirements > 0 ? (evaluatedRequirements / totalRequirements) * 100 : 0;
+  const domainSectionLabel = config.domainLabel || 'Aderência por Domínio';
+  const sectionSectionLabel = config.sectionLabel || 'Aderência por Seção';
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -182,13 +183,13 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
             </div>
           )}
 
-          {/* Aderência por Domínio */}
+          {/* Domain scores */}
           {domainScores.length > 0 && (
             <>
               <Separator />
               <div>
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2.5">
-                  Aderência por Domínio do Anexo A
+                  {domainSectionLabel}
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {domainScores.map((domain) => (
@@ -205,13 +206,13 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
             </>
           )}
 
-          {/* Aderência por Seção */}
+          {/* Section scores */}
           {sectionScores.length > 0 && (
             <>
               <Separator />
               <div>
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2.5">
-                  Aderência por Seção
+                  {sectionSectionLabel}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {sectionScores.map((section) => (
