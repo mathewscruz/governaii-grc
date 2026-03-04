@@ -143,9 +143,9 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
               </p>
             </div>
           ) : (
-            <div className="flex flex-col items-center text-center gap-3 py-2">
+            <div className="flex items-center gap-4 py-2">
               <ScoreDonut score={overallScore} config={config} size={100} />
-              <div className="flex items-center gap-2 flex-wrap justify-center">
+              <div className="flex flex-col gap-2 flex-1 min-w-0">
                 <Badge 
                   variant={
                     overallScore >= (config.scoreType === 'percentage' ? 80 : 4.5) ? 'default' :
@@ -153,7 +153,7 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
                     overallScore >= (config.scoreType === 'percentage' ? 40 : 2.5) ? 'outline' :
                     'destructive'
                   }
-                  className="text-xs"
+                  className="text-xs w-fit"
                 >
                   {getScoreLabel(overallScore, config)}
                 </Badge>
@@ -163,7 +163,7 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${maturity.bgColor} border text-xs`}>
+                          <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${maturity.bgColor} border text-xs w-fit`}>
                             <span>{maturity.icon}</span>
                             <span className={`font-semibold ${maturity.color}`}>
                               Nível {maturity.level}
@@ -178,13 +178,13 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
                     </TooltipProvider>
                   );
                 })()}
-              </div>
-              <div className="w-full max-w-xs space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Progresso da avaliação</span>
-                  <span className="font-medium">{evaluatedRequirements}/{totalRequirements}</span>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Progresso da avaliação</span>
+                    <span className="font-medium">{evaluatedRequirements}/{totalRequirements}</span>
+                  </div>
+                  <Progress value={evalPct} className="h-2" />
                 </div>
-                <Progress value={evalPct} className="h-2" />
               </div>
             </div>
           )}
@@ -197,7 +197,7 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2.5">
                   Aderência por Domínio do Anexo A
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {domainScores.map((domain) => (
                     <div key={domain.domain} className="rounded-md border border-border px-2.5 py-2">
                       <p className="text-[10px] font-medium text-muted-foreground truncate mb-1">{domain.name}</p>
