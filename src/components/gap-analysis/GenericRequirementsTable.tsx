@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, ChevronRight, Search, X, AlertTriangle, Paperclip } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronLeft, ChevronRight, Search, X, AlertTriangle, Paperclip, CheckSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
@@ -77,6 +78,8 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [onlyMandatory, setOnlyMandatory] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkUpdating, setBulkUpdating] = useState(false);
 
   const loadRequirements = async () => {
     if (!empresaId) return;
@@ -220,6 +223,68 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
     setSelectedRequirement(null);
     loadRequirements();
     onStatusChange?.();
+  };
+
+  const handleBulkStatusChange = async (newStatus: string) => {
+    if (!empresaId || selectedIds.size === 0) return;
+    setBulkUpdating(true);
+    try {
+      const ids = Array.from(selectedIds);
+      // For each selected requirement, upsert evaluation
+      for (const reqId of ids) {
+        const { data: existing } = await supabase
+          .from('gap_analysis_evaluations')
+          .select('id')
+          .eq('requirement_id', reqId)
+          .eq('framework_id', frameworkId)
+          .eq('empresa_id', empresaId)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('gap_analysis_evaluations')
+            .update({ conformity_status: newStatus, updated_at: new Date().toISOString() })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('gap_analysis_evaluations')
+            .insert({ framework_id: frameworkId, requirement_id: reqId, empresa_id: empresaId, conformity_status: newStatus });
+        }
+      }
+
+      // Update local state
+      setRequirements(prev =>
+        prev.map(r => selectedIds.has(r.id) ? { ...r, conformity_status: newStatus } : r)
+      );
+      setSelectedIds(new Set());
+      onStatusChange?.();
+      toast.success(`${ids.length} requisitos atualizados para "${newStatus === 'conforme' ? 'Conforme' : newStatus === 'parcial' ? 'Parcial' : newStatus === 'nao_conforme' ? 'Não Conforme' : 'N/A'}"`);
+    } catch (error: any) {
+      console.error('Erro na atualização em lote:', error);
+      toast.error('Erro na atualização em lote');
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
+  const toggleSelectAll = (reqs: Requirement[]) => {
+    const allSelected = reqs.every(r => selectedIds.has(r.id));
+    if (allSelected) {
+      const newSet = new Set(selectedIds);
+      reqs.forEach(r => newSet.delete(r.id));
+      setSelectedIds(newSet);
+    } else {
+      const newSet = new Set(selectedIds);
+      reqs.forEach(r => newSet.add(r.id));
+      setSelectedIds(newSet);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedIds(newSet);
   };
 
   const getStatusBadge = (status?: string | null) => {
@@ -405,12 +470,20 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
     const filtered = applyFilters(reqs);
     const pages = Math.ceil(filtered.length / itemsPerPage);
     const paginated = filtered.slice(startIndex, startIndex + itemsPerPage);
+    const allPageSelected = paginated.length > 0 && paginated.every(r => selectedIds.has(r.id));
 
     return (
       <>
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={allPageSelected}
+                  onCheckedChange={() => toggleSelectAll(paginated)}
+                  aria-label="Selecionar todos"
+                />
+              </TableHead>
               <TableHead className="w-28">Código</TableHead>
               <TableHead>Requisito</TableHead>
               <TableHead className="w-24">Prioridade</TableHead>
@@ -423,13 +496,19 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
           <TableBody>
             {paginated.length === 0 ? (
               <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   {hasActiveFilters ? 'Nenhum requisito encontrado com os filtros aplicados' : 'Nenhum requisito disponível'}
                 </TableCell>
               </TableRow>
             ) : (
               paginated.map(req => (
-                <TableRow key={req.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleRowClick(req)}>
+                <TableRow key={req.id} className={`cursor-pointer hover:bg-muted/50 ${selectedIds.has(req.id) ? 'bg-primary/5' : ''}`} onClick={() => handleRowClick(req)}>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedIds.has(req.id)}
+                      onCheckedChange={() => toggleSelect(req.id)}
+                    />
+                  </TableCell>
                   <TableCell className="font-mono text-sm">
                     <div className="flex items-center gap-1">
                       {(req.peso || 0) >= 3 && req.conformity_status === 'nao_conforme' && (
@@ -480,6 +559,34 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
           </TableBody>
         </Table>
         <PaginationControls total={reqs.length} filtered={filtered.length} />
+
+        {/* Floating Bulk Action Bar */}
+        {selectedIds.size > 0 && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border shadow-lg rounded-xl px-6 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-4">
+            <div className="flex items-center gap-2">
+              <CheckSquare className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">{selectedIds.size} selecionados</span>
+            </div>
+            <div className="h-6 w-px bg-border" />
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => handleBulkStatusChange('conforme')} disabled={bulkUpdating} className="text-xs border-green-500/30 text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20">
+                Conforme
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleBulkStatusChange('parcial')} disabled={bulkUpdating} className="text-xs border-yellow-500/30 text-yellow-700 hover:bg-yellow-50 dark:text-yellow-400 dark:hover:bg-yellow-900/20">
+                Parcial
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleBulkStatusChange('nao_conforme')} disabled={bulkUpdating} className="text-xs border-red-500/30 text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
+                Não Conforme
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleBulkStatusChange('nao_aplicavel')} disabled={bulkUpdating} className="text-xs">
+                N/A
+              </Button>
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="text-xs">
+              <X className="h-3.5 w-3.5 mr-1" />Limpar
+            </Button>
+          </div>
+        )}
       </>
     );
   };

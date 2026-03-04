@@ -1,10 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { FrameworkConfig, getScoreLabel, getScoreColor } from "@/lib/framework-configs";
+import { FrameworkConfig, getScoreLabel, getScoreColor, getMaturityLevel } from "@/lib/framework-configs";
 import { CategoryBarChart } from "./CategoryBarChart";
 import { ScoreEvolutionChart } from "./ScoreEvolutionChart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PillarScore {
   pillar: string;
@@ -150,6 +151,30 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
                     {getScoreLabel(overallScore, config)}
                   </Badge>
                 </div>
+                {/* Maturity Level Badge */}
+                {(() => {
+                  const maturity = getMaturityLevel(overallScore, config);
+                  return (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${maturity.bgColor} border`}>
+                            <span className="text-sm">{maturity.icon}</span>
+                            <div>
+                              <span className={`text-sm font-semibold ${maturity.color}`}>
+                                Nível {maturity.level} — {maturity.name}
+                              </span>
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-xs">
+                          <p className="font-medium">Modelo de Maturidade</p>
+                          <p className="text-xs text-muted-foreground mt-1">{maturity.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })()}
                 <Progress value={getProgressValue(overallScore)} className="h-3" />
                 <p className="text-sm text-muted-foreground">
                   {evaluatedRequirements} de {totalRequirements} requisitos avaliados

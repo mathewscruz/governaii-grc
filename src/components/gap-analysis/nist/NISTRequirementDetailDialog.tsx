@@ -9,9 +9,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
-import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, Sparkles, Bot, HelpCircle } from "lucide-react";
+import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, Sparkles, Bot, HelpCircle, History } from "lucide-react";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { PlanoAcaoDialog } from "@/components/planos-acao/PlanoAcaoDialog";
+import { AuditTrailTimeline } from "@/components/gap-analysis/AuditTrailTimeline";
 
 interface AIExplanation {
   explicacao_simples: string;
@@ -724,6 +725,17 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Trilha de Auditoria */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <History className="h-4 w-4" />
+                  Histórico de Alterações
+                </Label>
+                <div className="border rounded-md p-3 max-h-48 overflow-y-auto">
+                  <AuditTrailTimeline requirementId={requirement.id} frameworkId={frameworkId} />
                 </div>
               </div>
             </div>
