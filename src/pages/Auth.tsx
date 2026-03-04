@@ -299,7 +299,7 @@ const Auth = () => {
               <div className="space-y-1.5 landing-fade-in-3">
                 <Label htmlFor="email" className="text-white/70 text-sm font-medium">E-mail</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                   <Input
                     id="email"
                     type="email"
@@ -307,7 +307,7 @@ const Auth = () => {
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors(p => ({ ...p, email: undefined })); }}
                     autoFocus
-                    className={`h-11 pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-primary focus:ring-primary ${errors.email ? 'border-destructive' : ''}`}
+                    className={`h-11 pl-9 rounded-lg bg-white/[0.03] border-white/[0.08] text-white placeholder:text-white/25 focus:border-primary focus:ring-primary ${errors.email ? 'border-destructive' : ''}`}
                   />
                 </div>
                 {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
@@ -317,14 +317,14 @@ const Auth = () => {
               <div className="space-y-1.5 landing-fade-in-4">
                 <Label htmlFor="password" className="text-white/70 text-sm font-medium">Senha</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); if (errors.password) setErrors(p => ({ ...p, password: undefined })); }}
-                    className={`h-11 pl-10 pr-11 bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-primary focus:ring-primary ${errors.password ? 'border-destructive' : ''}`}
+                    className={`h-11 pl-9 pr-11 rounded-lg bg-white/[0.03] border-white/[0.08] text-white placeholder:text-white/25 focus:border-primary focus:ring-primary ${errors.password ? 'border-destructive' : ''}`}
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
