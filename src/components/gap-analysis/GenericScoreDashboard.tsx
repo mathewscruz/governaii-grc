@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { FrameworkConfig, getScoreLabel, getMaturityLevel } from "@/lib/framework-configs";
 import { ScoreEvolutionChart } from "./ScoreEvolutionChart";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,11 +60,12 @@ interface GenericScoreDashboardProps {
   frameworkId: string;
 }
 
-const ScoreDonut = ({ score, config }: { score: number; config: FrameworkConfig }) => {
+const ScoreDonut = ({ score, config, size = 120 }: { score: number; config: FrameworkConfig; size?: number }) => {
   const normalizedScore = config.scoreType === 'percentage' ? score : (score / 5.0) * 100;
-  const radius = 40;
+  const radius = (size / 2) - 10;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (normalizedScore / 100) * circumference;
+  const center = size / 2;
 
   const getColor = (s: number) => {
     if (s >= 80) return 'hsl(var(--chart-2))';
@@ -73,23 +75,23 @@ const ScoreDonut = ({ score, config }: { score: number; config: FrameworkConfig 
   };
 
   return (
-    <svg width="96" height="96" viewBox="0 0 96 96" className="shrink-0">
-      <circle cx="48" cy="48" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
+      <circle cx={center} cy={center} r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="10" />
       <circle
-        cx="48" cy="48" r={radius}
+        cx={center} cy={center} r={radius}
         fill="none"
         stroke={getColor(normalizedScore)}
-        strokeWidth="8"
+        strokeWidth="10"
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={offset}
-        transform="rotate(-90 48 48)"
+        transform={`rotate(-90 ${center} ${center})`}
         className="transition-all duration-700"
       />
-      <text x="48" y="44" textAnchor="middle" className="fill-foreground text-sm font-bold" fontSize="14">
+      <text x={center} y={center - 4} textAnchor="middle" className="fill-foreground font-bold" fontSize="20">
         {config.scoreType === 'percentage' ? `${score.toFixed(0)}%` : score.toFixed(1)}
       </text>
-      <text x="48" y="58" textAnchor="middle" className="fill-muted-foreground" fontSize="9">
+      <text x={center} y={center + 14} textAnchor="middle" className="fill-muted-foreground" fontSize="11">
         Score
       </text>
     </svg>
@@ -114,11 +116,6 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
     return score.toFixed(2);
   };
 
-  const getProgressValue = (score: number) => {
-    if (config.scoreType === 'percentage') return score;
-    return (score / 5.0) * 100;
-  };
-
   if (loading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -128,25 +125,27 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
     );
   }
 
+  const evalPct = totalRequirements > 0 ? (evaluatedRequirements / totalRequirements) * 100 : 0;
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <CardTitle className="text-base">Score Geral de Conformidade</CardTitle>
           </CardHeader>
           <CardContent>
             {evaluatedRequirements === 0 ? (
-              <div className="space-y-2">
+              <div className="flex flex-col items-center justify-center py-4 space-y-2">
                 <div className="text-4xl font-bold text-muted-foreground">—</div>
-                <p className="text-sm text-muted-foreground">
-                  Nenhum requisito avaliado. {totalRequirements} disponíveis.
+                <p className="text-sm text-muted-foreground text-center">
+                  Nenhum requisito avaliado ainda.<br />{totalRequirements} requisitos disponíveis para avaliação.
                 </p>
               </div>
             ) : (
-              <div className="flex items-center gap-5">
-                <ScoreDonut score={overallScore} config={config} />
-                <div className="flex-1 space-y-2">
+              <div className="flex items-start gap-5">
+                <ScoreDonut score={overallScore} config={config} size={120} />
+                <div className="flex-1 space-y-3 py-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge 
                       variant={
@@ -155,34 +154,40 @@ export const GenericScoreDashboard: React.FC<GenericScoreDashboardProps> = ({
                         overallScore >= (config.scoreType === 'percentage' ? 40 : 2.5) ? 'outline' :
                         'destructive'
                       }
+                      className="text-xs"
                     >
                       {getScoreLabel(overallScore, config)}
                     </Badge>
+                    {(() => {
+                      const maturity = getMaturityLevel(overallScore, config);
+                      return (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${maturity.bgColor} border text-xs`}>
+                                <span>{maturity.icon}</span>
+                                <span className={`font-semibold ${maturity.color}`}>
+                                  Nível {maturity.level}
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-xs">
+                              <p className="font-medium">{maturity.name}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{maturity.description}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })()}
                   </div>
-                  {(() => {
-                    const maturity = getMaturityLevel(overallScore, config);
-                    return (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md ${maturity.bgColor} border text-xs`}>
-                              <span>{maturity.icon}</span>
-                              <span className={`font-semibold ${maturity.color}`}>
-                                Nível {maturity.level} — {maturity.name}
-                              </span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="right" className="max-w-xs">
-                            <p className="font-medium">Modelo de Maturidade</p>
-                            <p className="text-xs text-muted-foreground mt-1">{maturity.description}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    );
-                  })()}
-                  <p className="text-xs text-muted-foreground">
-                    {evaluatedRequirements} de {totalRequirements} requisitos avaliados
-                  </p>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Progresso da avaliação</span>
+                      <span className="font-medium">{evaluatedRequirements}/{totalRequirements}</span>
+                    </div>
+                    <Progress value={evalPct} className="h-2" />
+                  </div>
                 </div>
               </div>
             )}

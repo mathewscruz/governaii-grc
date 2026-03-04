@@ -189,3 +189,6 @@ verify_jwt = false
 
 [functions.verify-mfa-code]
 verify_jwt = false
+
+[functions.populate-requirement-guidance]
+verify_jwt = true

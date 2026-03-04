@@ -202,6 +202,7 @@ export default function GapAnalysisFrameworkDetail() {
             totalRequirements={totalRequirements}
             conformeCount={categoryData.reduce((sum, c) => sum + c.conforme, 0)}
             hasActionPlans={evaluatedRequirements > 0}
+            naoConformeCount={categoryData.reduce((sum, c) => sum + c.nao_conforme, 0)}
           />
         )}
 

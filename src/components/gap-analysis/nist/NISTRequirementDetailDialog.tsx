@@ -5,25 +5,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
-import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, Sparkles, ChevronDown, History } from "lucide-react";
+import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, HelpCircle } from "lucide-react";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { PlanoAcaoDialog } from "@/components/planos-acao/PlanoAcaoDialog";
 import { AuditTrailTimeline } from "@/components/gap-analysis/AuditTrailTimeline";
-
-interface AIExplanation {
-  explicacao_simples: string;
-  exemplos_evidencias: string[];
-  perguntas_autoavaliacao: string[];
-  status_sugerido: string;
-  justificativa_sugestao: string;
-  dicas_implementacao: string[];
-  nivel_esforco: string;
-}
 
 interface NISTRequirement {
   id: string;
@@ -97,8 +87,6 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
   const [planoAcaoVinculado, setPlanoAcaoVinculado] = useState<any>(null);
   const [savingPlano, setSavingPlano] = useState(false);
   const [requirementDetails, setRequirementDetails] = useState<{ orientacao_implementacao?: string | null; exemplos_evidencias?: string | null }>({});
-  const [aiExplanation, setAiExplanation] = useState<AIExplanation | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
 
   const [formData, setFormData] = useState<EvaluationData>({
     responsavel_avaliacao: '', plano_acao: '', observacoes: '',
@@ -239,30 +227,6 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
     }
   };
 
-  const handleAskAI = async () => {
-    setAiLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('ai-module-assistant', {
-        body: {
-          action: 'explain-requirement',
-          data: {
-            framework_nome: frameworkId, codigo: requirement.codigo,
-            titulo: requirement.titulo, descricao: requirement.descricao,
-            categoria: requirement.categoria, status_atual: requirement.conformity_status || 'Não avaliado',
-          },
-        },
-      });
-      if (error) throw error;
-      if (data?.error) { toast.error(data.error); return; }
-      setAiExplanation(data?.data || null);
-    } catch (err: any) {
-      console.error('AI explain error:', err);
-      toast.error('Erro ao consultar a IA');
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
   const handleSavePlanoAcao = async (planoData: any) => {
     setSavingPlano(true);
     try {
@@ -306,284 +270,272 @@ export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogPr
 
   const isNonCompliant = requirement.conformity_status === 'nao_conforme' || requirement.conformity_status === 'parcial';
 
+  const hasGuidance = !!(requirementDetails.orientacao_implementacao || requirementDetails.exemplos_evidencias || requirement.descricao);
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-6xl max-h-[90vh] p-0 gap-0">
+          {/* Header */}
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <DialogTitle className="flex items-start gap-3">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                   <span className="font-mono text-sm text-muted-foreground">{requirement.codigo}</span>
                   {getStatusBadge(requirement.conformity_status)}
                   {requirement.obrigatorio && <Badge variant="destructive" className="text-xs">Obrigatório</Badge>}
                   {(requirement.peso || 0) >= 3 && <Badge variant="outline" className="text-xs">Peso {requirement.peso}</Badge>}
                 </div>
                 <p className="text-base font-medium">{requirement.titulo}</p>
-                {requirement.descricao && (
-                  <p className="text-sm text-muted-foreground font-normal mt-2">{requirement.descricao}</p>
-                )}
               </div>
             </DialogTitle>
           </DialogHeader>
 
           {loading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="space-y-1">
-              {/* Section 1: Always visible — Responsável + Prazo */}
-              <div className="space-y-4 p-3 rounded-lg border bg-card">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="responsavel" className="text-xs">Responsável</Label>
-                    <Select
-                      value={formData.responsavel_avaliacao}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, responsavel_avaliacao: value }))}
-                    >
-                      <SelectTrigger id="responsavel"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
-                      <SelectContent>
-                        {users.map(user => (
-                          <SelectItem key={user.user_id} value={user.user_id}>{user.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="prazo" className="text-xs flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />Prazo
-                    </Label>
-                    <input
-                      id="prazo" type="date"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      value={formData.prazo_implementacao}
-                      onChange={(e) => setFormData(prev => ({ ...prev, prazo_implementacao: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="observacoes" className="text-xs">Observações</Label>
-                  <Textarea
-                    id="observacoes" placeholder="Informações adicionais, contexto, justificativas..."
-                    value={formData.observacoes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
-                    rows={2}
-                  />
-                </div>
-              </div>
+            <div className="flex flex-col md:flex-row min-h-0 flex-1">
+              {/* LEFT PANEL — Educational context */}
+              {hasGuidance && (
+                <ScrollArea className="md:w-[40%] border-r bg-muted/30 max-h-[60vh]">
+                  <div className="p-5 space-y-5">
+                    {/* Description */}
+                    {requirement.descricao && (
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <BookOpen className="h-4 w-4 text-primary" />
+                          <h4 className="text-sm font-semibold text-foreground">Descrição do Requisito</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{requirement.descricao}</p>
+                      </div>
+                    )}
 
-              {/* Collapsible sections */}
-              <div className="divide-y rounded-lg border">
-                {/* Orientação */}
-                {requirementDetails.orientacao_implementacao && (
-                  <CollapsibleSection title="Orientação de Implementação" icon={Lightbulb} defaultOpen>
-                    <p className="text-sm text-foreground whitespace-pre-line">{requirementDetails.orientacao_implementacao}</p>
+                    {/* Implementation guidance */}
+                    {requirementDetails.orientacao_implementacao && (
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Lightbulb className="h-4 w-4 text-chart-4" />
+                          <h4 className="text-sm font-semibold text-foreground">O que este controle exige</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                          {requirementDetails.orientacao_implementacao}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Evidence examples */}
                     {requirementDetails.exemplos_evidencias && (
-                      <div className="mt-3">
-                        <p className="text-xs font-semibold mb-1">Evidências Sugeridas:</p>
-                        <ul className="text-sm space-y-1">
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <CheckCircle2 className="h-4 w-4 text-chart-2" />
+                          <h4 className="text-sm font-semibold text-foreground">Exemplos de Evidências Aceitas</h4>
+                        </div>
+                        <ul className="space-y-1.5">
                           {requirementDetails.exemplos_evidencias.split('\n').filter(Boolean).map((ex, i) => (
-                            <li key={i} className="flex items-start gap-1.5 text-muted-foreground">
-                              <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-chart-2 shrink-0 mt-0.5" />
                               <span>{ex.replace(/^[-•]\s*/, '')}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
                     )}
-                  </CollapsibleSection>
-                )}
 
-                {/* Plano de Ação */}
-                {isNonCompliant && (
-                  <CollapsibleSection
-                    title="Plano de Ação"
-                    icon={ClipboardList}
-                    defaultOpen={isNonCompliant}
-                    badge={planoAcaoVinculado ? getPlanoStatusBadge(planoAcaoVinculado.status) : <Badge variant="outline" className="text-[10px]">Sem plano</Badge>}
-                  >
-                    {planoAcaoVinculado ? (
-                      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{planoAcaoVinculado.titulo}</p>
-                          {planoAcaoVinculado.prazo && (
-                            <span className="text-xs text-muted-foreground">Prazo: {new Date(planoAcaoVinculado.prazo).toLocaleDateString('pt-BR')}</span>
-                          )}
-                        </div>
-                        <Button size="sm" variant="ghost" onClick={() => window.open('/planos-acao', '_blank')}>
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <p className="text-sm text-muted-foreground">
-                          <AlertTriangle className="h-4 w-4 inline mr-1 text-amber-500" />
-                          Requisito não conforme. Crie um plano de ação.
+                    {/* Self-assessment tips */}
+                    {!requirementDetails.orientacao_implementacao && !requirementDetails.exemplos_evidencias && (
+                      <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-dashed">
+                        <HelpCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                        <p className="text-xs text-muted-foreground">
+                          Orientações detalhadas para este requisito ainda não foram geradas. Avalie com base na descrição acima e no conhecimento da sua organização.
                         </p>
-                        <Button size="sm" variant="outline" onClick={() => setPlanoAcaoDialogOpen(true)}>
-                          <ClipboardList className="h-4 w-4 mr-1" />Criar Plano de Ação
-                        </Button>
                       </div>
                     )}
-                    <div className="mt-3 space-y-1.5">
-                      <Label htmlFor="plano" className="text-xs">Notas do Plano</Label>
+                  </div>
+                </ScrollArea>
+              )}
+
+              {/* RIGHT PANEL — Form & actions */}
+              <ScrollArea className={`${hasGuidance ? 'md:w-[60%]' : 'w-full'} max-h-[60vh]`}>
+                <div className="p-5 space-y-1">
+                  {/* Always visible: Responsável + Prazo + Observações */}
+                  <div className="space-y-4 p-3 rounded-lg border bg-card">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="responsavel" className="text-xs">Responsável</Label>
+                        <Select
+                          value={formData.responsavel_avaliacao}
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, responsavel_avaliacao: value }))}
+                        >
+                          <SelectTrigger id="responsavel"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                          <SelectContent>
+                            {users.map(user => (
+                              <SelectItem key={user.user_id} value={user.user_id}>{user.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="prazo" className="text-xs flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />Prazo
+                        </Label>
+                        <input
+                          id="prazo" type="date"
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={formData.prazo_implementacao}
+                          onChange={(e) => setFormData(prev => ({ ...prev, prazo_implementacao: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="observacoes" className="text-xs">Observações</Label>
                       <Textarea
-                        id="plano" placeholder="Ações necessárias..."
-                        value={formData.plano_acao}
-                        onChange={(e) => setFormData(prev => ({ ...prev, plano_acao: e.target.value }))}
+                        id="observacoes" placeholder="Informações adicionais, contexto, justificativas..."
+                        value={formData.observacoes}
+                        onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
                         rows={2}
                       />
                     </div>
-                  </CollapsibleSection>
-                )}
+                  </div>
 
-                {/* Evidências */}
-                <CollapsibleSection
-                  title="Evidências"
-                  icon={FileText}
-                  badge={formData.evidence_files.length > 0 ? <Badge variant="secondary" className="text-[10px]">{formData.evidence_files.length}</Badge> : undefined}
-                >
-                  <div className="space-y-3">
-                    <div
-                      className="relative border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center hover:border-primary/50 transition-colors cursor-pointer"
-                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
-                      onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
-                        const files = e.dataTransfer.files;
-                        if (files.length > 0) {
-                          const input = document.getElementById('file-upload') as HTMLInputElement;
-                          if (input) { input.files = files; input.dispatchEvent(new Event('change', { bubbles: true })); }
-                        }
-                      }}
-                      onClick={() => document.getElementById('file-upload')?.click()}
-                    >
-                      <Upload className="h-6 w-6 mx-auto text-muted-foreground/50 mb-1" />
-                      <p className="text-sm text-muted-foreground">{uploading ? 'Enviando...' : 'Arraste arquivos ou clique para buscar'}</p>
-                    </div>
-                    <input id="file-upload" type="file" multiple className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" />
-                    <Button type="button" variant="outline" size="sm" onClick={() => {
-                      const url = prompt('URL da evidência:');
-                      if (url?.trim()) {
-                        const name = prompt('Nome do link:') || new URL(url).hostname;
-                        setFormData(prev => ({ ...prev, evidence_files: [...prev.evidence_files, { type: 'link', name, url: url.trim() }] }));
-                      }
-                    }}>
-                      <ExternalLink className="h-4 w-4 mr-1" />Adicionar Link
-                    </Button>
-
-                    {formData.evidence_files.length > 0 && (
-                      <div className="border rounded-md p-2 space-y-1">
-                        {formData.evidence_files.map((file, index) => (
-                          <div key={index} className="flex items-center justify-between p-1.5 bg-muted/50 rounded text-sm">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              {file.type === 'link' ? <ExternalLink className="h-3.5 w-3.5 text-blue-500 shrink-0" /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-                              {file.type === 'link' ? (
-                                <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline truncate text-xs" onClick={(e) => e.stopPropagation()}>{file.name}</a>
-                              ) : (
-                                <span className="truncate text-xs">{file.name}</span>
+                  {/* Collapsible sections */}
+                  <div className="divide-y rounded-lg border">
+                    {/* Plano de Ação */}
+                    {isNonCompliant && (
+                      <CollapsibleSection
+                        title="Plano de Ação"
+                        icon={ClipboardList}
+                        defaultOpen={isNonCompliant}
+                        badge={planoAcaoVinculado ? getPlanoStatusBadge(planoAcaoVinculado.status) : <Badge variant="outline" className="text-[10px]">Sem plano</Badge>}
+                      >
+                        {planoAcaoVinculado ? (
+                          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{planoAcaoVinculado.titulo}</p>
+                              {planoAcaoVinculado.prazo && (
+                                <span className="text-xs text-muted-foreground">Prazo: {new Date(planoAcaoVinculado.prazo).toLocaleDateString('pt-BR')}</span>
                               )}
                             </div>
-                            <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleRemoveFile(index)}>
-                              <X className="h-3 w-3" />
+                            <Button size="sm" variant="ghost" onClick={() => window.open('/planos-acao', '_blank')}>
+                              <ExternalLink className="h-4 w-4" />
                             </Button>
                           </div>
-                        ))}
-                      </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <p className="text-sm text-muted-foreground">
+                              <AlertTriangle className="h-4 w-4 inline mr-1 text-amber-500" />
+                              Requisito não conforme. Crie um plano de ação.
+                            </p>
+                            <Button size="sm" variant="outline" onClick={() => setPlanoAcaoDialogOpen(true)}>
+                              <ClipboardList className="h-4 w-4 mr-1" />Criar Plano de Ação
+                            </Button>
+                          </div>
+                        )}
+                        <div className="mt-3 space-y-1.5">
+                          <Label htmlFor="plano" className="text-xs">Notas do Plano</Label>
+                          <Textarea
+                            id="plano" placeholder="Ações necessárias..."
+                            value={formData.plano_acao}
+                            onChange={(e) => setFormData(prev => ({ ...prev, plano_acao: e.target.value }))}
+                            rows={2}
+                          />
+                        </div>
+                      </CollapsibleSection>
                     )}
-                  </div>
-                </CollapsibleSection>
 
-                {/* Riscos Vinculados */}
-                <CollapsibleSection
-                  title="Riscos Vinculados"
-                  icon={AlertTriangle}
-                  badge={formData.riscos_vinculados.length > 0 ? <Badge variant="secondary" className="text-[10px]">{formData.riscos_vinculados.length}</Badge> : undefined}
-                >
-                  <div className="max-h-40 overflow-y-auto space-y-1">
-                    {riscos.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-3">Nenhum risco cadastrado</p>
-                    ) : (
-                      riscos.map(risco => (
-                        <label key={risco.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1.5 rounded text-sm">
-                          <input type="checkbox" checked={formData.riscos_vinculados.includes(risco.id)} onChange={() => handleToggleRisco(risco.id)} className="rounded" />
-                          <span className="font-medium">{risco.nome}</span>
-                          <Badge variant="outline" className="ml-auto text-xs">{risco.nivel_risco_inicial}</Badge>
-                        </label>
-                      ))
-                    )}
-                  </div>
-                </CollapsibleSection>
-
-                {/* Assistente IA */}
-                <CollapsibleSection title="Assistente IA" icon={Sparkles}>
-                  <div className="space-y-3">
-                    <Button size="sm" variant={aiExplanation ? "outline" : "default"} onClick={handleAskAI} disabled={aiLoading} className="w-full">
-                      {aiLoading ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Analisando...</> :
-                        aiExplanation ? <><Sparkles className="h-4 w-4 mr-1" />Reanalisar</> :
-                        <><Sparkles className="h-4 w-4 mr-1" />Pedir Ajuda à IA</>}
-                    </Button>
-                    {!aiExplanation && !aiLoading && (
-                      <p className="text-xs text-muted-foreground">A IA pode explicar o requisito, sugerir evidências e recomendar um status.</p>
-                    )}
-                    {aiExplanation && (
+                    {/* Evidências */}
+                    <CollapsibleSection
+                      title="Evidências"
+                      icon={FileText}
+                      badge={formData.evidence_files.length > 0 ? <Badge variant="secondary" className="text-[10px]">{formData.evidence_files.length}</Badge> : undefined}
+                    >
                       <div className="space-y-3">
-                        <div className="p-2 rounded-lg bg-primary/5 border border-primary/10">
-                          <p className="text-xs font-semibold text-primary mb-1">O que este requisito exige:</p>
-                          <p className="text-sm">{aiExplanation.explicacao_simples}</p>
-                        </div>
-                        {aiExplanation.exemplos_evidencias?.length > 0 && (
-                          <div>
-                            <p className="text-xs font-semibold mb-1">📋 Evidências aceitas:</p>
-                            <ul className="text-xs space-y-0.5">
-                              {aiExplanation.exemplos_evidencias.map((ev, i) => (
-                                <li key={i} className="flex items-start gap-1 text-muted-foreground">
-                                  <CheckCircle2 className="h-3 w-3 text-primary shrink-0 mt-0.5" /><span>{ev}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {aiExplanation.dicas_implementacao?.length > 0 && (
-                          <div>
-                            <p className="text-xs font-semibold mb-1">💡 Dicas:</p>
-                            <ul className="text-xs space-y-0.5">
-                              {aiExplanation.dicas_implementacao.map((d, i) => (
-                                <li key={i} className="text-muted-foreground">→ {d}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 p-2 rounded bg-muted/50 border text-xs">
-                          <span className="font-medium">Sugestão:</span>
-                          {(() => {
-                            switch (aiExplanation.status_sugerido) {
-                              case 'conforme': return <Badge variant="success">Conforme</Badge>;
-                              case 'parcial': return <Badge variant="warning">Parcial</Badge>;
-                              case 'nao_conforme': return <Badge variant="destructive">Não Conforme</Badge>;
-                              default: return <Badge variant="outline">{aiExplanation.status_sugerido}</Badge>;
+                        <div
+                          className="relative border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+                          onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
+                            const files = e.dataTransfer.files;
+                            if (files.length > 0) {
+                              const input = document.getElementById('file-upload') as HTMLInputElement;
+                              if (input) { input.files = files; input.dispatchEvent(new Event('change', { bubbles: true })); }
                             }
-                          })()}
-                          <span className="text-muted-foreground flex-1">{aiExplanation.justificativa_sugestao}</span>
+                          }}
+                          onClick={() => document.getElementById('file-upload')?.click()}
+                        >
+                          <Upload className="h-6 w-6 mx-auto text-muted-foreground/50 mb-1" />
+                          <p className="text-sm text-muted-foreground">{uploading ? 'Enviando...' : 'Arraste arquivos ou clique para buscar'}</p>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                </CollapsibleSection>
+                        <input id="file-upload" type="file" multiple className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" />
+                        <Button type="button" variant="outline" size="sm" onClick={() => {
+                          const url = prompt('URL da evidência:');
+                          if (url?.trim()) {
+                            const name = prompt('Nome do link:') || new URL(url).hostname;
+                            setFormData(prev => ({ ...prev, evidence_files: [...prev.evidence_files, { type: 'link', name, url: url.trim() }] }));
+                          }
+                        }}>
+                          <ExternalLink className="h-4 w-4 mr-1" />Adicionar Link
+                        </Button>
 
-                {/* Histórico */}
-                <CollapsibleSection title="Histórico de Alterações" icon={History}>
-                  <div className="max-h-48 overflow-y-auto">
-                    <AuditTrailTimeline requirementId={requirement.id} frameworkId={frameworkId} />
+                        {formData.evidence_files.length > 0 && (
+                          <div className="border rounded-md p-2 space-y-1">
+                            {formData.evidence_files.map((file, index) => (
+                              <div key={index} className="flex items-center justify-between p-1.5 bg-muted/50 rounded text-sm">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  {file.type === 'link' ? <ExternalLink className="h-3.5 w-3.5 text-blue-500 shrink-0" /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                                  {file.type === 'link' ? (
+                                    <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline truncate text-xs" onClick={(e) => e.stopPropagation()}>{file.name}</a>
+                                  ) : (
+                                    <span className="truncate text-xs">{file.name}</span>
+                                  )}
+                                </div>
+                                <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleRemoveFile(index)}>
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleSection>
+
+                    {/* Riscos Vinculados */}
+                    <CollapsibleSection
+                      title="Riscos Vinculados"
+                      icon={AlertTriangle}
+                      badge={formData.riscos_vinculados.length > 0 ? <Badge variant="secondary" className="text-[10px]">{formData.riscos_vinculados.length}</Badge> : undefined}
+                    >
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {riscos.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-3">Nenhum risco cadastrado</p>
+                        ) : (
+                          riscos.map(risco => (
+                            <label key={risco.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1.5 rounded text-sm">
+                              <input type="checkbox" checked={formData.riscos_vinculados.includes(risco.id)} onChange={() => handleToggleRisco(risco.id)} className="rounded" />
+                              <span className="font-medium">{risco.nome}</span>
+                              <Badge variant="outline" className="ml-auto text-xs">{risco.nivel_risco_inicial}</Badge>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    </CollapsibleSection>
+
+                    {/* Histórico */}
+                    <CollapsibleSection title="Histórico de Alterações" icon={History}>
+                      <div className="max-h-48 overflow-y-auto">
+                        <AuditTrailTimeline requirementId={requirement.id} frameworkId={frameworkId} />
+                      </div>
+                    </CollapsibleSection>
                   </div>
-                </CollapsibleSection>
-              </div>
+                </div>
+              </ScrollArea>
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="px-6 py-4 border-t">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
             <Button onClick={handleSave} disabled={saving || loading}>
               {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Salvando...</> : 'Salvar Detalhes'}

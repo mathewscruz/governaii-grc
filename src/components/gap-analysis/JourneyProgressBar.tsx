@@ -1,55 +1,68 @@
-import { CheckCircle2, BookOpen, ClipboardCheck, Wrench, Award } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { PlayCircle, ArrowRight, ClipboardCheck, Award, AlertTriangle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
 interface JourneyProgressBarProps {
   evaluatedRequirements: number;
   totalRequirements: number;
   conformeCount: number;
   hasActionPlans: boolean;
+  naoConformeCount?: number;
 }
 
-const STEPS = [
-  {
-    id: 1,
-    label: 'Conhecer o Framework',
-    description: 'Entenda os requisitos e o roteiro de avaliação',
-    icon: BookOpen,
-  },
-  {
-    id: 2,
-    label: 'Avaliar Requisitos',
-    description: 'Avalie cada requisito com ajuda da IA',
-    icon: ClipboardCheck,
-  },
-  {
-    id: 3,
-    label: 'Tratar Gaps',
-    description: 'Crie planos de ação para itens não conformes',
-    icon: Wrench,
-  },
-  {
-    id: 4,
-    label: 'Certificar',
-    description: 'Maturidade elevada — pronto para auditoria',
-    icon: Award,
-  },
-];
-
-function calculateCurrentStep(
+function getContextualState(
   evaluated: number,
   total: number,
   conformeCount: number,
-  hasActionPlans: boolean
-): number {
-  if (total === 0 || evaluated === 0) return 1;
-  const applicableEvaluated = evaluated;
-  const percentEvaluated = (applicableEvaluated / total) * 100;
-  const percentConforme = total > 0 ? (conformeCount / total) * 100 : 0;
+  hasActionPlans: boolean,
+  naoConformeCount: number
+) {
+  if (total === 0) return null;
+  const pctEvaluated = (evaluated / total) * 100;
+  const pctConforme = total > 0 ? (conformeCount / total) * 100 : 0;
 
-  if (percentConforme >= 80) return 4;
-  if (percentEvaluated >= 50 && hasActionPlans) return 3;
-  if (percentEvaluated > 0) return 2;
-  return 1;
+  if (evaluated === 0) {
+    return {
+      icon: PlayCircle,
+      iconColor: 'text-primary',
+      bgColor: 'bg-primary/5 border-primary/20',
+      message: 'Comece avaliando os requisitos — clique em qualquer linha da tabela para iniciar.',
+      action: 'Iniciar avaliação',
+    };
+  }
+  if (pctConforme >= 80) {
+    return {
+      icon: Award,
+      iconColor: 'text-chart-2',
+      bgColor: 'bg-chart-2/5 border-chart-2/20',
+      message: `Excelente! ${conformeCount} de ${total} requisitos conformes. Sua organização está pronta para auditoria externa.`,
+      action: null,
+    };
+  }
+  if (pctEvaluated >= 50 && naoConformeCount > 0 && !hasActionPlans) {
+    return {
+      icon: AlertTriangle,
+      iconColor: 'text-chart-4',
+      bgColor: 'bg-chart-4/5 border-chart-4/20',
+      message: `${naoConformeCount} requisito(s) não conforme(s) identificado(s). Crie planos de ação para tratar os gaps.`,
+      action: 'Ver remediação',
+    };
+  }
+  if (pctEvaluated < 100) {
+    return {
+      icon: ClipboardCheck,
+      iconColor: 'text-primary',
+      bgColor: 'bg-primary/5 border-primary/20',
+      message: `Continue avaliando — ${evaluated} de ${total} concluídos. Foque nos obrigatórios primeiro.`,
+      action: null,
+    };
+  }
+  return {
+    icon: Award,
+    iconColor: 'text-chart-2',
+    bgColor: 'bg-chart-2/5 border-chart-2/20',
+    message: `Todos os ${total} requisitos foram avaliados. Revise os itens não conformes e crie planos de ação.`,
+    action: null,
+  };
 }
 
 export function JourneyProgressBar({
@@ -57,73 +70,28 @@ export function JourneyProgressBar({
   totalRequirements,
   conformeCount,
   hasActionPlans,
+  naoConformeCount = 0,
 }: JourneyProgressBarProps) {
-  const currentStep = calculateCurrentStep(
-    evaluatedRequirements,
-    totalRequirements,
-    conformeCount,
-    hasActionPlans
-  );
+  const state = getContextualState(evaluatedRequirements, totalRequirements, conformeCount, hasActionPlans, naoConformeCount);
+  if (!state) return null;
+
+  const Icon = state.icon;
+  const pct = totalRequirements > 0 ? (evaluatedRequirements / totalRequirements) * 100 : 0;
 
   return (
-    <div className="bg-card border rounded-lg p-4 md:p-6">
-      <div className="flex items-center justify-between mb-1">
-        <h3 className="text-sm font-semibold text-foreground">Sua Jornada de Certificação</h3>
-        <span className="text-xs text-muted-foreground">Etapa {currentStep} de 4</span>
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${state.bgColor}`}>
+      <Icon className={`h-5 w-5 shrink-0 ${state.iconColor}`} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-foreground">{state.message}</p>
+        {evaluatedRequirements > 0 && evaluatedRequirements < totalRequirements && (
+          <Progress value={pct} className="h-1.5 mt-1.5" />
+        )}
       </div>
-
-      {/* Progress bar with steps */}
-      <div className="relative mt-4">
-        {/* Background line */}
-        <div className="absolute top-4 left-0 right-0 h-0.5 bg-border" />
-        {/* Active line */}
-        <div
-          className="absolute top-4 left-0 h-0.5 bg-primary transition-all duration-500"
-          style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
-        />
-
-        <div className="relative flex justify-between">
-          {STEPS.map((step) => {
-            const Icon = step.icon;
-            const isCompleted = step.id < currentStep;
-            const isCurrent = step.id === currentStep;
-
-            return (
-              <div key={step.id} className="flex flex-col items-center text-center w-1/4">
-                <div
-                  className={cn(
-                    'flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300',
-                    isCompleted
-                      ? 'bg-primary border-primary text-primary-foreground'
-                      : isCurrent
-                        ? 'bg-primary/10 border-primary text-primary'
-                        : 'bg-background border-muted-foreground/30 text-muted-foreground/50'
-                  )}
-                >
-                  {isCompleted ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <Icon className="h-4 w-4" />
-                  )}
-                </div>
-                <span
-                  className={cn(
-                    'text-[11px] mt-2 font-medium leading-tight hidden sm:block',
-                    isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
-                  )}
-                >
-                  {step.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Current step hint */}
-      <p className="text-xs text-muted-foreground mt-4 text-center">
-        {STEPS[currentStep - 1].description}
-      </p>
+      {state.action && (
+        <span className="text-xs font-medium text-primary flex items-center gap-1 shrink-0 cursor-default">
+          {state.action} <ArrowRight className="h-3 w-3" />
+        </span>
+      )}
     </div>
   );
 }
