@@ -719,11 +719,11 @@ const LandingPage = () => {
               <h4 className="font-semibold text-white mb-4">Localização</h4>
               <ul className="space-y-2.5">
                 <li className="flex items-center gap-2 text-gray-400 text-sm">
-                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span className="text-base shrink-0">🇧🇷</span>
                   São Paulo - Brazil
                 </li>
                 <li className="flex items-center gap-2 text-gray-400 text-sm">
-                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span className="text-base shrink-0">🇵🇹</span>
                   Porto - PT
                 </li>
               </ul>
