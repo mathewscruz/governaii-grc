@@ -1,48 +1,80 @@
 
 
-# Plano: Legenda do Ícone de Alerta + Completar ISO 27001
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-## 1. Legenda para o ícone de exclamação
-
-O ícone `AlertTriangle` (⚠️) aparece quando o requisito tem **peso ≥ 3** e status **Não Conforme** — indicando um item de alta prioridade em não conformidade. Atualmente não há nenhuma explicação visual para o usuário.
-
-**Solução**: Adicionar uma barra de legenda discreta abaixo dos filtros/acima da tabela, com os indicadores visuais utilizados:
-
-| Ícone | Significado |
-|-------|------------|
-| ⚠️ (AlertTriangle vermelho) | Requisito de alta prioridade em não conformidade |
-
-**Arquivo**: `src/components/gap-analysis/GenericRequirementsTable.tsx` — inserir um pequeno bloco de legenda (`text-xs text-muted-foreground`) antes da tabela.
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
 ---
 
-## 2. Completar requisitos ISO 27001:2022
+## 1. ErrorBoundary ausente na maioria das paginas
 
-A ISO 27001:2022 possui **28 cláusulas** (não 24) quando contamos todos os subitens numerados. Faltam 4 itens:
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-| Código | Título |
-|--------|--------|
-| 6.3 | Planejamento de mudanças |
-| 9.2.1 | Generalidades (Auditoria interna) |
-| 9.2.2 | Programa de auditoria interna |
-| 9.3.1 | Generalidades (Análise crítica pela direção) |
-| 9.3.2 | Entradas da análise crítica pela direção |
-| 9.3.3 | Resultados da análise crítica pela direção |
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
-Os itens atuais `9.2` e `9.3` devem ser **substituídos** pelos seus subitens, e `6.3` deve ser **adicionado**. Resultado: 24 - 2 (9.2, 9.3) + 6 (novos) = **28 cláusulas**.
-
-**Ação**: Usar o insert tool para:
-1. Inserir os 5 novos requisitos (6.3, 9.2.1, 9.2.2, 9.3.1, 9.3.2, 9.3.3)
-2. Remover os 2 antigos (9.2, 9.3) — migrando eventuais avaliações existentes antes
-
-**Total final**: 28 cláusulas + 93 Anexo A = **121 requisitos**.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
 ---
 
-## Resumo de Impacto
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-| Arquivo/Recurso | Ação |
-|-----------------|------|
-| `GenericRequirementsTable.tsx` | Adicionar legenda visual dos ícones |
-| Banco de dados (INSERT/DELETE) | Ajustar requisitos ISO 27001 de 24→28 cláusulas |
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+
+---
+
+## 3. Paginas sem EmptyState padronizado
+
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+
+---
+
+## 4. Ausencia de atalhos de teclado documentados para o usuario
+
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+
+---
+
+## 5. Botao de "Voltar" no header nao tem tooltip
+
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+
+---
+
+## Resumo de Prioridade
+
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 
