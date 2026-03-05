@@ -7,6 +7,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from '@/components/ui/command';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,6 +29,7 @@ import {
   Key,
   ScrollText,
   Search,
+  Keyboard,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -110,6 +112,23 @@ function CommandPaletteDialog({ open, onOpenChange }: { open: boolean; onOpenCha
               <span>{module.name}</span>
             </CommandItem>
           ))}
+        </CommandGroup>
+        <CommandSeparator />
+        <CommandGroup heading="Atalhos de Teclado">
+          <CommandItem className="flex items-center justify-between cursor-default" value="atalho busca cmd k">
+            <div className="flex items-center gap-3">
+              <Keyboard className="h-4 w-4 text-muted-foreground" />
+              <span>Busca Rápida</span>
+            </div>
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">⌘K</kbd>
+          </CommandItem>
+          <CommandItem className="flex items-center justify-between cursor-default" value="atalho sidebar ctrl b">
+            <div className="flex items-center gap-3">
+              <Keyboard className="h-4 w-4 text-muted-foreground" />
+              <span>Abrir/Fechar Menu</span>
+            </div>
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">Ctrl+B</kbd>
+          </CommandItem>
         </CommandGroup>
       </CommandList>
     </CommandDialog>

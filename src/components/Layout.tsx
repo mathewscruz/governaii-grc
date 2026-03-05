@@ -1,5 +1,6 @@
 import React from 'react';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { useAuth } from '@/components/AuthProvider';
@@ -19,6 +20,7 @@ import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { differenceInDays, parseISO } from 'date-fns';
 import { AlertTriangle, Lock, ArrowLeft } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import akurisLogo from '@/assets/akuris-logo.png';
 
@@ -149,6 +151,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background rounded-2xl m-2 border border-[hsl(230,20%,20%)]/30">
           {/* Banner de Trial */}
           <TrialBanner />
+          <TrialBanner />
           
           <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card flex-shrink-0">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
@@ -166,14 +169,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               {/* Back button - visible when not on dashboard */}
               {location.pathname !== '/dashboard' && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 flex-shrink-0" 
-                  onClick={() => navigate(-1)}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 flex-shrink-0" 
+                      onClick={() => {
+                        if (window.history.length > 2) {
+                          navigate(-1);
+                        } else {
+                          navigate('/dashboard');
+                        }
+                      }}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Voltar</TooltipContent>
+                </Tooltip>
               )}
               
               <Breadcrumb className="hidden sm:block">
@@ -210,9 +224,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </header>
 
           <main className="flex-1 p-4 md:p-6 overflow-auto overflow-x-hidden w-full max-w-full pb-20 md:pb-6">
-            <PageTransition routeKey={location.pathname}>
-              {children}
-            </PageTransition>
+            <ErrorBoundary>
+              <PageTransition routeKey={location.pathname}>
+                {children}
+              </PageTransition>
+            </ErrorBoundary>
           </main>
         </div>
         
