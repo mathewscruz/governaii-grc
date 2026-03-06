@@ -917,7 +917,7 @@ export default function Documentos() {
           open={renovarDialog.open}
           onOpenChange={(open) => setRenovarDialog({ open, documento: undefined })}
           documento={renovarDialog.documento || null}
-          onSuccess={fetchDocumentos}
+          onSuccess={invalidateDocumentos}
         />
 
         <HistoricoVersoesDialog
