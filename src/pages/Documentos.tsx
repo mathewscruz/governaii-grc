@@ -891,7 +891,7 @@ export default function Documentos() {
           open={showDocGenDialog}
           onOpenChange={setShowDocGenDialog}
           onDocumentSaved={() => {
-            fetchDocumentos();
+            invalidateDocumentos();
             setShowDocGenDialog(false);
           }}
         />
