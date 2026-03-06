@@ -560,7 +560,7 @@ export default function Privacidade() {
         description: "Item excluído com sucesso!",
       });
 
-      loadData();
+      invalidatePrivacidade();
       setDeleteConfirm({ open: false, id: '', type: '' });
     } catch (error: any) {
       logger.error('Erro ao excluir item de privacidade', { error: error instanceof Error ? error.message : String(error) });
