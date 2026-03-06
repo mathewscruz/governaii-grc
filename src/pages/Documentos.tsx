@@ -844,7 +844,7 @@ export default function Documentos() {
             open={aprovacaoDialog.open}
             onOpenChange={(open) => setAprovacaoDialog({ open })}
             documento={aprovacaoDialog.documento}
-            onSuccess={fetchDocumentos}
+            onSuccess={invalidateDocumentos}
           />
         )}
 
