@@ -820,7 +820,7 @@ export default function Documentos() {
           onOpenChange={(open) => setDocumentoDialog({ open })}
           documento={documentoDialog.documento}
           onSuccess={() => {
-            fetchDocumentos();
+            invalidateDocumentos();
             setDocumentoDialog({ open: false });
           }}
         />
