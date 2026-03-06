@@ -815,7 +815,7 @@ export default function Contratos() {
           fornecedor={selectedFornecedor}
           open={fornecedorDialogOpen}
           onOpenChange={setFornecedorDialogOpen}
-          onSuccess={fetchData}
+          onSuccess={invalidateData}
         />
 
         <MarcosDialog
