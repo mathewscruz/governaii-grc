@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +15,9 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Plus, Search, FileText, DollarSign, Users, AlertCircle, Edit, TrendingUp, Trash2, Building2, FileStack, Milestone, FilePlus2, Download, MoreHorizontal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { logger } from '@/lib/logger';
 import { ContratoDialogWizard } from '@/components/contratos/ContratoDialogWizard';
 import { FornecedorDialog } from '@/components/contratos/FornecedorDialog';
 import { MarcosDialog } from '@/components/contratos/MarcosDialog';
@@ -73,9 +76,8 @@ interface Fornecedor {
 }
 
 export default function Contratos() {
-  const [contratos, setContratos] = useState<Contrato[]>([]);
-  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { empresaId } = useEmpresaId();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchTermFornecedor, setSearchTermFornecedor] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -106,92 +108,75 @@ export default function Contratos() {
   // Buscar estatísticas dos contratos
   const { data: statsContratos } = useContratosStats();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // React Query para contratos
+  const { data: contratos = [], isLoading: loadingContratos } = useQuery({
+    queryKey: ['contratos', empresaId],
+    queryFn: async () => {
+      if (!empresaId) return [];
+      const { data, error } = await supabase
+        .from('contratos')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .order('created_at', { ascending: false });
 
-  // Reset pagination when filters change
-  useEffect(() => {
-    setCurrentPageContratos(1);
-  }, [searchTerm, statusFilter, tipoFilter]);
-
-  useEffect(() => {
-    setCurrentPageFornecedores(1);
-  }, [searchTermFornecedor, statusFornecedorFilter, categoriaFornecedorFilter, riscoFornecedorFilter]);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      await Promise.all([
-        fetchContratos(),
-        fetchFornecedores()
-      ]);
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar dados dos contratos",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchContratos = async () => {
-    const { data, error } = await supabase
-      .from('contratos')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    
-    // Buscar dados dos fornecedores separadamente
-    if (data && data.length > 0) {
-      const fornecedorIds = [...new Set(data.map(c => c.fornecedor_id).filter(Boolean))];
-      const { data: fornecedoresData } = await supabase
-        .from('fornecedores')
-        .select('id, nome, avaliacao_risco')
-        .in('id', fornecedorIds);
-
-      // Combinar os dados
-      const contratosComFornecedores = data.map(contrato => ({
-        ...contrato,
-        fornecedores: fornecedoresData?.find(f => f.id === contrato.fornecedor_id) || null
-      }));
+      if (error) throw error;
       
-      setContratos(contratosComFornecedores as Contrato[]);
-    } else {
-      setContratos([]);
-    }
-  };
+      if (data && data.length > 0) {
+        const fornecedorIds = [...new Set(data.map(c => c.fornecedor_id).filter(Boolean))];
+        const { data: fornecedoresData } = await supabase
+          .from('fornecedores')
+          .select('id, nome, avaliacao_risco')
+          .in('id', fornecedorIds);
 
-  const fetchFornecedores = async () => {
-    const { data, error } = await supabase
-      .from('fornecedores')
-      .select('*')
-      .order('nome');
-
-    if (error) throw error;
-
-    // Buscar contagem de contratos por fornecedor
-    const { data: contratosData } = await supabase
-      .from('contratos')
-      .select('fornecedor_id');
-
-    const contratosCountMap: Record<string, number> = {};
-    (contratosData || []).forEach(c => {
-      if (c.fornecedor_id) {
-        contratosCountMap[c.fornecedor_id] = (contratosCountMap[c.fornecedor_id] || 0) + 1;
+        return data.map(contrato => ({
+          ...contrato,
+          fornecedores: fornecedoresData?.find(f => f.id === contrato.fornecedor_id) || null
+        })) as Contrato[];
       }
-    });
+      return [];
+    },
+    enabled: !!empresaId,
+  });
 
-    const fornecedoresComContagem = (data || []).map(f => ({
-      ...f,
-      contratos_count: contratosCountMap[f.id] || 0
-    }));
+  // React Query para fornecedores
+  const { data: fornecedores = [], isLoading: loadingFornecedores } = useQuery({
+    queryKey: ['fornecedores', empresaId],
+    queryFn: async () => {
+      if (!empresaId) return [];
+      const { data, error } = await supabase
+        .from('fornecedores')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .order('nome');
 
-    setFornecedores(fornecedoresComContagem);
+      if (error) throw error;
+
+      const { data: contratosData } = await supabase
+        .from('contratos')
+        .select('fornecedor_id')
+        .eq('empresa_id', empresaId);
+
+      const contratosCountMap: Record<string, number> = {};
+      (contratosData || []).forEach(c => {
+        if (c.fornecedor_id) {
+          contratosCountMap[c.fornecedor_id] = (contratosCountMap[c.fornecedor_id] || 0) + 1;
+        }
+      });
+
+      return (data || []).map(f => ({
+        ...f,
+        contratos_count: contratosCountMap[f.id] || 0
+      }));
+    },
+    enabled: !!empresaId,
+  });
+
+  const loading = loadingContratos || loadingFornecedores;
+
+  const invalidateData = () => {
+    queryClient.invalidateQueries({ queryKey: ['contratos'] });
+    queryClient.invalidateQueries({ queryKey: ['fornecedores'] });
+    queryClient.invalidateQueries({ queryKey: ['contratos-stats'] });
   };
 
   const handleEdit = (item: Contrato | Fornecedor, type: 'contrato' | 'fornecedor') => {
@@ -222,10 +207,10 @@ export default function Contratos() {
         description: `${deleteConfirm.type === 'contrato' ? 'Contrato' : 'Fornecedor'} excluído com sucesso`,
       });
 
-      fetchData();
+      invalidateData();
       setDeleteConfirm({ open: false, id: '', type: 'contrato' });
     } catch (error) {
-      console.error('Erro ao excluir:', error);
+      logger.error('Erro ao excluir', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro",
         description: `Erro ao excluir ${deleteConfirm.type === 'contrato' ? 'contrato' : 'fornecedor'}`,
@@ -822,7 +807,7 @@ export default function Contratos() {
           contrato={selectedContrato}
           open={dialogOpen}
           onOpenChange={setDialogOpen}
-          onSuccess={fetchData}
+          onSuccess={invalidateData}
           fornecedores={fornecedores}
         />
 
@@ -830,7 +815,7 @@ export default function Contratos() {
           fornecedor={selectedFornecedor}
           open={fornecedorDialogOpen}
           onOpenChange={setFornecedorDialogOpen}
-          onSuccess={fetchData}
+          onSuccess={invalidateData}
         />
 
         <MarcosDialog

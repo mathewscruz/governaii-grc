@@ -28,6 +28,9 @@ import { RenovarDocumentoDialog } from '@/components/documentos/RenovarDocumento
 import { HistoricoVersoesDialog } from '@/components/documentos/HistoricoVersoesDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { logger } from '@/lib/logger';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { capitalizeText, getItemStatusColor, getTipoColor, getClassificacaoColor, formatStatus } from '@/lib/text-utils';
@@ -67,10 +70,10 @@ interface Categoria {
 export default function Documentos() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const { empresaId } = useEmpresaId();
+  const queryClient = useQueryClient();
   const [documentosFiltrados, setDocumentosFiltrados] = useState<Documento[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -103,10 +106,47 @@ export default function Documentos() {
   // Buscar estatísticas dos documentos
   const { data: statsDocumentos } = useDocumentosStats();
 
+  // React Query para documentos
+  const { data: documentos = [], isLoading: loading } = useQuery({
+    queryKey: ['documentos', empresaId],
+    queryFn: async () => {
+      if (!empresaId) return [];
+      const { data, error } = await supabase
+        .from('documentos')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as Documento[];
+    },
+    enabled: !!empresaId,
+  });
+
+  const invalidateDocumentos = () => {
+    queryClient.invalidateQueries({ queryKey: ['documentos'] });
+    queryClient.invalidateQueries({ queryKey: ['documentos-stats'] });
+  };
+
+  // Fetch categorias via React Query
+  const { data: categoriasData = [] } = useQuery({
+    queryKey: ['documentos-categorias', empresaId],
+    queryFn: async () => {
+      if (!empresaId) return [];
+      const { data, error } = await supabase
+        .from('documentos_categorias')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .order('nome');
+      if (error) throw error;
+      return (data || []) as Categoria[];
+    },
+    enabled: !!empresaId,
+  });
+
   useEffect(() => {
-    fetchDocumentos();
-    fetchCategorias();
-  }, []);
+    setCategorias(categoriasData);
+  }, [categoriasData]);
 
   useEffect(() => {
     aplicarFiltros();
@@ -142,41 +182,6 @@ export default function Documentos() {
       }
     }
   }, [searchParams, documentos, setSearchParams]);
-
-  const fetchDocumentos = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('documentos')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setDocumentos(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar documentos:', error);
-      toast({
-        title: "Erro ao carregar documentos",
-        description: "Tente novamente em alguns instantes.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCategorias = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('documentos_categorias')
-        .select('*')
-        .order('nome');
-
-      if (error) throw error;
-      setCategorias(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar categorias:', error);
-    }
-  };
 
   const aplicarFiltros = () => {
     let filtered = [...documentos];
@@ -298,10 +303,10 @@ export default function Documentos() {
         description: "O documento foi excluído com sucesso.",
       });
 
-      fetchDocumentos();
+      invalidateDocumentos();
       setDeleteConfirm({ open: false, documentoId: '' });
     } catch (error) {
-      console.error('Erro ao excluir documento:', error);
+      logger.error('Erro ao excluir documento', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro ao excluir documento",
         description: "Tente novamente em alguns instantes.",
@@ -815,7 +820,7 @@ export default function Documentos() {
           onOpenChange={(open) => setDocumentoDialog({ open })}
           documento={documentoDialog.documento}
           onSuccess={() => {
-            fetchDocumentos();
+            invalidateDocumentos();
             setDocumentoDialog({ open: false });
           }}
         />
@@ -823,7 +828,7 @@ export default function Documentos() {
         <CategoriasDialog
           open={categoriasDialog}
           onOpenChange={setCategoriasDialog}
-          onSuccess={fetchCategorias}
+          onSuccess={() => queryClient.invalidateQueries({ queryKey: ['documentos-categorias'] })}
         />
 
         {vinculacoesDialog.documento && (
@@ -839,7 +844,7 @@ export default function Documentos() {
             open={aprovacaoDialog.open}
             onOpenChange={(open) => setAprovacaoDialog({ open })}
             documento={aprovacaoDialog.documento}
-            onSuccess={fetchDocumentos}
+            onSuccess={invalidateDocumentos}
           />
         )}
 
@@ -878,7 +883,7 @@ export default function Documentos() {
         <UploadMultiplosDialog
           open={uploadMultiplos}
           onOpenChange={setUploadMultiplos}
-          onSuccess={fetchDocumentos}
+          onSuccess={invalidateDocumentos}
           categorias={categorias}
         />
 
@@ -886,7 +891,7 @@ export default function Documentos() {
           open={showDocGenDialog}
           onOpenChange={setShowDocGenDialog}
           onDocumentSaved={() => {
-            fetchDocumentos();
+            invalidateDocumentos();
             setShowDocGenDialog(false);
           }}
         />
@@ -912,7 +917,7 @@ export default function Documentos() {
           open={renovarDialog.open}
           onOpenChange={(open) => setRenovarDialog({ open, documento: undefined })}
           documento={renovarDialog.documento || null}
-          onSuccess={fetchDocumentos}
+          onSuccess={invalidateDocumentos}
         />
 
         <HistoricoVersoesDialog

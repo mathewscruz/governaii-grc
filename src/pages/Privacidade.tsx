@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { logger } from '@/lib/logger';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { Plus, Database, Users, AlertTriangle, Edit, Trash2, Link2, FileText, Eye, Clock, ShieldAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -25,20 +27,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 export default function Privacidade() {
   const navigate = useNavigate();
+  const { empresaId } = useEmpresaId();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("catalogo");
-  const [dadosPessoais, setDadosPessoais] = useState<any[]>([]);
-  const [ropaRegistros, setRopaRegistros] = useState<any[]>([]);
-  const [solicitacoes, setSolicitacoes] = useState<any[]>([]);
-  const [incidentesPrivacidade, setIncidentesPrivacidade] = useState(0);
-  const [solicitacoesForaPrazo, setSolicitacoesForaPrazo] = useState(0);
-  const [stats, setStats] = useState({
-    totalDados: 0,
-    dadosSensiveis: 0,
-    mapeamentos: 0,
-    ropaAtivos: 0,
-    solicitacoesPendentes: 0
-  });
-  
   const [showDadosDialog, setShowDadosDialog] = useState(false);
   const [showMapeamentoDialog, setShowMapeamentoDialog] = useState(false);
   const [showRopaWizard, setShowRopaWizard] = useState(false);
@@ -78,24 +69,19 @@ export default function Privacidade() {
   
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      // Query with aggregated counts for catalog
-      const dadosRes = await supabase.from('dados_pessoais').select('*').order('nome');
-      const mapeamentosRes = await supabase.from('dados_mapeamento').select('id, dados_pessoais_id');
-      const ropaRes = await supabase.from('ropa_registros').select('*').order('nome_tratamento');
-      const solicitacoesRes = await supabase.from('dados_solicitacoes_titular').select('*').order('data_solicitacao', { ascending: false });
+  // React Query for all privacy data
+  const { data: privacidadeData, isLoading } = useQuery({
+    queryKey: ['privacidade', empresaId],
+    queryFn: async () => {
+      if (!empresaId) return null;
+      
+      const dadosRes = await supabase.from('dados_pessoais').select('*').eq('empresa_id', empresaId).order('nome');
+      const mapeamentosRes = await (supabase.from('dados_mapeamento' as any).select('id, dados_pessoais_id') as any).eq('empresa_id', empresaId);
+      const ropaRes = await supabase.from('ropa_registros').select('*').eq('empresa_id', empresaId).order('nome_tratamento');
+      const solicitacoesRes = await supabase.from('dados_solicitacoes_titular').select('*').eq('empresa_id', empresaId).order('data_solicitacao', { ascending: false });
       const ropaDadosRes = await supabase.from('ropa_dados_vinculados').select('id, dados_pessoais_id');
-      const incidentesRes = await (supabase.from('incidentes').select('id') as any).eq('tipo', 'privacidade');
+      const incidentesRes = await (supabase.from('incidentes').select('id') as any).eq('tipo', 'privacidade').eq('empresa_id', empresaId);
 
-      const incidentesAbertos = (incidentesRes.data || []).length;
-      setIncidentesPrivacidade(incidentesAbertos);
-
-      // Aggregate counts per dados_pessoais_id
       const mapeamentosCounts: Record<string, number> = {};
       (mapeamentosRes.data || []).forEach((m: any) => {
         mapeamentosCounts[m.dados_pessoais_id] = (mapeamentosCounts[m.dados_pessoais_id] || 0) + 1;
@@ -106,43 +92,57 @@ export default function Privacidade() {
         ropasCounts[r.dados_pessoais_id] = (ropasCounts[r.dados_pessoais_id] || 0) + 1;
       });
 
-      // Enrich dados with counts
       const dadosEnriquecidos = (dadosRes.data || []).map((dado: any) => ({
         ...dado,
         mapeamentos_count: mapeamentosCounts[dado.id] || 0,
         ropas_count: ropasCounts[dado.id] || 0
       }));
 
-      setDadosPessoais(dadosEnriquecidos);
-      setRopaRegistros(ropaRes.data || []);
-      setSolicitacoes(solicitacoesRes.data || []);
-
-      // Calcular estatísticas
       const dados = dadosRes.data || [];
       const sensiveis = dados.filter((d: any) => d.tipo_dados === 'sensivel' || d.sensibilidade === 'muito_sensivel').length;
       const allSolicitacoes = solicitacoesRes.data || [];
       const pendentes = allSolicitacoes.filter((s: any) => s.status === 'pendente').length;
       
-      // Calcular solicitações fora do prazo LGPD (15 dias)
       const hoje = new Date();
       const foraPrazo = allSolicitacoes.filter((s: any) => {
         if (s.status === 'atendida' || s.status === 'rejeitada') return false;
         const prazo = s.prazo_resposta ? new Date(s.prazo_resposta) : null;
         return prazo && prazo < hoje;
       }).length;
-      setSolicitacoesForaPrazo(foraPrazo);
 
-      setStats({
-        totalDados: dados.length,
-        dadosSensiveis: sensiveis,
-        mapeamentos: (mapeamentosRes.data || []).length,
-        ropaAtivos: (ropaRes.data || []).filter((r: any) => r.status === 'ativo').length,
-        solicitacoesPendentes: pendentes
-      });
-    } catch (error) {
-      logger.error('Erro ao carregar dados de privacidade', { error: error instanceof Error ? error.message : String(error) });
-      toast({ title: "Erro ao carregar dados", variant: "destructive" });
-    }
+      return {
+        dadosPessoais: dadosEnriquecidos,
+        ropaRegistros: ropaRes.data || [],
+        solicitacoes: allSolicitacoes,
+        incidentesPrivacidade: (incidentesRes.data || []).length,
+        solicitacoesForaPrazo: foraPrazo,
+        stats: {
+          totalDados: dados.length,
+          dadosSensiveis: sensiveis,
+          mapeamentos: (mapeamentosRes.data || []).length,
+          ropaAtivos: (ropaRes.data || []).filter((r: any) => r.status === 'ativo').length,
+          solicitacoesPendentes: pendentes
+        }
+      };
+    },
+    enabled: !!empresaId,
+  });
+
+  const dadosPessoais = privacidadeData?.dadosPessoais || [];
+  const ropaRegistros = privacidadeData?.ropaRegistros || [];
+  const solicitacoes = privacidadeData?.solicitacoes || [];
+  const incidentesPrivacidade = privacidadeData?.incidentesPrivacidade || 0;
+  const solicitacoesForaPrazo = privacidadeData?.solicitacoesForaPrazo || 0;
+  const stats = privacidadeData?.stats || {
+    totalDados: 0,
+    dadosSensiveis: 0,
+    mapeamentos: 0,
+    ropaAtivos: 0,
+    solicitacoesPendentes: 0
+  };
+
+  const invalidatePrivacidade = () => {
+    queryClient.invalidateQueries({ queryKey: ['privacidade'] });
   };
 
   const getSensibilidadeBadge = (tipo: string, sensibilidade: string) => {
@@ -558,7 +558,7 @@ export default function Privacidade() {
         description: "Item excluído com sucesso!",
       });
 
-      loadData();
+      invalidatePrivacidade();
       setDeleteConfirm({ open: false, id: '', type: '' });
     } catch (error: any) {
       logger.error('Erro ao excluir item de privacidade', { error: error instanceof Error ? error.message : String(error) });
@@ -756,7 +756,7 @@ export default function Privacidade() {
         </TabsContent>
 
         <TabsContent value="descobertas" className="space-y-4">
-          <DescoberDadosTab onRefresh={loadData} />
+          <DescoberDadosTab onRefresh={invalidatePrivacidade} />
         </TabsContent>
       </Tabs>
 
@@ -766,7 +766,7 @@ export default function Privacidade() {
           setShowDadosDialog(false);
           setSelectedDado(null);
         }}
-        onSave={loadData}
+        onSave={invalidatePrivacidade}
         dados={selectedDado}
       />
       <MapeamentoDialog
@@ -775,7 +775,7 @@ export default function Privacidade() {
           setShowMapeamentoDialog(false);
           setSelectedDado(null);
         }}
-        onSave={loadData}
+        onSave={invalidatePrivacidade}
       />
       <RopaWizard
         isOpen={showRopaWizard}
@@ -783,7 +783,7 @@ export default function Privacidade() {
           setShowRopaWizard(false);
           setPreSelectedDadoId(undefined);
         }}
-        onSave={loadData}
+        onSave={invalidatePrivacidade}
         preSelectedDadoId={preSelectedDadoId}
       />
       <SolicitacaoTitularDialog
@@ -792,7 +792,7 @@ export default function Privacidade() {
           setShowSolicitacaoDialog(false);
           setSelectedSolicitacao(null);
         }}
-        onSave={loadData}
+        onSave={invalidatePrivacidade}
         solicitacao={selectedSolicitacao}
       />
       
