@@ -303,10 +303,10 @@ export default function Documentos() {
         description: "O documento foi excluído com sucesso.",
       });
 
-      fetchDocumentos();
+      invalidateDocumentos();
       setDeleteConfirm({ open: false, documentoId: '' });
     } catch (error) {
-      console.error('Erro ao excluir documento:', error);
+      logger.error('Erro ao excluir documento', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro ao excluir documento",
         description: "Tente novamente em alguns instantes.",
