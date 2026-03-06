@@ -807,7 +807,7 @@ export default function Contratos() {
           contrato={selectedContrato}
           open={dialogOpen}
           onOpenChange={setDialogOpen}
-          onSuccess={fetchData}
+          onSuccess={invalidateData}
           fornecedores={fornecedores}
         />
 
