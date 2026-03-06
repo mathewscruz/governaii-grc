@@ -28,6 +28,9 @@ import { RenovarDocumentoDialog } from '@/components/documentos/RenovarDocumento
 import { HistoricoVersoesDialog } from '@/components/documentos/HistoricoVersoesDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { logger } from '@/lib/logger';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { capitalizeText, getItemStatusColor, getTipoColor, getClassificacaoColor, formatStatus } from '@/lib/text-utils';
