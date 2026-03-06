@@ -777,7 +777,7 @@ export default function Privacidade() {
           setShowMapeamentoDialog(false);
           setSelectedDado(null);
         }}
-        onSave={loadData}
+        onSave={invalidatePrivacidade}
       />
       <RopaWizard
         isOpen={showRopaWizard}
