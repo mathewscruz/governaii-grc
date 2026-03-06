@@ -210,7 +210,7 @@ export default function Contratos() {
       invalidateData();
       setDeleteConfirm({ open: false, id: '', type: 'contrato' });
     } catch (error) {
-      console.error('Erro ao excluir:', error);
+      logger.error('Erro ao excluir', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro",
         description: `Erro ao excluir ${deleteConfirm.type === 'contrato' ? 'contrato' : 'fornecedor'}`,
