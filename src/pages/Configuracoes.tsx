@@ -2,24 +2,22 @@ import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
-import { Users, Building2, Settings, Shield, Plug, MessageSquare, CreditCard, Sparkles, Landmark } from 'lucide-react';
+import { Users, Building2, Plug, MessageSquare, CreditCard, Sparkles, Landmark } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
-import GerenciamentoUsuariosEnhanced from '@/components/configuracoes/GerenciamentoUsuariosEnhanced';
-import { PermissionMatrix } from '@/components/configuracoes/PermissionMatrix';
-import ConfiguracoesGerais from '@/components/configuracoes/ConfiguracoesGerais';
-import { ReminderSettings } from '@/components/configuracoes/ReminderSettings';
 import { IntegrationHub } from '@/components/configuracoes/IntegrationHub';
 import { ConfiguracoesDenuncia } from '@/components/denuncia/ConfiguracoesDenuncia';
 import { CategoriasDenuncia } from '@/components/denuncia/CategoriasDenuncia';
 import { AssinaturaTab } from '@/components/configuracoes/AssinaturaTab';
 import { CreditosIAManager } from '@/components/configuracoes/CreditosIAManager';
-import { CompanyContextSettings } from '@/components/configuracoes/CompanyContextSettings';
+import { UsersAccessTab } from '@/components/configuracoes/UsersAccessTab';
+import { OrganizacaoTab } from '@/components/configuracoes/OrganizacaoTab';
 
 const Configuracoes = () => {
   const { profile, loading } = useAuth();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'usuarios';
+  const selectedUserId = searchParams.get('userId') || undefined;
 
   const userRole = profile?.role || 'user';
 
@@ -54,12 +52,12 @@ const Configuracoes = () => {
           )}
           <TabsTrigger value="usuarios" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Usuários</span>
+            <span className="hidden sm:inline">Usuários & Acessos</span>
           </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger value="permissoes" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Permissões</span>
+            <TabsTrigger value="organizacao" className="flex items-center gap-2">
+              <Landmark className="h-4 w-4" />
+              <span className="hidden sm:inline">Organização</span>
             </TabsTrigger>
           )}
           {isAdmin && (
@@ -74,25 +72,9 @@ const Configuracoes = () => {
               <span className="hidden sm:inline">Denúncia</span>
             </TabsTrigger>
           )}
-          {isSuperAdmin && (
-            <TabsTrigger value="creditos-ia" className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">Créditos IA</span>
-            </TabsTrigger>
-          )}
           <TabsTrigger value="assinatura" className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">Assinatura</span>
-          </TabsTrigger>
-          {isAdmin && (
-            <TabsTrigger value="organizacao" className="flex items-center gap-2">
-              <Landmark className="h-4 w-4" />
-              <span className="hidden sm:inline">Organização</span>
-            </TabsTrigger>
-          )}
-          <TabsTrigger value="geral" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Geral</span>
           </TabsTrigger>
         </TabsList>
 
@@ -113,22 +95,16 @@ const Configuracoes = () => {
         )}
 
         <TabsContent value="usuarios">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Gerenciamento de Usuários
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <GerenciamentoUsuariosEnhanced userRole={userRole} />
-            </CardContent>
-          </Card>
+          <UsersAccessTab 
+            userRole={userRole} 
+            isAdmin={isAdmin} 
+            selectedUserId={selectedUserId} 
+          />
         </TabsContent>
 
         {isAdmin && (
-          <TabsContent value="permissoes">
-            <PermissionMatrix />
+          <TabsContent value="organizacao">
+            <OrganizacaoTab />
           </TabsContent>
         )}
 
@@ -157,57 +133,22 @@ const Configuracoes = () => {
           </TabsContent>
         )}
 
-        {isSuperAdmin && (
-          <TabsContent value="creditos-ia">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5" />
-                  Gestão de Créditos IA
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CreditosIAManager />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-
         <TabsContent value="assinatura">
-          <AssinaturaTab />
-        </TabsContent>
-
-        {isAdmin && (
-          <TabsContent value="organizacao">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Landmark className="h-5 w-5" />
-                  Contexto da Organização
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CompanyContextSettings />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-
-        <TabsContent value="geral">
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Configurações Gerais
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ConfiguracoesGerais userRole={userRole} />
-              </CardContent>
-            </Card>
-
-            <ReminderSettings />
+            <AssinaturaTab />
+            {isSuperAdmin && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5" />
+                    Gestão de Créditos IA
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CreditosIAManager />
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
       </Tabs>

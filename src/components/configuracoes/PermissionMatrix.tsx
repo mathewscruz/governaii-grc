@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, Users, Loader2 } from 'lucide-react';
 import { PermissionProfilesList } from './PermissionProfilesList';
@@ -49,39 +49,28 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          Gestão de Permissões
-        </CardTitle>
-        <CardDescription>
-          Crie perfis reutilizáveis e gerencie permissões por usuário
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue={selectedUserId ? 'usuarios' : 'perfis'} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="perfis" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Perfis de Permissão
-            </TabsTrigger>
-            <TabsTrigger value="usuarios" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Permissões por Usuário
-            </TabsTrigger>
-          </TabsList>
+    <div>
+      <Tabs defaultValue={selectedUserId ? 'usuarios' : 'perfis'} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="perfis" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Perfis de Permissão
+          </TabsTrigger>
+          <TabsTrigger value="usuarios" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Permissões por Usuário
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="perfis">
-            <PermissionProfilesList empresaId={empresaId} />
-          </TabsContent>
+        <TabsContent value="perfis">
+          <PermissionProfilesList empresaId={empresaId} />
+        </TabsContent>
 
-          <TabsContent value="usuarios">
-            <UserPermissionsList empresaId={empresaId} selectedUserId={selectedUserId} />
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+        <TabsContent value="usuarios">
+          <UserPermissionsList empresaId={empresaId} selectedUserId={selectedUserId} />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
