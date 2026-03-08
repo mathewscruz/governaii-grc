@@ -1,0 +1,1 @@
+ALTER TABLE public.riscos ADD COLUMN IF NOT EXISTS status_aceite TEXT DEFAULT NULL;

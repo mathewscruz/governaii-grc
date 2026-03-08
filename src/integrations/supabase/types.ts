@@ -5772,6 +5772,7 @@ export type Database = {
           probabilidade_residual: string | null
           responsavel: string | null
           status: string
+          status_aceite: string | null
           status_aprovacao: string | null
           updated_at: string
         }
@@ -5807,6 +5808,7 @@ export type Database = {
           probabilidade_residual?: string | null
           responsavel?: string | null
           status?: string
+          status_aceite?: string | null
           status_aprovacao?: string | null
           updated_at?: string
         }
@@ -5842,6 +5844,7 @@ export type Database = {
           probabilidade_residual?: string | null
           responsavel?: string | null
           status?: string
+          status_aceite?: string | null
           status_aprovacao?: string | null
           updated_at?: string
         }
