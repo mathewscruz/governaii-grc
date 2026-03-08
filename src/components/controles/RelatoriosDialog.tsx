@@ -15,15 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import { loadAkurisLogo, addAkurisHeader, addAkurisFooter, addSectionTitle, drawTableHeader, formatLabel, AKURIS_COLORS } from "@/lib/pdf-utils";
 import { exportCSV } from "@/lib/csv-utils";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DatePickerWithRange } from "@/components/ui/date-picker";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, FileText, Download, TrendingUp, PieChart, AlertTriangle } from "lucide-react";
-import { DateRange } from "react-day-picker";
-import { addDays } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 interface RelatoriosDialogProps {
   open: boolean;
