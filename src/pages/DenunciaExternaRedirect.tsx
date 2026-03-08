@@ -28,7 +28,7 @@ export default function DenunciaExternaRedirect() {
           .single();
 
         if (configError) {
-          console.error('Erro na consulta de configuração:', configError);
+          logger.error('Erro na consulta de configuração', { module: 'DenunciaExternaRedirect', error: String(configError) });
           throw configError;
         }
 
