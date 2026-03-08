@@ -80,7 +80,7 @@ export default function Privacidade() {
       const ropaRes = await supabase.from('ropa_registros').select('*').eq('empresa_id', empresaId).order('nome_tratamento');
       const solicitacoesRes = await supabase.from('dados_solicitacoes_titular').select('*').eq('empresa_id', empresaId).order('data_solicitacao', { ascending: false });
       const ropaDadosRes = await supabase.from('ropa_dados_vinculados').select('id, dados_pessoais_id');
-      const incidentesRes = await (supabase.from('incidentes').select('id') as any).eq('tipo', 'privacidade').eq('empresa_id', empresaId);
+      const incidentesRes = await (supabase.from('incidentes').select('id') as any).eq('tipo', 'privacidade').eq('empresa_id', empresaId).in('status', ['aberto', 'investigacao', 'contido']);
 
       const mapeamentosCounts: Record<string, number> = {};
       (mapeamentosRes.data || []).forEach((m: any) => {

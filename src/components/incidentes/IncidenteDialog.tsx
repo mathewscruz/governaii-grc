@@ -233,14 +233,16 @@ export function IncidenteDialog({ incidente, onSuccess, trigger, externalOpen, o
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Incidente
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Incidente
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>

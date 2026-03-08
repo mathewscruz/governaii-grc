@@ -49,29 +49,34 @@ export function FluxoDadosDialog({ isOpen, onClose, onSave, fluxo }: FluxoDadosD
 
   const loadDadosPessoais = async () => {
     try {
+      if (!empresaId) return;
       const { data, error } = await supabase
         .from('dados_pessoais')
         .select('*')
+        .eq('empresa_id', empresaId)
         .order('nome');
       
       if (error) throw error;
       setDadosPessoais(data || []);
     } catch (error) {
-      console.error('Erro ao carregar dados pessoais:', error);
+      logger.error('Erro ao carregar dados pessoais', { error });
     }
   };
 
   const loadUsuarios = async () => {
     try {
+      if (!empresaId) return;
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, nome, email')
+        .eq('empresa_id', empresaId)
+        .eq('ativo', true)
         .order('nome');
       
       if (error) throw error;
       setUsuarios(data || []);
     } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
+      logger.error('Erro ao carregar usuários', { error });
     }
   };
 

@@ -32,6 +32,22 @@ export function DadosPessoaisDialog({ isOpen, onClose, onSave, dados }: DadosPes
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    setFormData({
+      nome: dados?.nome || "",
+      descricao: dados?.descricao || "",
+      categoria_dados: dados?.categoria_dados || "",
+      tipo_dados: dados?.tipo_dados || "",
+      sensibilidade: dados?.sensibilidade || "comum",
+      origem_coleta: dados?.origem_coleta || "",
+      finalidade_tratamento: dados?.finalidade_tratamento || "",
+      base_legal: dados?.base_legal || "",
+      prazo_retencao: dados?.prazo_retencao || "",
+      forma_coleta: dados?.forma_coleta || "",
+      observacoes: dados?.observacoes || ""
+    });
+  }, [dados]);
+
   const handleSave = async () => {
     try {
       setIsLoading(true);

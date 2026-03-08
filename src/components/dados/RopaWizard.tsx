@@ -48,17 +48,21 @@ export function RopaWizard({ isOpen, onClose, onSave, preSelectedDadoId }: RopaW
   }, [isOpen]);
 
   const loadDados = async () => {
+    if (!empresaId) return;
     const { data } = await supabase
       .from('dados_pessoais')
       .select('*')
+      .eq('empresa_id', empresaId)
       .order('nome');
     setDadosPessoais(data || []);
   };
 
   const loadAtivos = async () => {
+    if (!empresaId) return;
     const { data } = await supabase
       .from('ativos')
       .select('*')
+      .eq('empresa_id', empresaId)
       .order('nome');
     setAtivos(data || []);
   };

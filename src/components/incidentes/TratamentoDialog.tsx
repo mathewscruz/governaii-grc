@@ -90,9 +90,12 @@ export function TratamentoDialog({ incidenteId, tratamento, onSuccess, trigger }
 
   useEffect(() => {
     const loadUsers = async () => {
+      if (!profile?.empresa_id) return;
       const { data } = await supabase
         .from('profiles')
         .select('user_id, nome, email')
+        .eq('empresa_id', profile.empresa_id)
+        .eq('ativo', true)
         .order('nome');
       if (data) setUsers(data);
     };
@@ -100,7 +103,7 @@ export function TratamentoDialog({ incidenteId, tratamento, onSuccess, trigger }
     if (open) {
       loadUsers();
     }
-  }, [open]);
+  }, [open, profile?.empresa_id]);
 
   const onSubmit = async (data: TratamentoFormData) => {
     setLoading(true);

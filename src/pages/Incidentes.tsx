@@ -469,6 +469,15 @@ export default function Incidentes() {
         />
       )}
 
+      {/* Dialog de Tratamentos - controlado pelo dropdown */}
+      {selectedIncidente && tratamentoDialogOpen && (
+        <TratamentoDialog
+          incidenteId={selectedIncidente.id}
+          onSuccess={invalidateIncidentes}
+          trigger={<span className="hidden" />}
+        />
+      )}
+
       <ConfirmDialog
         open={deleteConfirm.open}
         onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
