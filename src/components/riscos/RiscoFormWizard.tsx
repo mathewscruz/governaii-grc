@@ -111,6 +111,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
       consequencias: '',
       aceito: false,
       justificativa_aceite: '',
+      aprovador_aceite: '',
       ativos_vinculados: [],
       data_proxima_revisao: ''
     }
