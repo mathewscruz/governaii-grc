@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface MapeamentoDialogProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export function MapeamentoDialog({ isOpen, onClose, onSave, mapeamento }: Mapeam
   const [ativos, setAtivos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { empresaId } = useEmpresaId();
 
   useEffect(() => {
     if (isOpen) {
@@ -40,10 +42,12 @@ export function MapeamentoDialog({ isOpen, onClose, onSave, mapeamento }: Mapeam
   }, [isOpen]);
 
   const loadDadosPessoais = async () => {
+    if (!empresaId) return;
     try {
       const { data, error } = await supabase
         .from('dados_pessoais')
         .select('*')
+        .eq('empresa_id', empresaId)
         .order('nome');
       
       if (error) throw error;
@@ -54,10 +58,12 @@ export function MapeamentoDialog({ isOpen, onClose, onSave, mapeamento }: Mapeam
   };
 
   const loadAtivos = async () => {
+    if (!empresaId) return;
     try {
       const { data, error } = await supabase
         .from('ativos')
         .select('*')
+        .eq('empresa_id', empresaId)
         .order('nome');
       
       if (error) throw error;
@@ -68,13 +74,16 @@ export function MapeamentoDialog({ isOpen, onClose, onSave, mapeamento }: Mapeam
   };
 
   const handleSave = async () => {
+    if (!empresaId) return;
     try {
       setIsLoading(true);
+
+      const payload = { ...formData, empresa_id: empresaId };
 
       if (mapeamento?.id) {
         const { error } = await supabase
           .from('dados_mapeamento')
-          .update(formData)
+          .update(payload)
           .eq('id', mapeamento.id);
         
         if (error) throw error;
@@ -82,7 +91,7 @@ export function MapeamentoDialog({ isOpen, onClose, onSave, mapeamento }: Mapeam
       } else {
         const { error } = await supabase
           .from('dados_mapeamento')
-          .insert([formData]);
+          .insert([payload]);
         
         if (error) throw error;
         toast({ title: "Mapeamento criado com sucesso!" });

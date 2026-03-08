@@ -120,11 +120,13 @@ export function DescoberDadosTab({ onRefresh }: DescoberDadosTabProps) {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const { data: descobertas = [], isLoading, refetch } = useQuery({
-    queryKey: ['dados-descobertas'],
+    queryKey: ['dados-descobertas', empresaId],
     queryFn: async () => {
+      if (!empresaId) return [];
       const { data, error } = await supabase
         .from('dados_descobertas')
         .select('*')
+        .eq('empresa_id', empresaId)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -132,7 +134,8 @@ export function DescoberDadosTab({ onRefresh }: DescoberDadosTabProps) {
         ...item,
         resultado_scan: item.resultado_scan as DetectedForm[]
       })) as Descoberta[];
-    }
+    },
+    enabled: !!empresaId
   });
 
   const handleDelete = (id: string) => {

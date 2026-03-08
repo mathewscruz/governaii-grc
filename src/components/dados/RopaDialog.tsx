@@ -14,6 +14,7 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface RopaDialogProps {
   isOpen: boolean;
@@ -47,6 +48,7 @@ export function RopaDialog({ isOpen, onClose, onSave, ropa }: RopaDialogProps) {
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { empresaId } = useEmpresaId();
 
   useEffect(() => {
     if (isOpen) {
@@ -55,10 +57,12 @@ export function RopaDialog({ isOpen, onClose, onSave, ropa }: RopaDialogProps) {
   }, [isOpen]);
 
   const loadUsuarios = async () => {
+    if (!empresaId) return;
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, nome, email')
+        .eq('empresa_id', empresaId)
         .order('nome');
       
       if (error) throw error;

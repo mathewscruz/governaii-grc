@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { logger } from '@/lib/logger';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
-import { Plus, Database, Users, AlertTriangle, Edit, Trash2, Link2, FileText, Eye, Clock, ShieldAlert } from "lucide-react";
+import { Plus, Database, Users, AlertTriangle, Edit, Trash2, Link2, FileText, Eye, Clock, ShieldAlert, MoreHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,7 +23,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
 import { formatStatus, getSensibilidadeColor, getItemStatusColor, getWorkflowStatusColor } from '@/lib/text-utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function Privacidade() {
   const navigate = useNavigate();
@@ -79,7 +79,10 @@ export default function Privacidade() {
       const mapeamentosRes = await (supabase.from('dados_mapeamento' as any).select('id, dados_pessoais_id') as any).eq('empresa_id', empresaId);
       const ropaRes = await supabase.from('ropa_registros').select('*').eq('empresa_id', empresaId).order('nome_tratamento');
       const solicitacoesRes = await supabase.from('dados_solicitacoes_titular').select('*').eq('empresa_id', empresaId).order('data_solicitacao', { ascending: false });
-      const ropaDadosRes = await supabase.from('ropa_dados_vinculados').select('id, dados_pessoais_id');
+      const dadosIds = (dadosRes.data || []).map((d: any) => d.id);
+      const ropaDadosRes = dadosIds.length > 0
+        ? await supabase.from('ropa_dados_vinculados').select('id, dados_pessoais_id').in('dados_pessoais_id', dadosIds)
+        : { data: [] };
       const incidentesRes = await (supabase.from('incidentes').select('id') as any).eq('tipo', 'privacidade').eq('empresa_id', empresaId).in('status', ['aberto', 'investigacao', 'contido']);
 
       const mapeamentosCounts: Record<string, number> = {};
@@ -231,62 +234,30 @@ export default function Privacidade() {
       key: 'actions',
       label: 'Ações',
       render: (_: any, row: any) => (
-        <TooltipProvider>
-          <div className="flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => {
-                  setSelectedDado(row);
-                  setShowDadoSheet(true);
-                }}>
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Ver Detalhes</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => {
-                  setSelectedDado(row);
-                  setShowDadosDialog(true);
-                }}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Editar</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => {
-                  setSelectedDado(row);
-                  setShowMapeamentoDialog(true);
-                }}>
-                  <Link2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Mapear</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => {
-                  setPreSelectedDadoId(row.id);
-                  setShowRopaWizard(true);
-                }}>
-                  <FileText className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Criar ROPA</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(row.id, 'dados')} className="text-destructive hover:text-destructive">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Excluir</TooltipContent>
-            </Tooltip>
-          </div>
-        </TooltipProvider>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => { setSelectedDado(row); setShowDadoSheet(true); }}>
+              <Eye className="h-4 w-4 mr-2" /> Ver Detalhes
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setSelectedDado(row); setShowDadosDialog(true); }}>
+              <Edit className="h-4 w-4 mr-2" /> Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setSelectedDado(row); setShowMapeamentoDialog(true); }}>
+              <Link2 className="h-4 w-4 mr-2" /> Mapear
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setPreSelectedDadoId(row.id); setShowRopaWizard(true); }}>
+              <FileText className="h-4 w-4 mr-2" /> Criar ROPA
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleDelete(row.id, 'dados')} className="text-destructive focus:text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" /> Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     }
   ];
@@ -350,39 +321,22 @@ export default function Privacidade() {
     {
       key: 'actions',
       label: 'Ações',
-      render: (value: any, ropa: any) => (
-        <TooltipProvider>
-          <div className="flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedRopa(ropa);
-                    setShowRopaDialog(true);
-                  }}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Editar</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(ropa.id, 'ropa')}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Excluir</TooltipContent>
-            </Tooltip>
-          </div>
-        </TooltipProvider>
+      render: (_: any, ropa: any) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => { setSelectedRopa(ropa); setShowRopaDialog(true); }}>
+              <Edit className="h-4 w-4 mr-2" /> Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleDelete(ropa.id, 'ropa')} className="text-destructive focus:text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" /> Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     }
   ];
@@ -454,39 +408,22 @@ export default function Privacidade() {
     {
       key: 'actions',
       label: 'Ações',
-      render: (value: any, solicitacao: any) => (
-        <TooltipProvider>
-          <div className="flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedSolicitacao(solicitacao);
-                    setShowSolicitacaoDialog(true);
-                  }}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Editar</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(solicitacao.id, 'solicitacao')}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Excluir</TooltipContent>
-            </Tooltip>
-          </div>
-        </TooltipProvider>
+      render: (_: any, solicitacao: any) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => { setSelectedSolicitacao(solicitacao); setShowSolicitacaoDialog(true); }}>
+              <Edit className="h-4 w-4 mr-2" /> Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleDelete(solicitacao.id, 'solicitacao')} className="text-destructive focus:text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" /> Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     }
   ];
