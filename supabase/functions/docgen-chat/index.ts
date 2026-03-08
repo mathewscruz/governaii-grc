@@ -87,6 +87,23 @@ serve(async (req) => {
 
     console.log('DocGen Chat request:', { message, conversation_id, action, user_id, empresa_id });
 
+    // Consume AI credit before processing
+    if (user_id && empresa_id) {
+      const { data: creditResult } = await supabase.rpc('consume_ai_credit', {
+        p_empresa_id: empresa_id,
+        p_user_id: user_id,
+        p_funcionalidade: `docgen-chat:${action}`,
+        p_descricao: `DocGen - ${action === 'generate_document' ? 'Geração de documento' : 'Chat conversacional'}`
+      });
+
+      if (creditResult === false) {
+        return new Response(JSON.stringify({ error: 'CREDITS_EXHAUSTED' }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Buscar informações do usuário e empresa
     const { data: profile } = await supabase
       .from('profiles')
