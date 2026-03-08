@@ -447,6 +447,19 @@ export default function PlanosAcao() {
         breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Planos de Ação' }]}
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              if (planos.length === 0) return;
+              exportCSV(
+                ['Titulo', 'Status', 'Prioridade', 'Modulo', 'Prazo', 'Criado em'],
+                planos.map((p: any) => [
+                  p.titulo || p.nome || '', p.status || '', p.prioridade || '',
+                  p.modulo_origem || 'manual', p.prazo || '', p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : ''
+                ]),
+                'planos_acao'
+              );
+            }}>
+              <Download className="h-4 w-4 mr-2" />CSV
+            </Button>
             <div className="flex border rounded-md overflow-hidden">
               <Button variant={viewMode === 'lista' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('lista')} className="rounded-none">
                 <List className="h-4 w-4" />
