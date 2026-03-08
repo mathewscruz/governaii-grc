@@ -74,6 +74,7 @@ export function ContratoDialog({ contrato, open, onOpenChange, onSuccess, fornec
   const [loading, setLoading] = useState(false);
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const { toast } = useToast();
+  const { notify } = useIntegrationNotify();
 
   useEffect(() => {
     if (open) {
