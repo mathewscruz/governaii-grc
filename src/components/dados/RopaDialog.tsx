@@ -14,6 +14,7 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface RopaDialogProps {
   isOpen: boolean;
