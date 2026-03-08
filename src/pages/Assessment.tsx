@@ -483,11 +483,15 @@ export default function Assessment() {
 
       assessmentLogger.info('Iniciando cálculo de score com IA...');
       try {
-        const { error: scoreError } = await supabase.functions.invoke('calculate-assessment-score', {
+        const { data: scoreData, error: scoreError } = await supabase.functions.invoke('calculate-assessment-score', {
           body: { assessment_id: assessment.id }
         });
         if (scoreError) {
-          assessmentLogger.warn('Erro no cálculo de score:', scoreError);
+          if (scoreError.message?.includes('402') || (scoreError as any).status === 402) {
+            assessmentLogger.warn('Créditos de IA esgotados para cálculo de score');
+          } else {
+            assessmentLogger.warn('Erro no cálculo de score:', scoreError);
+          }
         } else {
           assessmentLogger.info('Score calculado com sucesso');
         }

@@ -313,9 +313,9 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
       }
     } catch (error: any) {
       console.error('Error generating guidance:', error);
-      if (!forceRegenerate) {
-        // Silent fail on auto-generation
-      } else {
+      if (error?.message?.includes('402') || error?.status === 402) {
+        toast.error('Créditos de IA esgotados. Entre em contato com a Akuris para adquirir mais créditos.');
+      } else if (forceRegenerate) {
         toast.error('Erro ao gerar orientações');
       }
     } finally {

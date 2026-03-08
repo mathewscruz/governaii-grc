@@ -72,8 +72,21 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
         },
       });
 
-      if (error) throw error;
-      if (data?.error) { toast.error(data.error); return; }
+      if (error) {
+        // Check for 402 credits exhausted
+        if (error.message?.includes('402') || error.status === 402) {
+          toast.error('Créditos de IA esgotados. Entre em contato com a Akuris para adquirir mais créditos.');
+          return;
+        }
+        throw error;
+      }
+      if (data?.error) {
+        if (data.error === 'Créditos de IA esgotados.') {
+          toast.error('Créditos de IA esgotados. Entre em contato com a Akuris para adquirir mais créditos.');
+          return;
+        }
+        toast.error(data.error); return;
+      }
       setRecommendations(data?.data || null);
     } catch (err: any) {
       console.error('AI recommendations error:', err);
