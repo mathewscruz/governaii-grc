@@ -113,12 +113,14 @@ export function DenunciaDialog({
 
       setAnexos(anexosData || []);
 
-      // Carregar usuários para atribuição
-      const { data: usersData } = await supabase
+      // Carregar usuários para atribuição (filtrado por empresa)
+      let usersQuery = supabase
         .from('profiles')
         .select('user_id, nome, role')
         .in('role', ['admin', 'super_admin'])
         .order('nome');
+      if (empresaId) usersQuery = usersQuery.eq('empresa_id', empresaId);
+      const { data: usersData } = await usersQuery;
 
       setUsuarios(usersData || []);
     } catch (error) {

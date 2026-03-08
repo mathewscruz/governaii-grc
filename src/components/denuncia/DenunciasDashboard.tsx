@@ -61,6 +61,7 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
   }, [itemIdToOpen, denuncias]);
 
   const carregarDenuncias = async () => {
+    if (!empresaId) return;
     try {
       const { data, error } = await supabase
         .from('denuncias')
@@ -68,6 +69,7 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
           *,
           categoria:denuncias_categorias(nome, cor)
         `)
+        .eq('empresa_id', empresaId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

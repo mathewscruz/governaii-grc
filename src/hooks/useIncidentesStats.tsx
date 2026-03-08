@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface IncidentesStats {
   total: number;
@@ -14,13 +15,17 @@ interface IncidentesStats {
 }
 
 export const useIncidentesStats = () => {
+  const { empresaId } = useEmpresaId();
+
   return useQuery({
-    queryKey: ['incidentes-stats'],
+    queryKey: ['incidentes-stats', empresaId],
     staleTime: 5 * 60 * 1000,
+    enabled: !!empresaId,
     queryFn: async (): Promise<IncidentesStats> => {
       const { data: incidentes, error } = await supabase
         .from('incidentes')
-        .select('status, criticidade, created_at');
+        .select('status, criticidade, created_at')
+        .eq('empresa_id', empresaId!);
 
       if (error) throw error;
 
@@ -34,7 +39,6 @@ export const useIncidentesStats = () => {
       const medios = incidentes?.filter(i => i.criticidade === 'media').length || 0;
       const baixos = incidentes?.filter(i => i.criticidade === 'baixa').length || 0;
       
-      // Incidentes do mês atual
       const agora = new Date();
       const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
       const mes = incidentes?.filter(i => {

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface DenunciasStats {
   total: number;
@@ -9,13 +10,17 @@ interface DenunciasStats {
 }
 
 export const useDenunciasStats = () => {
+  const { empresaId } = useEmpresaId();
+
   return useQuery({
-    queryKey: ['denuncias-stats'],
+    queryKey: ['denuncias-stats', empresaId],
+    enabled: !!empresaId,
     queryFn: async (): Promise<DenunciasStats> => {
       try {
         const { data: denuncias, error } = await supabase
           .from('denuncias')
-          .select('id, status');
+          .select('id, status')
+          .eq('empresa_id', empresaId!);
 
         if (error) {
           console.error('Erro ao buscar estatísticas de denúncias:', error);
