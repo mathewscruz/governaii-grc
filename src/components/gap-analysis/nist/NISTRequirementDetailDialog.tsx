@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import DOMPurify from 'dompurify';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -89,9 +90,10 @@ const getSectionIcon = (title: string): { icon: LucideIcon; color: string } => {
 };
 
 const inlineMd = (text: string): string => {
-  return text
+  const html = text
     .replace(/\*\*(.+?)\*\*/g, '<strong class="text-foreground font-semibold">$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>');
+  return DOMPurify.sanitize(html, { ALLOWED_TAGS: ['strong', 'em', 'br', 'span'], ALLOWED_ATTR: ['class'] });
 };
 
 /** Renders a list of lines into JSX elements (paragraphs, bullets, numbered lists) */

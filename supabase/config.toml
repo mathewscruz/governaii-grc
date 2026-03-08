@@ -146,7 +146,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.delete-user-complete]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-approval-notification]
 verify_jwt = false
