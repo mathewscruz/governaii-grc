@@ -20,7 +20,7 @@ export function LanguageSelector({ variant = 'default' }: LanguageSelectorProps)
       onClick={() => setLocale(locale === 'pt' ? 'en' : 'pt')}
       title={locale === 'pt' ? 'Switch to English' : 'Mudar para Português'}
     >
-      {locale === 'pt' ? '🇧🇷 PT' : '🇬🇧 EN'}
+      {locale === 'pt' ? 'PT' : 'EN'}
     </Button>
   );
 }
