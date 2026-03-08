@@ -145,11 +145,11 @@ export function DataTable<T extends Record<string, any>>({
   // Always render the table structure to show headers
   return (
     <div className={cn("", className)}>
-      {/* Header with search and filters - with padding like Riscos module */}
-      <div className="p-6 pb-4 space-y-4">
-        <div className="flex items-center justify-between gap-4">
+      {/* Header with search and filters */}
+      <div className="p-4 sm:p-6 pb-4 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           {searchable && (
-            <div className="relative flex-1 max-w-sm">
+            <div className="relative flex-1 sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder={searchPlaceholder}
@@ -160,7 +160,7 @@ export function DataTable<T extends Record<string, any>>({
             </div>
           )}
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {filters.length > 0 && (
               (() => {
                 const activeFiltersCount = filters.filter(f => f.value !== 'todos' && f.value !== '').length;
@@ -171,8 +171,8 @@ export function DataTable<T extends Record<string, any>>({
                     onClick={() => setShowFilters(!showFilters)}
                     className="relative"
                   >
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filtros
+                    <Filter className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Filtros</span>
                     {activeFiltersCount > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
                         {activeFiltersCount}
@@ -184,14 +184,14 @@ export function DataTable<T extends Record<string, any>>({
             )}
             {onRefresh && (
               <Button variant="outline" size="sm" onClick={onRefresh}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Atualizar
+                <RefreshCw className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Atualizar</span>
               </Button>
             )}
             {onExport && (
               <Button variant="outline" size="sm" onClick={onExport}>
-                <Download className="h-4 w-4 mr-2" />
-                Exportar
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Exportar</span>
               </Button>
             )}
           </div>
