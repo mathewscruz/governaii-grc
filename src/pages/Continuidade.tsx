@@ -13,6 +13,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { useContinuidadeStats } from '@/hooks/useContinuidadeStats';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateOnly } from '@/lib/date-utils';
+import { exportCSV } from '@/lib/csv-utils';
 import { PlanoDialog } from '@/components/continuidade/PlanoDialog';
 import { PlanoDetalheDialog } from '@/components/continuidade/PlanoDetalheDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
