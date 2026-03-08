@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { ExternalLink, ClipboardList, Clock, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { useAuth } from "@/components/AuthProvider";
 import { useNavigate } from "react-router-dom";
 
 interface RemediationTabProps {
@@ -27,7 +27,8 @@ interface PlanoAcao {
 }
 
 export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, frameworkName }) => {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const navigate = useNavigate();
   const [planos, setPlanos] = useState<PlanoAcao[]>([]);
   const [loading, setLoading] = useState(true);

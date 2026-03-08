@@ -1,60 +1,80 @@
 
 
-# Vincular DocGen ao Gap Analysis + Melhorias de Contexto
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-## Situação Atual
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
-O DocGen **já funciona** e usa Anthropic Claude corretamente (ANTHROPIC_API_KEY configurada). O fluxo de chat conversacional, geração de documento, preview, export PDF/DOCX e salvamento no sistema estão operacionais.
+---
 
-**Problemas identificados:**
-1. O DocGen só é acessível pela página de Documentos — usuários do Gap Analysis não descobrem a funcionalidade
-2. Quando aberto, o DocGen não tem contexto sobre qual framework o usuário está trabalhando — começa do zero
-3. O `RemediationTab` ainda usa `useEmpresaId()` (race condition residual não corrigida)
+## 1. ErrorBoundary ausente na maioria das paginas
 
-## Plano
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-### A. Adicionar botão DocGen no GapAnalysisFrameworkDetail
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
-Adicionar um botão "Gerar Política" no header da página de detalhe do framework (ao lado dos botões Board e PDF Técnico). O botão abre o DocGenDialog passando contexto do framework.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
-**Arquivo:** `src/pages/GapAnalysisFrameworkDetail.tsx`
-- Importar `DocGenDialog`
-- Adicionar state `showDocGen`
-- Adicionar botão com ícone `Brain` no `PageHeader.actions`
-- Renderizar `<DocGenDialog>` com novas props de contexto
+---
 
-### B. Estender DocGenDialog para aceitar contexto de framework
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-Adicionar props opcionais ao `DocGenDialog`:
-- `frameworkName?: string` — nome do framework (ex: "ISO 27001")
-- `frameworkVersion?: string` — versão
-- `frameworkId?: string` — para buscar requisitos não conformes
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
 
-Quando essas props existirem:
-- A mensagem inicial do chat muda para mencionar o framework
-- O `doc_type_hint` é pré-preenchido
-- A edge function recebe `framework_context` com dados dos gaps
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
 
-**Arquivo:** `src/components/documentos/DocGenDialog.tsx`
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
 
-### C. Enriquecer o prompt da edge function com dados de gap
+---
 
-Quando `framework_context` é enviado no body, a edge function:
-1. Busca os requisitos não conformes do framework para a empresa
-2. Inclui essa lista no system prompt para que a IA saiba quais gaps a política precisa endereçar
+## 3. Paginas sem EmptyState padronizado
 
-**Arquivo:** `supabase/functions/docgen-chat/index.ts`
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
 
-### D. Corrigir `useEmpresaId` residual no RemediationTab
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
 
-**Arquivo:** `src/components/gap-analysis/RemediationTab.tsx` — trocar `useEmpresaId()` por `useAuth().profile?.empresa_id`
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
 
-## Arquivos a modificar
+---
 
-| Arquivo | Mudança |
-|---|---|
-| `src/components/documentos/DocGenDialog.tsx` | Adicionar props `frameworkName`, `frameworkVersion`, `frameworkId`; adaptar mensagem inicial e envio |
-| `supabase/functions/docgen-chat/index.ts` | Receber `framework_context`, buscar gaps, enriquecer prompt |
-| `src/pages/GapAnalysisFrameworkDetail.tsx` | Importar DocGenDialog, adicionar botão e state |
-| `src/components/gap-analysis/RemediationTab.tsx` | `useEmpresaId()` → `useAuth()` |
+## 4. Ausencia de atalhos de teclado documentados para o usuario
+
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+
+---
+
+## 5. Botao de "Voltar" no header nao tem tooltip
+
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+
+---
+
+## Resumo de Prioridade
+
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Download, FileBarChart } from 'lucide-react';
+import { ChevronLeft, Download, FileBarChart, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,6 +17,7 @@ import { RemediationTab } from '@/components/gap-analysis/RemediationTab';
 import { FrameworkOnboarding } from '@/components/gap-analysis/FrameworkOnboarding';
 import { JourneyProgressBar } from '@/components/gap-analysis/JourneyProgressBar';
 import { SoATab } from '@/components/gap-analysis/SoATab';
+import { DocGenDialog } from '@/components/documentos/DocGenDialog';
 
 import { exportFrameworkPDF } from '@/components/gap-analysis/ExportFrameworkPDF';
 import { exportBoardPDF } from '@/components/gap-analysis/ExportBoardPDF';
@@ -87,7 +88,7 @@ export default function GapAnalysisFrameworkDetail() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [selectedAdherenceAssessment, setSelectedAdherenceAssessment] = useState<any>(null);
   const [adherenceView, setAdherenceView] = useState<'list' | 'result'>('list');
-  
+  const [showDocGen, setShowDocGen] = useState(false);
 
   useEffect(() => {
     if (!frameworkId) return;
@@ -254,6 +255,10 @@ export default function GapAnalysisFrameworkDetail() {
                   scoreType={config.scoreType}
                 />
               )}
+              <Button onClick={() => setShowDocGen(true)} variant="outline">
+                <Brain className="h-4 w-4 mr-2" />
+                Gerar Política
+              </Button>
               <Button onClick={handleExportBoard} variant="outline" disabled={exporting}>
                 <FileBarChart className="h-4 w-4 mr-2" />
                 Board
@@ -377,7 +382,12 @@ export default function GapAnalysisFrameworkDetail() {
           </TabsContent>
         </Tabs>
 
-        
+        <DocGenDialog
+          open={showDocGen}
+          onOpenChange={setShowDocGen}
+          frameworkName={framework.nome}
+          frameworkId={frameworkId}
+        />
       </div>
     </ErrorBoundary>
   );

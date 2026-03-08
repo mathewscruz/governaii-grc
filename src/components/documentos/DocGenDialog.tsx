@@ -27,6 +27,8 @@ interface DocGenDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDocumentSaved?: () => void;
+  frameworkName?: string;
+  frameworkId?: string;
 }
 
 interface TooltipTerm {
@@ -48,7 +50,9 @@ const TOOLTIPS: Record<string, string> = {
 export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   open,
   onOpenChange,
-  onDocumentSaved
+  onDocumentSaved,
+  frameworkName,
+  frameworkId,
 }) => {
   const { toast } = useToast();
   const { company } = useAuth();
@@ -108,12 +112,14 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
         }
       };
       fetchCategorias();
-      // Iniciar conversa com saudação
+      // Iniciar conversa com saudação contextualizada
+      const greeting = frameworkName
+        ? `Olá! Sou o DocGen, seu assistente inteligente para criação de documentos.\n\nVejo que você está trabalhando com o framework **${frameworkName}**. Posso ajudá-lo a gerar políticas, procedimentos ou normas alinhados a esse framework, usando os gaps identificados na sua avaliação para garantir que o documento cubra os pontos necessários.\n\nQue tipo de documento você gostaria de criar?`
+        : 'Olá! Sou o DocGen, seu assistente inteligente para criação de documentos. Estou aqui para ajudá-lo a criar qualquer tipo de documento que você precisa.\n\nPode me contar que tipo de documento você gostaria de criar?';
       setMessages([
         {
           role: 'assistant',
-          content:
-            'Olá! Sou o DocGen, seu assistente inteligente para criação de documentos. Estou aqui para ajudá-lo a criar qualquer tipo de documento que você precisa.\n\nPode me contar que tipo de documento você gostaria de criar?',
+          content: greeting,
           timestamp: new Date(),
         },
       ]);
@@ -145,7 +151,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           conversation_id: conversationId,
           user_id: userInfo.user_id,
           empresa_id: userInfo.empresa_id,
-          action: 'chat'
+          action: 'chat',
+          ...(frameworkName && { framework_context: { framework_name: frameworkName, framework_id: frameworkId } }),
         }
       });
 
@@ -193,7 +200,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           user_id: userInfo.user_id,
           empresa_id: userInfo.empresa_id,
           action: 'generate_document',
-          doc_type_hint: currentDocName || currentDocType
+          doc_type_hint: currentDocName || currentDocType,
+          ...(frameworkName && { framework_context: { framework_name: frameworkName, framework_id: frameworkId } }),
         }
       });
 
