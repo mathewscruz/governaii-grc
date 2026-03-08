@@ -334,7 +334,7 @@ export default function Contratos() {
         />
 
         {/* Cards de KPI */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total de Contratos"
             value={statsContratos?.total || 0}
