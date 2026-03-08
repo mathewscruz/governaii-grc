@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { useAuth } from '@/components/AuthProvider';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
