@@ -153,7 +153,7 @@ export function RecentActivities({ className }: { className?: string }) {
           id: `controle-${controle.id}`,
           type: 'creation',
           title: controle.nome,
-          description: 'Novo controle implementado',
+          description: t('activities.newControl'),
           created_at: controle.created_at,
           module: 'controles',
           icon: getIcon('controles'),
