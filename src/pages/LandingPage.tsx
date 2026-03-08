@@ -459,13 +459,13 @@ const LandingPage = () => {
         </section>
 
         {/* ===== 5. TESTIMONIALS ===== */}
-        <section className="relative py-16 sm:py-20 lg:py-28 bg-[#0F1A2E]" aria-labelledby="testimonials-title">
+        <section className="relative py-16 sm:py-20 lg:py-28 bg-[#F1F5F9]" aria-labelledby="testimonials-title">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16 lp-fade-up">
-              <h2 id="testimonials-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+              <h2 id="testimonials-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-gray-900">
                 O que dizem nossos <span className="text-[#7552FF]">clientes</span>
               </h2>
-              <p className="text-gray-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
+              <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
                 Empresas de diversos segmentos confiam no Akuris para transformar sua governança
               </p>
             </div>
@@ -474,11 +474,11 @@ const LandingPage = () => {
               {testimonials.map((t, index) => (
                 <blockquote
                   key={index}
-                  className="bg-[#111B2E] rounded-xl p-6 sm:p-8 border border-[#1E2D45]"
+                  className="bg-white rounded-xl p-6 sm:p-8 border border-gray-200 shadow-sm"
                 >
-                  <p className="text-gray-300 text-sm leading-relaxed mb-6 italic">"{t.text}"</p>
-                  <footer className="pt-4 border-t border-[#1E2D45]">
-                    <p className="text-white font-medium text-sm">{t.name}</p>
+                  <p className="text-gray-600 text-sm leading-relaxed mb-6 italic">"{t.text}"</p>
+                  <footer className="pt-4 border-t border-gray-100">
+                    <p className="text-gray-900 font-medium text-sm">{t.name}</p>
                     <p className="text-gray-500 text-xs">{t.role} · {t.company}</p>
                   </footer>
                 </blockquote>
