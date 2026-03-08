@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { useAuth } from "@/components/AuthProvider";
 
 interface IncidentesStats {
   total: number;
@@ -15,7 +15,8 @@ interface IncidentesStats {
 }
 
 export const useIncidentesStats = () => {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
 
   return useQuery({
     queryKey: ['incidentes-stats', empresaId],

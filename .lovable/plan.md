@@ -1,77 +1,80 @@
 
 
-# Diagnóstico: Dashboard com dados intermitentes
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-## Problemas encontrados
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
-### 1. Race condition na obtenção do `empresaId` (causa principal)
+---
 
-Os hooks do dashboard usam **duas formas diferentes** de obter o `empresaId`:
+## 1. ErrorBoundary ausente na maioria das paginas
 
-| Padrão | Hooks que usam | Como funciona |
-|---|---|---|
-| `useAuth().profile?.empresa_id` | `useAtivosStats`, `useRiscosStats`, `useDashboardStats`, `useTrendData` | Síncrono, disponível assim que AuthProvider carrega o profile |
-| `useEmpresaId()` (query separada) | `useControlesStats`, `useIncidentesStats`, `useContratosStats`, `useDocumentosStats`, `useDenunciasStats` | Faz uma query assíncrona separada ao Supabase para buscar `empresa_id` |
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-O `useEmpresaId()` faz uma query **adicional e independente** ao banco. Dependendo da latência, ele pode resolver **depois** dos hooks que usam `useAuth()`, fazendo com que metade dos dados apareça e a outra metade fique vazia até o `useEmpresaId` resolver. Se a resposta demora ou falha silenciosamente, esses hooks nunca disparam.
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
-### 2. `useRadarChartData` — queryKey não reage a mudanças de dados
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
-O `queryKey` é apenas `['radar-chart-data', empresaId]`. Quando os sub-hooks (riscos, controles, etc.) atualizam seus dados, o radar **não re-executa** porque a key não mudou. Ele lê os `.data` dos hooks via closure no momento da chamada, mas o React Query não sabe que precisa refazer a query.
+---
 
-### 3. `useGapAnalysisStats` usa sistema de cache diferente
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-Usa `useOptimizedQuery` (cache manual) em vez de React Query. Retorna `loading` em vez de `isLoading`. O `useRadarChartData` verifica corretamente `gapAnalysis.loading`, mas esse hook opera fora do React Query, não participa de `invalidateQueries`, e pode ficar dessincronizado.
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
 
-### 4. `useDueDiligenceStats` sem `empresaId` no queryKey
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
 
-Não recebe `empresaId` de fora — busca internamente via `supabase.auth.getUser()` + query ao profiles. Isso significa que:
-- Não participa do `invalidateQueries` baseado em `empresaId`
-- Se o auth não estiver pronto, pode falhar silenciosamente
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
 
-## Plano de correção
+---
 
-### A. Padronizar todos os hooks para usar `useAuth().profile?.empresa_id`
+## 3. Paginas sem EmptyState padronizado
 
-Eliminar `useEmpresaId()` de todos os hooks do dashboard. Usar o `profile?.empresa_id` que já está disponível no AuthProvider, evitando a query redundante.
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
 
-**Arquivos:** `useControlesStats`, `useIncidentesStats`, `useContratosStats`, `useDocumentosStats`, `useDenunciasStats`
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
 
-### B. Corrigir `useRadarChartData` para reagir a dados
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
 
-Incluir os `dataUpdatedAt` dos sub-hooks no `queryKey` para que o React Query re-execute quando qualquer dado mudar.
+---
 
-**Arquivo:** `useRadarChartData.tsx`
+## 4. Ausencia de atalhos de teclado documentados para o usuario
 
-### C. Migrar `useGapAnalysisStats` para React Query
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
 
-Substituir `useOptimizedQuery` por `useQuery` padrão, mantendo o mesmo staleTime. Isso unifica o sistema de cache e garante que `invalidateQueries` funcione.
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
 
-**Arquivo:** `useGapAnalysisStats.tsx`
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
 
-### D. Corrigir `useDueDiligenceStats` para receber `empresaId`
+---
 
-Usar `useAuth().profile?.empresa_id` como os demais, incluir no `queryKey` e no `enabled`.
+## 5. Botao de "Voltar" no header nao tem tooltip
 
-**Arquivo:** `useDueDiligenceStats.tsx`
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
 
-## Arquivos modificados
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
 
-| Arquivo | Mudança |
-|---|---|
-| `src/hooks/useControlesStats.tsx` | `useEmpresaId()` → `useAuth().profile?.empresa_id` |
-| `src/hooks/useIncidentesStats.tsx` | `useEmpresaId()` → `useAuth().profile?.empresa_id` |
-| `src/hooks/useContratosStats.tsx` | `useEmpresaId()` → `useAuth().profile?.empresa_id` |
-| `src/hooks/useDocumentosStats.tsx` | `useEmpresaId()` → `useAuth().profile?.empresa_id` |
-| `src/hooks/useDenunciasStats.tsx` | `useEmpresaId()` → `useAuth().profile?.empresa_id` |
-| `src/hooks/useGapAnalysisStats.tsx` | Migrar de `useOptimizedQuery` para `useQuery` |
-| `src/hooks/useDueDiligenceStats.tsx` | Receber `empresaId` via `useAuth()`, adicionar ao queryKey/enabled |
-| `src/hooks/useRadarChartData.tsx` | Incluir `dataUpdatedAt` dos sub-hooks no queryKey |
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
 
-## Impacto
+---
 
-- Elimina a race condition que causa dados intermitentes
-- Todos os hooks disparam simultaneamente assim que o `profile` está disponível
-- O refresh do dashboard (`invalidateQueries`) funciona uniformemente
-- Isolamento por empresa mantido (cada hook filtra por `empresa_id`)
+## Resumo de Prioridade
+
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 
