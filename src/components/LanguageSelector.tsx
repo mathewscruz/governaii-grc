@@ -14,13 +14,13 @@ export function LanguageSelector({ variant = 'default' }: LanguageSelectorProps)
       variant="ghost"
       size="sm"
       className={cn(
-        "h-8 gap-1.5 text-base px-2",
+        "h-8 gap-1.5 text-sm font-medium px-2.5 text-white",
         variant === 'dark' && "hover:bg-white/10"
       )}
       onClick={() => setLocale(locale === 'pt' ? 'en' : 'pt')}
       title={locale === 'pt' ? 'Switch to English' : 'Mudar para Português'}
     >
-      {locale === 'pt' ? '🇧🇷' : '🇬🇧'}
+      {locale === 'pt' ? '🇧🇷 PT' : '🇬🇧 EN'}
     </Button>
   );
 }
