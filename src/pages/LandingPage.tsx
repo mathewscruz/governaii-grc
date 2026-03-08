@@ -589,7 +589,7 @@ const LandingPage = () => {
                     <Textarea id="contact-message" name="message" value={formData.message} onChange={handleInputChange} required placeholder="Como podemos ajudar sua empresa?" rows={4} className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF] resize-none" />
                   </div>
 
-                  <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-500 text-white">
+                  <Button type="submit" disabled={isSubmitting} className="w-full bg-[#7552FF] hover:bg-[#8B6FFF] text-white">
                     {isSubmitting ? "Enviando..." : "Enviar Mensagem"}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
