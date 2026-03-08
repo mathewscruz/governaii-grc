@@ -62,6 +62,7 @@ export function TratamentoDialog({ incidenteId, tratamento, onSuccess, trigger }
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const { toast } = useToast();
+  const { profile } = useAuth();
 
   const form = useForm<TratamentoFormData>({
     resolver: zodResolver(tratamentoSchema),
