@@ -304,7 +304,7 @@ const LandingPage = () => {
                   <Button
                     size="lg"
                     onClick={() => scrollToSection("contato")}
-                    className="bg-blue-600 hover:bg-blue-500 text-white text-base px-8 h-12 w-full sm:w-auto"
+                    className="bg-[#7552FF] hover:bg-[#8B6FFF] text-white text-base px-8 h-12 w-full sm:w-auto"
                   >
                     Solicitar Demonstração
                     <ArrowRight className="ml-2 h-5 w-5" />
