@@ -11,7 +11,7 @@ export default function DenunciaExternaRedirect() {
   useEffect(() => {
     const buscarEmpresaPorToken = async () => {
       if (!token) {
-        console.log('Token não encontrado na URL');
+        logger.debug('Token não encontrado na URL', { module: 'DenunciaExternaRedirect' });
         navigate('/404', { replace: true });
         return;
       }
