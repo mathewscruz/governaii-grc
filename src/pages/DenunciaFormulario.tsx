@@ -128,7 +128,7 @@ export default function DenunciaFormulario() {
           .from('denuncias_configuracoes_public' as any)
           .select('*')
           .eq('empresa_id', empresaData.id)
-          .single();
+          .single() as { data: any; error: any };
 
         if (configError) {
           logger.error('Erro ao buscar configurações', { module: 'DenunciaFormulario', error: String(configError) });
