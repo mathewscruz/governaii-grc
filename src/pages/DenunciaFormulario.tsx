@@ -237,7 +237,7 @@ export default function DenunciaFormulario() {
             .upload(fileName, file);
 
           if (uploadError) {
-            console.error('Erro ao fazer upload:', uploadError);
+            logger.error('Erro ao fazer upload', { module: 'DenunciaFormulario', error: String(uploadError) });
           }
         }
       }
