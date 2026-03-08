@@ -43,7 +43,7 @@ export const useAdherenceStats = () => {
   });
 
   return {
-    data: query.data ? { data: query.data, error: null } : { data: { totalAvaliacoes: 0, avaliacoesConformes: 0, avaliacoesNaoConformes: 0, avaliacoesParciais: 0, mediaConformidade: 0 }, error: null },
+    data: query.data || { totalAvaliacoes: 0, avaliacoesConformes: 0, avaliacoesNaoConformes: 0, avaliacoesParciais: 0, mediaConformidade: 0 },
     loading: query.isLoading,
   };
 };
