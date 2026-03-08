@@ -569,7 +569,7 @@ const LandingPage = () => {
                     </div>
                     <div>
                       <label htmlFor="contact-email" className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
-                      <Input id="contact-email" name="email" type="email" value={formData.email} onChange={handleInputChange} required placeholder="seu@email.com" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500" />
+                      <Input id="contact-email" name="email" type="email" value={formData.email} onChange={handleInputChange} required placeholder="seu@email.com" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                   </div>
 
