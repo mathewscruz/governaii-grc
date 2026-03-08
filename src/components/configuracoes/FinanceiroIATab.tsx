@@ -5,12 +5,71 @@ import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
+import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { DollarSign, TrendingUp, TrendingDown, BarChart3, Sparkles, Building2, AlertTriangle, Loader2 } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, BarChart3, Sparkles, Building2, AlertTriangle, Loader2, Cpu } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { STRIPE_PLANS } from '@/lib/stripe-plans';
+
+// --- Constants: AI models, pricing, and function mapping ---
+
+interface ModelPricing {
+  label: string;
+  provider: string;
+  inputPer1kTokens: number;  // USD
+  outputPer1kTokens: number; // USD
+  avgCostPerReqBRL: number;  // BRL estimated avg per request
+  functions: string[];       // funcionalidade values that use this model
+}
+
+const MODEL_PRICING: Record<string, ModelPricing> = {
+  'google/gemini-3-flash-preview': {
+    label: 'Gemini 3 Flash Preview',
+    provider: 'Google',
+    inputPer1kTokens: 0.00015,
+    outputPer1kTokens: 0.0006,
+    avgCostPerReqBRL: 0.03,
+    functions: ['akuria_chat', 'ai-assistant', 'analyze_document_adherence'],
+  },
+  'google/gemini-2.5-flash': {
+    label: 'Gemini 2.5 Flash',
+    provider: 'Google',
+    inputPer1kTokens: 0.00015,
+    outputPer1kTokens: 0.0006,
+    avgCostPerReqBRL: 0.025,
+    functions: ['calculate-assessment-score', 'populate-requirement-guidance', 'populate-requirement-guidance-batch'],
+  },
+  'gpt-4.1-2025-04-14': {
+    label: 'GPT-4.1',
+    provider: 'OpenAI',
+    inputPer1kTokens: 0.002,
+    outputPer1kTokens: 0.008,
+    avgCostPerReqBRL: 0.15,
+    functions: ['docgen-chat'],
+  },
+  'gpt-4o-mini': {
+    label: 'GPT-4o Mini',
+    provider: 'OpenAI',
+    inputPer1kTokens: 0.00015,
+    outputPer1kTokens: 0.0006,
+    avgCostPerReqBRL: 0.02,
+    functions: ['suggest_risk_treatment'],
+  },
+};
+
+// Build reverse map: funcionalidade prefix → model key
+function getModelForFunc(funcionalidade: string): string | null {
+  for (const [modelKey, info] of Object.entries(MODEL_PRICING)) {
+    for (const fn of info.functions) {
+      if (funcionalidade === fn || funcionalidade.startsWith(fn + ':')) return modelKey;
+    }
+  }
+  return null;
+}
+
+// --- Interfaces ---
 
 interface EmpresaFinanceiro {
   id: string;
@@ -24,10 +83,13 @@ interface EmpresaFinanceiro {
   status: 'rentavel' | 'limite' | 'deficitario';
 }
 
-interface ConsumoFuncionalidade {
-  funcionalidade: string;
-  total: number;
-  custo: number;
+interface ModelStats {
+  model: string;
+  label: string;
+  provider: string;
+  avgCostBRL: number;
+  reqs: number;
+  totalCostBRL: number;
 }
 
 const PLAN_PRICES: Record<string, number> = {
@@ -39,28 +101,27 @@ const PLAN_PRICES: Record<string, number> = {
 
 export function FinanceiroIATab() {
   const [empresas, setEmpresas] = useState<EmpresaFinanceiro[]>([]);
-  const [consumoPorFunc, setConsumoPorFunc] = useState<ConsumoFuncionalidade[]>([]);
+  const [modelStats, setModelStats] = useState<ModelStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [custoReq, setCustoReq] = useState(0.15);
+  const [overrideEnabled, setOverrideEnabled] = useState(false);
+  const [overrideCost, setOverrideCost] = useState(0.05);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [avgCostPerReq, setAvgCostPerReq] = useState(0);
 
   useEffect(() => {
     fetchData();
-  }, [custoReq]);
+  }, [overrideEnabled, overrideCost]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch empresas with plan info
       const { data: empresasData, error: empErr } = await supabase
         .from('empresas')
         .select(`id, nome, creditos_consumidos, plano:planos(nome, creditos_franquia)`)
         .order('nome');
-
       if (empErr) throw empErr;
 
-      // Fetch consumption by functionality (current month)
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
@@ -69,25 +130,54 @@ export function FinanceiroIATab() {
         .from('creditos_consumo')
         .select('empresa_id, funcionalidade')
         .gte('created_at', startOfMonth.toISOString());
-
       if (consErr) throw consErr;
 
-      // Count per empresa
-      const reqCountByEmpresa: Record<string, number> = {};
+      // Build model stats & per-empresa costs
+      const modelReqCount: Record<string, number> = {};
+      const reqCountByEmpresa: Record<string, { total: number; cost: number }> = {};
       const funcCount: Record<string, number> = {};
 
       (consumoData || []).forEach((c: any) => {
-        reqCountByEmpresa[c.empresa_id] = (reqCountByEmpresa[c.empresa_id] || 0) + 1;
+        const model = getModelForFunc(c.funcionalidade);
+        const costPerReq = model ? MODEL_PRICING[model].avgCostPerReqBRL : 0.03;
+        const modelKey = model || 'unknown';
+
+        modelReqCount[modelKey] = (modelReqCount[modelKey] || 0) + 1;
         funcCount[c.funcionalidade] = (funcCount[c.funcionalidade] || 0) + 1;
+
+        if (!reqCountByEmpresa[c.empresa_id]) reqCountByEmpresa[c.empresa_id] = { total: 0, cost: 0 };
+        reqCountByEmpresa[c.empresa_id].total += 1;
+        reqCountByEmpresa[c.empresa_id].cost += overrideEnabled ? overrideCost : costPerReq;
       });
 
+      // Compute weighted avg cost
+      const totalReqs = Object.values(reqCountByEmpresa).reduce((s, e) => s + e.total, 0);
+      const totalCost = Object.values(reqCountByEmpresa).reduce((s, e) => s + e.cost, 0);
+      const computedAvg = totalReqs > 0 ? totalCost / totalReqs : 0;
+      setAvgCostPerReq(computedAvg);
+
+      // Model stats
+      const stats: ModelStats[] = Object.entries(MODEL_PRICING).map(([key, info]) => {
+        const reqs = modelReqCount[key] || 0;
+        return {
+          model: key,
+          label: info.label,
+          provider: info.provider,
+          avgCostBRL: info.avgCostPerReqBRL,
+          reqs,
+          totalCostBRL: reqs * info.avgCostPerReqBRL,
+        };
+      });
+      setModelStats(stats);
+
+      // Empresas
       const mapped: EmpresaFinanceiro[] = (empresasData || []).map((e: any) => {
         const planoNome = e.plano?.nome || 'Free';
         const receita = PLAN_PRICES[planoNome] || 0;
-        const reqs = reqCountByEmpresa[e.id] || 0;
-        const custo = reqs * custoReq;
+        const empData = reqCountByEmpresa[e.id] || { total: 0, cost: 0 };
+        const custo = empData.cost;
         const margem = receita - custo;
-        const margemPct = receita > 0 ? (margem / receita) * 100 : (reqs > 0 ? -100 : 0);
+        const margemPct = receita > 0 ? (margem / receita) * 100 : (empData.total > 0 ? -100 : 0);
         let status: 'rentavel' | 'limite' | 'deficitario' = 'rentavel';
         if (margemPct < 10) status = 'limite';
         if (margem < 0) status = 'deficitario';
@@ -97,7 +187,7 @@ export function FinanceiroIATab() {
           nome: e.nome,
           plano_nome: planoNome,
           receita_mensal: receita,
-          requisicoes: reqs,
+          requisicoes: empData.total,
           custo_estimado: custo,
           margem,
           margem_percent: margemPct,
@@ -106,12 +196,6 @@ export function FinanceiroIATab() {
       });
 
       setEmpresas(mapped);
-
-      const funcArr: ConsumoFuncionalidade[] = Object.entries(funcCount)
-        .map(([f, t]) => ({ funcionalidade: f, total: t, custo: t * custoReq }))
-        .sort((a, b) => b.total - a.total);
-
-      setConsumoPorFunc(funcArr);
     } catch (err) {
       console.error(err);
       toast.error('Erro ao carregar dados financeiros');
@@ -129,7 +213,6 @@ export function FinanceiroIATab() {
       custo,
       margem: receita - custo,
       margemPct: receita > 0 ? ((receita - custo) / receita) * 100 : 0,
-      custoMedio: reqs > 0 ? custo / reqs : 0,
       totalReqs: reqs,
       deficitarios: empresas.filter(e => e.status === 'deficitario').length,
     };
@@ -145,11 +228,17 @@ export function FinanceiroIATab() {
         margem_bruta: totals.margem,
         margem_percent: totals.margemPct,
         total_requisicoes: totals.totalReqs,
-        custo_por_req: custoReq,
+        custo_medio_por_req: avgCostPerReq,
+        modelos_em_uso: modelStats.map(m => ({
+          modelo: m.label,
+          provider: m.provider,
+          custo_medio_req: m.avgCostBRL,
+          requisicoes: m.reqs,
+          custo_total: m.totalCostBRL,
+        })),
         empresas_deficitarias: empresas.filter(e => e.status === 'deficitario').map(e => ({
           nome: e.nome, plano: e.plano_nome, reqs: e.requisicoes, margem: e.margem
         })),
-        top_funcionalidades: consumoPorFunc.slice(0, 5).map(f => ({ nome: f.funcionalidade, reqs: f.total })),
         planos: Object.entries(PLAN_PRICES).map(([nome, preco]) => ({ nome, preco })),
         empresas_por_plano: Object.entries(
           empresas.reduce((acc, e) => { acc[e.plano_nome] = (acc[e.plano_nome] || 0) + 1; return acc; }, {} as Record<string, number>)
@@ -216,33 +305,89 @@ export function FinanceiroIATab() {
     'hsl(var(--accent))',
     'hsl(262, 83%, 58%)',
     'hsl(220, 70%, 50%)',
-    'hsl(340, 75%, 55%)',
-    'hsl(160, 60%, 45%)',
-    'hsl(30, 80%, 55%)',
-    'hsl(190, 70%, 50%)',
   ];
 
   return (
     <div className="space-y-6">
-      {/* Custo por requisição configurável */}
+      {/* Card: Modelos IA em Uso */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-end gap-4 flex-wrap">
-            <div className="space-y-1">
-              <Label htmlFor="custoReq" className="text-sm font-medium">Custo estimado por requisição IA (R$)</Label>
-              <Input
-                id="custoReq"
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={custoReq}
-                onChange={(e) => setCustoReq(parseFloat(e.target.value) || 0.15)}
-                className="w-32"
-              />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Cpu className="h-5 w-5" />
+            Modelos de IA em Uso
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  <th className="pb-2 font-medium text-muted-foreground">Modelo</th>
+                  <th className="pb-2 font-medium text-muted-foreground">Provider</th>
+                  <th className="pb-2 font-medium text-muted-foreground">Input/1K tokens</th>
+                  <th className="pb-2 font-medium text-muted-foreground">Output/1K tokens</th>
+                  <th className="pb-2 font-medium text-muted-foreground">Custo médio/req (R$)</th>
+                  <th className="pb-2 font-medium text-muted-foreground">Funções</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-right">Reqs no mês</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-right">Custo total (R$)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(MODEL_PRICING).map(([key, info]) => {
+                  const stat = modelStats.find(m => m.model === key);
+                  return (
+                    <tr key={key} className="border-b border-border/50">
+                      <td className="py-2 font-medium">{info.label}</td>
+                      <td className="py-2">
+                        <Badge variant="outline" className="text-xs">{info.provider}</Badge>
+                      </td>
+                      <td className="py-2 font-mono text-xs">${info.inputPer1kTokens.toFixed(5)}</td>
+                      <td className="py-2 font-mono text-xs">${info.outputPer1kTokens.toFixed(4)}</td>
+                      <td className="py-2 font-mono text-xs">R$ {info.avgCostPerReqBRL.toFixed(3)}</td>
+                      <td className="py-2">
+                        <div className="flex flex-wrap gap-1">
+                          {info.functions.map(fn => (
+                            <Badge key={fn} variant="secondary" className="text-[10px]">{fn}</Badge>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-2 text-right font-semibold">{stat?.reqs || 0}</td>
+                      <td className="py-2 text-right font-semibold">R$ {(stat?.totalCostBRL || 0).toFixed(2)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="font-semibold">
+                  <td colSpan={4} className="pt-2">Custo médio ponderado por requisição:</td>
+                  <td className="pt-2 font-mono">R$ {avgCostPerReq.toFixed(3)}</td>
+                  <td></td>
+                  <td className="pt-2 text-right">{totals.totalReqs}</td>
+                  <td className="pt-2 text-right">R$ {totals.custo.toFixed(2)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {/* Override toggle */}
+          <div className="flex items-center gap-4 pt-2 border-t border-border">
+            <div className="flex items-center gap-2">
+              <Switch checked={overrideEnabled} onCheckedChange={setOverrideEnabled} id="override" />
+              <Label htmlFor="override" className="text-xs text-muted-foreground">Simular custo fixo por requisição</Label>
             </div>
-            <p className="text-xs text-muted-foreground pb-2">
-              Ajuste para simular diferentes cenários de custo.
-            </p>
+            {overrideEnabled && (
+              <div className="flex items-center gap-2">
+                <Label className="text-xs">R$</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0.001"
+                  value={overrideCost}
+                  onChange={(e) => setOverrideCost(parseFloat(e.target.value) || 0.05)}
+                  className="w-24 h-8 text-xs"
+                />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -258,7 +403,7 @@ export function FinanceiroIATab() {
         <StatCard
           title="Custo Estimado IA"
           value={`R$ ${totals.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-          description={`${totals.totalReqs} requisições no mês`}
+          description={`${totals.totalReqs} req · média R$ ${avgCostPerReq.toFixed(3)}/req`}
           icon={<Sparkles className="h-4 w-4" />}
         />
         <StatCard
@@ -299,34 +444,37 @@ export function FinanceiroIATab() {
         </CardContent>
       </Card>
 
-      {/* Gráfico consumo por funcionalidade */}
-      {consumoPorFunc.length > 0 && (
+      {/* Gráfico consumo por modelo */}
+      {modelStats.some(m => m.reqs > 0) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
-              Consumo por Funcionalidade (mês atual)
+              Consumo por Modelo IA (mês atual)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
+            <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={consumoPorFunc.slice(0, 10)} layout="vertical" margin={{ left: 20, right: 20 }}>
+                <BarChart data={modelStats.filter(m => m.reqs > 0)} layout="vertical" margin={{ left: 20, right: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis type="number" className="text-xs fill-muted-foreground" />
                   <YAxis
-                    dataKey="funcionalidade"
+                    dataKey="label"
                     type="category"
-                    width={180}
+                    width={160}
                     className="text-xs fill-muted-foreground"
                     tick={{ fontSize: 11 }}
                   />
                   <Tooltip
                     contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
-                    formatter={(value: number) => [`${value} requisições`, 'Total']}
+                    formatter={(value: number, name: string) => {
+                      if (name === 'reqs') return [`${value} requisições`, 'Requisições'];
+                      return [`R$ ${value.toFixed(2)}`, 'Custo'];
+                    }}
                   />
-                  <Bar dataKey="total" radius={[0, 4, 4, 0]}>
-                    {consumoPorFunc.slice(0, 10).map((_, i) => (
+                  <Bar dataKey="reqs" radius={[0, 4, 4, 0]}>
+                    {modelStats.filter(m => m.reqs > 0).map((_, i) => (
                       <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                     ))}
                   </Bar>
