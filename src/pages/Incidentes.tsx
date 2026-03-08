@@ -73,6 +73,7 @@ export default function Incidentes() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [comunicacaoDialogOpen, setComunicacaoDialogOpen] = useState(false);
   const [evidenciaDialogOpen, setEvidenciaDialogOpen] = useState(false);
+  const [tratamentoDialogOpen, setTratamentoDialogOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; incidenteId: string }>({
     open: false,
     incidenteId: ''
