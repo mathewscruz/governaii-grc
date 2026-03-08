@@ -173,7 +173,7 @@ export function RecentActivities({ className }: { className?: string }) {
           id: `documento-${documento.id}`,
           type: 'creation',
           title: documento.nome,
-          description: 'Documento adicionado',
+          description: t('activities.documentAdded'),
           created_at: documento.created_at,
           module: 'documentos',
           icon: getIcon('documentos'),
