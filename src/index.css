@@ -8,21 +8,6 @@
    ======================================== */
 
 /* Custom Animations */
-@keyframes grid-move {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-50px); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(5deg); }
-}
-
-@keyframes glow-pulse {
-  0%, 100% { opacity: 0.4; filter: blur(20px); }
-  50% { opacity: 0.8; filter: blur(30px); }
-}
-
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -34,45 +19,26 @@
   }
 }
 
-@keyframes flow-particle {
-  0% {
-    transform: translateX(-100%) scale(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-    transform: translateX(-80%) scale(1);
-  }
-  90% {
-    opacity: 1;
-    transform: translateX(80%) scale(1);
-  }
-  100% {
-    transform: translateX(100%) scale(0);
-    opacity: 0;
-  }
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
-@keyframes rotate-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.animate-scroll-left {
+  animation: scroll-left 30s linear infinite;
+}
+.animate-scroll-left:hover {
+  animation-play-state: paused;
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+.lp-fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
 }
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 0.8; }
-  50% { transform: scale(1.2); opacity: 0.2; }
-  100% { transform: scale(0.8); opacity: 0.8; }
-}
-
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.lp-fade-up.lp-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 @keyframes accent-bar-pulse {
@@ -99,100 +65,6 @@
   animation: toast-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Flow line container for landing page */
-.flow-line-container {
-  position: relative;
-  height: 2px;
-  width: 100%;
-  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.3), transparent);
-  overflow: hidden;
-}
-
-.flow-particle {
-  position: absolute;
-  height: 100%;
-  width: 50px;
-  background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
-  animation: flow-particle 3s ease-in-out infinite;
-}
-
-/* Landing page specific styles */
-.landing-grid-bg {
-  background-size: 60px 60px;
-  background-image: 
-    linear-gradient(to right, hsl(var(--primary) / 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, hsl(var(--primary) / 0.03) 1px, transparent 1px);
-}
-
-.landing-gradient-text {
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent-vibrant)) 50%, hsl(var(--primary-glow)) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  background-size: 200% 200%;
-  animation: gradient-shift 8s ease infinite;
-}
-
-.landing-glass {
-  background: rgba(15, 35, 64, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.landing-glass-light {
-  background: rgba(15, 35, 64, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.landing-glow-btn {
-  position: relative;
-  overflow: hidden;
-}
-
-.landing-glow-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, hsl(var(--primary-foreground) / 0.2), transparent);
-  animation: shimmer 3s infinite;
-}
-
-.landing-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.landing-fade-in-1 { animation: fade-in-up 0.8s ease-out forwards; animation-delay: 0.1s; opacity: 0; }
-.landing-fade-in-2 { animation: fade-in-up 0.8s ease-out forwards; animation-delay: 0.2s; opacity: 0; }
-.landing-fade-in-3 { animation: fade-in-up 0.8s ease-out forwards; animation-delay: 0.3s; opacity: 0; }
-.landing-fade-in-4 { animation: fade-in-up 0.8s ease-out forwards; animation-delay: 0.4s; opacity: 0; }
-.landing-fade-in-5 { animation: fade-in-up 0.8s ease-out forwards; animation-delay: 0.5s; opacity: 0; }
-
-.landing-card-glow:hover {
-  box-shadow: 0 0 40px hsl(var(--primary) / 0.15), 0 0 80px hsl(var(--primary) / 0.05);
-}
-
-.landing-border-gradient {
-  position: relative;
-}
-
-.landing-border-gradient::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.5), transparent, hsl(var(--accent-vibrant) / 0.3));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
 
 /* ========================================
    Akuris Color System
@@ -563,42 +435,13 @@ input:-webkit-autofill:focus {
   }
 }
 
-/* ========================================
-   Mobile Performance Optimizations
-   ======================================== */
-@media (max-width: 768px) {
-  .landing-grid-bg {
-    display: none;
-  }
-  
-  .landing-float {
-    animation: none !important;
-  }
-  
-  .landing-glass,
-  .landing-glass-light {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .landing-gradient-text,
-  .landing-float,
-  .flow-particle {
-    animation: none !important;
-  }
-  
-  .landing-glow-btn::before {
-    animation: none !important;
-  }
-  
-  .landing-fade-in-1,
-  .landing-fade-in-2,
-  .landing-fade-in-3,
-  .landing-fade-in-4,
-  .landing-fade-in-5 {
-    animation: none !important;
+  .lp-fade-up {
+    transition: none !important;
     opacity: 1 !important;
+    transform: none !important;
+  }
+  .animate-scroll-left {
+    animation: none !important;
   }
 }
