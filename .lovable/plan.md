@@ -1,80 +1,96 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Landing Page — Auditoria de Marketing, SEO & UX
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
+## Diagnóstico Crítico
 
----
+Analisei a landing page com olhar de head de marketing e especialista em SEO/UX. Identifiquei problemas sérios em 4 categorias:
 
-## 1. ErrorBoundary ausente na maioria das paginas
+### 1. Sinais visuais que denunciam "feito por IA"
+- **Gradient text animado** (`landing-gradient-text` com `gradient-shift 8s`): padrão #1 de templates gerados por IA
+- **Glassmorphism genérico** (`bg-white/[0.03] backdrop-blur-sm`): visual cookie-cutter de SaaS AI-generated
+- **Glow effects nos cards** (`landing-card-glow`, `shadow-glow`): efeito "wow" que toda landing de IA tem
+- **Shimmer button** (`landing-glow-btn::before` com shimmer animation): padrão extremamente AI
+- **Ícones Lucide coloridos em circles**: layout genérico que grita template
+- **Testimonials com avatar de letra**: sem foto, sem empresa real, sem credibilidade
+- **Dashboard mockup fake**: barras de gráfico CSS sem dados reais — parece demo genérica
+- **Flow particles** animados: efeito decorativo sem propósito
 
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
+### 2. Problemas de SEO técnico
+- **Zero heading hierarchy correta**: H1 está ok, mas seções usam H2 genericamente sem H3
+- **Sem `<article>` ou `<section>` semântico** com `aria-labelledby` consistente
+- **Links sociais apontam para `#`**: Google penaliza links quebrados
+- **Sem breadcrumb structured data** para a home
+- **LCP ruim**: hero carrega logo como asset importado (bundled) mas o mockup é pesado com muitos divs
+- **Sem `<meta name="description">` dinâmica** no componente (usa a do index.html, ok)
+- **Formulário de contato sem honeypot** anti-spam
+- **Falta `loading="lazy"`** em imagens do footer (bandeiras)
+- **CSS inline no `<style>`**: o `@keyframes scroll-left` deveria estar no index.css
+- **Falta alt text descritivo** no mockup do dashboard
 
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
+### 3. Problemas de UX/Conversão
+- **CTA "Solicitar Demonstração" repete 3x** com mesmo estilo — fadiga visual
+- **Nenhum dado quantificável** ("+200 empresas", "60% redução"): falta social proof real
+- **Seção "Ferramentas Inteligentes" e "Módulos" são redundantes**: dizem a mesma coisa de formas diferentes
+- **Formulário de contato é longo demais** (5 campos): taxa de conversão cai drasticamente com >3 campos
+- **Nenhum pricing visível**: visitante não sabe se pode pagar
+- **Nenhum CTA de trial/freemium**: só "demonstração" cria barreira alta
+- **Footer tem links sociais fake** (#): destrói credibilidade
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+### 4. Problemas de acessibilidade
+- **Skip link em português hardcoded** ("Pular para o conteúdo principal")
+- **Botões de navegação sem role adequado** (são `<button>` ok, mas sem `aria-current`)
+- **Contraste de `text-gray-400` sobre `#0A1628`**: ratio ~3.5:1, abaixo do WCAG AA 4.5:1
+- **Formulário sem `aria-describedby`** para erros
 
----
+## Plano de Implementação
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+### A. Eliminar visual "AI-generated"
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+1. **Remover gradient-text animado** do H1 e H2s — usar cor sólida branca ou um destaque estático com `text-blue-400` simples
+2. **Remover shimmer, glow-pulse, flow-particles** — limpar CSS morto
+3. **Substituir glassmorphism** por cards com `bg-[#111B2E]` sólido e `border border-[#1E2D45]` — visual enterprise limpo
+4. **Dashboard mockup**: substituir barras CSS por screenshot real do produto ou ilustração vetorial estática
+5. **Testimonials**: remover avatares de letra, usar aspas estilizadas simples — visual mais editorial/sóbrio
+6. **Cards de módulos**: ícones com fundo sólido opaco em vez de gradients transparentes
 
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+### B. SEO técnico
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+1. **Heading hierarchy**: H1 (hero) → H2 (cada seção) → H3 (cards de features)
+2. **Structured data**: adicionar `BreadcrumbList` e melhorar `SoftwareApplication` no index.html
+3. **Links sociais**: remover os `href="#"` — ou colocar URLs reais ou remover
+4. **Mover CSS inline** (`@keyframes scroll-left`, `.lp-fade-up`) para index.css
+5. **Adicionar `loading="lazy"`** nas imagens de bandeira do footer
+6. **Contraste**: subir `text-gray-400` → `text-gray-300` em textos descritivos
 
----
+### C. UX/Conversão
 
-## 3. Paginas sem EmptyState padronizado
+1. **Consolidar seções**: fundir "Ferramentas Inteligentes" e "Módulos" em uma única seção mais enxuta
+2. **CTA primário diferenciado**: hero com "Teste Grátis" (link para /registro) + secundário "Fale com Vendas"
+3. **Formulário simplificado**: reduzir para 3 campos (Nome, Email, Mensagem) — mover empresa/telefone para opcionais
+4. **Adicionar social proof numérico** no hero: "+X empresas confiam no Akuris" (ou badge de segurança)
+5. **Seção de preços resumida** com link para /planos
+6. **Footer**: remover ícones sociais sem URL real
 
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+### D. Limpeza de CSS
 
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+Remover do `index.css` as classes não utilizadas ou que remetem a templates AI:
+- `landing-glow-btn` + `::before` shimmer
+- `landing-card-glow`
+- `flow-line-container` + `flow-particle`
+- `landing-float`
+- `landing-glass`, `landing-glass-light`
+- Keyframes: `flow-particle`, `glow-pulse`, `shimmer`, `pulse-ring`, `float`, `rotate-slow`
 
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+## Arquivos a modificar
 
----
+| Arquivo | Mudança |
+|---|---|
+| `src/pages/LandingPage.tsx` | Reescrever layout: fundir seções, CTAs, cards sólidos, remover mockup fake, limpar testimonials, simplificar form |
+| `src/index.css` | Remover ~15 classes/keyframes AI-pattern não utilizadas |
+| `index.html` | Adicionar BreadcrumbList structured data |
 
-## 4. Ausencia de atalhos de teclado documentados para o usuario
+## Resultado esperado
 
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
-
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
-
----
-
-## 5. Botao de "Voltar" no header nao tem tooltip
-
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
-
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
-
----
-
-## Resumo de Prioridade
-
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
-
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+Landing page com visual enterprise sóbrio (referência: Vanta, Drata, OneTrust), sem nenhum padrão visual que denuncie geração por IA, otimizada para Core Web Vitals, com heading hierarchy correta e structured data completa.
 
