@@ -32,6 +32,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { logger } from '@/lib/logger';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
+import { PageSkeleton } from '@/components/ui/page-skeleton';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { capitalizeText, getItemStatusColor, getTipoColor, getClassificacaoColor, formatStatus } from '@/lib/text-utils';
 import { formatDateOnly } from '@/lib/date-utils';
