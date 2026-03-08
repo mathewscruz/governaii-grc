@@ -17,6 +17,7 @@ import { RemediationTab } from '@/components/gap-analysis/RemediationTab';
 import { FrameworkOnboarding } from '@/components/gap-analysis/FrameworkOnboarding';
 import { JourneyProgressBar } from '@/components/gap-analysis/JourneyProgressBar';
 import { SoATab } from '@/components/gap-analysis/SoATab';
+import { DocGenDialog } from '@/components/documentos/DocGenDialog';
 
 import { exportFrameworkPDF } from '@/components/gap-analysis/ExportFrameworkPDF';
 import { exportBoardPDF } from '@/components/gap-analysis/ExportBoardPDF';
