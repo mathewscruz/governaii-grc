@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,14 @@ export function RelatorioDialog({ open, onOpenChange, onSave, relatorio, loading
   const [nome, setNome] = useState(relatorio?.nome || '');
   const [descricao, setDescricao] = useState(relatorio?.descricao || '');
   const [templateBase, setTemplateBase] = useState(relatorio?.template_base || '');
+
+  useEffect(() => {
+    if (open) {
+      setNome(relatorio?.nome || '');
+      setDescricao(relatorio?.descricao || '');
+      setTemplateBase(relatorio?.template_base || '');
+    }
+  }, [open, relatorio]);
 
   const handleSave = () => {
     if (!nome.trim()) return;
