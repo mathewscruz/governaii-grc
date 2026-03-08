@@ -22,7 +22,7 @@ export default function DenunciaMenu() {
   useEffect(() => {
     const loadEmpresaData = async () => {
       if (!empresaSlug) {
-        console.error('❌ [ERROR] Slug da empresa não fornecido');
+        logger.debug('Slug da empresa não fornecido', { module: 'DenunciaMenu' });
         setLoading(false);
         return;
       }
