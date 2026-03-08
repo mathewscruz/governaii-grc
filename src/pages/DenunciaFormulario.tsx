@@ -88,7 +88,7 @@ export default function DenunciaFormulario() {
   useEffect(() => {
     const loadConfiguracao = async () => {
       if (!empresaSlug) {
-        console.error('❌ [ERROR] Slug da empresa não fornecido');
+        logger.debug('Slug da empresa não fornecido', { module: 'DenunciaFormulario' });
         setLoading(false);
         return;
       }
