@@ -81,11 +81,13 @@ export function FornecedoresManager() {
 
   // Fetch fornecedores with assessment stats
   const { data: fornecedores = [], isLoading } = useQuery({
-    queryKey: ['fornecedores-with-stats'],
+    queryKey: ['fornecedores-with-stats', empresaId],
+    enabled: !!empresaId,
     queryFn: async () => {
       const { data: fornecedoresData, error } = await supabase
         .from('fornecedores')
         .select('*')
+        .eq('empresa_id', empresaId!)
         .order('nome');
 
       if (error) throw error;
@@ -93,7 +95,8 @@ export function FornecedoresManager() {
       // Fetch assessment stats for all fornecedores
       const { data: assessments } = await supabase
         .from('due_diligence_assessments')
-        .select('fornecedor_email, status, score_final, created_at');
+        .select('fornecedor_email, status, score_final, created_at')
+        .eq('empresa_id', empresaId!);
 
       const assessmentMap = new Map<string, { total: number; lastScore: number | null; pending: number }>();
       
