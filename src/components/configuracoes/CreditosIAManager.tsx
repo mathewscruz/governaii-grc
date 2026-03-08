@@ -288,6 +288,7 @@ export function CreditosIAManager() {
               columns={historicoColumns}
               loading={historicoLoading}
               searchPlaceholder="Buscar no histórico..."
+              paginated
               emptyState={{
                 icon: <History className="h-8 w-8" />,
                 title: "Sem histórico",

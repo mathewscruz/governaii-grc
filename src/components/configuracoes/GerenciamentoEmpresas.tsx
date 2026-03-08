@@ -640,6 +640,7 @@ const GerenciamentoEmpresas = () => {
         sortDirection={sortDirection}
         onSort={handleSort}
         onRefresh={fetchEmpresas}
+        paginated
         emptyState={{
           icon: <Building2 className="h-12 w-12" />,
           title: 'Nenhuma empresa encontrada',

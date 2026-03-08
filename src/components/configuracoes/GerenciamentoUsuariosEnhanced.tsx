@@ -900,6 +900,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         sortDirection={sortDirection}
         onSort={handleSort}
         onRefresh={fetchUsuarios}
+        paginated
         emptyState={{
           icon: <Users className="h-12 w-12" />,
           title: 'Nenhum usuário encontrado',
