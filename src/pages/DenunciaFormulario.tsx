@@ -167,7 +167,7 @@ export default function DenunciaFormulario() {
           logger.debug('Nenhum logotipo cadastrado para esta empresa', { module: 'DenunciaFormulario' });
         }
       } catch (error) {
-        console.error('❌ [ERROR] Erro geral ao carregar configuração:', error);
+        logger.error('Erro geral ao carregar configuração', { module: 'DenunciaFormulario', error: String(error) });
       } finally {
         setLoading(false);
       }
