@@ -234,62 +234,30 @@ export default function Privacidade() {
       key: 'actions',
       label: 'Ações',
       render: (_: any, row: any) => (
-        <TooltipProvider>
-          <div className="flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => {
-                  setSelectedDado(row);
-                  setShowDadoSheet(true);
-                }}>
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Ver Detalhes</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => {
-                  setSelectedDado(row);
-                  setShowDadosDialog(true);
-                }}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Editar</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => {
-                  setSelectedDado(row);
-                  setShowMapeamentoDialog(true);
-                }}>
-                  <Link2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Mapear</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => {
-                  setPreSelectedDadoId(row.id);
-                  setShowRopaWizard(true);
-                }}>
-                  <FileText className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Criar ROPA</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(row.id, 'dados')} className="text-destructive hover:text-destructive">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Excluir</TooltipContent>
-            </Tooltip>
-          </div>
-        </TooltipProvider>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => { setSelectedDado(row); setShowDadoSheet(true); }}>
+              <Eye className="h-4 w-4 mr-2" /> Ver Detalhes
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setSelectedDado(row); setShowDadosDialog(true); }}>
+              <Edit className="h-4 w-4 mr-2" /> Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setSelectedDado(row); setShowMapeamentoDialog(true); }}>
+              <Link2 className="h-4 w-4 mr-2" /> Mapear
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setPreSelectedDadoId(row.id); setShowRopaWizard(true); }}>
+              <FileText className="h-4 w-4 mr-2" /> Criar ROPA
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleDelete(row.id, 'dados')} className="text-destructive focus:text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" /> Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     }
   ];
