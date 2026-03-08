@@ -80,7 +80,7 @@ export function SoATab({ frameworkId, frameworkName, frameworkVersion }: SoATabP
       let soaMap = new Map<string, { aplicavel: boolean; justificativa: string }>();
       try {
         const { data: soaData } = await supabase
-          .from('gap_analysis_soa' as any)
+          .from('gap_analysis_soa')
           .select('requirement_id, aplicavel, justificativa')
           .eq('framework_id', frameworkId)
           .eq('empresa_id', empresaId);
