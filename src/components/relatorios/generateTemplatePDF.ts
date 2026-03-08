@@ -223,14 +223,11 @@ async function fetchExecutivoData(empresaId: string) {
 }
 
 async function fetchComplianceData(empresaId: string) {
-  const [{ data: frameworks }, { data: controles }, { data: politicas }, { data: auditorias }] = await Promise.all([
-    // Frameworks are global
-    supabase.from('gap_analysis_frameworks').select('id, nome, versao, tipo_framework').eq('ativo', true),
-    supabase.from('controles').select('*').eq('empresa_id', empresaId),
-    supabase.from('politicas').select('*').eq('empresa_id', empresaId),
-    supabase.from('auditorias').select('*').eq('empresa_id', empresaId),
-  ]);
-  const f = frameworks || []; const c = controles || []; const p = politicas || []; const a = auditorias || [];
+  const { data: frameworks } = await (supabase.from('gap_analysis_frameworks').select('id, nome, versao, tipo_framework').eq('ativo', true) as any);
+  const { data: controles } = await supabase.from('controles').select('*').eq('empresa_id', empresaId);
+  const { data: politicas } = await supabase.from('politicas').select('*').eq('empresa_id', empresaId);
+  const { data: auditorias } = await supabase.from('auditorias').select('*').eq('empresa_id', empresaId);
+  const f = (frameworks || []) as any[]; const c = controles || []; const p = politicas || []; const a = auditorias || [];
   return {
     sections: [
       { title: 'Status Geral de Compliance', metrics: [
