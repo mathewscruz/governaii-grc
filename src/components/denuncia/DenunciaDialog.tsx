@@ -77,6 +77,7 @@ export function DenunciaDialog({
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
   const { notify } = useIntegrationNotify();
+  const { empresaId } = useEmpresaId();
 
   const [formData, setFormData] = useState({
     status: denuncia.status,
