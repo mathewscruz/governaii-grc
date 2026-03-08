@@ -114,7 +114,7 @@ export default function DenunciaFormulario() {
         }
 
         if (!empresaData) {
-          console.error('❌ [ERROR] Empresa não encontrada para slug:', normalizedSlug);
+          logger.error('Empresa não encontrada para slug', { module: 'DenunciaFormulario', action: normalizedSlug });
           setLoading(false);
           return;
         }
