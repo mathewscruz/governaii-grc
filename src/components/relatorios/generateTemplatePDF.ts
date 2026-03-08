@@ -106,13 +106,13 @@ async function fetchRiscosData(empresaId: string) {
     sections: [
       { title: 'Resumo Executivo', metrics: [
         { label: 'Total de Riscos', value: r.length },
-        { label: 'Críticos', value: criticos },
+        { label: 'Criticos', value: criticos },
         { label: 'Altos', value: altos },
-        { label: 'Médios', value: medios },
+        { label: 'Medios', value: medios },
         { label: 'Baixos', value: baixos },
-        { label: 'Tratamentos Concluídos', value: `${concluidos}/${t.length}` },
+        { label: 'Tratamentos Concluidos', value: `${concluidos}/${t.length}` },
       ]},
-      { title: 'Detalhamento dos Riscos', tableHeaders: ['Nome', 'Nível', 'Status', 'Responsável'],
+      { title: 'Detalhamento dos Riscos', tableHeaders: ['Nome', 'Nivel', 'Status', 'Responsavel'],
         tableRows: r.map(x => [x.nome, x.nivel_risco_inicial || '-', x.status || '-', x.responsavel || '-']),
         colWidths: [60, 30, 35, 45] },
     ] as Section[]
@@ -122,19 +122,19 @@ async function fetchRiscosData(empresaId: string) {
 async function fetchIncidentesData(empresaId: string) {
   const { data: inc } = await supabase.from('incidentes').select('*').eq('empresa_id', empresaId).order('data_deteccao', { ascending: false });
   const i = inc || [];
-  const critica = i.filter(x => x.criticidade === 'critica').length;
-  const alta = i.filter(x => x.criticidade === 'alta').length;
+  const critica = i.filter(x => x.gravidade === 'critica').length;
+  const alta = i.filter(x => x.gravidade === 'alta').length;
   const resolvidos = i.filter(x => x.status === 'resolvido').length;
   return {
     sections: [
       { title: 'Resumo de Incidentes', metrics: [
         { label: 'Total de Incidentes', value: i.length },
-        { label: 'Criticidade Crítica', value: critica },
-        { label: 'Criticidade Alta', value: alta },
+        { label: 'Gravidade Critica', value: critica },
+        { label: 'Gravidade Alta', value: alta },
         { label: 'Resolvidos', value: resolvidos },
       ]},
-      { title: 'Lista de Incidentes', tableHeaders: ['Título', 'Tipo', 'Criticidade', 'Status'],
-        tableRows: i.map(x => [x.titulo, x.tipo_incidente || '-', x.criticidade || '-', x.status || '-']),
+      { title: 'Lista de Incidentes', tableHeaders: ['Titulo', 'Tipo', 'Gravidade', 'Status'],
+        tableRows: i.map(x => [x.titulo, x.tipo || '-', x.gravidade || '-', x.status || '-']),
         colWidths: [60, 35, 35, 40] },
     ] as Section[]
   };
@@ -151,13 +151,13 @@ async function fetchLGPDData(empresaId: string) {
     sections: [
       { title: 'Panorama LGPD', metrics: [
         { label: 'Dados Pessoais Mapeados', value: d.length },
-        { label: 'Solicitações de Titulares', value: s.length },
-        { label: 'Políticas Ativas', value: p.filter(x => x.status === 'ativa').length },
+        { label: 'Solicitacoes de Titulares', value: s.length },
+        { label: 'Politicas Ativas', value: p.filter(x => x.status === 'ativa').length },
       ]},
       { title: 'Dados Pessoais Mapeados', tableHeaders: ['Nome', 'Categoria', 'Base Legal', 'Sensibilidade'],
         tableRows: d.map(x => [x.nome, x.categoria_dados || '-', x.base_legal || '-', x.sensibilidade || '-']),
         colWidths: [50, 35, 45, 40] },
-      ...(s.length > 0 ? [{ title: 'Solicitações de Titulares', tableHeaders: ['Tipo', 'Status', 'Criado em'],
+      ...(s.length > 0 ? [{ title: 'Solicitacoes de Titulares', tableHeaders: ['Tipo', 'Status', 'Criado em'],
         tableRows: s.map((x: any) => [x.tipo_solicitacao || '-', x.status || '-', new Date(x.created_at).toLocaleDateString('pt-BR')]),
         colWidths: [60, 50, 60] }] : []),
     ] as Section[]
@@ -165,16 +165,30 @@ async function fetchLGPDData(empresaId: string) {
 }
 
 async function fetchISO27001Data(empresaId: string) {
-  const [{ data: frameworks }, { data: controles }] = await Promise.all([
-    supabase.from('gap_analysis_frameworks').select('*').eq('empresa_id', empresaId).ilike('nome', '%ISO%27001%'),
+  // Frameworks are global (empresa_id IS NULL), evaluations are per-company
+  const [{ data: frameworks }, { data: evaluations }, { data: controles }] = await Promise.all([
+    supabase.from('gap_analysis_frameworks').select('id, nome, versao, tipo_framework').ilike('nome', '%ISO%27001%'),
+    supabase.from('gap_analysis_evaluations').select('framework_id, conformity_status').eq('empresa_id', empresaId),
     supabase.from('controles').select('*').eq('empresa_id', empresaId),
   ]);
-  const f = frameworks || []; const c = controles || [];
+  const f = frameworks || []; const e = evaluations || []; const c = controles || [];
   const ativos = c.filter(x => x.status === 'ativo').length;
+  
+  // Calculate conformity stats from evaluations
+  const isoFrameworkIds = f.map(fw => fw.id);
+  const isoEvals = e.filter(ev => isoFrameworkIds.includes(ev.framework_id));
+  const conformes = isoEvals.filter(ev => ev.conformity_status === 'conforme').length;
+  const parciais = isoEvals.filter(ev => ev.conformity_status === 'parcialmente_conforme').length;
+  const naoConformes = isoEvals.filter(ev => ev.conformity_status === 'nao_conforme').length;
+  
   return {
     sections: [
       { title: 'Status ISO 27001', metrics: [
         { label: 'Frameworks ISO encontrados', value: f.length },
+        { label: 'Requisitos avaliados', value: isoEvals.length },
+        { label: 'Conformes', value: conformes },
+        { label: 'Parcialmente conformes', value: parciais },
+        { label: 'Nao conformes', value: naoConformes },
         { label: 'Total de Controles', value: c.length },
         { label: 'Controles Ativos', value: ativos },
       ]},
@@ -191,20 +205,21 @@ async function fetchExecutivoData(empresaId: string) {
     supabase.from('riscos').select('*').eq('empresa_id', empresaId),
     supabase.from('incidentes').select('*').eq('empresa_id', empresaId).gte('data_deteccao', ninetyDaysAgo.toISOString()),
     supabase.from('controles').select('*').eq('empresa_id', empresaId),
-    supabase.from('gap_analysis_frameworks').select('*').eq('empresa_id', empresaId),
+    // Frameworks are global - fetch all active ones
+    supabase.from('gap_analysis_frameworks').select('id, nome').eq('ativo', true),
   ]);
   const r = riscos || []; const i = incidentes || []; const c = controles || []; const f = frameworks || [];
   return {
     sections: [
-      { title: 'Resumo Executivo - Últimos 90 dias', metrics: [
+      { title: 'Resumo Executivo - Ultimos 90 dias', metrics: [
         { label: 'Riscos Ativos', value: r.length },
-        { label: 'Riscos Críticos', value: r.filter(x => x.nivel_risco_inicial === 'critico').length },
+        { label: 'Riscos Criticos', value: r.filter(x => x.nivel_risco_inicial === 'critico').length },
         { label: 'Incidentes (90 dias)', value: i.length },
         { label: 'Controles Ativos', value: c.filter(x => x.status === 'ativo').length },
         { label: 'Frameworks Monitorados', value: f.length },
       ]},
-      { title: 'Incidentes Recentes', tableHeaders: ['Título', 'Criticidade', 'Status'],
-        tableRows: i.slice(0, 15).map(x => [x.titulo, x.criticidade || '-', x.status || '-']),
+      { title: 'Incidentes Recentes', tableHeaders: ['Titulo', 'Gravidade', 'Status'],
+        tableRows: i.slice(0, 15).map(x => [x.titulo, x.gravidade || '-', x.status || '-']),
         colWidths: [80, 45, 45] },
     ] as Section[]
   };
@@ -212,7 +227,8 @@ async function fetchExecutivoData(empresaId: string) {
 
 async function fetchComplianceData(empresaId: string) {
   const [{ data: frameworks }, { data: controles }, { data: politicas }, { data: auditorias }] = await Promise.all([
-    supabase.from('gap_analysis_frameworks').select('*').eq('empresa_id', empresaId),
+    // Frameworks are global
+    supabase.from('gap_analysis_frameworks').select('id, nome, versao, tipo_framework').eq('ativo', true),
     supabase.from('controles').select('*').eq('empresa_id', empresaId),
     supabase.from('politicas').select('*').eq('empresa_id', empresaId),
     supabase.from('auditorias').select('*').eq('empresa_id', empresaId),
@@ -224,10 +240,10 @@ async function fetchComplianceData(empresaId: string) {
         { label: 'Frameworks', value: f.length },
         { label: 'Controles', value: c.length },
         { label: 'Controles Ativos', value: c.filter(x => x.status === 'ativo').length },
-        { label: 'Políticas', value: p.length },
+        { label: 'Politicas', value: p.length },
         { label: 'Auditorias', value: a.length },
       ]},
-      { title: 'Frameworks', tableHeaders: ['Nome', 'Versão', 'Tipo'],
+      { title: 'Frameworks', tableHeaders: ['Nome', 'Versao', 'Tipo'],
         tableRows: f.map(x => [x.nome, x.versao || '-', x.tipo_framework || '-']),
         colWidths: [80, 40, 50] },
       { title: 'Auditorias', tableHeaders: ['Nome', 'Tipo', 'Status'],
@@ -275,7 +291,7 @@ export async function generateTemplatePDF(relatorio: any, empresaId: string) {
     doc.setFontSize(14);
     doc.setTextColor(AKURIS_COLORS.textLight);
     doc.text('Nenhum dado encontrado para este template.', 105, 140, { align: 'center' });
-    doc.text('Verifique se há dados cadastrados nos módulos correspondentes.', 105, 155, { align: 'center' });
+    doc.text('Verifique se ha dados cadastrados nos modulos correspondentes.', 105, 155, { align: 'center' });
   }
 
   addAkurisFooter(doc);
