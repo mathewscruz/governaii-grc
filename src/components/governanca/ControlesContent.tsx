@@ -142,7 +142,7 @@ export default function ControlesContent() {
 
   // Buscar controles
   const { data: controles = [], isLoading } = useQuery({
-    queryKey: ['controles'],
+    queryKey: ['controles', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('controles')
@@ -150,6 +150,7 @@ export default function ControlesContent() {
           *,
           categoria:controles_categorias(nome, cor)
         `)
+        .eq('empresa_id', empresaId!)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
