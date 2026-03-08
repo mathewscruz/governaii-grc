@@ -48,6 +48,7 @@ export function RopaDialog({ isOpen, onClose, onSave, ropa }: RopaDialogProps) {
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { empresaId } = useEmpresaId();
 
   useEffect(() => {
     if (isOpen) {
