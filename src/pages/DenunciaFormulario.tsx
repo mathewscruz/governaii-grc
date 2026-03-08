@@ -142,7 +142,7 @@ export default function DenunciaFormulario() {
           return;
         }
 
-        console.log('✅ [SUCCESS] Configurações carregadas:', configData);
+        logger.debug('Configurações carregadas', { module: 'DenunciaFormulario' });
         setConfig(configData);
 
         // Buscar categorias ativas da empresa
