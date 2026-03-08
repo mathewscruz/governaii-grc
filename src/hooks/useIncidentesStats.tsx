@@ -15,7 +15,8 @@ interface IncidentesStats {
 }
 
 export const useIncidentesStats = () => {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
 
   return useQuery({
     queryKey: ['incidentes-stats', empresaId],

@@ -18,7 +18,8 @@ interface ControlesStats {
 }
 
 export const useControlesStats = () => {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
 
   return useQuery({
     queryKey: ['controles-stats', empresaId],

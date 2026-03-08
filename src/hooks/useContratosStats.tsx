@@ -13,7 +13,8 @@ interface ContratosStats {
 }
 
 export const useContratosStats = () => {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
 
   return useQuery({
     queryKey: ['contratos-stats', empresaId],

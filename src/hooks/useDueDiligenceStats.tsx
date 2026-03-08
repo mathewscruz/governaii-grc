@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 import { logger } from '@/lib/logger';
 
 interface DueDiligenceStats {
@@ -15,100 +16,67 @@ interface DueDiligenceStats {
 }
 
 export const useDueDiligenceStats = () => {
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
+
   return useQuery({
-    queryKey: ['due-diligence-stats'],
+    queryKey: ['due-diligence-stats', empresaId],
+    enabled: !!empresaId,
+    staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<DueDiligenceStats> => {
       try {
-        // Buscar todos os templates (não apenas ativos)
         const { data: templates, error: templatesError } = await supabase
           .from('due_diligence_templates')
           .select('id, ativo');
 
-        if (templatesError) {
-          logger.error('Erro ao buscar templates', { error: templatesError.message });
-          throw templatesError;
-        }
-
-        // Buscar assessments da empresa do usuário
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Usuário não autenticado');
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('empresa_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (!profile?.empresa_id) throw new Error('Empresa não encontrada');
+        if (templatesError) throw templatesError;
 
         const { data: assessments, error } = await supabase
           .from('due_diligence_assessments')
           .select('status, created_at, data_expiracao, fornecedor_email, score_final')
-          .eq('empresa_id', profile.empresa_id);
+          .eq('empresa_id', empresaId!);
 
-        if (error) {
-          logger.error('Erro ao buscar assessments', { error: error.message });
-          throw error;
-        }
+        if (error) throw error;
 
-        logger.debug('Templates encontrados', { count: templates?.length || 0 });
-        logger.debug('Assessments encontrados', { count: assessments?.length || 0 });
-
-        // Contar fornecedores únicos nos assessments
         const uniqueFornecedores = new Set(
           assessments?.map(a => a.fornecedor_email).filter(Boolean) || []
         ).size;
 
         const total = assessments?.length || 0;
-        
-        // Verificar diferentes valores de status
-        const statusCounts = assessments?.reduce((acc, a) => {
-          acc[a.status] = (acc[a.status] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>) || {};
-        
-        logger.debug('Status counts', { statusCounts });
 
-        // Usar diferentes variações de status
-        const active = assessments?.filter(a => 
+        const active = assessments?.filter(a =>
           a.status === 'ativo' || a.status === 'em_andamento' || a.status === 'enviado'
         ).length || 0;
-        
-        const pending = assessments?.filter(a => 
+
+        const pending = assessments?.filter(a =>
           a.status === 'pendente' || a.status === 'em_andamento' || a.status === 'enviado'
         ).length || 0;
-        
-        const completed = assessments?.filter(a => 
+
+        const completed = assessments?.filter(a =>
           a.status === 'concluido' || a.status === 'finalizado'
         ).length || 0;
-        
+
         const hoje = new Date();
-        // Assessments expirados
-        const expired = assessments?.filter(a => {
-          return a.data_expiracao && new Date(a.data_expiracao) < hoje && 
-                 !['concluido', 'finalizado'].includes(a.status);
-        }).length || 0;
+        const expired = assessments?.filter(a =>
+          a.data_expiracao && new Date(a.data_expiracao) < hoje &&
+          !['concluido', 'finalizado'].includes(a.status)
+        ).length || 0;
 
-        // Assessments deste mês
         const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-        const thisMonth = assessments?.filter(a => {
-          return new Date(a.created_at) >= inicioMes;
-        }).length || 0;
+        const thisMonth = assessments?.filter(a =>
+          new Date(a.created_at) >= inicioMes
+        ).length || 0;
 
-        // Calcular score médio - converter para escala 0-100%
-        const completedWithScores = assessments?.filter(a => 
-          ['concluido', 'finalizado'].includes(a.status) && 
-          a.score_final != null && 
-          a.score_final > 0
+        const completedWithScores = assessments?.filter(a =>
+          ['concluido', 'finalizado'].includes(a.status) &&
+          a.score_final != null && a.score_final > 0
         ) || [];
-        
-        logger.debug('Assessments concluídos com score', { count: completedWithScores.length });
-        
-        const averageScore = completedWithScores.length > 0 
+
+        const averageScore = completedWithScores.length > 0
           ? (completedWithScores.reduce((sum, a) => sum + (a.score_final || 0), 0) / completedWithScores.length) * 10
           : 0;
 
-        const result = {
+        return {
           totalTemplates: templates?.length || 0,
           totalAssessments: total,
           activeAssessments: active,
@@ -119,9 +87,6 @@ export const useDueDiligenceStats = () => {
           assessmentsThisMonth: thisMonth,
           averageScore
         };
-
-        logger.debug('Resultado final das estatísticas', { result });
-        return result;
       } catch (error) {
         logger.error('Erro ao buscar estatísticas de due diligence', { error: error instanceof Error ? error.message : String(error) });
         throw error;

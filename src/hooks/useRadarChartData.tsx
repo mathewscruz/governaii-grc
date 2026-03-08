@@ -40,10 +40,24 @@ export const useRadarChartData = () => {
   const documentos = useDocumentosStats();
   const denuncias = useDenunciasStats();
 
+  const allLoaded = !ativos.isLoading && !controles.isLoading && !riscos.isLoading &&
+    !incidentes.isLoading && !gapAnalysis.isLoading && !dueDiligence.isLoading &&
+    !documentos.isLoading && !denuncias.isLoading;
+
   return useQuery({
-    queryKey: ['radar-chart-data', empresaId],
+    queryKey: [
+      'radar-chart-data',
+      empresaId,
+      ativos.dataUpdatedAt,
+      controles.dataUpdatedAt,
+      riscos.dataUpdatedAt,
+      incidentes.dataUpdatedAt,
+      gapAnalysis.dataUpdatedAt,
+      dueDiligence.dataUpdatedAt,
+      documentos.dataUpdatedAt,
+      denuncias.dataUpdatedAt,
+    ],
     queryFn: async (): Promise<RadarDataPoint[]> => {
-      // Aguardar todos os dados estarem disponíveis
       const ativosData = ativos.data;
       const controlesData = controles.data;
       const riscosData = riscos.data;
@@ -53,15 +67,15 @@ export const useRadarChartData = () => {
       const documentosData = documentos.data;
       const denunciasData = denuncias.data;
 
-      if (!ativosData || !controlesData || !riscosData || !incidentesData || 
+      if (!ativosData || !controlesData || !riscosData || !incidentesData ||
           !gapData || !dueDiligenceData || !documentosData || !denunciasData) {
         return [];
       }
 
       // 1. GESTÃO DE RISCOS
-      const scoreRiscos = riscosData.total > 0 
+      const scoreRiscos = riscosData.total > 0
         ? Math.max(0, 100 - (
-            (riscosData.criticos * 100 + riscosData.altos * 75 + riscosData.medios * 50 + riscosData.baixos * 25) / 
+            (riscosData.criticos * 100 + riscosData.altos * 75 + riscosData.medios * 50 + riscosData.baixos * 25) /
             (riscosData.total * 100)
           ))
         : 0;
@@ -86,7 +100,7 @@ export const useRadarChartData = () => {
       // 4. INCIDENTES
       const scoreIncidentes = incidentesData.total > 0
         ? Math.min(100, Math.max(0, 100 - (
-            (incidentesData.criticos * 100 + incidentesData.altos * 75 + incidentesData.medios * 50 + incidentesData.baixos * 25) / 
+            (incidentesData.criticos * 100 + incidentesData.altos * 75 + incidentesData.medios * 50 + incidentesData.baixos * 25) /
             (incidentesData.total * 100)
           )) + (incidentesData.mes < 5 ? 10 : 0))
         : 0;
@@ -123,130 +137,48 @@ export const useRadarChartData = () => {
 
       return [
         {
-          subject: 'Riscos',
-          score: Math.round(scoreRiscos),
-          fullMark: 100,
-          details: {
-            total: riscosData.total,
-            status: getStatus(scoreRiscos),
-            metrics: [
-              `${riscosData.criticos} críticos`,
-              `${riscosData.altos} altos`,
-              `${riscosData.tratados} tratados`
-            ]
-          },
+          subject: 'Riscos', score: Math.round(scoreRiscos), fullMark: 100,
+          details: { total: riscosData.total, status: getStatus(scoreRiscos), metrics: [`${riscosData.criticos} críticos`, `${riscosData.altos} altos`, `${riscosData.tratados} tratados`] },
           link: '/riscos'
         },
         {
-          subject: 'Controles',
-          score: Math.round(scoreControles),
-          fullMark: 100,
-          details: {
-            total: controlesData.total,
-            status: getStatus(scoreControles),
-            metrics: [
-              `${controlesData.ativos} ativos`,
-              `${controlesData.vencendoAvaliacao} vencendo avaliação`,
-              `${controlesData.criticos} críticos`
-            ]
-          },
+          subject: 'Controles', score: Math.round(scoreControles), fullMark: 100,
+          details: { total: controlesData.total, status: getStatus(scoreControles), metrics: [`${controlesData.ativos} ativos`, `${controlesData.vencendoAvaliacao} vencendo avaliação`, `${controlesData.criticos} críticos`] },
           link: '/controles'
         },
         {
-          subject: 'Ativos',
-          score: Math.round(scoreAtivos),
-          fullMark: 100,
-          details: {
-            total: ativosData.total,
-            status: getStatus(scoreAtivos),
-            metrics: [
-              `${ativosData.ativos} ativos`,
-              `${ativosData.criticos} críticos`,
-              `${ativosData.percentualAltoValor}% alto valor`
-            ]
-          },
+          subject: 'Ativos', score: Math.round(scoreAtivos), fullMark: 100,
+          details: { total: ativosData.total, status: getStatus(scoreAtivos), metrics: [`${ativosData.ativos} ativos`, `${ativosData.criticos} críticos`, `${ativosData.percentualAltoValor}% alto valor`] },
           link: '/ativos'
         },
         {
-          subject: 'Incidentes',
-          score: Math.round(scoreIncidentes),
-          fullMark: 100,
-          details: {
-            total: incidentesData.total,
-            status: getStatus(scoreIncidentes),
-            metrics: [
-              `${incidentesData.abertos} abertos`,
-              `${incidentesData.criticos} críticos`,
-              `${incidentesData.mes} no mês`
-            ]
-          },
+          subject: 'Incidentes', score: Math.round(scoreIncidentes), fullMark: 100,
+          details: { total: incidentesData.total, status: getStatus(scoreIncidentes), metrics: [`${incidentesData.abertos} abertos`, `${incidentesData.criticos} críticos`, `${incidentesData.mes} no mês`] },
           link: '/incidentes'
         },
         {
-          subject: 'Gap Analysis',
-          score: Math.round(scoreGapAnalysis),
-          fullMark: 100,
-          details: {
-            total: gapData.totalFrameworks || 0,
-            status: getStatus(scoreGapAnalysis),
-            metrics: [
-              `${gapData.totalFrameworks} frameworks`,
-              `${gapData.assessmentsInProgress} em progresso`,
-              `${gapData.pendingItems} itens pendentes`
-            ]
-          },
+          subject: 'Gap Analysis', score: Math.round(scoreGapAnalysis), fullMark: 100,
+          details: { total: gapData.totalFrameworks || 0, status: getStatus(scoreGapAnalysis), metrics: [`${gapData.totalFrameworks} frameworks`, `${gapData.assessmentsInProgress} em progresso`, `${gapData.pendingItems} itens pendentes`] },
           link: '/gap-analysis'
         },
         {
-          subject: 'Due Diligence',
-          score: Math.round(scoreDueDiligence),
-          fullMark: 100,
-          details: {
-            total: dueDiligenceData.totalAssessments,
-            status: getStatus(scoreDueDiligence),
-            metrics: [
-              `${dueDiligenceData.completedAssessments} completos`,
-              `Score médio: ${Math.round(dueDiligenceData.averageScore)}`,
-              `${dueDiligenceData.expiredAssessments} expirados`
-            ]
-          },
+          subject: 'Due Diligence', score: Math.round(scoreDueDiligence), fullMark: 100,
+          details: { total: dueDiligenceData.totalAssessments, status: getStatus(scoreDueDiligence), metrics: [`${dueDiligenceData.completedAssessments} completos`, `Score médio: ${Math.round(dueDiligenceData.averageScore)}`, `${dueDiligenceData.expiredAssessments} expirados`] },
           link: '/due-diligence'
         },
         {
-          subject: 'Documentos',
-          score: Math.round(scoreDocumentos),
-          fullMark: 100,
-          details: {
-            total: documentosData.total,
-            status: getStatus(scoreDocumentos),
-            metrics: [
-              `${documentosData.ativos} ativos`,
-              `${documentosData.vencidos} vencidos`,
-              `${documentosData.aprovados} aprovados`
-            ]
-          },
+          subject: 'Documentos', score: Math.round(scoreDocumentos), fullMark: 100,
+          details: { total: documentosData.total, status: getStatus(scoreDocumentos), metrics: [`${documentosData.ativos} ativos`, `${documentosData.vencidos} vencidos`, `${documentosData.aprovados} aprovados`] },
           link: '/documentos'
         },
         {
-          subject: 'Denúncias',
-          score: Math.round(scoreDenuncias),
-          fullMark: 100,
-          details: {
-            total: denunciasData.total,
-            status: getStatus(scoreDenuncias),
-            metrics: [
-              `${denunciasData.resolvidas} resolvidas`,
-              `${denunciasData.novas} novas`,
-              `${denunciasData.em_andamento} em andamento`
-            ]
-          },
+          subject: 'Denúncias', score: Math.round(scoreDenuncias), fullMark: 100,
+          details: { total: denunciasData.total, status: getStatus(scoreDenuncias), metrics: [`${denunciasData.resolvidas} resolvidas`, `${denunciasData.novas} novas`, `${denunciasData.em_andamento} em andamento`] },
           link: '/denuncia'
         }
       ];
     },
-    enabled: !ativos.isLoading && !controles.isLoading && !riscos.isLoading && 
-             !incidentes.isLoading && !gapAnalysis.loading && !dueDiligence.isLoading &&
-             !documentos.isLoading && !denuncias.isLoading,
-    staleTime: 2 * 60 * 1000, // 2 minutos
+    enabled: allLoaded && !!empresaId,
+    staleTime: 2 * 60 * 1000,
   });
 };

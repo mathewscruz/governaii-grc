@@ -10,7 +10,8 @@ interface DenunciasStats {
 }
 
 export const useDenunciasStats = () => {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
 
   return useQuery({
     queryKey: ['denuncias-stats', empresaId],
