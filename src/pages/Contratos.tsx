@@ -321,7 +321,7 @@ export default function Contratos() {
   }, [filteredFornecedores, currentPageFornecedores, itemsPerPage]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-96">Carregando...</div>;
+    return <PageSkeleton variant="table" />;
   }
 
   return (
