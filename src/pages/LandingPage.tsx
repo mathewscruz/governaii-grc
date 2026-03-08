@@ -314,9 +314,6 @@ const LandingPage = () => {
               </Button>
             </div>
 
-            <p className="text-sm text-gray-500 lp-fade-up lp-visible">
-              Sem cartão de crédito • Setup em minutos • Suporte incluso
-            </p>
           </div>
         </section>
 
