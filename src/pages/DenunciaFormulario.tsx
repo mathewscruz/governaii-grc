@@ -146,7 +146,7 @@ export default function DenunciaFormulario() {
         setConfig(configData);
 
         // Buscar categorias ativas da empresa
-        console.log('🔍 [DEBUG] Buscando categorias para empresa ID:', empresaData.id);
+        logger.debug('Buscando categorias', { module: 'DenunciaFormulario' });
         const { data: categoriasData, error: categoriasError } = await supabase
           .from('denuncias_categorias')
           .select('*')
