@@ -1,68 +1,80 @@
 
 
-# Dashboard — Remoção do Resumo IA + Correção dos Cálculos
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-## 1. Remover ExecutiveSummaryAI
-
-**Arquivo deletado:** `src/components/dashboard/ExecutiveSummaryAI.tsx`
-
-**`src/pages/Dashboard.tsx`:** Remover import e JSX `<ExecutiveSummaryAI />` (linhas 12 e 128-129).
-
-**`src/i18n/pt.ts` e `en.ts`:** Remover chaves `summaryWithAI`, `summaryDesc`, `generateAnalysis`, `generatingAnalysis`, `summaryGenerated`, `summaryUpdated`, `errorGenerating` (linhas 92-99 em ambos).
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
 ---
 
-## 2. Causa raiz dos scores zerados
+## 1. ErrorBoundary ausente na maioria das paginas
 
-O problema é de **comparação de strings com acentos**. Os dados no banco são salvos sem acento (ex: `critico`, `medio`), mas os hooks comparam com acento (`crítico`, `médio`), resultando em zero matches.
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-### `src/hooks/useRiscosStats.tsx` — Corrigir `normalizeNivel`
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
-A função atual:
-```ts
-const normalizeNivel = (nivel: string): string => {
-  return (nivel || '').toLowerCase().trim();
-};
-```
-Retorna `'critico'`, mas depois compara com `'crítico'` (com acento). Corrigir adicionando remoção de acentos:
-```ts
-const normalizeNivel = (nivel: string): string => {
-  return (nivel || '').toLowerCase().trim()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-};
-```
-E atualizar todas as comparações para usar strings sem acento:
-- `'crítico'` → `'critico'`
-- `'médio'` → `'medio'`
-- `'muito alto'` permanece (sem acento)
-
-### `src/hooks/useDashboardStats.tsx` — Corrigir filtro de riscos
-
-A query atual filtra:
-```ts
-.in('nivel_risco_inicial', ['Alto', 'Crítico', 'Muito Alto'])
-```
-Mas o banco guarda `critico`, `alto`, `medio` (lowercase, sem acento). Corrigir para:
-```ts
-.in('nivel_risco_inicial', ['alto', 'Alto', 'critico', 'Crítico', 'Critico', 'muito alto', 'Muito Alto'])
-```
-Ou melhor: buscar todos os riscos e filtrar no JS com normalização.
-
-### `src/hooks/useRadarChartData.tsx` — queryKey sem empresa_id
-
-O `queryKey` é `['radar-chart-data']` fixo, sem incluir `empresa_id`. Isso causa cache incorreto se o usuário trocar de empresa. Corrigir para incluir o identificador da empresa no key.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
 ---
 
-## Resumo de alterações
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-| Arquivo | Ação |
-|---------|------|
-| `src/components/dashboard/ExecutiveSummaryAI.tsx` | **Deletar** |
-| `src/pages/Dashboard.tsx` | Remover import e uso do ExecutiveSummaryAI |
-| `src/i18n/pt.ts` | Remover 7 chaves de i18n do resumo IA |
-| `src/i18n/en.ts` | Remover 7 chaves de i18n do resumo IA |
-| `src/hooks/useRiscosStats.tsx` | Adicionar strip de acentos no `normalizeNivel` + corrigir comparações |
-| `src/hooks/useDashboardStats.tsx` | Buscar riscos sem filtro de nível e classificar no JS com normalização |
-| `src/hooks/useRadarChartData.tsx` | Adicionar empresa_id ao queryKey |
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+
+---
+
+## 3. Paginas sem EmptyState padronizado
+
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+
+---
+
+## 4. Ausencia de atalhos de teclado documentados para o usuario
+
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+
+---
+
+## 5. Botao de "Voltar" no header nao tem tooltip
+
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+
+---
+
+## Resumo de Prioridade
+
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 

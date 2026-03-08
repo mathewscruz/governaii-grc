@@ -26,15 +26,16 @@ export interface RiscosStats {
 
 // Função auxiliar para normalizar comparação de nível
 const normalizeNivel = (nivel: string | null | undefined): string => {
-  return (nivel || '').toLowerCase().trim();
+  return (nivel || '').toLowerCase().trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 };
 
 // Função para calcular score de risco (quanto menor, melhor)
 const calcularScore = (nivel: string): number => {
   const nivelNorm = normalizeNivel(nivel);
-  if (nivelNorm === 'crítico' || nivelNorm === 'muito alto') return 100;
+  if (nivelNorm === 'critico' || nivelNorm === 'muito alto') return 100;
   if (nivelNorm === 'alto') return 75;
-  if (nivelNorm === 'médio') return 50;
+  if (nivelNorm === 'medio') return 50;
   if (nivelNorm === 'baixo') return 25;
   if (nivelNorm === 'muito baixo') return 10;
   return 0;
@@ -79,17 +80,17 @@ export const useRiscosStats = () => {
       const antiguosTotal = riscosAntigos?.length || 0;
       const antiguosCriticos = riscosAntigos?.filter(r => {
         const nivel = normalizeNivel(r.nivel_risco_residual || r.nivel_risco_inicial);
-        return nivel === 'crítico' || nivel === 'muito alto';
+        return nivel === 'critico' || nivel === 'muito alto';
       }).length || 0;
 
       const newStats: RiscosStats = {
         total: riscos?.length || 0,
         criticos: riscos?.filter(r => {
           const nivel = normalizeNivel(r.nivel_risco_inicial);
-          return nivel === 'crítico' || nivel === 'muito alto';
+          return nivel === 'critico' || nivel === 'muito alto';
         }).length || 0,
         altos: riscos?.filter(r => normalizeNivel(r.nivel_risco_inicial) === 'alto').length || 0,
-        medios: riscos?.filter(r => normalizeNivel(r.nivel_risco_inicial) === 'médio').length || 0,
+        medios: riscos?.filter(r => normalizeNivel(r.nivel_risco_inicial) === 'medio').length || 0,
         baixos: riscos?.filter(r => {
           const nivel = normalizeNivel(r.nivel_risco_inicial);
           return nivel === 'baixo' || nivel === 'muito baixo';

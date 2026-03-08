@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/components/AuthProvider";
 import { useAtivosStats } from "./useAtivosStats";
 import { useControlesStats } from "./useControlesStats";
 import { useIncidentesStats } from "./useIncidentesStats";
@@ -28,6 +29,8 @@ const getStatus = (score: number): 'excellent' | 'good' | 'warning' | 'critical'
 };
 
 export const useRadarChartData = () => {
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const ativos = useAtivosStats();
   const controles = useControlesStats();
   const riscos = useRiscosStats();
@@ -38,7 +41,7 @@ export const useRadarChartData = () => {
   const denuncias = useDenunciasStats();
 
   return useQuery({
-    queryKey: ['radar-chart-data'],
+    queryKey: ['radar-chart-data', empresaId],
     queryFn: async (): Promise<RadarDataPoint[]> => {
       // Aguardar todos os dados estarem disponíveis
       const ativosData = ativos.data;

@@ -9,7 +9,7 @@ import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
 import AlertsDetailDialog from '@/components/dashboard/AlertsDetailDialog';
 import { UpcomingExpirations } from '@/components/dashboard/UpcomingExpirations';
 import { AkurIAChatbot } from '@/components/dashboard/AkurIAChatbot';
-import { ExecutiveSummaryAI } from '@/components/dashboard/ExecutiveSummaryAI';
+
 import { useTrendData } from '@/components/dashboard/TrendIndicators';
 import { HeroScoreBanner } from '@/components/dashboard/HeroScoreBanner';
 import { KPIPills } from '@/components/dashboard/KPIPills';
@@ -125,8 +125,6 @@ export default function Dashboard() {
           onAlertsClick={() => setAlertsDialogOpen(true)}
         />
 
-        {/* Resumo Executivo com IA */}
-        <ExecutiveSummaryAI />
 
         {/* Vencimentos + Radar + Timeline */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5 w-full">
