@@ -127,7 +127,6 @@ Deno.serve(async (req) => {
 
     let processed = 0;
     for (const r of requirements) {
-      // Consume credit per requirement in batch mode
       if (userId && empresaId) {
         const { data: batchCredit } = await supabase.rpc('consume_ai_credit', {
           p_empresa_id: empresaId,
@@ -135,10 +134,7 @@ Deno.serve(async (req) => {
           p_funcionalidade: 'populate-requirement-guidance-batch',
           p_descricao: `Orientação requisito ${r.codigo || r.titulo}`
         });
-        if (batchCredit === false) {
-          // Stop processing if credits exhausted
-          break;
-        }
+        if (batchCredit === false) break;
       }
 
       try {
@@ -189,9 +185,10 @@ async function generateGuidance(
   req: { codigo: string | null; titulo: string; descricao: string | null; categoria: string | null },
   apiKey: string
 ): Promise<GuidanceResult | null> {
-  const prompt = `Você é um consultor sênior de GRC (Governança, Riscos e Compliance) com 20 anos de experiência em Big4. Seu papel é explicar requisitos de conformidade para gestores que NÃO são técnicos, de forma clara, prática e acionável.
+  // Consolidated prompt: generates all 3 outputs in a single AI call (was 3 parallel calls)
+  const consolidatedPrompt = `Você é um consultor sênior de GRC (Governança, Riscos e Compliance) com 20 anos de experiência em Big4.
 
-Para o requisito abaixo, gere uma orientação detalhada e rica seguindo EXATAMENTE a estrutura Markdown indicada.
+Para o requisito abaixo, gere TRÊS saídas separadas claramente por delimitadores.
 
 **Requisito:**
 - Código: ${req.codigo || "N/A"}
@@ -201,130 +198,85 @@ Para o requisito abaixo, gere uma orientação detalhada e rica seguindo EXATAME
 
 ---
 
-Gere o conteúdo em Markdown com EXATAMENTE estas seções, nesta ordem:
+Gere o conteúdo seguindo EXATAMENTE este formato com os delimitadores indicados:
+
+===ORIENTACAO_START===
+Gere o conteúdo em Markdown com estas seções:
 
 ## 📋 O que este requisito significa
-
-Explique em linguagem simples o que este controle/requisito pede. Use analogias do dia a dia se possível. 2-3 parágrafos curtos.
+Explique em linguagem simples. 2-3 parágrafos curtos.
 
 ## 🎯 Por que isso importa para sua empresa
-
-Explique as consequências reais: multas, perda de clientes, danos à reputação. Cite exemplos de mercado (sem inventar nomes de empresas). 2-3 parágrafos.
+Consequências reais: multas, perda de clientes, danos à reputação. 2-3 parágrafos.
 
 ## ⚠️ O que acontece se você não faz isso
-
-Descreva os riscos concretos de não conformidade: sanções regulatórias, vulnerabilidades, impacto operacional. Use bullets para clareza.
+Riscos concretos de não conformidade. Use bullets.
 
 ## 🔍 Fatores que você deve analisar
-
-Liste 5-8 perguntas de autoavaliação que o gestor deve se fazer. Formato: lista numerada.
+5-8 perguntas de autoavaliação em lista numerada.
 
 ## 💡 Dicas práticas de implementação
+4-6 passos concretos e simples.
+===ORIENTACAO_END===
 
-Passos concretos e simples que o gestor pode tomar imediatamente. 4-6 itens com descrição breve.
+===EVIDENCIAS_START===
+Liste 6 a 10 exemplos de evidências que um auditor aceitaria. Uma por linha, iniciando com "- ". Seja específico.
+===EVIDENCIAS_END===
 
----
-
-**Regras obrigatórias:**
-- Linguagem simples, sem jargão técnico desnecessário
-- Quando usar termos técnicos, explique entre parênteses
-- Foco em ações práticas, não teóricas
-- Tom profissional mas acessível
-- Conteúdo específico para o requisito, NÃO genérico
-- Responda em português brasileiro
-- NUNCA inclua frases introdutórias como "Com certeza!", "Aqui está", "Claro!" ou qualquer saudação. Comece DIRETAMENTE com o conteúdo da primeira seção (## 📋 O que este requisito significa)`;
-
-  const evidenciasPrompt = `Para o mesmo requisito (${req.codigo} - ${req.titulo}), liste de 6 a 10 exemplos de evidências que um auditor aceitaria como prova de conformidade.
-
-Formato: uma evidência por linha, iniciando com "- ". Cada evidência deve ser específica e prática.
-
-Exemplos ruins: "Documento de política" (muito vago)
-Exemplos bons: "Política de Controle de Acesso aprovada pela diretoria, com data de revisão nos últimos 12 meses"
-
-Responda APENAS com a lista, sem introdução.`;
-
-  const diagnosticoPrompt = `Você é um auditor sênior avaliando o requisito "${req.codigo} - ${req.titulo}" (${req.categoria || "Geral"}).
-
-Gere exatamente 5 perguntas de diagnóstico rápido para que um gestor avalie se sua empresa está em conformidade com este requisito. As perguntas devem ser respondíveis com "Sim", "Parcial" ou "Não".
-
-Retorne APENAS um JSON array com objetos no formato:
+===DIAGNOSTICO_START===
+Gere exatamente 5 perguntas de diagnóstico rápido respondíveis com "Sim", "Parcial" ou "Não".
+Retorne APENAS um JSON array:
 [
-  {"pergunta": "A empresa possui política documentada e aprovada sobre X?", "peso": 2},
-  {"pergunta": "Existe registro de treinamentos realizados nos últimos 12 meses?", "peso": 1}
+  {"pergunta": "texto da pergunta", "peso": 1},
+  ...
 ]
+Pesos: 1 (normal), 2 (alta), 3 (crítica). Exatamente 5 itens.
+===DIAGNOSTICO_END===
 
-Regras:
-- Exatamente 5 perguntas
-- Cada pergunta deve ser específica para o requisito, não genérica
-- O "peso" indica importância: 1 (normal), 2 (alta), 3 (crítica)
-- Perguntas objetivas que possam ser respondidas com Sim/Parcial/Não
+**Regras:**
+- Linguagem simples, sem jargão desnecessário
+- Conteúdo específico para o requisito, NÃO genérico
 - Português brasileiro
-- Retorne APENAS o JSON, sem markdown ou texto adicional`;
+- Comece DIRETAMENTE com o conteúdo, sem saudações`;
 
   try {
-    const [guidanceRes, evidenciasRes, diagnosticoRes] = await Promise.all([
-      fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.4,
-        }),
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [{ role: "user", content: consolidatedPrompt }],
+        temperature: 0.4,
+        max_tokens: 4000,
       }),
-      fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [{ role: "user", content: evidenciasPrompt }],
-          temperature: 0.3,
-        }),
-      }),
-      fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [{ role: "user", content: diagnosticoPrompt }],
-          temperature: 0.2,
-        }),
-      }),
-    ]);
+    });
 
-    if (!guidanceRes.ok) {
-      console.error(`AI gateway error for guidance: ${guidanceRes.status} ${guidanceRes.statusText}`);
-      return null;
-    }
-    if (!evidenciasRes.ok) {
-      console.error(`AI gateway error for evidencias: ${evidenciasRes.status} ${evidenciasRes.statusText}`);
+    if (!response.ok) {
+      console.error(`AI gateway error: ${response.status} ${response.statusText}`);
       return null;
     }
 
-    const guidanceData = await guidanceRes.json();
-    const evidenciasData = await evidenciasRes.json();
+    const data = await response.json();
+    const fullContent = data.choices?.[0]?.message?.content || "";
 
-    const orientacao = guidanceData.choices?.[0]?.message?.content || "";
-    const evidencias = evidenciasData.choices?.[0]?.message?.content || "";
+    if (!fullContent) return null;
 
-    if (!orientacao) return null;
+    // Parse the three sections from the consolidated response
+    const orientacaoMatch = fullContent.match(/===ORIENTACAO_START===([\s\S]*?)===ORIENTACAO_END===/);
+    const evidenciasMatch = fullContent.match(/===EVIDENCIAS_START===([\s\S]*?)===EVIDENCIAS_END===/);
+    const diagnosticoMatch = fullContent.match(/===DIAGNOSTICO_START===([\s\S]*?)===DIAGNOSTICO_END===/);
+
+    const orientacao = orientacaoMatch?.[1]?.trim() || fullContent;
+    const evidencias = evidenciasMatch?.[1]?.trim() || "";
 
     // Parse diagnostic questions
     let perguntasJson: string | null = null;
-    if (diagnosticoRes.ok) {
-      const diagnosticoData = await diagnosticoRes.json();
-      const rawContent = diagnosticoData.choices?.[0]?.message?.content || "";
-      // Extract JSON from potential markdown code blocks
-      const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
+    if (diagnosticoMatch) {
+      const rawDiagnostico = diagnosticoMatch[1].trim();
+      const jsonMatch = rawDiagnostico.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         try {
           JSON.parse(jsonMatch[0]); // validate

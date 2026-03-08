@@ -25,7 +25,6 @@ serve(async (req) => {
 
     console.log('Calculating score for assessment:', assessment_id);
 
-    // Get empresa_id from assessment to consume credit
     const { data: assessmentInfo, error: assessmentInfoError } = await supabase
       .from('due_diligence_assessments')
       .select('empresa_id')
@@ -36,7 +35,6 @@ serve(async (req) => {
 
     const empresaId = assessmentInfo?.empresa_id;
 
-    // Try to get user from auth header, otherwise use a system context
     let userId: string | null = null;
     const authHeader = req.headers.get('Authorization');
     if (authHeader?.startsWith('Bearer ')) {
@@ -50,7 +48,6 @@ serve(async (req) => {
       }
     }
 
-    // If no authenticated user, find the assessment creator or any admin of the empresa
     if (!userId && empresaId) {
       const { data: adminProfile } = await supabase
         .from('profiles')
@@ -61,7 +58,6 @@ serve(async (req) => {
       userId = adminProfile?.user_id || null;
     }
 
-    // Consume AI credit
     if (empresaId && userId) {
       const { data: creditResult } = await supabase.rpc('consume_ai_credit', {
         p_empresa_id: empresaId,
@@ -218,7 +214,7 @@ IMPORTANTE: O breakdown deve ser agrupado pelo campo "section" de cada pergunta.
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
+      model: 'google/gemini-3-flash-preview',
       messages: [
         {
           role: 'system',

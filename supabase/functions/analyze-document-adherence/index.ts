@@ -19,10 +19,10 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
+    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')!;
 
-    if (!lovableApiKey) {
-      throw new Error('LOVABLE_API_KEY não configurada');
+    if (!anthropicApiKey) {
+      throw new Error('ANTHROPIC_API_KEY não configurada');
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -100,14 +100,11 @@ serve(async (req) => {
     console.log('Document downloaded, size:', fileData.size);
 
     // 3. Extrair texto
-    console.log('Reading document text...');
     let documentText = '';
     const fileExtension = storageFileName.toLowerCase().split('.').pop();
-    console.log('File extension detected:', fileExtension);
 
     if (fileExtension === 'txt') {
       documentText = await fileData.text();
-      console.log('Text extracted, length:', documentText.length);
     } else {
       throw new Error(`Tipo de arquivo não suportado: ${fileExtension}. Apenas TXT pré-processados são aceitos.`);
     }
@@ -116,11 +113,10 @@ serve(async (req) => {
       throw new Error('Documento não contém texto suficiente para análise (mínimo 100 caracteres)');
     }
 
-    // 4. Montar prompt com comparação auditor-like incluindo descrição completa dos requisitos
+    // 4. Montar prompt
     const docTextForAnalysis = documentText.substring(0, 30000);
     const reqsForAnalysis = requirements.slice(0, 60);
 
-    // Montar requisitos com descrição completa + orientações de implementação
     const reqsText = reqsForAnalysis.map((r: any, i: number) => {
       let entry = `${i+1}. ID:${r.id} | ${r.codigo || 'N/A'}: ${r.titulo}`;
       if (r.descricao) entry += `\n   Descrição: ${r.descricao.substring(0, 300)}`;
@@ -140,11 +136,6 @@ MÉTODO DE ANÁLISE (siga rigorosamente):
 4. Quando o documento NÃO abordar um requisito, indique claramente o GAP e o que deveria conter
 5. Marque como "nao_aplicavel" APENAS requisitos que genuinamente não se relacionam com o escopo do documento
 6. Seja CRITERIOSO: "conforme" = cobre adequadamente; "parcial" = menciona mas incompleto; "nao_conforme" = ausente ou inadequado
-
-EXEMPLO DE ANÁLISE:
-- Se o documento é uma "Política de Mesa e Tela Limpa", encontre no framework o requisito que trata de proteção de informações em áreas de trabalho
-- Verifique se a política cobre: bloqueio de tela, armazenamento de documentos, destruição segura, etc.
-- Cite o trecho: "Conforme seção 3.2 do documento: 'Todos os colaboradores devem bloquear suas estações...'"
 
 DOCUMENTO ANALISADO:
 ---
@@ -184,59 +175,56 @@ FORMATO JSON OBRIGATÓRIO (retorne APENAS JSON válido, sem markdown):
   "analise_detalhada": "resumo executivo da análise (max 500 palavras) incluindo: visão geral da conformidade, áreas de maior risco, prioridades de remediação"
 }`;
 
-    // 5. Chamar Lovable AI Gateway
-    console.log('Calling Lovable AI Gateway...');
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // 5. Chamar Anthropic Claude API
+    console.log('Calling Anthropic Claude API...');
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
+        'x-api-key': anthropicApiKey,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 16000,
+        system: 'Você é um auditor sênior de conformidade regulatória. Analise documentos com rigor e precisão. Retorne APENAS JSON válido seguindo exatamente o schema fornecido. Seja específico nas evidências e gaps.',
         messages: [
-          { 
-            role: 'system', 
-            content: 'Você é um auditor sênior de conformidade regulatória. Analise documentos com rigor e precisão. Retorne APENAS JSON válido seguindo exatamente o schema fornecido. Seja específico nas evidências e gaps.'
-          },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 20000,
-        response_format: { type: 'json_object' }
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Lovable AI Gateway error:', response.status, errorText);
+      console.error('Anthropic API error:', response.status, errorText);
       if (response.status === 429) throw new Error('Limite de requisições excedido. Aguarde e tente novamente.');
-      if (response.status === 402) throw new Error('Créditos do Lovable AI esgotados.');
-      throw new Error(`Erro na API (${response.status}): ${errorText}`);
+      if (response.status === 401) throw new Error('Chave da API Anthropic inválida.');
+      throw new Error(`Erro na API Anthropic (${response.status}): ${errorText}`);
     }
 
     const aiResponse = await response.json();
-    console.log('Lovable AI response received:', JSON.stringify({
-      hasChoices: !!aiResponse.choices,
-      choicesLength: aiResponse.choices?.length,
-      hasMessage: !!aiResponse.choices?.[0]?.message,
-      hasContent: !!aiResponse.choices?.[0]?.message?.content,
-      contentLength: aiResponse.choices?.[0]?.message?.content?.length,
-      finishReason: aiResponse.choices?.[0]?.finish_reason
+    console.log('Anthropic response received:', JSON.stringify({
+      hasContent: !!aiResponse.content,
+      contentLength: aiResponse.content?.[0]?.text?.length,
+      stopReason: aiResponse.stop_reason
     }));
     
-    if (aiResponse.choices?.[0]?.finish_reason === 'length') {
+    if (aiResponse.stop_reason === 'max_tokens') {
       console.error('Response truncated');
       throw new Error('Análise truncada. Tente com um framework com menos requisitos.');
     }
     
-    if (!aiResponse.choices?.[0]?.message?.content) {
+    if (!aiResponse.content?.[0]?.text) {
       throw new Error('Resposta da IA inválida');
     }
 
     let analysisResult;
     try {
-      const content = aiResponse.choices[0].message.content;
+      let content = aiResponse.content[0].text;
       console.log('AI response length:', content.length);
+      
+      // Remove markdown code blocks if present
+      content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
       
       analysisResult = JSON.parse(content);
       
@@ -278,7 +266,8 @@ FORMATO JSON OBRIGATÓRIO (retorne APENAS JSON válido, sem markdown):
         recomendacoes: analysisResult.recomendacoes || [],
         analise_detalhada: analysisResult.analise_detalhada,
         metadados_analise: {
-          modelo_usado: 'google/gemini-3-flash-preview',
+          modelo_usado: 'claude-sonnet-4-20250514',
+          provider: 'anthropic',
           tempo_processamento: Date.now(),
           total_requisitos: requirements?.length || 0,
           total_requisitos_relevantes: analysisResult.total_requisitos_relevantes || 0,
@@ -295,8 +284,6 @@ FORMATO JSON OBRIGATÓRIO (retorne APENAS JSON válido, sem markdown):
       console.error('Error updating assessment:', updateError);
       throw updateError;
     }
-
-    console.log('Assessment updated successfully');
 
     // 7. Salvar detalhes por requisito
     if (analysisResult.requisitos_analisados && analysisResult.requisitos_analisados.length > 0) {

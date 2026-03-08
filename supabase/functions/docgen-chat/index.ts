@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
@@ -59,18 +58,49 @@ function extractFrameworks(messageText: string): string[] {
   return frameworks;
 }
 
+async function callClaude(messages: { role: string; content: string }[], systemPrompt: string, apiKey: string, maxTokens = 2000, temperature = 0.8) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: messages.filter(m => m.role !== 'system').map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content,
+      })),
+      temperature,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Anthropic API error:', response.status, errorText);
+    if (response.status === 429) throw new Error('Limite de requisições excedido. Tente novamente em alguns minutos.');
+    if (response.status === 401) throw new Error('Chave da API Anthropic inválida.');
+    throw new Error(`Erro na API Anthropic (${response.status})`);
+  }
+
+  const data = await response.json();
+  return data.content?.[0]?.text || '';
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!OPENAI_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    if (!ANTHROPIC_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error('Missing required environment variables');
     }
 
@@ -151,16 +181,13 @@ serve(async (req) => {
     const messages: ChatMessage[] = conversation?.mensagens || [];
 
     if (action === 'chat') {
-      // Adicionar mensagem do usuário
       messages.push({ role: 'user', content: message });
 
-      // Buscar templates disponíveis e padrões de aprendizado
       const { data: templates } = await supabase
         .from('docgen_templates')
         .select('*')
         .or(`empresa_id.eq.${empresa_id},is_system.eq.true`);
 
-      // Buscar padrões de aprendizado para este tipo de documento (se existir)
       let learningPatterns = [];
       try {
         const { data: patterns } = await supabase
@@ -175,7 +202,6 @@ serve(async (req) => {
         console.log('Learning patterns not available:', error);
       }
 
-      // Preparar prompt para a IA
       const systemPrompt = `Você é DocGen, um especialista em documentação corporativa altamente qualificado, com amplo conhecimento em frameworks de compliance, regulamentações e melhores práticas empresariais.
 
 CONTEXTO DA CONVERSA:
@@ -194,125 +220,38 @@ INSTRUÇÕES DE COMUNICAÇÃO:
 5. **Seja prático** - Foque em informações que realmente impactam o documento final
 
 TIPOS DE DOCUMENTOS ESPECIALIZADOS:
-**Políticas Corporativas:**
-- Política de Segurança da Informação
-- Política de Senhas
-- Política de Mesa Limpa
-- Política de LGPD
-- Código de Ética
-
-**Procedimentos Operacionais:**
-- Procedimentos de Backup
-- Gestão de Incidentes
-- Controle de Acesso
-- Gestão de Mudanças
-
-**Documentos de Compliance:**
-- Plano de Continuidade de Negócios
-- Análise de Impacto (BIA)
-- Registros LGPD (ROPA)
-- Matriz de Riscos
-
-ESTRATÉGIA DE PERGUNTAS POR TIPO:
-
-**Para Políticas:**
-- Qual o escopo específico? (sistemas, usuários, processos)
-- Quais são os principais riscos que vocês enfrentam?
-- Existem regulamentações específicas que devem ser atendidas?
-- Qual é a estrutura organizacional para este tema?
-
-**Para Procedimentos:**
-- Como o processo funciona atualmente?
-- Quem são os responsáveis e suas funções?
-- Quais sistemas/ferramentas são utilizados?
-- Quais são os principais pontos de controle?
-
-**Para Compliance:**
-- Quais frameworks/normas devem ser atendidos?
-- Qual é o ambiente tecnológico da empresa?
-- Existem requisitos legais específicos?
-- Como é feita a auditoria/monitoramento atual?
+**Políticas Corporativas:** Segurança da Informação, Senhas, Mesa Limpa, LGPD, Código de Ética
+**Procedimentos Operacionais:** Backup, Gestão de Incidentes, Controle de Acesso, Gestão de Mudanças
+**Documentos de Compliance:** Plano de Continuidade, Análise de Impacto (BIA), ROPA, Matriz de Riscos
 
 REGRAS PARA IDENTIFICAR QUANDO GERAR DOCUMENTO:
 - O usuário respondeu pelo menos 3-4 rodadas de perguntas específicas
 - Você coletou informações sobre: objetivo, escopo, responsabilidades, e procedimentos básicos
 - O usuário demonstra que tem as informações necessárias
-- Não há dúvidas críticas sobre o documento
-
-FORMATO DE RESPOSTA OBRIGATÓRIO:
-Responda SOMENTE com uma mensagem limpa e formatada para o usuário. NÃO inclua JSON visível, metadados técnicos ou informações de configuração na sua resposta.
-
-Estruture sua resposta assim:
-1. **Cumprimento/Reconhecimento** (se apropriado)
-2. **Contexto do que foi identificado** (tipo de documento)
-3. **Perguntas específicas organizadas por temas**
-4. **Próximos passos claros**
-
-Use formatação em markdown para destacar:
-- **Negrito** para títulos e pontos importantes
-- Listas numeradas para perguntas organizadas
-- Listas com marcadores para itens relacionados
 
 QUANDO ESTIVER PRONTO PARA GERAR O DOCUMENTO:
 Diga claramente: "Tenho todas as informações necessárias! Agora posso gerar a [NOME DO DOCUMENTO] completa para a ${context.empresa_nome}. Clique no botão 'Gerar Documento' para prosseguir."
 
-EXEMPLO DE RESPOSTA IDEAL:
-"Perfeito! Identificei que você precisa de uma **Política de Senhas** para a ${context.empresa_nome}.
+IMPORTANTE: Sempre responda em português brasileiro. Responda SOMENTE com uma mensagem limpa e formatada. NÃO inclua JSON visível ou metadados técnicos.`;
 
-Para criar um documento completo e alinhado com as melhores práticas de segurança, preciso entender melhor o ambiente da sua empresa:
+      // Call Claude for chat
+      const aiMessage = await callClaude(
+        messages.slice(-15),
+        systemPrompt,
+        ANTHROPIC_API_KEY,
+        2000,
+        0.8
+      );
 
-**1. Ambiente Tecnológico:**
-   - Quais sistemas vocês utilizam? (Active Directory, Google Workspace, aplicações web?)
-   - Quantos usuários aproximadamente a política irá abranger?
-
-**2. Requisitos de Segurança:**
-   - Vocês seguem algum framework específico? (ISO 27001, LGPD?)
-   - Já existem controles de senha implementados atualmente?
-
-**3. Estrutura Organizacional:**
-   - Quem será responsável pela implementação desta política?
-   - Existe uma área de TI/Segurança estruturada?
-
-**4. Criticidade:**
-   - Que tipo de informação sensível vocês processam?
-   - Já tiveram algum incidente relacionado a senhas frágeis?
-
-Com essas informações, posso criar uma política robusta e implementável!"
-
-IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`;
-
-      // Chamar OpenAI
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4.1-2025-04-14',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages.slice(-15) // Mais contexto para melhor compreensão
-          ],
-          temperature: 0.8,
-          max_tokens: 2000,
-        }),
-      });
-
-      const aiData = await response.json();
-      const aiMessage = aiData.choices[0].message.content;
-      
-      console.log('AI Response:', aiMessage);
+      console.log('AI Response length:', aiMessage.length);
 
       // Parse da resposta da IA
       let parsedResponse;
       try {
-        // Tentar extrair JSON da resposta (pode estar misturado com texto)
         const jsonMatch = aiMessage.match(/```json\s*(\{[\s\S]*?\})\s*```/);
         if (jsonMatch) {
           parsedResponse = JSON.parse(jsonMatch[1]);
         } else {
-          // Tentar encontrar JSON no início da resposta
           const jsonStart = aiMessage.indexOf('{');
           const jsonEnd = aiMessage.lastIndexOf('}') + 1;
           if (jsonStart !== -1 && jsonEnd > jsonStart) {
@@ -323,9 +262,7 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
           }
         }
         
-        // Garantir que temos uma mensagem limpa
         if (!parsedResponse.message) {
-          // Se não tem message no JSON, extrair apenas a parte da mensagem antes de dados técnicos
           const cleanMessage = aiMessage
             .replace(/```json[\s\S]*?```/g, '')
             .replace(/\{[\s\S]*?\}/g, '')
@@ -333,7 +270,6 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
           parsedResponse.message = cleanMessage || aiMessage;
         }
         
-        // Limpar a mensagem de informações técnicas desnecessárias
         if (parsedResponse.message) {
           parsedResponse.message = parsedResponse.message
             .replace(/```json[\s\S]*?```/g, '')
@@ -347,7 +283,6 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
       } catch (error) {
         console.log('Erro ao fazer parse da resposta JSON:', error);
         
-        // Fallback - limpar mensagem de dados técnicos
         let cleanMessage = aiMessage
           .replace(/```json[\s\S]*?```/g, '')
           .replace(/\{[\s\S]*?\}/g, '')
@@ -357,10 +292,8 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
           .replace(/informacoes_[\s\S]*$/g, '')
           .trim();
         
-        // Verificar se a resposta indica documento pronto
         const isDocumentReady = aiMessage.toLowerCase().includes('documento foi gerado') || 
                                aiMessage.toLowerCase().includes('documento está pronto') ||
-                               aiMessage.toLowerCase().includes('política de senhas foi gerada') ||
                                aiMessage.toLowerCase().includes('pronto para ser implementado') ||
                                aiMessage.toLowerCase().includes('gerar_documento');
         
@@ -372,7 +305,6 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
         };
       }
 
-      // Detectar se documento está pronto baseado na mensagem limpa
       const messageText = parsedResponse.message.toLowerCase();
       const isDocumentReady = messageText.includes('clique no botão') || 
                              messageText.includes('gerar documento') ||
@@ -381,10 +313,8 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
                              messageText.includes('documento completa') ||
                              messageText.includes('documento está pronto');
 
-      // Adicionar resposta da IA
       messages.push({ role: 'assistant', content: parsedResponse.message });
 
-      // Atualizar contexto com detecção inteligente do documento
       const updatedContext = {
         ...context,
         tipo_documento_identificado: parsedResponse.tipo_documento_identificado || 
@@ -403,10 +333,8 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
         }
       };
 
-      // Coletar dados para aprendizado contínuo (opcional)
       try {
         if (parsedResponse.tipo_documento_identificado && parsedResponse.message) {
-          // Registrar padrão de pergunta bem-sucedida
           await supabase
             .from('docgen_learning_patterns')
             .upsert({
@@ -426,10 +354,8 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
         }
       } catch (learningError) {
         console.log('Learning data collection failed:', learningError);
-        // Não impedir o fluxo principal
       }
 
-      // Salvar conversa atualizada
       await supabase
         .from('docgen_conversations')
         .update({
@@ -454,32 +380,23 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
       });
 
     } else if (action === 'generate_document') {
-      // Gerar documento completo
-      // Buscar templates disponíveis (precisamos desta variável neste branch)
       const { data: templates } = await supabase
         .from('docgen_templates')
         .select('*')
         .or(`empresa_id.eq.${empresa_id},is_system.eq.true`);
 
-      // Selecionar template: priorizar por nome identificado (doc_type_hint/documento_nome_identificado)
       const hintName = (doc_type_hint || (context as any).documento_nome_identificado || '').toLowerCase();
       let template = templates?.find(t => (t.nome || '').toLowerCase() === hintName)
         || templates?.find(t => hintName && (t.nome || '').toLowerCase().includes(hintName))
         || templates?.find(t => t.tipo_documento === context.tipo_documento_identificado);
       
-      // Se não encontrar template específico, usar template genérico baseado no tipo
       if (!template) {
         const docType = context.tipo_documento_identificado || 'politica';
-        // Para políticas, usar o template de política
         if (docType === 'politica' || hintName.includes('política') || hintName.includes('politica')) {
           template = templates?.find(t => t.tipo_documento === 'politica') || templates?.[0];
-        }
-        // Para procedimentos, usar o template de procedimento
-        else if (docType === 'procedimento' || hintName.includes('procedimento')) {
+        } else if (docType === 'procedimento' || hintName.includes('procedimento')) {
           template = templates?.find(t => t.tipo_documento === 'procedimento') || templates?.[0];
-        }
-        // Fallback para o primeiro template disponível
-        else {
+        } else {
           template = templates?.[0];
         }
       }
@@ -488,15 +405,12 @@ IMPORTANTE: Sempre responda em português brasileiro e mantenha o JSON válido.`
         throw new Error('Nenhum template disponível no sistema');
       }
 
-      // Garantir que a estrutura do template está em JSON
       let templateEstrutura: any = template.estrutura;
       try {
         if (typeof templateEstrutura === 'string') {
           templateEstrutura = JSON.parse(templateEstrutura);
         }
-      } catch (_e) {
-        // Continua com a estrutura original se não for JSON válido
-      }
+      } catch (_e) {}
 
       const documentPrompt = `Gere um documento COMPLETO e ESPECÍFICO do tipo solicitado.
 
@@ -532,35 +446,25 @@ Responda APENAS com um JSON na seguinte estrutura:
   }
 }`;
 
-      const docResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4.1-2025-04-14',
-          messages: [
-            { role: 'system', content: documentPrompt },
-            { role: 'user', content: 'Gere o documento agora.' }
-          ],
-          temperature: 0.4,
-          max_tokens: 8000,
-        }),
-      });
+      const docContent = await callClaude(
+        [{ role: 'user', content: 'Gere o documento agora.' }],
+        documentPrompt,
+        ANTHROPIC_API_KEY,
+        8000,
+        0.4
+      );
 
-      const docData = await docResponse.json();
       let documentContent;
       try {
-        documentContent = JSON.parse(docData.choices[0].message.content);
+        const cleaned = docContent.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+        documentContent = JSON.parse(cleaned);
       } catch (_e) {
-        // Se a IA não retornar JSON puro, encapsular em um documento mínimo
         documentContent = {
           titulo: `Documento ${context.tipo_documento_identificado || ''}`.trim(),
           versao: '1.0',
           data_criacao: new Date().toISOString().slice(0, 10),
           secoes: [
-            { nome: 'Conteúdo', conteudo: String(docData.choices[0].message.content || '') }
+            { nome: 'Conteúdo', conteudo: String(docContent || '') }
           ],
           metadados: {
             classificacao: 'Interno',
@@ -571,7 +475,6 @@ Responda APENAS com um JSON na seguinte estrutura:
         };
       }
 
-      // Registrar feedback implícito de sucesso na geração (opcional)
       try {
         await supabase
           .from('docgen_feedback_implicit')
@@ -579,7 +482,7 @@ Responda APENAS com um JSON na seguinte estrutura:
             empresa_id,
             conversation_id: conversation.id,
             documento_salvo: true,
-            qualidade_estimada: 8, // Geração bem-sucedida
+            qualidade_estimada: 8,
             padroes_identificados: {
               tipo_documento: context.tipo_documento_identificado,
               secoes_geradas: documentContent.secoes?.length || 0,
@@ -588,10 +491,8 @@ Responda APENAS com um JSON na seguinte estrutura:
           });
       } catch (feedbackError) {
         console.log('Feedback collection failed:', feedbackError);
-        // Não impedir o fluxo principal
       }
 
-      // Salvar documento gerado
       const { data: generatedDoc } = await supabase
         .from('docgen_generated_docs')
         .insert({

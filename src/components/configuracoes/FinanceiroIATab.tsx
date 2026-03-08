@@ -25,37 +25,21 @@ interface ModelPricing {
 }
 
 const MODEL_PRICING: Record<string, ModelPricing> = {
+  'claude-sonnet-4-20250514': {
+    label: 'Claude Sonnet 4',
+    provider: 'Anthropic',
+    inputPer1kTokens: 0.003,
+    outputPer1kTokens: 0.015,
+    avgCostPerReqBRL: 0.20,
+    functions: ['analyze_document_adherence', 'docgen-chat'],
+  },
   'google/gemini-3-flash-preview': {
     label: 'Gemini 3 Flash Preview',
     provider: 'Google',
     inputPer1kTokens: 0.00015,
     outputPer1kTokens: 0.0006,
     avgCostPerReqBRL: 0.03,
-    functions: ['akuria_chat', 'ai-assistant', 'analyze_document_adherence'],
-  },
-  'google/gemini-2.5-flash': {
-    label: 'Gemini 2.5 Flash',
-    provider: 'Google',
-    inputPer1kTokens: 0.00015,
-    outputPer1kTokens: 0.0006,
-    avgCostPerReqBRL: 0.025,
-    functions: ['calculate-assessment-score', 'populate-requirement-guidance', 'populate-requirement-guidance-batch'],
-  },
-  'gpt-4.1-2025-04-14': {
-    label: 'GPT-4.1',
-    provider: 'OpenAI',
-    inputPer1kTokens: 0.002,
-    outputPer1kTokens: 0.008,
-    avgCostPerReqBRL: 0.15,
-    functions: ['docgen-chat'],
-  },
-  'gpt-4o-mini': {
-    label: 'GPT-4o Mini',
-    provider: 'OpenAI',
-    inputPer1kTokens: 0.00015,
-    outputPer1kTokens: 0.0006,
-    avgCostPerReqBRL: 0.02,
-    functions: ['suggest_risk_treatment'],
+    functions: ['akuria_chat', 'ai-assistant', 'calculate-assessment-score', 'populate-requirement-guidance', 'populate-requirement-guidance-batch', 'suggest_risk_treatment'],
   },
 };
 
