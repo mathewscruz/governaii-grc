@@ -310,6 +310,20 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
       return;
     }
 
+    // Validar aceite: aprovador e justificativa obrigatórios
+    if (data.aceito && !data.aprovador_aceite) {
+      toast.error('Selecione um aprovador para o aceite do risco');
+      return;
+    }
+    if (data.aceito && !data.justificativa_aceite) {
+      toast.error('A justificativa é obrigatória para o aceite do risco');
+      return;
+    }
+    if (data.aceito && !data.data_proxima_revisao) {
+      toast.error('A data da próxima revisão é obrigatória para o aceite do risco');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -332,6 +346,9 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
           )
         : null;
 
+      // Se aceite marcado: NÃO marcar aceito=true, enviar para aprovação
+      const isNovoAceite = data.aceito && (!risco?.status_aceite || risco?.status_aceite === 'rejeitado');
+
       const riscoData: any = {
         nome: data.nome,
         descricao: data.descricao,
@@ -349,9 +366,11 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         controles_existentes: data.controles_existentes || null,
         causas: data.causas || null,
         consequencias: data.consequencias || null,
-        aceito: data.aceito,
+        aceito: isNovoAceite ? false : (data.aceito && risco?.status_aceite === 'aprovado'),
         justificativa_aceite: data.justificativa_aceite || null,
+        aprovador_aceite: data.aprovador_aceite || null,
         data_proxima_revisao: data.data_proxima_revisao || null,
+        status_aceite: isNovoAceite ? 'pendente' : (data.aceito ? (risco?.status_aceite || null) : null),
         ...(risco?.id ? {} : { created_by: profile.user_id }),
       };
 
