@@ -33,7 +33,7 @@ export default function DenunciaExternaRedirect() {
         }
 
         if (!config) {
-          console.error('Configuração não encontrada para token:', token);
+          logger.error('Configuração não encontrada para token', { module: 'DenunciaExternaRedirect', action: token });
           navigate('/404', { replace: true });
           return;
         }
