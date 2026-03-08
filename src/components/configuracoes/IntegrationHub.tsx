@@ -284,8 +284,7 @@ export function IntegrationHub() {
 
   const handleConfigureClick = (integration: Integration) => {
     if (!integration.disponivel) {
-      toast({
-        title: 'Em breve',
+      toast.info('Em breve', {
         description: `A integração com ${integration.nome} estará disponível em breve.`,
       });
       return;
