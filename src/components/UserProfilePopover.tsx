@@ -53,6 +53,27 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
     nova: false,
     confirmar: false,
   });
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    email_notifications: true,
+    in_app_notifications: true,
+    digest_frequency: 'realtime' as 'realtime' | 'daily' | 'weekly',
+  });
+
+  useEffect(() => {
+    if (user?.id) {
+      const saved = localStorage.getItem(`notification_prefs_${user.id}`);
+      if (saved) {
+        try { setNotificationPrefs(JSON.parse(saved)); } catch {}
+      }
+    }
+  }, [user?.id]);
+
+  const saveNotificationPrefs = (prefs: typeof notificationPrefs) => {
+    setNotificationPrefs(prefs);
+    if (user?.id) {
+      localStorage.setItem(`notification_prefs_${user.id}`, JSON.stringify(prefs));
+    }
+  };
 
   const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp'];
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
