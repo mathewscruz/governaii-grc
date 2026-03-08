@@ -58,7 +58,7 @@ export default function DenunciaMenu() {
 
         // Usar logo_url da base de dados se disponível
         if (empresaData.logo_url) {
-          console.log('✅ [SUCCESS] Logotipo encontrado na base de dados:', empresaData.logo_url);
+          logger.debug('Logotipo encontrado na base de dados', { module: 'DenunciaMenu' });
           setLogoUrl(empresaData.logo_url);
         } else {
           console.log('ℹ️ [INFO] Nenhum logotipo cadastrado para esta empresa');
