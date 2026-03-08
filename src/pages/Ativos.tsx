@@ -345,7 +345,7 @@ const Ativos = () => {
         ativo.data_aquisicao ? formatDateOnly(ativo.data_aquisicao) : ''
       ].join(','))
     ].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.setAttribute('href', URL.createObjectURL(blob));
     link.setAttribute('download', `ativos-${new Date().toISOString().split('T')[0]}.csv`);

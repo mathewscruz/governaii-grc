@@ -108,7 +108,7 @@ export function DocumentosRelatorios({ documentos, categorias, open, onOpenChang
       y += 5;
 
       doc.setFont('helvetica', 'normal');
-      documentos.slice(0, 50).forEach((d, i) => {
+      documentos.forEach((d, i) => {
         if (y > pageHeight - 25) {
           doc.addPage();
           y = addAkurisHeader(doc, logo);

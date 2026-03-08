@@ -376,7 +376,22 @@ export default function Incidentes() {
       <PageHeader
         title="Incidentes"
         description="Gerencie incidentes de segurança e acompanhe tratamentos"
-        actions={undefined}
+        actions={
+          <Button variant="outline" size="sm" onClick={() => {
+            if (incidentes.length === 0) return;
+            const { exportCSV } = require('@/lib/csv-utils');
+            exportCSV(
+              ['Titulo', 'Tipo', 'Categoria', 'Criticidade', 'Status', 'Data Deteccao', 'Data Resolucao'],
+              incidentes.map((inc: any) => [
+                inc.titulo, inc.tipo || '', inc.categoria || '', inc.criticidade || '',
+                inc.status || '', inc.data_deteccao || '', inc.data_resolucao || ''
+              ]),
+              'incidentes'
+            );
+          }}>
+            <Download className="h-4 w-4 mr-2" />Exportar CSV
+          </Button>
+        }
       />
 
       {/* StatCards */}
