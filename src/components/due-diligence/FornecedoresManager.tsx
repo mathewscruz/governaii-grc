@@ -265,7 +265,7 @@ export function FornecedoresManager() {
   });
 
   return (
-    <TooltipProvider>
+    <>
       <Card className="rounded-lg border overflow-hidden">
         <CardContent className="p-0">
           <div className="p-6 pb-4">
