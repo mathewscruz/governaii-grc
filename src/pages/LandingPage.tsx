@@ -268,12 +268,19 @@ const LandingPage = () => {
       <main id="main-content" role="main">
 
         {/* ===== 1. HERO ===== */}
-        <section className="relative min-h-[90vh] flex items-center pt-24 pb-12" aria-labelledby="hero-title">
+        <section
+          className="relative min-h-[90vh] flex items-center pt-24 pb-12"
+          aria-labelledby="hero-title"
+          style={{
+            backgroundImage: `
+              radial-gradient(ellipse 60% 50% at 50% 40%, rgba(59,130,246,0.08) 0%, transparent 70%),
+              linear-gradient(rgba(30,45,69,0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(30,45,69,0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '100% 100%, 60px 60px, 60px 60px',
+          }}
+        >
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-
-            <p className="inline-block text-xs font-medium tracking-widest uppercase text-blue-400 border border-blue-400/30 rounded-full px-4 py-1.5 mb-8 lp-fade-up lp-visible">
-              Plataforma GRC para empresas
-            </p>
 
             <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight mb-6 lp-fade-up lp-visible">
               Gestão de{" "}
@@ -307,9 +314,6 @@ const LandingPage = () => {
               </Button>
             </div>
 
-            <p className="text-sm text-gray-500 lp-fade-up lp-visible">
-              Sem cartão de crédito • Setup em minutos • Suporte incluso
-            </p>
           </div>
         </section>
 
