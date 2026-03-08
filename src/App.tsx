@@ -241,11 +241,6 @@ function App() {
                 </ProtectedRoute>
               </Layout>
             } />
-            <Route path="/planos" element={
-              <Layout>
-                <Planos />
-              </Layout>
-            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>

@@ -640,7 +640,6 @@ const LandingPage = () => {
               <ul className="space-y-2.5">
                 <li><button onClick={() => scrollToSection("modulos")} className="text-gray-400 hover:text-white text-sm transition-colors">Módulos</button></li>
                 <li><button onClick={() => scrollToSection("como-funciona")} className="text-gray-400 hover:text-white text-sm transition-colors">Como Funciona</button></li>
-                <li><Link to="/planos" className="text-gray-400 hover:text-white text-sm transition-colors">Planos</Link></li>
               </ul>
             </div>
 
