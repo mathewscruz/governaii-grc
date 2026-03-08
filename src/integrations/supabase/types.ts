@@ -6667,7 +6667,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      denuncias_configuracoes_public: {
+        Row: {
+          ativo: boolean | null
+          empresa_id: string | null
+          id: string | null
+          permitir_anonimas: boolean | null
+          politica_privacidade: string | null
+          requerer_email: boolean | null
+          texto_apresentacao: string | null
+          token_publico: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          empresa_id?: string | null
+          id?: string | null
+          permitir_anonimas?: boolean | null
+          politica_privacidade?: string | null
+          requerer_email?: boolean | null
+          texto_apresentacao?: string | null
+          token_publico?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          empresa_id?: string | null
+          id?: string | null
+          permitir_anonimas?: boolean | null
+          politica_privacidade?: string | null
+          requerer_email?: boolean | null
+          texto_apresentacao?: string | null
+          token_publico?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_default_permissions_for_user: {
