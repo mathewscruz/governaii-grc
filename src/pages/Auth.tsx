@@ -130,7 +130,7 @@ const Auth = () => {
             }
           } else if (mfaResponse.data?.success && mfaResponse.data?.skipped) {
             // Sessão MFA válida encontrada - pular verificação e re-autenticar
-            console.log('MFA skipped - sessão válida encontrada');
+            logger.debug('MFA skipped - sessão válida encontrada', { module: 'Auth' });
             mfaInProgressRef.current = false;
             setMfaPending(false);
             setMfaPassword('');
