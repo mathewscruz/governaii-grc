@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface ControlesStats {
   total: number;
@@ -18,13 +19,17 @@ interface ControlesStats {
 }
 
 export const useControlesStats = () => {
+  const { empresaId } = useEmpresaId();
+
   return useQuery({
-    queryKey: ['controles-stats'],
+    queryKey: ['controles-stats', empresaId],
     staleTime: 5 * 60 * 1000,
+    enabled: !!empresaId,
     queryFn: async (): Promise<ControlesStats> => {
       const { data: controles, error } = await supabase
         .from('controles')
-        .select('status, criticidade, tipo, proxima_avaliacao');
+        .select('status, criticidade, tipo, proxima_avaliacao')
+        .eq('empresa_id', empresaId!);
 
       if (error) throw error;
 
@@ -46,7 +51,6 @@ export const useControlesStats = () => {
       hoje.setHours(0, 0, 0, 0);
       const em30Dias = new Date(hoje.getTime() + (30 * 24 * 60 * 60 * 1000));
       
-      // Controles com avaliação vencendo em 30 dias (não vencidos ainda)
       const vencendoAvaliacao = controles?.filter(c => {
         if (!c.proxima_avaliacao) return false;
         const dataAvaliacao = new Date(c.proxima_avaliacao);
@@ -54,7 +58,6 @@ export const useControlesStats = () => {
         return dataAvaliacao <= em30Dias && dataAvaliacao >= hoje;
       }).length || 0;
       
-      // Controles com avaliação já vencida
       const vencidos = controles?.filter(c => {
         if (!c.proxima_avaliacao) return false;
         const dataAvaliacao = new Date(c.proxima_avaliacao);

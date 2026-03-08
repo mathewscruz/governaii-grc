@@ -8,8 +8,15 @@ import {
   Trash2,
   Calendar,
   User,
-  ClipboardList
+  ClipboardList,
+  MoreHorizontal
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { formatStatus, getAuditoriaStatusColor, getAuditoriaPrioridadeColor } from "@/lib/text-utils";
 import { formatDateOnly } from "@/lib/date-utils";
 
@@ -97,26 +104,29 @@ export function AuditoriaCardAccordion({
             )}
           </div>
 
-          {/* Botões de ação */}
-          <div className="flex items-center gap-0.5 flex-shrink-0">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onEdit} 
-              className="h-7 w-7 p-0"
-              title="Editar"
-            >
-              <Edit className="h-3.5 w-3.5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onDelete} 
-              className="h-7 w-7 p-0"
-              title="Excluir"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+          {/* Menu de ações */}
+          <div className="flex-shrink-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onEdit}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onOpenControles}>
+                  <ClipboardList className="h-4 w-4 mr-2" />
+                  Gerenciar Itens
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

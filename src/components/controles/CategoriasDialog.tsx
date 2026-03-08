@@ -5,12 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 interface Categoria {
   id: string;
@@ -35,44 +35,37 @@ export default function CategoriasDialog({ open, onOpenChange }: CategoriasDialo
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useEmpresaId();
 
   const cores = [
     "#3B82F6", "#EF4444", "#10B981", "#F59E0B",
     "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"
   ];
 
-  // Buscar categorias
+  // Buscar categorias filtradas por empresa
   const { data: categorias = [] } = useQuery({
-    queryKey: ['controles_categorias'],
+    queryKey: ['controles_categorias', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('controles_categorias')
         .select('*')
+        .eq('empresa_id', empresaId!)
         .order('nome');
       
       if (error) throw error;
       return data as Categoria[];
     },
-    enabled: open
+    enabled: open && !!empresaId
   });
 
   // Salvar categoria
   const saveCategoriaMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      // Obter empresa_id do usuário atual
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('empresa_id')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
-
-      if (!profile?.empresa_id) {
-        throw new Error('Empresa não encontrada');
-      }
+      if (!empresaId) throw new Error('Empresa não encontrada');
 
       const categoriaData = {
         ...data,
-        empresa_id: profile.empresa_id
+        empresa_id: empresaId
       };
 
       if (editingId) {

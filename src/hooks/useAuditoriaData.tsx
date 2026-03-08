@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 
 export const useAuditoriaData = (auditoriaId?: string) => {
   const { data: trabalhos } = useQuery({
@@ -59,13 +60,17 @@ export const useAuditoriaData = (auditoriaId?: string) => {
 };
 
 export const useUsuariosEmpresa = () => {
+  const { empresaId } = useEmpresaId();
+
   return useQuery({
-    queryKey: ['usuarios-empresa'],
+    queryKey: ['usuarios-empresa', empresaId],
+    enabled: !!empresaId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, nome, email, role')
         .eq('ativo', true)
+        .eq('empresa_id', empresaId!)
         .order('nome');
 
       if (error) throw error;
