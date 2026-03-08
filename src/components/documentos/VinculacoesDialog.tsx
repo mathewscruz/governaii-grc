@@ -33,6 +33,7 @@ interface VinculacoesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   documento: Documento;
+  empresaId?: string | null;
 }
 
 const modulosDisponiveis = [
