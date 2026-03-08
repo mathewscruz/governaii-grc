@@ -87,10 +87,10 @@ export const useRiscosStats = () => {
         total: riscos?.length || 0,
         criticos: riscos?.filter(r => {
           const nivel = normalizeNivel(r.nivel_risco_inicial);
-          return nivel === 'crítico' || nivel === 'muito alto';
+          return nivel === 'critico' || nivel === 'muito alto';
         }).length || 0,
         altos: riscos?.filter(r => normalizeNivel(r.nivel_risco_inicial) === 'alto').length || 0,
-        medios: riscos?.filter(r => normalizeNivel(r.nivel_risco_inicial) === 'médio').length || 0,
+        medios: riscos?.filter(r => normalizeNivel(r.nivel_risco_inicial) === 'medio').length || 0,
         baixos: riscos?.filter(r => {
           const nivel = normalizeNivel(r.nivel_risco_inicial);
           return nivel === 'baixo' || nivel === 'muito baixo';
