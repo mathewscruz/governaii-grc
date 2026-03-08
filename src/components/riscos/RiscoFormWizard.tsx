@@ -148,6 +148,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         consequencias: risco.consequencias || '',
         aceito: risco.aceito || false,
         justificativa_aceite: risco.justificativa_aceite || '',
+        aprovador_aceite: risco.aprovador_aceite || '',
         ativos_vinculados: [],
         data_proxima_revisao: risco.data_proxima_revisao || ''
       });
