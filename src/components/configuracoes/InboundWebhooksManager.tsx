@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { Webhook, Plus, Copy, Trash2, Loader2, Send, Code } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -93,7 +93,6 @@ function generateToken(): string {
 }
 
 export function InboundWebhooksManager() {
-  const { toast } = useToast();
   const { empresaId } = useEmpresaId();
   const [webhooks, setWebhooks] = useState<InboundWebhook[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,7 +148,7 @@ export function InboundWebhooksManager() {
       });
 
       if (error) throw error;
-      toast({ title: 'Webhook criado', description: 'Use a URL gerada para enviar eventos.' });
+      toast.success('Webhook criado', { description: 'Use a URL gerada para enviar eventos.' });
       setDialogOpen(false);
       setNome('');
       setDescricao('');
@@ -157,27 +156,32 @@ export function InboundWebhooksManager() {
       setModuloDestino('');
       fetchWebhooks();
     } catch (err: any) {
-      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+      toast.error('Erro ao criar webhook', { description: err.message });
     } finally {
       setSaving(false);
     }
   };
 
   const handleToggle = async (id: string, ativo: boolean) => {
-    await supabase.from('api_inbound_webhooks').update({ ativo }).eq('id', id);
-    fetchWebhooks();
+    try {
+      await supabase.from('api_inbound_webhooks').update({ ativo }).eq('id', id);
+      fetchWebhooks();
+      toast.success(ativo ? 'Webhook ativado' : 'Webhook desativado');
+    } catch (err: any) {
+      toast.error('Erro ao alterar status', { description: err.message });
+    }
   };
 
   const handleDelete = async (id: string) => {
     await supabase.from('api_inbound_webhooks').delete().eq('id', id);
     setDeleteConfirm(null);
     fetchWebhooks();
-    toast({ title: 'Webhook removido' });
+    toast.success('Webhook removido');
   };
 
   const copyUrl = (token: string) => {
     navigator.clipboard.writeText(`${baseUrl}?token=${token}`);
-    toast({ title: 'URL copiada!' });
+    toast.info('URL copiada!');
   };
 
   const handleTestWebhook = async (wh: InboundWebhook) => {
@@ -192,14 +196,14 @@ export function InboundWebhooksManager() {
       });
 
       if (response.ok) {
-        toast({ title: 'Teste enviado!', description: `Evento de teste processado com sucesso no módulo ${wh.modulo_destino}.` });
+        toast.success('Teste enviado!', { description: `Evento de teste processado com sucesso no módulo ${wh.modulo_destino}.` });
         fetchWebhooks();
       } else {
         const err = await response.json();
-        toast({ title: 'Erro no teste', description: err.error || 'Falha ao processar evento', variant: 'destructive' });
+        toast.error('Erro no teste', { description: err.error || 'Falha ao processar evento' });
       }
     } catch (err: any) {
-      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+      toast.error('Erro', { description: err.message });
     } finally {
       setTestingWebhook(null);
     }
@@ -352,7 +356,6 @@ export function InboundWebhooksManager() {
               </Select>
             </div>
 
-            {/* Payload de exemplo baseado no módulo selecionado */}
             {moduloDestino && (
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Payload JSON esperado para {MODULOS_DESTINO.find(m => m.value === moduloDestino)?.label}</Label>
@@ -392,7 +395,7 @@ export function InboundWebhooksManager() {
               variant="outline"
               onClick={() => {
                 navigator.clipboard.writeText(payloadDialogOpen ? getPayloadForModule(payloadDialogOpen) : '');
-                toast({ title: 'Payload copiado!' });
+                toast.info('Payload copiado!');
               }}
             >
               <Copy className="h-4 w-4 mr-2" /> Copiar

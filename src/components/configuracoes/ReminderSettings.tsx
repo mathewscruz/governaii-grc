@@ -5,11 +5,11 @@ import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { StatCard } from "@/components/ui/stat-card"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { supabase } from "@/integrations/supabase/client"
 import { Bell, Mail, Clock, Users, TrendingUp } from "lucide-react"
 
-interface ReminderSettings {
+interface ReminderSettingsData {
   id?: string
   empresa_id: string
   reminders_enabled: boolean
@@ -25,7 +25,7 @@ interface ReminderStats {
 }
 
 export function ReminderSettings() {
-  const [settings, setSettings] = useState<ReminderSettings>({
+  const [settings, setSettings] = useState<ReminderSettingsData>({
     empresa_id: '',
     reminders_enabled: true,
     reminder_intervals: [3, 7, 14],
@@ -40,13 +40,11 @@ export function ReminderSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [processing, setProcessing] = useState(false)
-  const { toast } = useToast()
 
   useEffect(() => {
     loadSettings()
   }, [])
 
-  // Load stats after settings are loaded (need empresa_id)
   useEffect(() => {
     if (settings.empresa_id) {
       loadStats()
@@ -55,7 +53,6 @@ export function ReminderSettings() {
 
   const loadSettings = async () => {
     try {
-      // Obter empresa_id do usuário logado
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         console.error('Usuário não autenticado')
@@ -73,7 +70,6 @@ export function ReminderSettings() {
         return
       }
 
-      // Buscar configurações da empresa
       const { data, error } = await supabase
         .from('empresa_reminder_settings')
         .select('*')
@@ -88,7 +84,6 @@ export function ReminderSettings() {
       if (data) {
         setSettings(data)
       } else {
-        // Se não existir configuração, criar uma padrão
         setSettings({
           empresa_id: profile.empresa_id,
           reminders_enabled: true,
@@ -108,21 +103,18 @@ export function ReminderSettings() {
       const empresaId = settings.empresa_id;
       if (!empresaId) return;
 
-      // Contar usuários convidados (com senha temporária) da empresa
       const { count: totalInvited } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('empresa_id', empresaId)
         .not('temporary_passwords', 'is', null)
 
-      // Contar lembretes pendentes (ativos) da empresa
       const { count: pendingReminders } = await supabase
         .from('user_invitation_reminders')
         .select('*, profiles!inner(empresa_id)', { count: 'exact', head: true })
         .eq('status', 'active')
         .eq('profiles.empresa_id', empresaId)
 
-      // Contar convites completados da empresa
       const { count: completedInvitations } = await supabase
         .from('user_invitation_reminders')
         .select('*, profiles!inner(empresa_id)', { count: 'exact', head: true })
@@ -153,16 +145,13 @@ export function ReminderSettings() {
 
       if (error) throw error
 
-      toast({
-        title: "Configurações salvas",
+      toast.success("Configurações salvas", {
         description: "As configurações de lembretes foram atualizadas com sucesso.",
       })
     } catch (error: any) {
       console.error('Erro ao salvar:', error)
-      toast({
-        title: "Erro ao salvar",
+      toast.error("Erro ao salvar", {
         description: error.message,
-        variant: "destructive",
       })
     } finally {
       setSaving(false)
@@ -178,19 +167,15 @@ export function ReminderSettings() {
 
       if (error) throw error
 
-      toast({
-        title: "Lembretes processados",
+      toast.success("Lembretes processados", {
         description: `${data.sent} lembretes enviados com sucesso.`,
       })
 
-      // Recarregar estatísticas
       loadStats()
     } catch (error: any) {
       console.error('Erro ao processar lembretes:', error)
-      toast({
-        title: "Erro ao processar lembretes",
+      toast.error("Erro ao processar lembretes", {
         description: error.message,
-        variant: "destructive",
       })
     } finally {
       setProcessing(false)
@@ -209,7 +194,6 @@ export function ReminderSettings() {
 
   return (
     <div className="space-y-6">
-      {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Usuários Convidados"
@@ -237,7 +221,6 @@ export function ReminderSettings() {
         />
       </div>
 
-      {/* Configurações */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -249,7 +232,6 @@ export function ReminderSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Ativar/Desativar lembretes */}
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="text-base">Lembretes Automáticos</Label>
@@ -265,7 +247,6 @@ export function ReminderSettings() {
             />
           </div>
 
-          {/* Intervalos de lembrete */}
           <div className="space-y-3">
             <Label className="text-base">Intervalos de Lembrete (em dias)</Label>
             <p className="text-sm text-muted-foreground">
@@ -291,7 +272,6 @@ export function ReminderSettings() {
             </div>
           </div>
 
-          {/* Número máximo de lembretes */}
           <div className="space-y-2">
             <Label className="text-base">Número Máximo de Lembretes</Label>
             <p className="text-sm text-muted-foreground">
@@ -310,7 +290,6 @@ export function ReminderSettings() {
             />
           </div>
 
-          {/* Ações */}
           <div className="flex items-center gap-3 pt-4 border-t">
             <Button 
               onClick={saveSettings} 
@@ -328,7 +307,6 @@ export function ReminderSettings() {
             </Button>
           </div>
 
-          {/* Informações sobre funcionamento */}
           <div className="bg-muted p-4 rounded-lg border border-border">
             <h4 className="font-medium text-foreground mb-2">Como funciona:</h4>
             <ul className="text-sm text-muted-foreground space-y-1">

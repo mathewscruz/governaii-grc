@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { Key, Plus, Copy, Trash2, Eye, EyeOff, Loader2, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
@@ -53,7 +53,6 @@ function generateApiKey(): { key: string; prefix: string } {
 }
 
 export function ApiKeysManager() {
-  const { toast } = useToast();
   const { empresaId } = useEmpresaId();
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,34 +108,39 @@ export function ApiKeysManager() {
       if (error) throw error;
 
       setNewKeyRevealed(key);
-      toast({ title: 'API Key criada', description: 'Copie a chave agora — ela não será exibida novamente.' });
+      toast.success('API Key criada', { description: 'Copie a chave agora — ela não será exibida novamente.' });
       setDialogOpen(false);
       setNome('');
       setPermissoes([]);
       setRateLimit('60');
       fetchKeys();
     } catch (err: any) {
-      toast({ title: 'Erro', description: err.message, variant: 'destructive' });
+      toast.error('Erro ao criar API Key', { description: err.message });
     } finally {
       setSaving(false);
     }
   };
 
   const handleToggle = async (id: string, ativo: boolean) => {
-    await supabase.from('api_keys').update({ ativo }).eq('id', id);
-    fetchKeys();
+    try {
+      await supabase.from('api_keys').update({ ativo }).eq('id', id);
+      fetchKeys();
+      toast.success(ativo ? 'API Key ativada' : 'API Key desativada');
+    } catch (err: any) {
+      toast.error('Erro ao alterar status', { description: err.message });
+    }
   };
 
   const handleDelete = async (id: string) => {
     await supabase.from('api_keys').delete().eq('id', id);
     setDeleteConfirm(null);
     fetchKeys();
-    toast({ title: 'API Key removida' });
+    toast.success('API Key removida');
   };
 
   const copyKey = (key: string) => {
     navigator.clipboard.writeText(key);
-    toast({ title: 'Chave copiada!' });
+    toast.info('Chave copiada!');
   };
 
   const togglePermissao = (perm: string) => {
