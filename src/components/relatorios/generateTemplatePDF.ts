@@ -204,7 +204,7 @@ async function fetchExecutivoData(empresaId: string) {
   const { data: riscos } = await supabase.from('riscos').select('*').eq('empresa_id', empresaId);
   const { data: incidentes } = await (supabase.from('incidentes').select('*').eq('empresa_id', empresaId).gte('data_deteccao', ninetyDaysAgo.toISOString()) as any);
   const { data: controles } = await supabase.from('controles').select('*').eq('empresa_id', empresaId);
-  const { data: frameworks } = await supabase.from('gap_analysis_frameworks').select('id, nome').eq('ativo', true);
+  const { data: frameworks } = await (supabase.from('gap_analysis_frameworks').select('id, nome').eq('ativo', true) as any);
   const r = riscos || []; const i = incidentes || []; const c = controles || []; const f = frameworks || [];
   return {
     sections: [
