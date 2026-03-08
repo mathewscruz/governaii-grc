@@ -137,7 +137,7 @@ export default function DenunciaFormulario() {
         }
 
         if (!configData?.ativo) {
-          console.error('❌ [ERROR] Canal de denúncia desativado');
+          logger.debug('Canal de denúncia desativado', { module: 'DenunciaFormulario' });
           setLoading(false);
           return;
         }
