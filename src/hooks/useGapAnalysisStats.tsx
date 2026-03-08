@@ -30,11 +30,12 @@ export const useGapAnalysisStats = () => {
 
         if (frameworksListError) throw frameworksListError;
 
-        // Buscar avaliações filtradas por empresa_id
+        // Buscar avaliações filtradas por empresa_id (limit 5000 para evitar truncamento do default 1000)
         const { data: evaluations, error: evaluationsError } = await supabase
           .from('gap_analysis_evaluations')
           .select('conformity_status, evidence_status, framework_id')
-          .eq('empresa_id', empresaId);
+          .eq('empresa_id', empresaId)
+          .limit(5000);
 
         if (evaluationsError) throw evaluationsError;
 
