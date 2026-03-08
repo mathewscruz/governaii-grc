@@ -1,80 +1,57 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Otimização de Modelos IA + Integração Claude Anthropic
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
+## Situação Atual
 
----
+O sistema não possui `ANTHROPIC_API_KEY` nem `OPENAI_API_KEY` nos secrets do Supabase. Há apenas `LOVABLE_API_KEY`. As Edge Functions `docgen-chat` e `suggest-risk-treatment` referenciam `OPENAI_API_KEY` diretamente do `Deno.env`, o que significa que essa chave foi configurada em outro lugar ou essas funções podem estar falhando.
 
-## 1. ErrorBoundary ausente na maioria das paginas
+## Plano de Otimização
 
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
+### Mapeamento Final: Funcionalidade → Modelo Ideal
 
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
+| Funcionalidade | Modelo Atual | Modelo Proposto | Razão |
+|---|---|---|---|
+| Análise Aderência Documentos | gemini-3-flash | **Claude 3.5 Sonnet** (Anthropic) | Melhor em análise documental longa, citação precisa, raciocínio jurídico |
+| DocGen Chat + Geração | gpt-4.1 (OpenAI) | **Claude 3.5 Sonnet** (Anthropic) | Superior em geração de texto estruturado PT-BR, elimina OPENAI_API_KEY |
+| Orientação Requisitos (3 calls) | gemini-2.5-flash (x3) | **gemini-3-flash-preview** (1 call) | Consolidar 3→1 chamada, ~66% economia |
+| Score Due Diligence | gemini-2.5-flash | **gemini-3-flash-preview** | Unificar, modelo mais recente |
+| Sugestão Tratamento Risco | gpt-4o-mini (OpenAI) | **gemini-3-flash-preview** | Elimina OPENAI_API_KEY, custo equivalente |
+| AkurIA Chat | gemini-3-flash | (sem mudança) | Já ideal |
+| AI Module Assistant | gemini-3-flash | (sem mudança) | Já ideal |
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+### Onde o Claude agrega valor real
 
----
+1. **Análise de Aderência de Documentos** — Analisa documentos longos (até 30K chars) contra 60+ requisitos. Claude é reconhecidamente o melhor em: compreensão de documentos extensos, citação precisa de trechos, raciocínio de conformidade jurídica/regulatória.
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+2. **DocGen (Geração de Documentos)** — Gera políticas, procedimentos e manuais corporativos completos. Claude produz texto mais natural e estruturado em português, com melhor aderência a templates complexos.
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+### Custo estimado Claude
 
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+| Modelo | Input/1M tokens | Output/1M tokens | Custo médio/req (BRL) |
+|---|---|---|---|
+| Claude 3.5 Sonnet | US$ 3.00 | US$ 15.00 | ~R$ 0.20 |
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+Comparação: gemini-3-flash ~R$ 0.03, GPT-4.1 ~R$ 0.15. Claude custa mais que Flash mas menos que GPT-4.1 para a mesma qualidade superior.
 
----
+## Arquivos a Modificar
 
-## 3. Paginas sem EmptyState padronizado
+| Arquivo | Mudança |
+|---|---|
+| **Secret** | Adicionar `ANTHROPIC_API_KEY` via tool |
+| `supabase/functions/analyze-document-adherence/index.ts` | Trocar Lovable Gateway → API Anthropic (Claude 3.5 Sonnet) |
+| `supabase/functions/docgen-chat/index.ts` | Trocar OpenAI → API Anthropic (Claude 3.5 Sonnet) |
+| `supabase/functions/suggest-risk-treatment/index.ts` | Trocar OpenAI → Lovable Gateway (gemini-3-flash-preview) |
+| `supabase/functions/calculate-assessment-score/index.ts` | Trocar gemini-2.5-flash → gemini-3-flash-preview |
+| `supabase/functions/populate-requirement-guidance/index.ts` | Consolidar 3 chamadas → 1 + trocar para gemini-3-flash-preview |
+| `src/components/configuracoes/FinanceiroIATab.tsx` | Adicionar Claude ao MODEL_PRICING + atualizar mapeamentos |
 
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+## Resumo de Economia Estimada
 
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
-
----
-
-## 4. Ausencia de atalhos de teclado documentados para o usuario
-
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
-
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
-
----
-
-## 5. Botao de "Voltar" no header nao tem tooltip
-
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
-
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
-
----
-
-## Resumo de Prioridade
-
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
-
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+- **DocGen**: R$ 0.15 → R$ 0.20 (sobe, mas qualidade muito superior e elimina dependência OpenAI)
+- **Análise Documentos**: R$ 0.05 → R$ 0.20 (sobe, mas precisão significativamente melhor)
+- **Orientação Requisitos**: R$ 0.075 → R$ 0.03 (cai 60%, consolidação 3→1)
+- **Sugestão Risco**: R$ 0.02 → R$ 0.03 (equivalente, elimina OPENAI_API_KEY)
+- **Score DD**: R$ 0.025 → R$ 0.03 (equivalente, unifica)
+- **Resultado**: Remove dependência total do `OPENAI_API_KEY`, fica com 2 provedores (Lovable/Gemini + Anthropic/Claude), cada um no que faz melhor
 
