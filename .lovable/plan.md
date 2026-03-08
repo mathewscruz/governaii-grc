@@ -1,80 +1,52 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Informações Automáticas de Modelo e Custo IA
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
+## O que será feito
 
----
+Substituir o campo manual "Custo estimado por requisição" por um card informativo automático que mostra:
 
-## 1. ErrorBoundary ausente na maioria das paginas
+1. **Modelos IA em uso** — extraídos das Edge Functions do sistema:
+   - `google/gemini-3-flash-preview` (akuria-chat, ai-module-assistant, analyze-document-adherence)
+   - `google/gemini-2.5-flash` (calculate-assessment-score, populate-requirement-guidance)
+   - `gpt-4.1-2025-04-14` (docgen-chat)
+   - `gpt-4o-mini` (suggest-risk-treatment)
 
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
+2. **Custo médio real por requisição** — calculado automaticamente a partir dos dados reais da tabela `creditos_consumo`, cruzando com uma tabela de preços por modelo (constante no código, baseada nos preços públicos do Lovable AI Gateway).
 
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
+3. **Custo por modelo** — card detalhado mostrando cada modelo, quais funções o usam, preço estimado por 1K tokens, e total de requisições no mês.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+## Abordagem técnica
 
----
+### Constante de preços por modelo (no componente)
+```typescript
+const MODEL_PRICING = {
+  'google/gemini-3-flash-preview': { inputPer1k: 0.00015, outputPer1k: 0.0006, avgCostPerReq: 0.005 },
+  'google/gemini-2.5-flash': { inputPer1k: 0.00015, outputPer1k: 0.0006, avgCostPerReq: 0.004 },
+  'gpt-4.1-2025-04-14': { inputPer1k: 0.002, outputPer1k: 0.008, avgCostPerReq: 0.025 },
+  'gpt-4o-mini': { inputPer1k: 0.00015, outputPer1k: 0.0006, avgCostPerReq: 0.003 },
+};
+```
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+### Mapeamento funcionalidade → modelo (constante)
+```typescript
+const FUNCTION_MODEL_MAP = {
+  'akuria_chat': 'google/gemini-3-flash-preview',
+  'docgen_chat': 'gpt-4.1-2025-04-14',
+  'ai-assistant:classify-risk': 'google/gemini-3-flash-preview',
+  // etc.
+};
+```
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+### Cálculo automático do custo
+Em vez do input manual, o custo por requisição será calculado como média ponderada: para cada funcionalidade no mês, multiplica-se o número de requisições pelo custo médio do modelo correspondente, e divide-se pelo total de requisições.
 
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+### UI Changes em `FinanceiroIATab.tsx`
+- Remover o card com Input de custo manual
+- Adicionar card "Modelos IA em Uso" com tabela: Modelo | Funções | Custo médio/req | Reqs no mês | Custo total
+- O custo por requisição no KPI passa a ser calculado automaticamente
+- Manter opção de "override" manual como toggle discreto para simulações
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
-
----
-
-## 3. Paginas sem EmptyState padronizado
-
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
-
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
-
----
-
-## 4. Ausencia de atalhos de teclado documentados para o usuario
-
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
-
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
-
----
-
-## 5. Botao de "Voltar" no header nao tem tooltip
-
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
-
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
-
----
-
-## Resumo de Prioridade
-
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
-
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+## Arquivo modificado
+- `src/components/configuracoes/FinanceiroIATab.tsx`
 
