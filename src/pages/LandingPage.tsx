@@ -525,7 +525,7 @@ const LandingPage = () => {
               <div className="w-full lg:flex-1 space-y-6 sm:space-y-8 lp-fade-up">
                 <h2 id="contato-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold">
                   Pronto para transformar sua{" "}
-                  <span className="text-blue-400">Governança</span>?
+                  <span className="text-[#7552FF]">Governança</span>?
                 </h2>
                 <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
                   Entre em contato com nossa equipe e descubra como o Akuris pode
