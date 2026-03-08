@@ -565,7 +565,7 @@ const LandingPage = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="contact-name" className="block text-sm font-medium text-gray-300 mb-2">Nome *</label>
-                      <Input id="contact-name" name="name" value={formData.name} onChange={handleInputChange} required placeholder="Seu nome" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-blue-500" />
+                      <Input id="contact-name" name="name" value={formData.name} onChange={handleInputChange} required placeholder="Seu nome" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                     <div>
                       <label htmlFor="contact-email" className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
