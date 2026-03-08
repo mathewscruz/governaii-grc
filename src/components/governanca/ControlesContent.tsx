@@ -117,14 +117,16 @@ export default function ControlesContent() {
 
   // Buscar auditorias para o filtro
   const { data: auditorias = [] } = useQuery({
-    queryKey: ['auditorias-lista'],
+    queryKey: ['auditorias-lista', empresaId],
     queryFn: async () => {
       const { data } = await supabase
         .from('auditorias')
         .select('id, nome')
+        .eq('empresa_id', empresaId!)
         .order('nome');
       return data || [];
-    }
+    },
+    enabled: !!empresaId,
   });
 
   // Buscar vínculos controles-auditorias
