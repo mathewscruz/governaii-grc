@@ -389,6 +389,65 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
           </div>
         </form>
       </Form>
+
+      {/* Preferências de Notificação */}
+      <div className="pt-2">
+        <Separator className="my-5" />
+        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+          <Bell className="h-4 w-4" />
+          Notificações
+        </h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="pp-email-notif" className="text-sm">Email</Label>
+              <p className="text-xs text-muted-foreground">Alertas por email</p>
+            </div>
+            <Switch
+              id="pp-email-notif"
+              checked={notificationPrefs.email_notifications}
+              onCheckedChange={(checked) =>
+                saveNotificationPrefs({ ...notificationPrefs, email_notifications: checked })
+              }
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="pp-inapp-notif" className="text-sm">In-App</Label>
+              <p className="text-xs text-muted-foreground">Notificações no sino</p>
+            </div>
+            <Switch
+              id="pp-inapp-notif"
+              checked={notificationPrefs.in_app_notifications}
+              onCheckedChange={(checked) =>
+                saveNotificationPrefs({ ...notificationPrefs, in_app_notifications: checked })
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm">Frequência</Label>
+            <div className="flex gap-1.5">
+              {[
+                { value: 'realtime' as const, label: 'Tempo Real' },
+                { value: 'daily' as const, label: 'Diário' },
+                { value: 'weekly' as const, label: 'Semanal' },
+              ].map((opt) => (
+                <Button
+                  key={opt.value}
+                  variant={notificationPrefs.digest_frequency === opt.value ? 'default' : 'outline'}
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() =>
+                    saveNotificationPrefs({ ...notificationPrefs, digest_frequency: opt.value })
+                  }
+                >
+                  {opt.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
