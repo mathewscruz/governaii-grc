@@ -684,7 +684,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
         </Tabs>
 
         {selectedRequirement && (
-          <NISTRequirementDetailDialog
+          <RequirementDetailDialog
             open={detailDialogOpen}
             onOpenChange={setDetailDialogOpen}
             requirement={selectedRequirement}
