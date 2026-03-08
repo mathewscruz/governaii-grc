@@ -22,6 +22,7 @@ interface RopaWizardProps {
 }
 
 export function RopaWizard({ isOpen, onClose, onSave, preSelectedDadoId }: RopaWizardProps) {
+  const { empresaId } = useEmpresaId();
   const [step, setStep] = useState(1);
   const [selectedDados, setSelectedDados] = useState<string[]>(preSelectedDadoId ? [preSelectedDadoId] : []);
   const [selectedAtivos, setSelectedAtivos] = useState<string[]>([]);
