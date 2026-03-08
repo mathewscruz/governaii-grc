@@ -50,7 +50,9 @@ const TOOLTIPS: Record<string, string> = {
 export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   open,
   onOpenChange,
-  onDocumentSaved
+  onDocumentSaved,
+  frameworkName,
+  frameworkId,
 }) => {
   const { toast } = useToast();
   const { company } = useAuth();
