@@ -174,19 +174,26 @@ export function CreditosIAManager() {
       key: 'actions',
       label: 'Ações',
       render: (_: any, row: EmpresaCredito) => (
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={() => openHistorico(row.id, row.nome)}>
-            <History className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setResetConfirm({ open: true, empresaId: row.id, empresaNome: row.nome })}
-            className="text-destructive hover:text-destructive"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => openHistorico(row.id, row.nome)}>
+              <History className="h-4 w-4 mr-2" />
+              Histórico
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setResetConfirm({ open: true, empresaId: row.id, empresaNome: row.nome })}
+              className="text-destructive focus:text-destructive"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Resetar Créditos
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     }
   ];

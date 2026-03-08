@@ -329,9 +329,9 @@ export function ReminderSettings() {
           </div>
 
           {/* Informações sobre funcionamento */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h4 className="font-medium text-blue-900 mb-2">Como funciona:</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
+          <div className="bg-muted p-4 rounded-lg border border-border">
+            <h4 className="font-medium text-foreground mb-2">Como funciona:</h4>
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Lembretes são enviados apenas para usuários com senhas temporárias ativas</li>
               <li>• O sistema para automaticamente após o número máximo de lembretes</li>
               <li>• Quando o usuário faz login, os lembretes param automaticamente</li>

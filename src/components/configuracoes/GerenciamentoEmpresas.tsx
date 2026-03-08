@@ -417,38 +417,44 @@ const GerenciamentoEmpresas = () => {
     {
       key: 'actions',
       label: 'Ações',
-      className: 'w-24 text-right',
+      className: 'w-16 text-right',
       render: (_, empresa) => (
-        <div className="flex items-center justify-end gap-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEdit(empresa)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Editar empresa</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openDeleteDialog(empresa)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Excluir empresa</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleEdit(empresa)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Upload className="h-4 w-4" />
+                Upload Logo
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleLogoUpload(empresa.id, file);
+                  }}
+                  disabled={uploading}
+                />
+              </label>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => openDeleteDialog(empresa)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];

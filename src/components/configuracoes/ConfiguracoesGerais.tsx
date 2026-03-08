@@ -279,9 +279,12 @@ const ConfiguracoesGerais = ({ userRole }: Props) => {
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
             Preferências de Notificação
+            <Badge variant="outline" className="text-xs font-normal ml-2">
+              Salvo localmente
+            </Badge>
           </CardTitle>
           <CardDescription>
-            Configure como você deseja receber notificações do sistema
+            Configure como você deseja receber notificações do sistema. Essas preferências são salvas apenas neste navegador.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
