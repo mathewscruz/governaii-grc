@@ -315,7 +315,7 @@ const GerenciamentoEmpresas = () => {
       label: 'Logo',
       sortable: false,
       render: (_, empresa) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           {empresa.logo_url ? (
             <img
               src={empresa.logo_url}
@@ -327,26 +327,6 @@ const GerenciamentoEmpresas = () => {
               <Building2 className="h-4 w-4 text-muted-foreground" />
             </div>
           )}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleLogoUpload(empresa.id, file);
-                    }}
-                    disabled={uploading}
-                  />
-                  <Upload className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                </label>
-              </TooltipTrigger>
-              <TooltipContent>Upload de logo</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
       ),
     },
