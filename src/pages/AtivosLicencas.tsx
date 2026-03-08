@@ -101,6 +101,7 @@ export default function AtivosLicencas() {
       
       return (data || []) as Licenca[];
     },
+    enabled: !!empresaId,
   });
 
   const handleNew = () => {
