@@ -402,7 +402,7 @@ const LandingPage = () => {
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-3 text-xl">
                     <div className="w-10 h-10 rounded-lg bg-[#0A1628] border border-[#1E2D45] flex items-center justify-center">
-                      {(() => { const Icon = modules[selectedFeature].icon; return <Icon className="h-5 w-5 text-blue-400" />; })()}
+                      {(() => { const Icon = modules[selectedFeature].icon; return <Icon className="h-5 w-5 text-[#7552FF]" />; })()}
                     </div>
                     {modules[selectedFeature].title}
                   </DialogTitle>
