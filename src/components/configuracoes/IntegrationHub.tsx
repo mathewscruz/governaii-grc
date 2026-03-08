@@ -223,7 +223,6 @@ const CATEGORIAS = {
 
 export function IntegrationHub() {
   const [loading, setLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
   const [configuredIntegrations, setConfiguredIntegrations] = useState<IntegrationConfig[]>([]);
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [logViewerOpen, setLogViewerOpen] = useState(false);
