@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { DashboardMockup } from "@/components/landing/DashboardMockup";
 import akurisLogo from "@/assets/akuris-logo.png";
 import flagBrazil from "@/assets/flag-brazil.png";
 import flagPortugal from "@/assets/flag-portugal.png";
@@ -280,40 +281,48 @@ const LandingPage = () => {
             backgroundSize: '100% 100%, 60px 60px, 60px 60px',
           }}
         >
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+              {/* Left — Text */}
+              <div className="text-center lg:text-left">
+                <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold leading-tight mb-6 lp-fade-up lp-visible">
+                  Gestão de{" "}
+                  <span className="text-blue-400">Riscos</span>,{" "}
+                  <span className="text-blue-400">Compliance</span>{" "}
+                  e <span className="text-blue-400">Governança</span>
+                </h1>
 
-            <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight mb-6 lp-fade-up lp-visible">
-              Gestão de{" "}
-              <span className="text-blue-400">Riscos</span>,{" "}
-              <span className="text-blue-400">Compliance</span>{" "}
-              e <span className="text-blue-400">Governança</span>
-            </h1>
+                <p className="text-lg sm:text-xl text-gray-300 max-w-xl mb-10 lp-fade-up lp-visible leading-relaxed mx-auto lg:mx-0">
+                  Centralize toda a gestão de governança, riscos e conformidade em uma única plataforma.
+                  Automatize processos, avalie aderência a frameworks e tome decisões baseadas em dados.
+                </p>
 
-            <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto mb-10 lp-fade-up lp-visible leading-relaxed">
-              Centralize toda a gestão de governança, riscos e conformidade em uma única plataforma.
-              Automatize processos, avalie aderência a frameworks e tome decisões baseadas em dados.
-            </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8 lp-fade-up lp-visible">
+                  <Link to="/registro">
+                    <Button
+                      size="lg"
+                      className="bg-blue-600 hover:bg-blue-500 text-white text-base px-8 h-12 w-full sm:w-auto"
+                    >
+                      Teste Grátis
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => scrollToSection("contato")}
+                    className="border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white text-base px-8 h-12"
+                  >
+                    Fale com Vendas
+                  </Button>
+                </div>
+              </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8 lp-fade-up lp-visible">
-              <Link to="/registro">
-                <Button
-                  size="lg"
-                  className="bg-blue-600 hover:bg-blue-500 text-white text-base px-8 h-12 w-full sm:w-auto"
-                >
-                  Teste Grátis
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => scrollToSection("contato")}
-                className="border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white text-base px-8 h-12"
-              >
-                Fale com Vendas
-              </Button>
+              {/* Right — Dashboard Mockup */}
+              <div className="lp-fade-up lp-visible hidden md:block">
+                <DashboardMockup />
+              </div>
             </div>
-
           </div>
         </section>
 
