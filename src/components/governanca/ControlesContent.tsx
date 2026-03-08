@@ -1,7 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { useLocation, useSearchParams } from "react-router-dom";
-import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2, Filter, TestTube, Download } from "lucide-react";
+import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2, Filter, TestTube, Download, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -129,17 +135,6 @@ export default function ControlesContent() {
     enabled: !!empresaId,
   });
 
-  // Buscar vínculos controles-auditorias
-  const { data: vinculos = [] } = useQuery({
-    queryKey: ['controles-auditorias-vinculos'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('controles_auditorias')
-        .select('controle_id, auditoria_id');
-      return data || [];
-    }
-  });
-
   // Buscar controles
   const { data: controles = [], isLoading } = useQuery({
     queryKey: ['controles', empresaId],
@@ -161,10 +156,12 @@ export default function ControlesContent() {
           .map(c => c.responsavel_id)
           .filter(r => r && r.trim() !== '');
         
-        // Buscar contagem de testes para cada controle
+        // Buscar contagem de testes para cada controle (filtrado por IDs da empresa)
+        const ids = data.map(c => c.id);
         const { data: testes } = await supabase
           .from('controles_testes')
-          .select('controle_id');
+          .select('controle_id')
+          .in('controle_id', ids);
         
         const testesCountMap = new Map<string, number>();
         testes?.forEach(t => {
@@ -205,6 +202,21 @@ export default function ControlesContent() {
     enabled: !!empresaId,
   });
 
+  // Buscar vínculos controles-auditorias (filtrado pelos controles da empresa)
+  const controleIds = useMemo(() => controles.map(c => c.id), [controles]);
+  const { data: vinculos = [] } = useQuery({
+    queryKey: ['controles-auditorias-vinculos', empresaId, controleIds],
+    queryFn: async () => {
+      if (controleIds.length === 0) return [];
+      const { data } = await supabase
+        .from('controles_auditorias')
+        .select('controle_id, auditoria_id')
+        .in('controle_id', controleIds);
+      return data || [];
+    },
+    enabled: !!empresaId && controleIds.length > 0
+  });
+
   // Detectar se veio com itemId do dashboard
   useEffect(() => {
     const itemId = location.state?.itemId;
@@ -234,18 +246,20 @@ export default function ControlesContent() {
     }
   }, [searchParams, controles, setSearchParams]);
 
-  // Buscar categorias
+  // Buscar categorias filtradas por empresa
   const { data: categorias = [] } = useQuery({
-    queryKey: ['controles_categorias'],
+    queryKey: ['controles_categorias', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('controles_categorias')
         .select('*')
+        .eq('empresa_id', empresaId!)
         .order('nome');
       
       if (error) throw error;
       return data as Categoria[];
-    }
+    },
+    enabled: !!empresaId
   });
 
   // Deletar controle
@@ -512,57 +526,37 @@ export default function ControlesContent() {
       label: 'Ações',
       sortable: false,
       render: (value: any, controle: Controle) => (
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEdit(controle)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedControleForTests(controle);
-                    setTestesDialogOpen(true);
-                  }}
-                >
-                  <TestTube className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Gerenciar Testes</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedControleForVinculacao(controle);
-                    setVinculacaoDialogOpen(true);
-                  }}
-                >
-                  <Link className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Gerenciar Vinculações</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDelete(controle.id)}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleEdit(controle)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              setSelectedControleForTests(controle);
+              setTestesDialogOpen(true);
+            }}>
+              <TestTube className="h-4 w-4 mr-2" />
+              Gerenciar Testes
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              setSelectedControleForVinculacao(controle);
+              setVinculacaoDialogOpen(true);
+            }}>
+              <Link className="h-4 w-4 mr-2" />
+              Gerenciar Vinculações
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleDelete(controle.id)} className="text-destructive focus:text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     }
   ];

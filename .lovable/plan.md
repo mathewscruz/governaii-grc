@@ -1,96 +1,80 @@
 
 
-# Validacao Completa — Modulo Governanca (Controles + Auditorias)
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-Analisei em profundidade todos os componentes: Governanca.tsx, ControlesContent.tsx, AuditoriasContent.tsx, AuditoriaDialog.tsx, AuditoriaCardAccordion.tsx, ItensAuditoriaDialog.tsx, ControleDialog.tsx, CategoriasDialog.tsx, TestesList.tsx, useControlesStats.tsx, useAuditoriaData.tsx.
-
----
-
-## RLS — OK
-
-Tabelas `controles`, `auditorias`, `auditoria_itens`, `controles_categorias`, `controles_testes`, `controles_auditorias` possuem RLS com policies baseadas em `get_user_empresa_id()`.
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
 ---
 
-## Problemas Identificados
+## 1. ErrorBoundary ausente na maioria das paginas
 
-### 1. SEGURANCA — `useControlesStats` sem filtro `empresa_id` e queryKey estatica
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-O hook busca `supabase.from('controles').select('status, criticidade, tipo, proxima_avaliacao')` sem `.eq('empresa_id', empresaId)`. A queryKey e fixa `['controles-stats']`, causando cache compartilhado entre empresas.
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
-**Correcao**: Importar `useEmpresaId`, filtrar por `empresa_id`, incluir `empresaId` na queryKey.
-
-### 2. SEGURANCA — `ControlesContent` busca `controles_categorias` sem filtro `empresa_id`
-
-Linha 241: `supabase.from('controles_categorias').select('*').order('nome')` — sem `.eq('empresa_id', empresaId)`. Categorias de outras empresas podem aparecer no dropdown. A queryKey tambem e estatica `['controles_categorias']`.
-
-**Correcao**: Adicionar `.eq('empresa_id', empresaId!)` e incluir `empresaId` na queryKey.
-
-### 3. SEGURANCA — `ControlesContent` busca `controles_testes` sem filtro `empresa_id`
-
-Linha 166: `supabase.from('controles_testes').select('controle_id')` busca TODOS os testes de todas as empresas para calcular contagem. Depende apenas de RLS.
-
-**Correcao**: Filtrar os IDs dos controles ja buscados (que ja sao da empresa) para limitar: `.in('controle_id', controleIds)`.
-
-### 4. SEGURANCA — `CategoriasDialog` busca categorias sem filtro `empresa_id`
-
-Linha 48-51: `supabase.from('controles_categorias').select('*').order('nome')` — sem filtro de empresa. O save grava corretamente com `empresa_id`, mas a listagem pode mostrar categorias de outras empresas.
-
-**Correcao**: Adicionar filtro `empresa_id` na query de listagem.
-
-### 5. SEGURANCA — `AuditoriasContent` busca auditorias sem filtro `empresa_id`
-
-Linha 49-52: `supabase.from('auditorias').select('*').order(...)` — sem `.eq('empresa_id', empresaId)`. Depende exclusivamente de RLS. A queryKey tambem nao inclui `empresaId`.
-
-**Correcao**: Importar `useEmpresaId`, adicionar filtro e incluir na queryKey.
-
-### 6. SEGURANCA — `useUsuariosEmpresa` busca profiles sem filtro `empresa_id`
-
-Linha 65-69 em `useAuditoriaData.tsx`: `supabase.from('profiles').select(...).eq('ativo', true)` — retorna usuarios de TODAS as empresas. Usado nos dropdowns de responsaveis de auditorias.
-
-**Correcao**: Adicionar `.eq('empresa_id', empresaId)`.
-
-### 7. UX — Coluna de acoes em Controles usa botoes inline
-
-A coluna de acoes (linhas 511-567) usa 4 botoes ghost inline (Edit, TestTube, Link, Trash2), nao seguindo o padrao DropdownMenu adotado nos demais modulos.
-
-**Correcao**: Migrar para `DropdownMenu` com `MoreHorizontal`.
-
-### 8. UX — Coluna de acoes em Auditorias usa botoes inline
-
-`AuditoriaCardAccordion.tsx` linhas 101-120 usa botoes ghost inline (Edit, Trash2). Inconsistente com o padrao DropdownMenu.
-
-**Correcao**: Migrar para `DropdownMenu` com `MoreHorizontal`.
-
-### 9. SEGURANCA — `controles_auditorias` vinculos sem filtro
-
-Linha 136-141 em `ControlesContent.tsx`: `supabase.from('controles_auditorias').select('controle_id, auditoria_id')` — busca vinculos de todas as empresas. Sem `empresa_id` na tabela de juncao, mas os controles ja sao filtrados, entao os vinculos "orfaos" nao aparecem na UI. Risco baixo, mas viola o padrao.
-
-**Correcao**: Limitar query com `.in('controle_id', controleIds)` apos carregar controles, ou aceitar como risco baixo dado RLS.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
 ---
 
-## Resumo de Acoes
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-| # | Problema | Tipo | Impacto |
-|---|----------|------|---------|
-| 1 | `useControlesStats` sem empresa_id | Seguranca/Cache | **Alto** |
-| 2 | Categorias sem empresa_id (ControlesContent) | Seguranca | **Alto** |
-| 3 | `controles_testes` sem filtro | Seguranca | **Medio** |
-| 4 | `CategoriasDialog` sem empresa_id | Seguranca | **Alto** |
-| 5 | Auditorias sem empresa_id | Seguranca/Cache | **Alto** |
-| 6 | `useUsuariosEmpresa` sem empresa_id | Seguranca | **Alto** |
-| 7 | Controles acoes inline | UX | **Medio** |
-| 8 | Auditorias acoes inline | UX | **Medio** |
-| 9 | `controles_auditorias` vinculos sem filtro | Seguranca | **Baixo** |
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
 
-### Arquivos a editar:
-- `src/hooks/useControlesStats.tsx` — empresa_id filter + queryKey
-- `src/hooks/useAuditoriaData.tsx` — empresa_id filter no `useUsuariosEmpresa`
-- `src/components/governanca/ControlesContent.tsx` — categorias + testes + vinculos com empresa_id, acoes DropdownMenu
-- `src/components/governanca/AuditoriasContent.tsx` — empresa_id filter + queryKey
-- `src/components/controles/CategoriasDialog.tsx` — empresa_id filter
-- `src/components/auditorias/AuditoriaCardAccordion.tsx` — DropdownMenu
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
 
-Todos os 9 itens serao implementados.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+
+---
+
+## 3. Paginas sem EmptyState padronizado
+
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+
+---
+
+## 4. Ausencia de atalhos de teclado documentados para o usuario
+
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+
+---
+
+## 5. Botao de "Voltar" no header nao tem tooltip
+
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+
+---
+
+## Resumo de Prioridade
+
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 
