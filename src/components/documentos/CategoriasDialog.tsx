@@ -31,7 +31,7 @@ const cores = [
   '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
 ];
 
-export function CategoriasDialog({ open, onOpenChange, onSuccess }: CategoriasDialogProps) {
+export function CategoriasDialog({ open, onOpenChange, onSuccess, empresaId }: CategoriasDialogProps) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
