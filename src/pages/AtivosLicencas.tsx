@@ -52,17 +52,19 @@ export default function AtivosLicencas() {
     nome: string;
   }>({ open: false, id: '', nome: '' });
   const { toast } = useToast();
+  const { empresaId } = useEmpresaId();
 
   // Buscar estatísticas
   const { data: stats, isLoading: statsLoading } = useLicencasStats();
 
   // Buscar licenças
   const { data: licencas = [], refetch, isLoading } = useQuery({
-    queryKey: ['ativos-licencas'],
+    queryKey: ['ativos-licencas', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ativos_licencas')
         .select('*')
+        .eq('empresa_id', empresaId!)
         .order('data_vencimento');
 
       if (error) throw error;
