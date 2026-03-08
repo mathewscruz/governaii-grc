@@ -290,9 +290,9 @@ const LandingPage = () => {
               <div className="text-center lg:text-left">
                 <h1 id="hero-title" className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold leading-tight mb-6 lp-fade-up lp-visible">
                   Gestão de{" "}
-                  <span className="text-blue-400">Riscos</span>,{" "}
-                  <span className="text-blue-400">Compliance</span>{" "}
-                  e <span className="text-blue-400">Governança</span>
+                   <span className="text-[#7552FF]">Riscos</span>,{" "}
+                   <span className="text-[#7552FF]">Compliance</span>{" "}
+                   e <span className="text-[#7552FF]">Governança</span>
                 </h1>
 
                 <p className="text-lg sm:text-xl text-gray-300 max-w-xl mb-10 lp-fade-up lp-visible leading-relaxed mx-auto lg:mx-0">
