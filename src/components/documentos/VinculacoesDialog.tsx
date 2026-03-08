@@ -53,7 +53,7 @@ const tiposVinculacao = [
   'revisao'
 ];
 
-export function VinculacoesDialog({ open, onOpenChange, documento }: VinculacoesDialogProps) {
+export function VinculacoesDialog({ open, onOpenChange, documento, empresaId }: VinculacoesDialogProps) {
   const [vinculacoes, setVinculacoes] = useState<Vinculacao[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
