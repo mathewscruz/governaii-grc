@@ -360,13 +360,13 @@ const LandingPage = () => {
         </section>
 
         {/* ===== 3. MÓDULOS ===== */}
-        <section id="modulos" className="relative py-16 sm:py-20 lg:py-28 bg-[#0F1A2E]" aria-labelledby="modulos-title">
+        <section id="modulos" className="relative py-16 sm:py-20 lg:py-28 bg-[#F1F5F9]" aria-labelledby="modulos-title">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16 lp-fade-up">
-              <h2 id="modulos-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+              <h2 id="modulos-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-gray-900">
                 Tudo em uma <span className="text-[#7552FF]">única plataforma</span>
               </h2>
-              <p className="text-gray-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
+              <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
                 Módulos integrados para cobrir todo o ciclo de governança, riscos e conformidade da sua empresa
               </p>
             </div>
@@ -375,13 +375,13 @@ const LandingPage = () => {
               {modules.map((mod, index) => (
                 <article
                   key={index}
-                  className="group bg-[#111B2E] rounded-xl p-5 sm:p-6 border border-[#1E2D45] hover:border-[#2A3F5F] transition-all duration-200"
+                  className="group bg-white rounded-xl p-5 sm:p-6 border border-gray-200 shadow-sm hover:border-[#7552FF]/30 hover:shadow-md transition-all duration-200"
                 >
-                  <div className="inline-flex p-3 rounded-lg bg-[#0A1628] border border-[#1E2D45] mb-4">
+                  <div className="inline-flex p-3 rounded-lg bg-[#F8F6FF] border border-[#7552FF]/10 mb-4">
                     <mod.icon className="h-5 w-5 text-[#7552FF]" />
                   </div>
-                  <h3 className="text-base sm:text-lg font-semibold mb-2 text-white">{mod.title}</h3>
-                  <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">{mod.description}</p>
+                  <h3 className="text-base sm:text-lg font-semibold mb-2 text-gray-900">{mod.title}</h3>
+                  <p className="text-gray-500 text-xs sm:text-sm leading-relaxed">{mod.description}</p>
                   <button
                     onClick={() => setSelectedFeature(index)}
                     className="mt-4 flex items-center text-[#7552FF] text-xs sm:text-sm font-medium hover:text-[#8B6FFF] transition-colors"
@@ -459,13 +459,13 @@ const LandingPage = () => {
         </section>
 
         {/* ===== 5. TESTIMONIALS ===== */}
-        <section className="relative py-16 sm:py-20 lg:py-28 bg-[#0F1A2E]" aria-labelledby="testimonials-title">
+        <section className="relative py-16 sm:py-20 lg:py-28 bg-[#F1F5F9]" aria-labelledby="testimonials-title">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16 lp-fade-up">
-              <h2 id="testimonials-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+              <h2 id="testimonials-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-gray-900">
                 O que dizem nossos <span className="text-[#7552FF]">clientes</span>
               </h2>
-              <p className="text-gray-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
+              <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
                 Empresas de diversos segmentos confiam no Akuris para transformar sua governança
               </p>
             </div>
@@ -474,11 +474,11 @@ const LandingPage = () => {
               {testimonials.map((t, index) => (
                 <blockquote
                   key={index}
-                  className="bg-[#111B2E] rounded-xl p-6 sm:p-8 border border-[#1E2D45]"
+                  className="bg-white rounded-xl p-6 sm:p-8 border border-gray-200 shadow-sm"
                 >
-                  <p className="text-gray-300 text-sm leading-relaxed mb-6 italic">"{t.text}"</p>
-                  <footer className="pt-4 border-t border-[#1E2D45]">
-                    <p className="text-white font-medium text-sm">{t.name}</p>
+                  <p className="text-gray-600 text-sm leading-relaxed mb-6 italic">"{t.text}"</p>
+                  <footer className="pt-4 border-t border-gray-100">
+                    <p className="text-gray-900 font-medium text-sm">{t.name}</p>
                     <p className="text-gray-500 text-xs">{t.role} · {t.company}</p>
                   </footer>
                 </blockquote>
@@ -519,15 +519,15 @@ const LandingPage = () => {
         </section>
 
         {/* ===== 7. CONTATO ===== */}
-        <section id="contato" className="relative py-16 sm:py-20 lg:py-28 bg-[#0F1A2E]" aria-labelledby="contato-title">
+        <section id="contato" className="relative py-16 sm:py-20 lg:py-28 bg-[#F1F5F9]" aria-labelledby="contato-title">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="flex flex-col lg:flex-row gap-10 lg:gap-16">
               <div className="w-full lg:flex-1 space-y-6 sm:space-y-8 lp-fade-up">
-                <h2 id="contato-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold">
+                <h2 id="contato-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
                   Pronto para transformar sua{" "}
                   <span className="text-[#7552FF]">Governança</span>?
                 </h2>
-                <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
+                <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
                   Entre em contato com nossa equipe e descubra como o Akuris pode
                   ajudar sua empresa a atingir excelência em compliance e gestão de riscos.
                 </p>
@@ -538,8 +538,8 @@ const LandingPage = () => {
                     { icon: CheckCircle2, text: "Consultoria inicial gratuita" },
                     { icon: CheckCircle2, text: "Implantação assistida por especialistas" },
                   ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-4 text-gray-300">
-                      <div className="w-10 h-10 rounded-lg bg-[#111B2E] border border-[#1E2D45] flex items-center justify-center shrink-0">
+                    <div key={i} className="flex items-center gap-4 text-gray-700">
+                      <div className="w-10 h-10 rounded-lg bg-white border border-gray-200 shadow-sm flex items-center justify-center shrink-0">
                         <item.icon className="h-5 w-5 text-[#7552FF]" />
                       </div>
                       <span className="text-sm sm:text-base">{item.text}</span>
@@ -548,7 +548,7 @@ const LandingPage = () => {
                 </div>
               </div>
 
-              <div className="relative z-20 w-full lg:flex-1 bg-[#111B2E] rounded-xl p-6 sm:p-8 border border-[#1E2D45] lp-fade-up">
+              <div className="relative z-20 w-full lg:flex-1 bg-white rounded-xl p-6 sm:p-8 border border-gray-200 shadow-sm lp-fade-up">
                 <form onSubmit={handleSubmit} className="space-y-5">
                   {/* Honeypot - hidden from users */}
                   <input
@@ -564,29 +564,29 @@ const LandingPage = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="contact-name" className="block text-sm font-medium text-gray-300 mb-2">Nome *</label>
-                      <Input id="contact-name" name="name" value={formData.name} onChange={handleInputChange} required placeholder="Seu nome" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF]" />
+                      <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-2">Nome *</label>
+                      <Input id="contact-name" name="name" value={formData.name} onChange={handleInputChange} required placeholder="Seu nome" className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                     <div>
-                      <label htmlFor="contact-email" className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
-                      <Input id="contact-email" name="email" type="email" value={formData.email} onChange={handleInputChange} required placeholder="seu@email.com" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF]" />
+                      <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                      <Input id="contact-email" name="email" type="email" value={formData.email} onChange={handleInputChange} required placeholder="seu@email.com" className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="contact-company" className="block text-sm font-medium text-gray-500 mb-2">Empresa <span className="text-gray-600">(opcional)</span></label>
-                      <Input id="contact-company" name="company" value={formData.company} onChange={handleInputChange} placeholder="Nome da empresa" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF]" />
+                      <label htmlFor="contact-company" className="block text-sm font-medium text-gray-500 mb-2">Empresa <span className="text-gray-400">(opcional)</span></label>
+                      <Input id="contact-company" name="company" value={formData.company} onChange={handleInputChange} placeholder="Nome da empresa" className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                     <div>
-                      <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-500 mb-2">Telefone <span className="text-gray-600">(opcional)</span></label>
-                      <Input id="contact-phone" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="(00) 00000-0000" className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF]" />
+                      <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-500 mb-2">Telefone <span className="text-gray-400">(opcional)</span></label>
+                      <Input id="contact-phone" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="(00) 00000-0000" className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="contact-message" className="block text-sm font-medium text-gray-300 mb-2">Mensagem *</label>
-                    <Textarea id="contact-message" name="message" value={formData.message} onChange={handleInputChange} required placeholder="Como podemos ajudar sua empresa?" rows={4} className="bg-[#0A1628] border-[#1E2D45] text-white placeholder:text-gray-500 focus:border-[#7552FF] focus:ring-[#7552FF] resize-none" />
+                    <label htmlFor="contact-message" className="block text-sm font-medium text-gray-700 mb-2">Mensagem *</label>
+                    <Textarea id="contact-message" name="message" value={formData.message} onChange={handleInputChange} required placeholder="Como podemos ajudar sua empresa?" rows={4} className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#7552FF] focus:ring-[#7552FF] resize-none" />
                   </div>
 
                   <Button type="submit" disabled={isSubmitting} className="w-full bg-[#7552FF] hover:bg-[#8B6FFF] text-white">
