@@ -31,10 +31,10 @@ interface RequirementDetail {
   obrigatorio?: boolean | null;
 }
 
-interface NISTRequirementDetailDialogProps {
+interface RequirementDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  requirement: NISTRequirement;
+  requirement: RequirementDetail;
   frameworkId: string;
   onClose: () => void;
 }
