@@ -247,7 +247,7 @@ export default function DenunciaFormulario() {
       setAnexos([]);
       
     } catch (error) {
-      console.error('Erro geral:', error);
+      logger.error('Erro geral ao registrar denúncia', { module: 'DenunciaFormulario', error: String(error) });
       toast.error('Erro inesperado ao registrar denúncia');
     } finally {
       setSubmitting(false);
