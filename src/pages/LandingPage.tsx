@@ -378,7 +378,7 @@ const LandingPage = () => {
                   className="group bg-[#111B2E] rounded-xl p-5 sm:p-6 border border-[#1E2D45] hover:border-[#2A3F5F] transition-all duration-200"
                 >
                   <div className="inline-flex p-3 rounded-lg bg-[#0A1628] border border-[#1E2D45] mb-4">
-                    <mod.icon className="h-5 w-5 text-blue-400" />
+                    <mod.icon className="h-5 w-5 text-[#7552FF]" />
                   </div>
                   <h3 className="text-base sm:text-lg font-semibold mb-2 text-white">{mod.title}</h3>
                   <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">{mod.description}</p>
