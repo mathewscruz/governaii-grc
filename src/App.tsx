@@ -253,6 +253,7 @@ function App() {
         <SonnerToaster />
       </AuthProvider>
     </QueryClientProvider>
+    </LanguageProvider>
   );
 }
 
