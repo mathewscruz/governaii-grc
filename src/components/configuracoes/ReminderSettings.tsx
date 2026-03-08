@@ -44,8 +44,14 @@ export function ReminderSettings() {
 
   useEffect(() => {
     loadSettings()
-    loadStats()
   }, [])
+
+  // Load stats after settings are loaded (need empresa_id)
+  useEffect(() => {
+    if (settings.empresa_id) {
+      loadStats()
+    }
+  }, [settings.empresa_id])
 
   const loadSettings = async () => {
     try {
