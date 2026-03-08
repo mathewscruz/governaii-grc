@@ -537,26 +537,6 @@ const LandingPage = () => {
               </div>
             </div>
 
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/registro">
-                <Button
-                  size="lg"
-                  className="bg-[#7552FF] hover:bg-[#8B6FFF] text-white text-base px-10 h-13 w-full sm:w-auto font-semibold shadow-lg shadow-[#7552FF]/25"
-                >
-                  Quero auditar minha empresa
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => scrollToSection("contato")}
-                className="border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white text-base px-10 h-13 w-full sm:w-auto"
-              >
-                Fale com um especialista
-              </Button>
-            </div>
           </div>
         </section>
 
