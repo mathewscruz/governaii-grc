@@ -171,10 +171,12 @@ export default function ControlesContent() {
           .map(c => c.responsavel_id)
           .filter(r => r && r.trim() !== '');
         
-        // Buscar contagem de testes para cada controle
+        // Buscar contagem de testes para cada controle (filtrado por IDs da empresa)
+        const ids = data.map(c => c.id);
         const { data: testes } = await supabase
           .from('controles_testes')
-          .select('controle_id');
+          .select('controle_id')
+          .in('controle_id', ids);
         
         const testesCountMap = new Map<string, number>();
         testes?.forEach(t => {
