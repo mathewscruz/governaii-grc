@@ -259,7 +259,6 @@ const LandingPage = () => {
               <button onClick={() => scrollToSection("modulos")} className="block w-full text-left text-gray-300 hover:text-white py-2">Módulos</button>
               <button onClick={() => scrollToSection("como-funciona")} className="block w-full text-left text-gray-300 hover:text-white py-2">Como Funciona</button>
               <button onClick={() => scrollToSection("contato")} className="block w-full text-left text-gray-300 hover:text-white py-2">Contato</button>
-              <Link to="/planos" className="block text-gray-300 hover:text-white py-2">Planos</Link>
               <Link to="/auth" className="block">
                 <button className="w-full h-10 px-4 rounded-lg text-sm font-medium border border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white transition-all">
                   Acessar Plataforma
