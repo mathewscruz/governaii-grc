@@ -487,22 +487,72 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* ===== 6. PRICING CTA ===== */}
-        <section className="relative py-16 sm:py-20 lg:py-24 bg-[#0D1F37]" aria-labelledby="pricing-cta-title">
-          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center lp-fade-up">
-            <h2 id="pricing-cta-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Planos que cabem no seu <span className="text-[#7552FF]">orçamento</span>
+        {/* ===== 6. GAP ANALYSIS DESTAQUE ===== */}
+        <section className="relative py-20 sm:py-28 lg:py-32 bg-[#0D1F37] overflow-hidden" aria-labelledby="gap-analysis-title">
+          {/* Glow decorativo */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#7552FF]/5 rounded-full blur-[120px] pointer-events-none" />
+
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 lp-fade-up">
+            {/* Badge */}
+            <div className="flex justify-center mb-6">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#7552FF]/10 border border-[#7552FF]/20 text-[#A78BFA] text-xs font-semibold uppercase tracking-widest">
+                <Sparkles className="h-3.5 w-3.5" />
+                Nosso carro-chefe
+              </span>
+            </div>
+
+            {/* Headline */}
+            <h2 id="gap-analysis-title" className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-center mb-6 leading-tight">
+              Sua empresa em conformidade.{" "}
+              <span className="text-[#7552FF]">Sem depender de ninguém.</span>
             </h2>
-            <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Do plano gratuito ao enterprise. Escolha o melhor para o estágio da sua empresa.
+
+            {/* Subheadline */}
+            <p className="text-center text-gray-300 text-base sm:text-lg lg:text-xl max-w-3xl mx-auto mb-14 leading-relaxed">
+              Chega de gastar <span className="text-white font-semibold">R$ 50 mil com consultoria externa</span> pra te dizer o que você já desconfiava. Com o Gap Analysis da Akuris, <span className="text-white font-medium">você mesmo conduz a adequação da sua empresa</span> — da ISO 27001 à LGPD — com um passo a passo claro, prático e que qualquer pessoa do time consegue seguir.
             </p>
+
+            {/* 3 Bullets */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-14">
+              <div className="relative group p-6 sm:p-8 rounded-2xl bg-[#111B2E] border border-[#1E2D45] hover:border-[#7552FF]/40 transition-all duration-300">
+                <div className="w-12 h-12 rounded-xl bg-[#7552FF]/10 flex items-center justify-center mb-5">
+                  <Shield className="h-6 w-6 text-[#7552FF]" />
+                </div>
+                <h3 className="text-white font-bold text-lg mb-2">21 frameworks prontos</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  ISO 27001, LGPD, NIST, SOC 2, GDPR, PCI-DSS e mais. Tudo estruturado e pronto pra usar. Sem precisar montar planilha, sem copiar modelo de internet.
+                </p>
+              </div>
+
+              <div className="relative group p-6 sm:p-8 rounded-2xl bg-[#111B2E] border border-[#1E2D45] hover:border-[#7552FF]/40 transition-all duration-300">
+                <div className="w-12 h-12 rounded-xl bg-[#7552FF]/10 flex items-center justify-center mb-5">
+                  <BookOpen className="h-6 w-6 text-[#7552FF]" />
+                </div>
+                <h3 className="text-white font-bold text-lg mb-2">Orientação em cada requisito</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  O sistema te diz exatamente o que fazer, como fazer e o que entregar. É como ter um consultor sênior do lado — disponível 24h, sem cobrar hora extra.
+                </p>
+              </div>
+
+              <div className="relative group p-6 sm:p-8 rounded-2xl bg-[#111B2E] border border-[#1E2D45] hover:border-[#7552FF]/40 transition-all duration-300">
+                <div className="w-12 h-12 rounded-xl bg-[#7552FF]/10 flex items-center justify-center mb-5">
+                  <FileCheck className="h-6 w-6 text-[#7552FF]" />
+                </div>
+                <h3 className="text-white font-bold text-lg mb-2">Artefatos gerados na hora</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  SoA, planos de remediação, relatórios de auditoria — tudo gerado automaticamente. Pronto pra apresentar pro auditor, pro board ou pra quem cobrar.
+                </p>
+              </div>
+            </div>
+
+            {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/planos">
+              <Link to="/registro">
                 <Button
                   size="lg"
-                  className="bg-[#7552FF] hover:bg-[#8B6FFF] text-white text-base px-10 h-12 w-full sm:w-auto"
+                  className="bg-[#7552FF] hover:bg-[#8B6FFF] text-white text-base px-10 h-13 w-full sm:w-auto font-semibold shadow-lg shadow-[#7552FF]/25"
                 >
-                  Ver Planos e Preços
+                  Quero auditar minha empresa
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
@@ -510,9 +560,9 @@ const LandingPage = () => {
                 size="lg"
                 variant="outline"
                 onClick={() => scrollToSection("contato")}
-                className="border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white text-base px-10 h-12 w-full sm:w-auto"
+                className="border-[#2A3F5F] bg-transparent text-gray-200 hover:bg-[#111B2E] hover:text-white text-base px-10 h-13 w-full sm:w-auto"
               >
-                Fale Conosco
+                Fale com um especialista
               </Button>
             </div>
           </div>
