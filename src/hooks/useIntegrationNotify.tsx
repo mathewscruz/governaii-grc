@@ -1,24 +1,10 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
+import type { IntegrationEventType } from '@/lib/integration-events';
 
-export type IntegrationEventType = 
-  | 'incidente_criado'
-  | 'incidente_atualizado'
-  | 'incidente_resolvido'
-  | 'incidente_critico'
-  | 'risco_identificado'
-  | 'risco_atualizado'
-  | 'risco_nivel_alterado'
-  | 'documento_criado'
-  | 'documento_aprovado'
-  | 'documento_rejeitado'
-  | 'controle_criado'
-  | 'controle_atualizado'
-  | 'controle_vencendo'
-  | 'auditoria_criada'
-  | 'auditoria_item_atribuido'
-  | 'denuncia_recebida';
+// Re-export for backward compatibility
+export type { IntegrationEventType };
 
 interface NotifyOptions {
   titulo: string;
@@ -29,25 +15,15 @@ interface NotifyOptions {
 }
 
 export function useIntegrationNotify() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const notify = useCallback(async (
     evento: IntegrationEventType,
     options: NotifyOptions
   ) => {
-    if (!user?.id) return;
+    if (!user?.id || !profile?.empresa_id) return;
 
     try {
-      // Buscar empresa_id do usuário
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('empresa_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!profile?.empresa_id) return;
-
-      // Chamar Edge Function dispatcher
       const { error } = await supabase.functions.invoke('integration-webhook-dispatcher', {
         body: {
           empresa_id: profile.empresa_id,
@@ -68,10 +44,7 @@ export function useIntegrationNotify() {
     } catch (error) {
       console.error('Erro ao notificar integrações:', error);
     }
-  }, [user]);
+  }, [user, profile]);
 
   return { notify };
 }
-
-// Nota: A função dispatchIntegrationEvent para uso server-side
-// deve ser usada diretamente nas Edge Functions, não neste arquivo client-side.
