@@ -43,10 +43,11 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
   const [sortField, setSortField] = useState('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const { toast } = useToast();
+  const { empresaId } = useEmpresaId();
 
   useEffect(() => {
-    carregarDenuncias();
-  }, []);
+    if (empresaId) carregarDenuncias();
+  }, [empresaId]);
 
   // Detectar se veio com itemIdToOpen
   useEffect(() => {
