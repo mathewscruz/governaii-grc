@@ -190,6 +190,7 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
   }, [watchMatrizId, matrizes]);
 
   const fetchData = async () => {
+    if (!profile?.empresa_id) return;
     try {
       const [matrizesRes, categoriasRes, ativosRes] = await Promise.all([
         supabase.from('riscos_matrizes').select(`
@@ -201,9 +202,9 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
             niveis_risco,
             metodo_calculo
           )
-        `),
-        supabase.from('riscos_categorias').select('id, nome, cor'),
-        supabase.from('ativos').select('id, nome, tipo')
+        `).eq('empresa_id', profile.empresa_id),
+        supabase.from('riscos_categorias').select('id, nome, cor').eq('empresa_id', profile.empresa_id),
+        supabase.from('ativos').select('id, nome, tipo').eq('empresa_id', profile.empresa_id)
       ]);
 
       if (matrizesRes.data) setMatrizes(matrizesRes.data);
