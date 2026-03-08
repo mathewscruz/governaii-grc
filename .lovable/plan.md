@@ -1,80 +1,61 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Avaliação Comparativa — Akuris vs Eramba vs Vanta
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
+## Cobertura Atual do Akuris
 
----
+O Akuris já possui uma cobertura robusta com **16 módulos ativos**, cobrindo a maioria dos pilares GRC. Comparando com os concorrentes:
 
-## 1. ErrorBoundary ausente na maioria das paginas
+| Capacidade | Akuris | Eramba | Vanta |
+|---|:---:|:---:|:---:|
+| Gestão de Riscos | ✅ | ✅ | ✅ |
+| Controles Internos | ✅ | ✅ | ✅ |
+| Compliance / Gap Analysis | ✅ | ✅ | ✅ |
+| Políticas | ✅ | ✅ | ✅ |
+| Gestão de Ativos | ✅ | ✅ | — |
+| Auditorias Internas | ✅ | ✅ | — |
+| Incidentes | ✅ | ✅ | — |
+| Proteção de Dados / LGPD | ✅ | ✅ | ✅ |
+| Due Diligence / TPRM | ✅ | ✅ | ✅ |
+| Revisão de Acessos | ✅ | — | ✅ |
+| Contas Privilegiadas | ✅ | — | — |
+| Contratos | ✅ | — | — |
+| Canal de Denúncia | ✅ | — | — |
+| Documentos | ✅ | — | — |
+| Planos de Ação | ✅ | ✅ (Projects) | — |
+| IA Assistente | ✅ | — | ✅ |
+| **Gestão de Exceções** | ❌ | ✅ | — |
+| **Trust Center** | ❌ | — | ✅ |
+| **Continuidade de Negócios** | ❌ | ✅ | — |
+| **Questionário Automatizado** | ❌ | — | ✅ |
+| **Monitoramento Contínuo** | ❌ | — | ✅ |
 
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
+## Conclusão
 
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
-
----
-
-## 2. Feedback de "carregando" inconsistente entre modulos
-
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
-
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
-
----
-
-## 3. Paginas sem EmptyState padronizado
-
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
-
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+O Akuris já **supera o Eramba** em amplitude (tem Denúncia, Contratos, Revisão de Acessos, Contas Privilegiadas que Eramba não tem) e **compete com Vanta** em módulos core. Os gaps reais são **3 funcionalidades de alto valor** que diferenciariam o Akuris:
 
 ---
 
-## 4. Ausencia de atalhos de teclado documentados para o usuario
+## Funcionalidades Sugeridas (por prioridade)
 
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+### 1. Gestão de Exceções (Eramba tem, alta demanda)
+Quando alguém precisa temporariamente descumprir uma política, controle ou requisito de compliance, registra uma **exceção formal** com aprovação, justificativa, prazo de validade e revisão periódica. Tipos: Exceção de Política, Exceção de Compliance, Exceção de Risco.
 
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+**Valor:** Toda empresa madura precisa disso. Auditores externos cobram esse registro.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+### 2. Trust Center / Portal de Transparência (Vanta tem, diferencial comercial)
+Página pública (ou protegida por senha) onde a empresa exibe suas certificações, frameworks em conformidade, políticas públicas e status de segurança. Clientes e parceiros acessam sem pedir documentos manualmente.
 
----
+**Valor:** Reduz carga de questionários de segurança recebidos. Diferencial de vendas.
 
-## 5. Botao de "Voltar" no header nao tem tooltip
+### 3. Plano de Continuidade de Negócios — BCP/DRP (Eramba tem)
+Módulo para documentar planos de continuidade e recuperação de desastres, com tarefas vinculadas, responsáveis, testes periódicos e vinculação com riscos e ativos.
 
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
-
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+**Valor:** Exigido por ISO 22301, cobrado por reguladores financeiros e de saúde.
 
 ---
 
-## Resumo de Prioridade
+## Recomendação
 
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
-
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+O sistema está **maduro e competitivo**. Nenhuma das 3 sugestões é urgente — são diferenciais para posicionamento. Se for implementar uma, a **Gestão de Exceções** é a mais simples (1 tabela, fluxo de aprovação similar ao Aceite de Risco) e a mais cobrada em auditorias.
 
