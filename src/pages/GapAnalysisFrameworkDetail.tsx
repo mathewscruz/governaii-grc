@@ -255,6 +255,10 @@ export default function GapAnalysisFrameworkDetail() {
                   scoreType={config.scoreType}
                 />
               )}
+              <Button onClick={() => setShowDocGen(true)} variant="outline">
+                <Brain className="h-4 w-4 mr-2" />
+                Gerar Política
+              </Button>
               <Button onClick={handleExportBoard} variant="outline" disabled={exporting}>
                 <FileBarChart className="h-4 w-4 mr-2" />
                 Board
