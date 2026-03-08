@@ -9,7 +9,7 @@ import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
 import AlertsDetailDialog from '@/components/dashboard/AlertsDetailDialog';
 import { UpcomingExpirations } from '@/components/dashboard/UpcomingExpirations';
 import { AkurIAChatbot } from '@/components/dashboard/AkurIAChatbot';
-import { ExecutiveSummaryAI } from '@/components/dashboard/ExecutiveSummaryAI';
+
 import { useTrendData } from '@/components/dashboard/TrendIndicators';
 import { HeroScoreBanner } from '@/components/dashboard/HeroScoreBanner';
 import { KPIPills } from '@/components/dashboard/KPIPills';
