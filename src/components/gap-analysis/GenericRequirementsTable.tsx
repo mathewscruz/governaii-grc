@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
 import { FrameworkConfig, NIST_PILLAR_NAMES } from "@/lib/framework-configs";
-import { NISTRequirementDetailDialog } from "./nist/NISTRequirementDetailDialog";
+import { RequirementDetailDialog } from "./nist/NISTRequirementDetailDialog";
 import { saveScoreHistory } from "@/hooks/useScoreHistory";
 
 interface Requirement {

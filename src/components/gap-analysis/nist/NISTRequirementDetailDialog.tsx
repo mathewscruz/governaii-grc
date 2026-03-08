@@ -267,7 +267,7 @@ const GuidanceSkeleton = () => (
   </div>
 );
 
-export const NISTRequirementDetailDialog: React.FC<NISTRequirementDetailDialogProps> = ({
+export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = ({
   open, onOpenChange, requirement, frameworkId, onClose
 }) => {
   const { empresaId } = useEmpresaId();
