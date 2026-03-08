@@ -310,7 +310,7 @@ export default function PlanosAcao() {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      const { error } = await supabase.from('planos_acao').delete().eq('id', deleteId);
+      const { error } = await supabase.from('planos_acao').delete().eq('id', deleteId).eq('empresa_id', empresaId);
       if (error) throw error;
       toast.success('Plano de ação excluído');
       queryClient.invalidateQueries({ queryKey: ['planos-acao'] });

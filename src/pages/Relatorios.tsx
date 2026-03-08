@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
 import { RelatorioDialog } from '@/components/relatorios/RelatorioDialog';
 import { RelatorioPreviewDialog } from '@/components/relatorios/RelatorioPreviewDialog';
 import { generateTemplatePDF } from '@/components/relatorios/generateTemplatePDF';
@@ -18,7 +19,7 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
 import { 
-  Plus, FileText, Download, Pencil, Trash2, Eye, 
+  Plus, FileText, Download, Pencil, Trash2, Eye, MoreHorizontal,
   FileBarChart, BarChart3, Shield, AlertTriangle, BookOpen, Clock, Loader2
 } from 'lucide-react';
 
@@ -89,7 +90,7 @@ export default function Relatorios() {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      const { error } = await supabase.from('relatorios_customizados').delete().eq('id', deleteId);
+      const { error } = await supabase.from('relatorios_customizados').delete().eq('id', deleteId).eq('empresa_id', empresaId);
       if (error) throw error;
       toast.success('Relatório excluído');
       queryClient.invalidateQueries({ queryKey: ['relatorios-customizados'] });
@@ -247,44 +248,30 @@ export default function Relatorios() {
                     <p className="text-xs text-muted-foreground mb-3">
                       Criado em {formatDateOnly(rel.created_at)}
                     </p>
-                    <TooltipProvider>
-                      <div className="flex gap-1">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
                         {rel.template_base && templateConfigs[rel.template_base] && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setPreviewRelatorio(rel)}>
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Visualizar</TooltipContent>
-                          </Tooltip>
+                          <DropdownMenuItem onClick={() => setPreviewRelatorio(rel)}>
+                            <Eye className="h-4 w-4 mr-2" />Visualizar
+                          </DropdownMenuItem>
                         )}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleExportPDF(rel)} disabled={exporting === rel.id}>
-                              {exporting === rel.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Exportar PDF</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditRelatorio(rel)}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Editar</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(rel.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Excluir</TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </TooltipProvider>
+                        <DropdownMenuItem onClick={() => handleExportPDF(rel)} disabled={exporting === rel.id}>
+                          {exporting === rel.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                          Exportar PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditRelatorio(rel)}>
+                          <Pencil className="h-4 w-4 mr-2" />Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(rel.id)}>
+                          <Trash2 className="h-4 w-4 mr-2" />Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </CardContent>
                 </Card>
               ))}

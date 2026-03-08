@@ -91,9 +91,12 @@ interface Section { title: string; metrics?: { label: string; value: string | nu
 
 async function fetchRiscosData(empresaId: string) {
   const { data: riscos } = await supabase.from('riscos').select('*').eq('empresa_id', empresaId);
-  const { data: tratamentos } = await supabase.from('riscos_tratamentos').select('*');
   const r = riscos || [];
-  const t = (tratamentos || []).filter((tr: any) => r.some(ri => ri.id === tr.risco_id));
+  const riscoIds = r.map(ri => ri.id);
+  const { data: tratamentos } = riscoIds.length > 0
+    ? await supabase.from('riscos_tratamentos').select('*').in('risco_id', riscoIds)
+    : { data: [] };
+  const t = tratamentos || [];
   const criticos = r.filter(x => x.nivel_risco_inicial === 'critico').length;
   const altos = r.filter(x => x.nivel_risco_inicial === 'alto').length;
   const medios = r.filter(x => x.nivel_risco_inicial === 'medio').length;

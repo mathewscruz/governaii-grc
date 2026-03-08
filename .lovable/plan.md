@@ -1,71 +1,80 @@
 
 
-# Validacao Completa — Modulos Relatorios + Planos de Acao
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-Analisei todos os componentes: Relatorios.tsx, RelatorioDialog.tsx, RelatorioPreviewDialog.tsx, generateTemplatePDF.ts, PlanosAcao.tsx, PlanoAcaoDialog.tsx, UserSelect.tsx.
-
----
-
-## OK — Sem problemas
-
-- **PlanosAcao.tsx** — query principal filtra por `empresa_id`, queryKey inclui `empresaId`. Queries externas (controles, auditorias, incidentes) todas filtradas por `empresa_id` e `user.id`. StatCards com variantes semanticas. DataTable com filtros, sort, busca, paginacao. Kanban view. DropdownMenu nas acoes. ConfirmDialog. Empty states. Tab "Todos" restrita a admin. OK.
-- **PlanoAcaoDialog** — useEffect reseta estado ao abrir/fechar. UserSelect filtra por `empresa_id`. Campos condicionais (referencia aparece quando modulo != manual). OK.
-- **UserSelect** — filtra profiles por `empresa_id` e `ativo: true`. OK.
-- **Relatorios.tsx** — query principal filtra por `empresa_id`, queryKey inclui `empresaId`. Grava `empresa_id` e `created_by`. StatCards. Tabs (Meus/Templates). Empty state. ConfirmDialog. OK.
-- **RelatorioPreviewDialog** — carrega dados via fetchTemplateData com empresaId. Skeleton loading. Empty state. OK.
-- **generateTemplatePDF.ts** — todas as queries principais filtram por `empresa_id`. OK.
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
 ---
 
-## Problemas Identificados
+## 1. ErrorBoundary ausente na maioria das paginas
 
-### 1. SEGURANCA — `generateTemplatePDF.fetchRiscosData` busca tratamentos SEM filtro `empresa_id`
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-Linha 94: `supabase.from('riscos_tratamentos').select('*')` — busca TODOS os tratamentos de todas as empresas, depois filtra em memoria por `risco_id`. Embora o resultado final esteja correto (filtra pelos riscos da empresa), a query transfere dados de todas as empresas para o cliente.
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
-**Correcao**: Buscar tratamentos apenas dos riscos da empresa. Usar `.in('risco_id', riscoIds)` apos obter os IDs dos riscos.
-
-### 2. SEGURANCA — `Relatorios.handleDelete` sem filtro redundante `empresa_id`
-
-Linha 92: `supabase.from('relatorios_customizados').delete().eq('id', deleteId)` — sem `.eq('empresa_id', empresaId)`. Depende exclusivamente de RLS.
-
-**Correcao**: Adicionar `.eq('empresa_id', empresaId)`.
-
-### 3. SEGURANCA — `PlanosAcao.handleDelete` sem filtro redundante `empresa_id`
-
-Linha 313: `supabase.from('planos_acao').delete().eq('id', deleteId)` — sem `.eq('empresa_id', empresaId)`.
-
-**Correcao**: Adicionar `.eq('empresa_id', empresaId)`.
-
-### 4. BUG — `RelatorioDialog` nao reseta estado ao reabrir
-
-O dialog usa `useState` com valor inicial do prop `relatorio`, mas nao tem `useEffect` para resetar quando o dialog reabre ou o relatorio muda. Ao editar um relatorio e depois clicar "Novo", os campos ficam com valores do relatorio anterior.
-
-**Correcao**: Adicionar `useEffect` para sincronizar estado com props, similar ao PlanoAcaoDialog.
-
-### 5. UX — Relatorios usa botoes inline com Tooltip em vez de DropdownMenu
-
-Linhas 250-287: os cards de relatorios usam 4 botoes ghost inline (Eye, Download, Pencil, Trash2) em vez do padrao DropdownMenu adotado nos demais modulos.
-
-**Correcao**: Migrar para DropdownMenu com MoreHorizontal.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
 ---
 
-## Resumo de Acoes
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-| # | Problema | Tipo | Impacto |
-|---|----------|------|---------|
-| 1 | fetchRiscosData tratamentos sem empresa_id | Seguranca | **Alto** |
-| 2 | Relatorios handleDelete sem empresa_id | Seguranca | **Medio** |
-| 3 | PlanosAcao handleDelete sem empresa_id | Seguranca | **Medio** |
-| 4 | RelatorioDialog nao reseta estado | Bug | **Medio** |
-| 5 | Relatorios cards acoes inline → DropdownMenu | UX | **Medio** |
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
 
-Todos os 5 itens serao implementados.
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
 
-### Arquivos a editar:
-- `src/components/relatorios/generateTemplatePDF.ts` — filtrar tratamentos por risco_id
-- `src/pages/Relatorios.tsx` — empresa_id no delete + DropdownMenu nos cards
-- `src/pages/PlanosAcao.tsx` — empresa_id no delete
-- `src/components/relatorios/RelatorioDialog.tsx` — adicionar useEffect para reset de estado
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+
+---
+
+## 3. Paginas sem EmptyState padronizado
+
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+
+---
+
+## 4. Ausencia de atalhos de teclado documentados para o usuario
+
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+
+---
+
+## 5. Botao de "Voltar" no header nao tem tooltip
+
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+
+---
+
+## Resumo de Prioridade
+
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 
