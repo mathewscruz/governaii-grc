@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { Plus, FileText, AlertTriangle, CheckCircle, Clock, Filter, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
