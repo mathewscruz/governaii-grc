@@ -17,7 +17,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
-import { Plus, BookOpen, Users, CheckCircle2, Clock, Pencil, Trash2, Send, Eye, Award, BarChart3 } from 'lucide-react';
+import { Plus, BookOpen, Users, CheckCircle2, Clock, Pencil, Trash2, Send, Eye, Award, BarChart3, MoreHorizontal } from 'lucide-react';
 
 const categoriaLabels: Record<string, string> = {
   seguranca: 'Segurança', privacidade: 'Privacidade', compliance: 'Compliance',
