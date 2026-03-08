@@ -9,7 +9,7 @@ import { DataTable, Column } from '@/components/ui/data-table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { useAuth } from '@/components/AuthProvider';
 import { useContinuidadeStats } from '@/hooks/useContinuidadeStats';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateOnly } from '@/lib/date-utils';
@@ -31,7 +31,8 @@ const tipoMap: Record<string, string> = {
 };
 
 export default function Continuidade() {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: stats, isLoading: statsLoading } = useContinuidadeStats();

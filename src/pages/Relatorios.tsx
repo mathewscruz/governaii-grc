@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { useAuth } from '@/components/AuthProvider';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -33,8 +32,8 @@ const templateConfigs: Record<string, { nome: string; descricao: string; icon: a
 };
 
 export default function Relatorios() {
-  const { empresaId } = useEmpresaId();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);

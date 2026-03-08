@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useEmpresaId } from './useEmpresaId';
+import { useAuth } from '@/components/AuthProvider';
 import { FrameworkConfig, NIST_PILLAR_NAMES } from '@/lib/framework-configs';
 
 interface Requirement {
@@ -89,7 +89,8 @@ const PILLAR_COLORS: Record<string, string> = {
 };
 
 export function useFrameworkScore(frameworkId: string, config: FrameworkConfig, refreshKey?: number): FrameworkScore {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [overallScore, setOverallScore] = useState(0);

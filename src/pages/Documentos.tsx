@@ -29,7 +29,7 @@ import { HistoricoVersoesDialog } from '@/components/documentos/HistoricoVersoes
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { useAuth } from '@/components/AuthProvider';
 import { logger } from '@/lib/logger';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
 import { PageSkeleton } from '@/components/ui/page-skeleton';
@@ -71,7 +71,8 @@ interface Categoria {
 export default function Documentos() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
   const [documentosFiltrados, setDocumentosFiltrados] = useState<Documento[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);

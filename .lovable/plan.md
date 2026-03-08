@@ -1,117 +1,80 @@
 
 
-# Auditoria QA Completa do Sistema
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-## Problemas Encontrados
-
-### 1. CRITICO: `useGapAnalysisStats` nao filtra frameworks por `empresa_id`
-
-**Arquivo:** `src/hooks/useGapAnalysisStats.tsx` linhas 16-25
-
-As queries de `gap_analysis_frameworks` nao incluem filtro `.eq('empresa_id', empresaId)`. Isso significa que o count de frameworks e a lista de IDs retorna dados de **todas as empresas**, quebrando o isolamento de dados.
-
-```
-// ATUAL (errado):
-.from('gap_analysis_frameworks').select('*', { count: 'exact', head: true })
-// deveria ser:
-.from('gap_analysis_frameworks').select('*', { count: 'exact', head: true }).eq('empresa_id', empresaId)
-```
-
-### 2. CRITICO: Paginas ainda usam `useEmpresaId()` (race condition residual)
-
-Os hooks do dashboard foram corrigidos, mas **9 paginas** ainda usam `useEmpresaId()` que faz query separada ao banco, causando a mesma race condition para dados desses modulos:
-
-- `src/pages/PlanosAcao.tsx`
-- `src/pages/Politicas.tsx`
-- `src/pages/Incidentes.tsx`
-- `src/pages/Documentos.tsx`
-- `src/pages/Continuidade.tsx`
-- `src/pages/Relatorios.tsx`
-- `src/pages/RevisaoAcessos.tsx`
-- `src/pages/GapAnalysisFrameworks.tsx`
-- `src/pages/GapAnalysisFrameworkDetail.tsx`
-
-E **8 hooks** auxiliares:
-- `useChavesStats`, `useLicencasStats`, `useFrameworkScore`, `useScoreHistory`, `useReviewStats`, `useReviewData`, `useAdherenceStats`, `useAuditoriaData`
-
-### 3. MEDIO: `useRiscosStats` tem `staleTime: 0` e `refetchOnWindowFocus: true`
-
-Enquanto todos os outros hooks usam `staleTime: 5 * 60 * 1000`, riscos usa `staleTime: 0`. Isso gera requisicoes excessivas ao Supabase a cada foco de janela.
-
-### 4. MEDIO: `useDenunciasStats` falta `staleTime`
-
-Nao define `staleTime`, usando o default de 0 do React Query, causando refetch desnecessario.
-
-### 5. BAIXO: Console warning React.Fragment `data-lov-id`
-
-O `PageHeader` renderiza `<React.Fragment>` dentro de `.map()` e o Lovable injeta `data-lov-id` como prop no Fragment, gerando warning no console. Nao afeta funcionalidade, mas polui logs.
-
-### 6. MEDIO: `useReviewStats` e `useAdherenceStats` usam `useOptimizedQuery` em vez de React Query
-
-Estes hooks operam fora do sistema React Query, nao participam de `invalidateQueries`, e podem ficar dessincronizados. O `useReviewData.invalidateCache()` usa queryKeys erradas (`review-stats-${empresaId}` como key no React Query, mas o cache real esta no `useOptimizedQuery`).
-
-### 7. BAIXO: `useRadarChartData` retorna score 0 quando modulo tem 0 registros
-
-Se um modulo nao tem registros (ex: `riscosData.total === 0`), o score e 0. Isso puxa a media do health score pra baixo artificialmente. Uma abordagem melhor seria excluir modulos sem dados do calculo ou dar score neutro.
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
 ---
 
-## Plano de Correcao
+## 1. ErrorBoundary ausente na maioria das paginas
 
-### A. Corrigir filtro `empresa_id` em `useGapAnalysisStats` (critico, seguranca)
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-Adicionar `.eq('empresa_id', empresaId!)` nas duas queries de frameworks.
-
-**Arquivo:** `src/hooks/useGapAnalysisStats.tsx`
-
-### B. Migrar paginas de `useEmpresaId()` para `useAuth().profile?.empresa_id`
-
-Substituir em todas as 9 paginas e 8 hooks listados. Padrao simples:
-```
-// DE:
-const { empresaId } = useEmpresaId();
-// PARA:
-const { profile } = useAuth();
-const empresaId = profile?.empresa_id;
-```
-
-Onde a pagina ja usa `useAuth()`, basta extrair `empresa_id` do profile existente.
-
-**Arquivos:** 17 arquivos listados acima.
-
-### C. Padronizar `staleTime` em hooks inconsistentes
-
-- `useRiscosStats`: mudar `staleTime: 0` para `staleTime: 5 * 60 * 1000` e remover `refetchOnWindowFocus: true`
-- `useDenunciasStats`: adicionar `staleTime: 5 * 60 * 1000`
-
-### D. Migrar `useReviewStats` de `useOptimizedQuery` para `useQuery`
-
-Unificar com o padrao React Query para que `invalidateQueries` funcione.
-
-**Arquivo:** `src/hooks/useReviewStats.tsx`
-
-### Arquivos a modificar
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
 | Arquivo | Mudanca |
-|---|---|
-| `src/hooks/useGapAnalysisStats.tsx` | Adicionar filtro `.eq('empresa_id', empresaId)` |
-| `src/hooks/useRiscosStats.tsx` | `staleTime: 5 * 60 * 1000`, remover `refetchOnWindowFocus` |
-| `src/hooks/useDenunciasStats.tsx` | Adicionar `staleTime: 5 * 60 * 1000` |
-| `src/hooks/useReviewStats.tsx` | Migrar para `useQuery` |
-| `src/pages/PlanosAcao.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/pages/Politicas.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/pages/Incidentes.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/pages/Documentos.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/pages/Continuidade.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/pages/Relatorios.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/pages/RevisaoAcessos.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/pages/GapAnalysisFrameworks.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/pages/GapAnalysisFrameworkDetail.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/hooks/useChavesStats.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/hooks/useLicencasStats.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/hooks/useFrameworkScore.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/hooks/useScoreHistory.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/hooks/useReviewData.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/hooks/useAdherenceStats.tsx` | `useEmpresaId()` → `useAuth()` |
-| `src/hooks/useAuditoriaData.tsx` | `useEmpresaId()` → `useAuth()` |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+
+---
+
+## 2. Feedback de "carregando" inconsistente entre modulos
+
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+
+---
+
+## 3. Paginas sem EmptyState padronizado
+
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+
+---
+
+## 4. Ausencia de atalhos de teclado documentados para o usuario
+
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+
+---
+
+## 5. Botao de "Voltar" no header nao tem tooltip
+
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+
+---
+
+## Resumo de Prioridade
+
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 

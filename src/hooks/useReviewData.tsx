@@ -1,17 +1,18 @@
 import { supabase } from "@/integrations/supabase/client";
-import { useEmpresaId } from "./useEmpresaId";
+import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
 export const useReviewData = () => {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const invalidateCache = () => {
-    queryClient.invalidateQueries({ queryKey: [`review-stats-${empresaId}`] });
-    queryClient.invalidateQueries({ queryKey: [`reviews-${empresaId}`] });
-    queryClient.invalidateQueries({ queryKey: [`review-items-`] });
+    queryClient.invalidateQueries({ queryKey: ['review-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['reviews'] });
+    queryClient.invalidateQueries({ queryKey: ['review-items'] });
   };
 
   const createReview = async (data: any) => {

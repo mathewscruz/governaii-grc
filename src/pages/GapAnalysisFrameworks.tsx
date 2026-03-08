@@ -10,7 +10,7 @@ import { WelcomeHero } from '@/components/gap-analysis/WelcomeHero';
 import { FrameworkCatalog } from '@/components/gap-analysis/FrameworkCatalog';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
-import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { useAuth } from '@/components/AuthProvider';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Activity, TrendingUp, AlertTriangle, Shield, Target, Search } from 'lucide-react';
 import { logger } from '@/lib/logger';
@@ -43,7 +43,8 @@ const SUGGESTED_NAMES = ['ISO 27001', 'LGPD', 'NIST CSF 2.0'];
 
 export default function GapAnalysisFrameworks() {
   const navigate = useNavigate();
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const [frameworks, setFrameworks] = useState<Framework[]>([]);
   const [requirementCounts, setRequirementCounts] = useState<Record<string, number>>({});
   const [frameworkProgress, setFrameworkProgress] = useState<Record<string, FrameworkProgress>>({});

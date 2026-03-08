@@ -8,8 +8,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { useReviewStats } from "@/hooks/useReviewStats";
 import { useReviewData } from "@/hooks/useReviewData";
-import { useEmpresaId } from "@/hooks/useEmpresaId";
-import { useOptimizedQuery } from "@/hooks/useOptimizedQuery";
+import { useAuth } from "@/components/AuthProvider";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { ReviewDialog } from "@/components/revisao-acessos/ReviewDialog";
@@ -28,7 +28,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function RevisaoAcessos() {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const { data: stats, loading: statsLoading } = useReviewStats();
   const { deleteReview } = useReviewData();
   const { toast } = useToast();
@@ -41,12 +42,15 @@ export default function RevisaoAcessos() {
   const [sortConfig, setSortConfig] = useState<{ field: string; direction: "asc" | "desc" } | null>(null);
 
   const {
-    data: reviews,
-    loading: reviewsLoading,
+    data: reviews = [],
+    isLoading: reviewsLoading,
     refetch,
-  } = useOptimizedQuery(
-    async () => {
-      if (!empresaId) return { data: [], error: null };
+  } = useQuery({
+    queryKey: ['reviews', empresaId, statusFilter],
+    enabled: !!empresaId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      if (!empresaId) return [];
 
       let query = supabase
         .from("access_reviews")
@@ -63,20 +67,21 @@ export default function RevisaoAcessos() {
       }
 
       const { data, error } = await query.order("created_at", { ascending: false });
-
-      return { data: data || [], error };
+      if (error) throw error;
+      return data || [];
     },
-    [empresaId, statusFilter],
-    { cacheKey: `reviews-${empresaId}-${statusFilter}` }
-  );
+  });
 
   // Buscar histórico (revisões concluídas ou canceladas)
   const {
-    data: historico,
-    loading: historicoLoading,
-  } = useOptimizedQuery(
-    async () => {
-      if (!empresaId) return { data: [], error: null };
+    data: historico = [],
+    isLoading: historicoLoading,
+  } = useQuery({
+    queryKey: ['reviews-historico', empresaId],
+    enabled: !!empresaId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      if (!empresaId) return [];
 
       const { data, error } = await supabase
         .from("access_reviews")
@@ -89,11 +94,10 @@ export default function RevisaoAcessos() {
         .in("status", ["concluida", "cancelada"])
         .order("data_conclusao", { ascending: false });
 
-      return { data: data || [], error };
+      if (error) throw error;
+      return data || [];
     },
-    [empresaId],
-    { cacheKey: `reviews-historico-${empresaId}` }
-  );
+  });
 
   const handleEdit = (review: any) => {
     setSelectedReview(review);

@@ -46,7 +46,7 @@ import { TratamentoDialog } from '@/components/incidentes/TratamentoDialog';
 import { ComunicacaoDialog } from '@/components/incidentes/ComunicacaoDialog';
 import { EvidenciaDialog } from '@/components/incidentes/EvidenciaDialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { useAuth } from '@/components/AuthProvider';
 
 interface Incidente {
   id: string;
@@ -86,7 +86,8 @@ export default function Incidentes() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   
   const { data: statsIncidentes } = useIncidentesStats();
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useEmpresaId } from './useEmpresaId';
+import { useAuth } from '@/components/AuthProvider';
 
 export type ScoreHistoryPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
@@ -14,7 +14,8 @@ interface ScoreHistoryPoint {
 export const useScoreHistory = (frameworkId: string, period: ScoreHistoryPeriod = 'daily') => {
   const [history, setHistory] = useState<ScoreHistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
 
   useEffect(() => {
     if (!frameworkId || !empresaId) return;

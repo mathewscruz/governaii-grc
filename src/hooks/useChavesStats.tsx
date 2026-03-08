@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { differenceInDays } from "date-fns";
-import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { useAuth } from "@/components/AuthProvider";
 
 interface ChavesStats {
   total: number;
@@ -14,7 +14,8 @@ interface ChavesStats {
 }
 
 export const useChavesStats = () => {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
 
   return useQuery({
     queryKey: ['chaves-stats', empresaId],

@@ -23,7 +23,7 @@ import { exportBoardPDF } from '@/components/gap-analysis/ExportBoardPDF';
 import { supabase } from '@/integrations/supabase/client';
 import { getFrameworkConfig } from '@/lib/framework-configs';
 import { useFrameworkScore } from '@/hooks/useFrameworkScore';
-import { useEmpresaId } from '@/hooks/useEmpresaId';
+import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
@@ -75,7 +75,8 @@ interface Framework {
 export default function GapAnalysisFrameworkDetail() {
   const { frameworkId } = useParams<{ frameworkId: string }>();
   const navigate = useNavigate();
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const [framework, setFramework] = useState<Framework | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);

@@ -159,8 +159,6 @@ export const useRiscosStats = () => {
       return newStats;
     },
     enabled: !!empresaId,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000,
   });
 };
