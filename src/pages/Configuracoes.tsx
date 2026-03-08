@@ -2,7 +2,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
-import { Users, Building2, Plug, MessageSquare, CreditCard, Sparkles, Landmark } from 'lucide-react';
+import { Users, Building2, Plug, MessageSquare, CreditCard, Sparkles, Landmark, DollarSign } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
 import { IntegrationHub } from '@/components/configuracoes/IntegrationHub';
@@ -12,6 +12,7 @@ import { AssinaturaTab } from '@/components/configuracoes/AssinaturaTab';
 import { CreditosIAManager } from '@/components/configuracoes/CreditosIAManager';
 import { UsersAccessTab } from '@/components/configuracoes/UsersAccessTab';
 import { OrganizacaoTab } from '@/components/configuracoes/OrganizacaoTab';
+import { FinanceiroIATab } from '@/components/configuracoes/FinanceiroIATab';
 
 const Configuracoes = () => {
   const { profile, loading } = useAuth();
@@ -76,6 +77,12 @@ const Configuracoes = () => {
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">Assinatura</span>
           </TabsTrigger>
+          {isSuperAdmin && (
+            <TabsTrigger value="financeiro-ia" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              <span className="hidden sm:inline">Financeiro IA</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {isSuperAdmin && (
@@ -151,6 +158,11 @@ const Configuracoes = () => {
             )}
           </div>
         </TabsContent>
+        {isSuperAdmin && (
+          <TabsContent value="financeiro-ia">
+            <FinanceiroIATab />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

@@ -167,6 +167,38 @@ Cláusulas: ${data.clausulas || ''}
 Retorne JSON: {"alertas":[{"tipo":"sla|penalidade|renovacao|confidencialidade|lgpd","descricao":"string","severidade":"alta|media|baixa"}],"recomendacoes":["string"],"score_risco":"1-10","resumo":"string 2-3 frases"}`;
         break;
 
+      case 'pricing_analysis':
+        systemPrompt = "Você é um consultor financeiro SaaS especialista em precificação de produtos B2B com IA. Responda APENAS com JSON válido, sem markdown. Responda em português do Brasil.";
+        userPrompt = `Analise a rentabilidade do meu produto SaaS de GRC (Governança, Risco e Compliance) que utiliza IA:
+
+DADOS FINANCEIROS DO MÊS:
+- Receita total: R$ ${data.receita_total?.toFixed(2) || '0'}
+- Custo total IA estimado: R$ ${data.custo_total?.toFixed(2) || '0'}
+- Margem bruta: R$ ${data.margem_bruta?.toFixed(2) || '0'} (${data.margem_percent?.toFixed(1) || '0'}%)
+- Total de requisições IA: ${data.total_requisicoes || 0}
+- Custo por requisição: R$ ${data.custo_por_req || '0.15'}
+
+PLANOS DISPONÍVEIS:
+${(data.planos || []).map((p: any) => `- ${p.nome}: R$ ${p.preco}/mês`).join('\n')}
+
+DISTRIBUIÇÃO POR PLANO:
+${(data.empresas_por_plano || []).map((e: any) => `- ${e.plano}: ${e.qtd} empresas`).join('\n')}
+
+EMPRESAS EM DÉFICIT (custo > receita):
+${(data.empresas_deficitarias || []).map((e: any) => `- ${e.nome} (${e.plano}): ${e.reqs} reqs, margem R$ ${e.margem?.toFixed(2)}`).join('\n') || 'Nenhuma'}
+
+TOP FUNCIONALIDADES MAIS USADAS:
+${(data.top_funcionalidades || []).map((f: any) => `- ${f.nome}: ${f.reqs} requisições`).join('\n')}
+
+Retorne JSON: {
+  "resumo": "string com 2-3 frases sobre a situação financeira geral",
+  "diagnostico": "string com análise se os preços estão adequados, abaixo ou acima do mercado SaaS B2B",
+  "recomendacoes": ["string com recomendação específica e acionável"],
+  "alerta_empresas": "string sobre empresas deficitárias e o que fazer",
+  "conclusao": "string com veredicto final: manter preços, aumentar, ou reestruturar franquias"
+}`;
+        break;
+
       default:
         return new Response(JSON.stringify({ error: `Ação desconhecida: ${action}` }), {
           status: 400,
