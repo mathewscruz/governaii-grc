@@ -28,7 +28,7 @@ export default function DenunciaMenu() {
       }
 
       try {
-        console.log('🔍 [DEBUG] Carregando dados para empresa slug:', empresaSlug);
+        logger.debug('Carregando dados para empresa slug', { module: 'DenunciaMenu', action: empresaSlug });
         
         // Normalizar slug (lowercase e trim)
         const normalizedSlug = empresaSlug.toLowerCase().trim();
