@@ -9,6 +9,7 @@ import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
 import AlertsDetailDialog from '@/components/dashboard/AlertsDetailDialog';
 import { UpcomingExpirations } from '@/components/dashboard/UpcomingExpirations';
 import { AkurIAChatbot } from '@/components/dashboard/AkurIAChatbot';
+import { ExecutiveSummaryAI } from '@/components/dashboard/ExecutiveSummaryAI';
 import { useTrendData } from '@/components/dashboard/TrendIndicators';
 import { HeroScoreBanner } from '@/components/dashboard/HeroScoreBanner';
 import { KPIPills } from '@/components/dashboard/KPIPills';
@@ -24,11 +25,13 @@ import { ptBR, enUS } from 'date-fns/locale';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRadarChartData } from '@/hooks/useRadarChartData';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Dashboard() {
   const { profile } = useAuth();
   const { t, locale } = useLanguage();
   const [alertsDialogOpen, setAlertsDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
   
   const ativosStats = useAtivosStats();
   const controlesStats = useControlesStats();
@@ -36,11 +39,23 @@ export default function Dashboard() {
   const contratosStats = useContratosStats();
   const documentosStats = useDocumentosStats();
   const gapStats = useGapAnalysisStats();
-  const { data: dashboardData, isLoading: dashboardLoading, refetch: refetchDashboard, dataUpdatedAt } = useDashboardStats();
+  const { data: dashboardData, isLoading: dashboardLoading, dataUpdatedAt } = useDashboardStats();
   const { data: trends } = useTrendData();
   const { data: radarData } = useRadarChartData();
 
   const isLoading = ativosStats.isLoading || controlesStats.isLoading || incidentesStats.isLoading || dashboardLoading;
+
+  const handleRefreshAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['ativos-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['controles-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['incidentes-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['contratos-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['documentos-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['gap-analysis-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['radar-chart-data'] });
+    queryClient.invalidateQueries({ queryKey: ['trend-data'] });
+  };
 
   if (isLoading) {
     return (
@@ -75,7 +90,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
             <span>{dataUpdatedAt ? format(new Date(dataUpdatedAt), "HH:mm", { locale: locale === 'pt' ? ptBR : enUS }) : '--:--'}</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => refetchDashboard()}>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleRefreshAll}>
               <RefreshCw className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -109,6 +124,9 @@ export default function Dashboard() {
           trends={trends}
           onAlertsClick={() => setAlertsDialogOpen(true)}
         />
+
+        {/* Resumo Executivo com IA */}
+        <ExecutiveSummaryAI />
 
         {/* Vencimentos + Radar + Timeline */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5 w-full">

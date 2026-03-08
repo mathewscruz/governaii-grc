@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 
 interface AtivosStats {
   total: number;
@@ -15,13 +16,18 @@ interface AtivosStats {
 }
 
 export const useAtivosStats = () => {
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
+
   return useQuery({
-    queryKey: ['ativos-stats'],
+    queryKey: ['ativos-stats', empresaId],
+    enabled: !!empresaId,
     staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<AtivosStats> => {
       const { data: ativos, error } = await supabase
         .from('ativos')
-        .select('status, criticidade, valor_negocio');
+        .select('status, criticidade, valor_negocio')
+        .eq('empresa_id', empresaId!);
 
       if (error) throw error;
 

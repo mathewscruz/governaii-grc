@@ -213,7 +213,7 @@ export function RecentActivities({ className }: { className?: string }) {
           id: `denuncia-${denuncia.id}`,
           type: 'creation',
           title: denuncia.titulo,
-          description: 'Nova denúncia recebida',
+          description: t('activities.newComplaint'),
           created_at: denuncia.created_at,
           module: 'denuncias',
           icon: getIcon('denuncias'),
