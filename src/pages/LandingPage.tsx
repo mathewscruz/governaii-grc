@@ -501,7 +501,7 @@ const LandingPage = () => {
 
             {/* Subheadline */}
             <p className="text-center text-gray-300 text-base sm:text-lg lg:text-xl max-w-3xl mx-auto mb-14 leading-relaxed">
-              Chega de gastar <span className="text-white font-semibold">R$ 50 mil com consultoria externa</span> pra te dizer o que você já desconfiava. Com o Gap Analysis da Akuris, <span className="text-white font-medium">você mesmo conduz a adequação da sua empresa</span> — da ISO 27001 à LGPD — com um passo a passo claro, prático e que qualquer pessoa do time consegue seguir.
+              Chega de gastar <span className="text-white font-semibold">com consultoria externa</span> pra te dizer o que você já desconfiava. Com o Gap Analysis da Akuris, <span className="text-white font-medium">você mesmo conduz a adequação da sua empresa</span>, da ISO 27001 à LGPD, com um passo a passo claro, prático e que qualquer pessoa do time consegue seguir.
             </p>
 
             {/* 3 Bullets */}
