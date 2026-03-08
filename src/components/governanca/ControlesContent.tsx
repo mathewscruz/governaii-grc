@@ -201,7 +201,8 @@ export default function ControlesContent() {
       }
       
       return data as Controle[];
-    }
+    },
+    enabled: !!empresaId,
   });
 
   // Detectar se veio com itemId do dashboard
