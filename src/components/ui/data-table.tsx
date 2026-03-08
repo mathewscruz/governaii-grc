@@ -218,8 +218,8 @@ export function DataTable<T extends Record<string, any>>({
         )}
       </div>
 
-      {/* Table - without border since Card wrapper provides it */}
-      <div className="overflow-hidden">
+      {/* Table - with horizontal scroll for mobile */}
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
