@@ -5750,6 +5750,7 @@ export type Database = {
           consequencias: string | null
           controles_existentes: string | null
           created_at: string
+          created_by: string | null
           data_aceite: string | null
           data_aprovacao: string | null
           data_avaliacao: string | null
@@ -5784,6 +5785,7 @@ export type Database = {
           consequencias?: string | null
           controles_existentes?: string | null
           created_at?: string
+          created_by?: string | null
           data_aceite?: string | null
           data_aprovacao?: string | null
           data_avaliacao?: string | null
@@ -5818,6 +5820,7 @@ export type Database = {
           consequencias?: string | null
           controles_existentes?: string | null
           created_at?: string
+          created_by?: string | null
           data_aceite?: string | null
           data_aprovacao?: string | null
           data_avaliacao?: string | null

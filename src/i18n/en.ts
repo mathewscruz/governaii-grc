@@ -39,6 +39,8 @@ export const en = {
     licenses: 'Licenses',
     keys: 'Keys',
     riskManagement: 'Risk Management',
+    risks: 'Risks',
+    riskAcceptance: 'Risk Acceptance',
     gapAnalysis: 'Gap Analysis',
     frameworks: 'Frameworks',
     adherenceAssessment: 'Adherence Assessment',

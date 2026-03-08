@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { Plus, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, Edit, Trash2, X, History, Clock, FileText, Download } from 'lucide-react';
+import { Plus, AlertTriangle, TrendingUp, CheckCircle, Shield, Settings, Tag, X, Clock, FileText, Download, MoreHorizontal, Edit, Trash2, History, ShieldCheck, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -522,42 +522,41 @@ export function Riscos() {
     {
       key: 'actions',
       label: 'Ações',
-      className: 'w-[140px]',
+      className: 'w-[60px]',
       render: (value: any, risco: Risco) => (
-        <div className="flex items-center gap-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={() => setHistoricoRisco(risco)}>
-                <Clock className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent><p>Histórico avaliações</p></TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={() => setAuditRisco(risco)}>
-                <History className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent><p>Trilha de auditoria</p></TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={() => handleEdit(risco)}>
-                <Edit className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent><p>Editar</p></TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(risco)} className="text-destructive hover:text-destructive">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent><p>Excluir</p></TooltipContent>
-          </Tooltip>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleEdit(risco)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openTratamentosDialog(risco)}>
+              <Shield className="mr-2 h-4 w-4" />
+              Tratamentos ({risco.tratamentos_count || 0})
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setAprovacaoRisco(risco)}>
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Aprovação
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setHistoricoRisco(risco)}>
+              <Clock className="mr-2 h-4 w-4" />
+              Histórico Avaliações
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setAuditRisco(risco)}>
+              <History className="mr-2 h-4 w-4" />
+              Trilha de Auditoria
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openDeleteDialog(risco)} className="text-destructive focus:text-destructive">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     }
   ];
@@ -571,6 +570,7 @@ export function Riscos() {
         { value: 'all', label: 'Todos' },
         { value: 'identificado', label: 'Identificado' },
         { value: 'analisado', label: 'Analisado' },
+        { value: 'em_tratamento', label: 'Em Tratamento' },
         { value: 'tratado', label: 'Tratado' },
         { value: 'monitorado', label: 'Monitorado' },
         { value: 'aceito', label: 'Aceito' }

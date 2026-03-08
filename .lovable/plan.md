@@ -1,80 +1,80 @@
 
 
-# Validacao Completa — Modulo Gestao de Riscos + Sub-modulo Aceite de Risco
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-## Problemas Identificados no Modulo Atual
-
-### 1. DADOS — Coluna `created_by` inexistente na tabela `riscos`
-
-O `RiscoFormWizard.tsx` nao grava `created_by` (a coluna nao existe), e o `AprovacaoRiscoDialog.tsx` tenta usar `risco.created_by` para notificar o criador — sempre `undefined`. O fluxo de aprovacao nunca notifica o criador.
-
-**Correcao**: Criar migration adicionando `created_by uuid NULL REFERENCES auth.users(id)` e atualizar o `RiscoFormWizard.tsx` para gravar o valor.
-
-### 2. SEGURANCA — `useRiscosStats` sem filtro `empresa_id`
-
-O hook faz `supabase.from('riscos').select(...)` sem `.eq('empresa_id', ...)` e a queryKey nao inclui `empresaId`. Mesmos problemas de cache e isolamento identificados nos outros modulos.
-
-**Correcao**: Injetar `useAuth()` para obter `empresa_id`, filtrar queries e incluir na queryKey.
-
-### 3. SEGURANCA — `RiscoFormWizard` queries sem filtro `empresa_id`
-
-As queries de `riscos_matrizes`, `riscos_categorias` e `ativos` nao filtram por `empresa_id`, podendo mostrar dados de outras empresas.
-
-**Correcao**: Adicionar `.eq('empresa_id', profile!.empresa_id)` nas 3 queries de `fetchData()`.
-
-### 4. UX — Status `em_tratamento` ausente nos filtros
-
-O `RiscoSelect.tsx` filtra por `em_tratamento` mas a pagina `Riscos.tsx` nao oferece esse status nos filtros. Riscos com status `em_tratamento` ficam invisiveis se filtrado por status.
-
-**Correcao**: Adicionar `{ value: 'em_tratamento', label: 'Em Tratamento' }` aos filtros de status.
-
-### 5. UX — Botao "Aprovacao" inacessivel na pagina
-
-O `AprovacaoRiscoDialog` esta renderizado mas **nao ha botao/menu para abri-lo**. O state `aprovacaoRisco` nunca e setado na UI. O fluxo de aprovacao e inacessivel.
-
-**Correcao**: Adicionar botao de aprovacao na coluna de acoes da tabela.
-
-### 6. UX — Coluna de acoes usa botoes inline em vez de DropdownMenu
-
-A coluna de acoes usa 4 botoes inline (historico, audit, edit, delete) que ocupam muito espaco. Nao segue o padrao DropdownMenu da aplicacao.
-
-**Correcao**: Migrar para `DropdownMenu` com `MoreHorizontal`, incluindo todas as acoes + Aprovacao + Tratamentos + Anexos.
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
 ---
 
-## Novo Sub-modulo: Aceite de Risco
+## 1. ErrorBoundary ausente na maioria das paginas
 
-Uma pagina dedicada em `/riscos/aceite` que lista todos os riscos aceitos com visao completa de gestao.
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-### Funcionalidades:
-- **Tabela** com riscos aceitos: nome, nivel, justificativa, data aceite, aprovador, proxima revisao, status revisao
-- **KPIs**: total aceitos, revisoes vencidas, revisoes proximas (7d), sem data de revisao
-- **Filtros**: nivel de risco, status de revisao (vencida/proxima/ok/sem data)
-- **Dialog de detalhes**: historico de aceite, fluxo de aprovacao, anexos de aceite, timeline
-- **Acao rapida**: agendar/reagendar revisao, revogar aceite
-- **Exportar**: CSV/PDF dos riscos aceitos
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
-### Mudancas necessarias:
-- Novo arquivo `src/pages/RiscosAceite.tsx`
-- Novo arquivo `src/components/riscos/AceiteDetalheDialog.tsx`
-- Rota em `App.tsx`: `/riscos/aceite`
-- Sub-itens no sidebar: Riscos passa a ter sub-menu (Riscos + Aceite de Risco)
-- Traducoes em `i18n/pt.ts` e `i18n/en.ts`
-
-### Tabela DB:
-Nao precisa de nova tabela — os campos `aceito`, `justificativa_aceite`, `aprovador_aceite`, `data_aceite`, `data_proxima_revisao` ja existem na tabela `riscos`. Apenas `created_by` precisa ser adicionado.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
 ---
 
-## Resumo de Acoes
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-| # | Problema | Tipo | Impacto |
-|---|----------|------|---------|
-| 1 | `created_by` inexistente | Bug dados | **Critico** — aprovacao nao notifica criador |
-| 2 | `useRiscosStats` sem empresa_id | Seguranca | **Alto** — cache/isolamento |
-| 3 | `RiscoFormWizard` queries sem empresa_id | Seguranca | **Alto** — dados cross-tenant |
-| 4 | Status `em_tratamento` ausente | UX | **Medio** — riscos invisiveis |
-| 5 | Botao aprovacao inacessivel | Bug funcional | **Alto** — fluxo morto |
-| 6 | Acoes sem DropdownMenu | UX | **Medio** — inconsistencia visual |
-| 7 | Sub-modulo Aceite de Risco | Feature nova | **Alto** — requisito do usuario |
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+
+---
+
+## 3. Paginas sem EmptyState padronizado
+
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+
+---
+
+## 4. Ausencia de atalhos de teclado documentados para o usuario
+
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+
+---
+
+## 5. Botao de "Voltar" no header nao tem tooltip
+
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+
+---
+
+## Resumo de Prioridade
+
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 

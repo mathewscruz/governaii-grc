@@ -72,9 +72,11 @@ const getMenuItems = (t: (key: string) => string) => [
   },
   {
     title: t('sidebar.riskManagement'),
-    url: '/riscos',
     icon: AlertTriangle,
-    moduleName: 'riscos',
+    subItems: [
+      { title: t('sidebar.risks'), url: '/riscos', icon: AlertTriangle, moduleName: 'riscos' },
+      { title: t('sidebar.riskAcceptance'), url: '/riscos/aceite', icon: CheckSquare, moduleName: 'riscos' },
+    ],
   },
   {
     title: t('sidebar.gapAnalysis'),

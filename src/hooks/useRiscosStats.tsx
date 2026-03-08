@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 
 export interface RiscosStats {
   total: number;
@@ -29,7 +30,6 @@ const normalizeNivel = (nivel: string | null | undefined): string => {
 };
 
 // Função para calcular score de risco (quanto menor, melhor)
-// Crítico=100, Alto=75, Médio=50, Baixo=25, Muito Baixo=10
 const calcularScore = (nivel: string): number => {
   const nivelNorm = normalizeNivel(nivel);
   if (nivelNorm === 'crítico' || nivelNorm === 'muito alto') return 100;
@@ -41,8 +41,11 @@ const calcularScore = (nivel: string): number => {
 };
 
 export const useRiscosStats = () => {
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
+
   return useQuery({
-    queryKey: ['riscos-stats'],
+    queryKey: ['riscos-stats', empresaId],
     queryFn: async (): Promise<RiscosStats> => {
       const hoje = new Date();
       const seteDiasAtras = new Date(hoje);
@@ -59,33 +62,26 @@ export const useRiscosStats = () => {
           created_at,
           updated_at,
           data_proxima_revisao
-        `);
+        `)
+        .eq('empresa_id', empresaId!);
 
       if (riscosError) throw riscosError;
 
-      // Buscar riscos que existiam há 7 dias (criados antes ou na data)
+      // Buscar riscos que existiam há 7 dias
       const { data: riscosAntigos, error: riscosAntigosError } = await supabase
         .from('riscos')
         .select('nivel_risco_inicial, nivel_risco_residual')
+        .eq('empresa_id', empresaId!)
         .lte('created_at', seteDiasAtras.toISOString());
 
       if (riscosAntigosError) console.error('Erro ao buscar riscos antigos:', riscosAntigosError);
 
-      // Contar dados antigos para tendências
       const antiguosTotal = riscosAntigos?.length || 0;
       const antiguosCriticos = riscosAntigos?.filter(r => {
         const nivel = normalizeNivel(r.nivel_risco_residual || r.nivel_risco_inicial);
         return nivel === 'crítico' || nivel === 'muito alto';
       }).length || 0;
 
-      // Buscar tratamentos antigos para tendência
-      let antiguosTratamentosConcluidos: number | null = null;
-      if (riscosAntigos && riscosAntigos.length > 0) {
-        // Approximate: we use current treatment counts for old risks
-        antiguosTratamentosConcluidos = 0; // will be refined below
-      }
-
-      // Normalizar e contar níveis de risco
       const newStats: RiscosStats = {
         total: riscos?.length || 0,
         criticos: riscos?.filter(r => {
@@ -107,7 +103,6 @@ export const useRiscosStats = () => {
         variacao7dias: null,
         revisoes_vencidas: 0,
         revisoes_proximas: 0,
-        // Tendências
         total_7d_atras: antiguosTotal > 0 ? antiguosTotal : null,
         criticos_7d_atras: antiguosTotal > 0 ? antiguosCriticos : null,
         tratamentos_concluidos_7d_atras: null,
@@ -125,32 +120,26 @@ export const useRiscosStats = () => {
         }
       });
 
-      // Calcular score atual (média ponderada dos riscos)
+      // Calcular score atual
       if (riscos && riscos.length > 0) {
         const somaScores = riscos.reduce((acc, r) => {
-          // Usar nível residual se existir, senão inicial
           const nivel = r.nivel_risco_residual || r.nivel_risco_inicial;
           return acc + calcularScore(nivel);
         }, 0);
         newStats.scoreAtual = Math.round(somaScores / riscos.length);
 
-        // Calcular score de 7 dias atrás
         if (riscosAntigos && riscosAntigos.length > 0) {
           const somaScoresAntigos = riscosAntigos.reduce((acc, r) => {
             const nivel = r.nivel_risco_residual || r.nivel_risco_inicial;
             return acc + calcularScore(nivel);
           }, 0);
           const scoreAntigo = somaScoresAntigos / riscosAntigos.length;
-          
-          // Calcular variação percentual (quanto menor o score, melhor - então inversão de sinal)
-          // Se score diminuiu (melhorou), variação é positiva
-          // Se score aumentou (piorou), variação é negativa
           const variacao = ((scoreAntigo - newStats.scoreAtual) / scoreAntigo) * 100;
           newStats.variacao7dias = Math.round(variacao);
         }
       }
 
-      // Buscar estatísticas de tratamentos se houver riscos
+      // Buscar estatísticas de tratamentos
       if (riscos && riscos.length > 0) {
         const { data: tratamentos, error: tratamentosError } = await supabase
           .from('riscos_tratamentos')
@@ -168,7 +157,8 @@ export const useRiscosStats = () => {
 
       return newStats;
     },
-    staleTime: 0, // Sempre refetch para dados em tempo real
+    enabled: !!empresaId,
+    staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
