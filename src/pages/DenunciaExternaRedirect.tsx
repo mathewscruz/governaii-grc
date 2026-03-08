@@ -59,7 +59,7 @@ export default function DenunciaExternaRedirect() {
           navigate('/404', { replace: true });
         }
       } catch (error) {
-        console.error('Erro ao buscar empresa:', error);
+        logger.error('Erro ao buscar empresa', { module: 'DenunciaExternaRedirect', error: String(error) });
         navigate('/404', { replace: true });
       } finally {
         setLoading(false);
