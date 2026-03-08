@@ -454,6 +454,16 @@
   }
 }
 
+/* Autofill Override — Login dark theme */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px hsl(230, 25%, 10%) inset !important;
+  -webkit-text-fill-color: white !important;
+  caret-color: white !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 /* Base Styles */
 @layer base {
   * {
