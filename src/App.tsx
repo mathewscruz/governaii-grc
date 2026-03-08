@@ -12,7 +12,6 @@ import AtivosLicencas from '@/pages/AtivosLicencas';
 import AtivosChaves from '@/pages/AtivosChaves';
 import { Riscos } from '@/pages/Riscos';
 import RiscosAceite from '@/pages/RiscosAceite';
-import GapAnalysis from '@/pages/GapAnalysis';
 import GapAnalysisFrameworks from '@/pages/GapAnalysisFrameworks';
 import GapAnalysisFrameworkDetail from '@/pages/GapAnalysisFrameworkDetail';
 
@@ -131,11 +130,7 @@ function App() {
               </Layout>
             } />
             <Route path="/gap-analysis" element={
-              <Layout>
-                <ProtectedRoute moduleName="gap-analysis" fallbackToRoleCheck={false}>
-                  <GapAnalysis />
-                </ProtectedRoute>
-              </Layout>
+              <Navigate to="/gap-analysis/frameworks" replace />
             } />
             <Route path="/gap-analysis/frameworks" element={
               <Layout>

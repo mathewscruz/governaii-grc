@@ -167,35 +167,3 @@ export function useOptimizedQuery<T>(
     isStale: isStale()
   };
 }
-
-// Hook específico para queries do Supabase
-export function useSupabaseQuery<T>(
-  table: any,
-  query: (builder: any) => any,
-  options?: QueryOptions
-) {
-  const queryFn = useCallback(async () => {
-    const builder = supabase.from(table);
-    return await query(builder);
-  }, [table, query]);
-
-  return useOptimizedQuery<T>(queryFn, [table], {
-    cacheKey: `${table}_${JSON.stringify(options)}`,
-    ...options
-  });
-}
-
-// Utilitário para limpar cache
-export const clearQueryCache = (pattern?: string) => {
-  if (pattern) {
-    for (const key of queryCache.keys()) {
-      if (key.includes(pattern)) {
-        queryCache.delete(key);
-      }
-    }
-    logger.info('Cache cleared', { pattern, module: 'cache' });
-  } else {
-    queryCache.clear();
-    logger.info('All cache cleared', { module: 'cache' });
-  }
-};

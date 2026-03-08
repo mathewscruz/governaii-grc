@@ -1,70 +1,80 @@
 
 
-# Auditoria de Código — Itens Legados e Otimizações
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-## 1. Código Morto / Não Utilizado
-
-### Edge Function Órfã
-| Arquivo | Problema |
-|---------|----------|
-| `supabase/functions/dashboard-ai-summary/index.ts` | Removemos o `ExecutiveSummaryAI.tsx` mas a Edge Function que o servia continua no projeto. Nenhum arquivo no frontend a referencia. |
-
-### Hooks sem Importação
-| Arquivo | Problema |
-|---------|----------|
-| `src/hooks/useCreditosIA.tsx` | Exporta `useCreditosIA` mas nenhum componente o importa. Código morto. |
-| `src/hooks/useNISTScore.tsx` | Exporta `useNISTScore` mas nenhum componente o importa (era do layout antigo NIST). |
-
-### Componentes Órfãos
-| Arquivo | Problema |
-|---------|----------|
-| `src/components/due-diligence/ReportsViewer.tsx` | Nenhum arquivo importa este componente. Substituído por `ReportsView.tsx` + `ReportsSidebar.tsx`. |
-| `src/components/due-diligence/FornecedorSelector.tsx` | Nenhum arquivo importa este componente. |
-
-### Assets Não Utilizados
-| Arquivo | Problema |
-|---------|----------|
-| `src/assets/governaii-logo-main.png` | Nenhuma referência no código. |
-| `src/assets/governaii-logo-mini.png` | Nenhuma referência no código. |
-| `src/assets/governaii-logo.png` | Nenhuma referência no código. |
-| `src/assets/governance-security-badge.png` | Nenhuma referência no código. |
-| `public/governaii-logo.png` | Nenhuma referência no código. |
-
-### Código Não Utilizado em Hooks
-| Arquivo | Item | Problema |
-|---------|------|----------|
-| `src/hooks/useOptimizedQuery.tsx` | `useSupabaseQuery` | Exportado mas nenhum componente usa. |
-| `src/hooks/useOptimizedQuery.tsx` | `clearQueryCache` | Exportado mas nenhum componente usa. |
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
 ---
 
-## 2. Página Redirect Desnecessária
+## 1. ErrorBoundary ausente na maioria das paginas
 
-| Arquivo | Problema |
-|---------|----------|
-| `src/pages/GapAnalysis.tsx` | Componente inteiro é apenas um `useEffect → navigate('/gap-analysis/frameworks')`. Pode ser substituído por `<Navigate>` direto no `App.tsx` (como já é feito para `/dados → /privacidade`). |
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
+
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
 ---
 
-## 3. Plano de Limpeza
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-### Deletar arquivos
-- `supabase/functions/dashboard-ai-summary/index.ts` (+ remover do `config.toml`)
-- `src/hooks/useCreditosIA.tsx`
-- `src/hooks/useNISTScore.tsx`
-- `src/components/due-diligence/ReportsViewer.tsx`
-- `src/components/due-diligence/FornecedorSelector.tsx`
-- `src/assets/governaii-logo-main.png`
-- `src/assets/governaii-logo-mini.png`
-- `src/assets/governaii-logo.png`
-- `src/assets/governance-security-badge.png`
-- `public/governaii-logo.png`
-- `src/pages/GapAnalysis.tsx`
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
 
-### Editar arquivos
-- `src/hooks/useOptimizedQuery.tsx` — remover `useSupabaseQuery` e `clearQueryCache`
-- `src/App.tsx` — substituir `<GapAnalysis />` por `<Navigate to="/gap-analysis/frameworks" replace />` e remover import
-- `supabase/config.toml` — remover seção `[functions.dashboard-ai-summary]`
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
 
-Total: **11 arquivos deletados**, **3 arquivos editados**. Nenhuma funcionalidade ativa é afetada.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+
+---
+
+## 3. Paginas sem EmptyState padronizado
+
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+
+---
+
+## 4. Ausencia de atalhos de teclado documentados para o usuario
+
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+
+---
+
+## 5. Botao de "Voltar" no header nao tem tooltip
+
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+
+---
+
+## Resumo de Prioridade
+
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 
