@@ -224,38 +224,28 @@ export default function Politicas() {
       render: (val: string) => <span className="text-sm">{formatDateOnly(val)}</span>,
     },
     {
-      key: 'actions', label: 'Ações', className: 'w-32',
+      key: 'actions', label: 'Ações', className: 'w-16',
       render: (_: any, item: any) => (
-        <TooltipProvider>
-          <div className="flex gap-1">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
             {item.status === 'rascunho' && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-success" onClick={() => handlePublish(item)}>
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Publicar</TooltipContent>
-              </Tooltip>
+              <DropdownMenuItem onClick={() => handlePublish(item)}>
+                <Send className="h-4 w-4 mr-2" />Publicar
+              </DropdownMenuItem>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingPolitica(item); setDialogOpen(true); }}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Editar</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(item.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Excluir</TooltipContent>
-            </Tooltip>
-          </div>
-        </TooltipProvider>
+            <DropdownMenuItem onClick={() => { setEditingPolitica(item); setDialogOpen(true); }}>
+              <Pencil className="h-4 w-4 mr-2" />Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(item.id)}>
+              <Trash2 className="h-4 w-4 mr-2" />Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];

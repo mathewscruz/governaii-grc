@@ -464,6 +464,6 @@ export function FornecedoresManager() {
         confirmText="Remover"
         variant="destructive"
       />
-    </TooltipProvider>
+    </>
   );
 }
