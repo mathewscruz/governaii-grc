@@ -42,12 +42,15 @@ export default function RevisaoAcessos() {
   const [sortConfig, setSortConfig] = useState<{ field: string; direction: "asc" | "desc" } | null>(null);
 
   const {
-    data: reviews,
-    loading: reviewsLoading,
+    data: reviews = [],
+    isLoading: reviewsLoading,
     refetch,
-  } = useOptimizedQuery(
-    async () => {
-      if (!empresaId) return { data: [], error: null };
+  } = useQuery({
+    queryKey: ['reviews', empresaId, statusFilter],
+    enabled: !!empresaId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      if (!empresaId) return [];
 
       let query = supabase
         .from("access_reviews")
@@ -64,12 +67,10 @@ export default function RevisaoAcessos() {
       }
 
       const { data, error } = await query.order("created_at", { ascending: false });
-
-      return { data: data || [], error };
+      if (error) throw error;
+      return data || [];
     },
-    [empresaId, statusFilter],
-    { cacheKey: `reviews-${empresaId}-${statusFilter}` }
-  );
+  });
 
   // Buscar histórico (revisões concluídas ou canceladas)
   const {
