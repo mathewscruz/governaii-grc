@@ -470,7 +470,39 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
         console.warn('Erro ao registrar histórico de avaliação:', histError);
       }
 
-      toast.success(risco?.id ? 'Risco atualizado com sucesso!' : 'Risco cadastrado com sucesso!');
+      // Se é um novo aceite, enviar notificação e e-mail ao aprovador
+      if (isNovoAceite && data.aprovador_aceite) {
+        try {
+          // Notificação in-app
+          await supabase.from('notifications').insert({
+            user_id: data.aprovador_aceite,
+            title: 'Solicitação de Aceite de Risco',
+            message: `O risco "${data.nome}" foi enviado para sua aprovação de aceite.`,
+            type: 'info',
+            link_to: '/riscos'
+          });
+
+          // E-mail via edge function
+          await supabase.functions.invoke('send-risco-aceite-notification', {
+            body: {
+              risco_id: riscoId,
+              risco_nome: data.nome,
+              aprovador_id: data.aprovador_aceite,
+              solicitante_id: profile.user_id,
+              empresa_id: profile.empresa_id,
+              tipo: 'solicitacao'
+            }
+          });
+        } catch (notifError) {
+          console.warn('Erro ao enviar notificação de aceite:', notifError);
+        }
+      }
+
+      toast.success(
+        isNovoAceite 
+          ? 'Risco salvo e enviado para aprovação de aceite!' 
+          : (risco?.id ? 'Risco atualizado com sucesso!' : 'Risco cadastrado com sucesso!')
+      );
       onSuccess();
     } catch (error: any) {
       console.error('❌ Erro ao salvar risco:', error);
