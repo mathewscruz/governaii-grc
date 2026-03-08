@@ -286,6 +286,10 @@ export default function Incidentes() {
                 <FileText className="mr-2 h-4 w-4" />
                 Evidências
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleTratamentos(item)}>
+                <Shield className="mr-2 h-4 w-4" />
+                Tratamentos
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleDelete(item.id)} className="text-destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
                 Excluir
