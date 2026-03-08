@@ -493,14 +493,6 @@ const LandingPage = () => {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#7552FF]/5 rounded-full blur-[120px] pointer-events-none" />
 
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 lp-fade-up">
-            {/* Badge */}
-            <div className="flex justify-center mb-6">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#7552FF]/10 border border-[#7552FF]/20 text-[#A78BFA] text-xs font-semibold uppercase tracking-widest">
-                <Sparkles className="h-3.5 w-3.5" />
-                Nosso carro-chefe
-              </span>
-            </div>
-
             {/* Headline */}
             <h2 id="gap-analysis-title" className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-center mb-6 leading-tight">
               Sua empresa em conformidade.{" "}
