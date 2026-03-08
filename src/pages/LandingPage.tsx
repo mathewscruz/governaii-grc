@@ -463,7 +463,7 @@ const LandingPage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 sm:mb-16 lp-fade-up">
               <h2 id="testimonials-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-                O que dizem nossos <span className="text-blue-400">clientes</span>
+                O que dizem nossos <span className="text-[#7552FF]">clientes</span>
               </h2>
               <p className="text-gray-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
                 Empresas de diversos segmentos confiam no Akuris para transformar sua governança
