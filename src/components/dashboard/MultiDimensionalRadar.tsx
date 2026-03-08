@@ -40,15 +40,23 @@ const CustomDot = ({ cx, cy, payload, navigate }: any) => {
 };
 
 const CustomTooltip = ({ active, payload }: any) => {
+  const { t } = useLanguage();
   if (!active || !payload || !payload[0]) return null;
 
   const data: RadarDataPoint = payload[0].payload;
   
+  const statusLabels: Record<string, string> = {
+    excellent: t('dashboard.excellent'),
+    good: t('dashboard.good'),
+    warning: t('dashboard.warning'),
+    critical: t('dashboard.criticalStatus'),
+  };
+
   const statusConfig = {
-    excellent: { icon: CheckCircle2, color: "text-green-500", label: data.details?.statusLabel || "Excelente", bgColor: "bg-green-500/10" },
-    good: { icon: CheckCircle2, color: "text-blue-500", label: data.details?.statusLabel || "Bom", bgColor: "bg-blue-500/10" },
-    warning: { icon: AlertCircle, color: "text-yellow-500", label: data.details?.statusLabel || "Atenção", bgColor: "bg-yellow-500/10" },
-    critical: { icon: XCircle, color: "text-red-500", label: data.details?.statusLabel || "Crítico", bgColor: "bg-red-500/10" }
+    excellent: { icon: CheckCircle2, color: "text-green-500", label: statusLabels.excellent, bgColor: "bg-green-500/10" },
+    good: { icon: CheckCircle2, color: "text-blue-500", label: statusLabels.good, bgColor: "bg-blue-500/10" },
+    warning: { icon: AlertCircle, color: "text-yellow-500", label: statusLabels.warning, bgColor: "bg-yellow-500/10" },
+    critical: { icon: XCircle, color: "text-red-500", label: statusLabels.critical, bgColor: "bg-red-500/10" }
   };
 
   const config = statusConfig[data.details.status];
