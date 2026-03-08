@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { exportCSV } from '@/lib/csv-utils';
 import { useAuth } from '@/components/AuthProvider';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -17,7 +18,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
-import { Plus, BookOpen, Users, CheckCircle2, Clock, Pencil, Trash2, Send, Eye, Award, BarChart3, MoreHorizontal } from 'lucide-react';
+import { Plus, BookOpen, Users, CheckCircle2, Clock, Pencil, Trash2, Send, Eye, Award, BarChart3, MoreHorizontal, Download } from 'lucide-react';
 
 const categoriaLabels: Record<string, string> = {
   seguranca: 'Segurança', privacidade: 'Privacidade', compliance: 'Compliance',
@@ -271,9 +272,25 @@ export default function Politicas() {
         description="Gerencie políticas corporativas, aceites e questionários de validação"
         breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Políticas e Treinamentos' }]}
         actions={
-          <Button onClick={() => { setEditingPolitica(null); setDialogOpen(true); }}>
-            <Plus className="h-4 w-4 mr-2" />Nova Política
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              if (politicas.length === 0) return;
+              exportCSV(
+                ['Nome', 'Categoria', 'Status', 'Versao', 'Criado em'],
+                politicas.map((p: any) => [
+                  p.nome || '', categoriaLabels[p.categoria] || p.categoria || '',
+                  statusConfig[p.status]?.label || p.status || '', p.versao || '1',
+                  p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : ''
+                ]),
+                'politicas'
+              );
+            }}>
+              <Download className="h-4 w-4 mr-2" />CSV
+            </Button>
+            <Button onClick={() => { setEditingPolitica(null); setDialogOpen(true); }}>
+              <Plus className="h-4 w-4 mr-2" />Nova Política
+            </Button>
+          </div>
         }
       />
 

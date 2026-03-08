@@ -1,119 +1,80 @@
 
 
-# Auditoria Completa de Relatórios do Sistema
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-## Inventário Atual — O que existe
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
-| Módulo | Relatório | Formato | Status | Problema |
-|---|---|---|---|---|
-| **Riscos** | Listagem + KPIs | PDF + CSV | Funcional | Bom, completo |
-| **Documentos** | Geral, Vencidos, Categoria | PDF + CSV | Funcional | PDF limita 50 docs; CSV "por categoria" não agrupa |
-| **Gap Analysis (Framework)** | Técnico completo | PDF | Funcional | Bom, completo |
-| **Gap Analysis (Board)** | Executivo 5 páginas | PDF | Funcional | Bom, completo |
-| **Gap Analysis (SoA)** | Declaração Aplicabilidade | PDF | Funcional | Bom, completo |
-| **Gap Analysis (Aderência)** | Avaliação documento | PDF | Funcional | Visual diferente (cinza), não usa `pdf-utils` |
-| **Denúncias** | Analytics + filtros | CSV | Parcial | Só exporta CSV; sem PDF |
-| **Contratos** | Dashboard + gráficos | Tela apenas | **Quebrado** | `exportarRelatorio` é placeholder (`console.log`) |
-| **Controles** | Dialog com tabs | Tela apenas | **Quebrado** | `exportarRelatorio` é placeholder (`console.log`) |
-| **Due Diligence** | ReportsView + Sidebar | Tela + JSON | Parcial | Botões PDF/Excel/CSV são placeholder; sidebar exporta JSON bruto |
-| **Templates (Relatórios)** | 6 templates pré-definidos | PDF | Funcional | ISO 27001 query com `.eq('empresa_id')` em frameworks globais (retorna 0); Executivo idem |
-| **Incidentes** | — | — | **Inexistente** | Zero export |
-| **Planos de Ação** | — | — | **Inexistente** | Zero export |
-| **Políticas** | — | — | **Inexistente** | Zero export |
-| **Ativos** | CSV básico | CSV | Mínimo | Sem BOM UTF-8, sem PDF |
-| **Continuidade** | — | — | **Inexistente** | Zero export |
-| **Contas Privilegiadas** | — | — | **Inexistente** | Zero export |
+---
 
-## Problemas Identificados
+## 1. ErrorBoundary ausente na maioria das paginas
 
-### 1. CRÍTICO: Templates ISO 27001 e Executivo retornam dados vazios
-`fetchISO27001Data` e `fetchExecutivoData` fazem `.eq('empresa_id', empresaId)` na tabela `gap_analysis_frameworks`, mas frameworks são globais (`empresa_id = NULL`). Resultado: sempre 0 frameworks.
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-### 2. CRÍTICO: Controles — export é `console.log`
-`RelatoriosDialog.tsx` linha 63-66: `exportarRelatorio` faz apenas `console.log`. Os botões "Exportar" enganam o usuário.
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
-### 3. CRÍTICO: Contratos — export é placeholder
-`RelatoriosContratos.tsx`: `exportarRelatorio` mostra toast de sucesso mas não gera arquivo real.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
-### 4. CRÍTICO: Due Diligence — 4 botões de export são placeholder
-`ReportsView.tsx` linhas 228-244: botões PDF/Excel/CSV não têm `onClick` handler.
+---
 
-### 5. MÉDIO: Aderência PDF não segue o padrão visual Akuris
-`ExportPDF.tsx` usa esquema de cores cinza próprio e logo loader diferente, enquanto todos os outros PDFs usam `pdf-utils.ts` com cores Akuris roxas.
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-### 6. MÉDIO: Documentos PDF limita a 50 registros
-`DocumentosRelatorios.tsx` linha 111: `.slice(0, 50)` trunca sem aviso.
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
 
-### 7. MÉDIO: 6 módulos sem nenhum export
-Incidentes, Planos de Ação, Políticas, Continuidade, Contas Privilegiadas não possuem nenhuma capacidade de exportação.
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
 
-### 8. BAIXO: Ativos CSV não inclui BOM UTF-8
-Acentos podem quebrar ao abrir no Excel.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
 
-### 9. BAIXO: Denúncias só exporta CSV
-Módulo com dashboard visual rico, mas sem PDF executivo.
+---
 
-## Plano de Correção
+## 3. Paginas sem EmptyState padronizado
 
-### Fase 1: Corrigir o que está quebrado (prioridade alta)
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
 
-**A. Corrigir queries dos templates ISO/Executivo/Compliance**
-- `generateTemplatePDF.ts`: Trocar `.eq('empresa_id', empresaId)` por query sem filtro de empresa em `gap_analysis_frameworks` (são globais). Buscar evaluations filtradas por `empresa_id`.
-- Arquivos: `src/components/relatorios/generateTemplatePDF.ts`
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
 
-**B. Implementar export real em Controles**
-- Substituir `console.log` por geração real de PDF usando `pdf-utils` com KPIs + tabela de controles.
-- Arquivo: `src/components/controles/RelatoriosDialog.tsx`
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
 
-**C. Implementar export real em Contratos**
-- Substituir placeholder por PDF com KPIs (total, valor, vencidos) + tabela.
-- Arquivo: `src/components/contratos/RelatoriosContratos.tsx`
+---
 
-**D. Implementar export real em Due Diligence**
-- Adicionar `onClick` handlers nos 4 botões com geração de PDF/CSV real.
-- Arquivo: `src/components/due-diligence/ReportsView.tsx`
+## 4. Ausencia de atalhos de teclado documentados para o usuario
 
-### Fase 2: Adicionar exports nos módulos que não têm (prioridade média)
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
 
-**E. Incidentes — PDF + CSV**
-- Criar `ExportIncidentesPDF.tsx` com KPIs (total, criticidade, MTTR) + tabela.
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
 
-**F. Planos de Ação — CSV**
-- Adicionar botão export na página com dados filtrados.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
 
-**G. Políticas — CSV**
-- Adicionar botão export na página.
+---
 
-**H. Continuidade — CSV**
-- Adicionar botão export na página.
+## 5. Botao de "Voltar" no header nao tem tooltip
 
-**I. Contas Privilegiadas — CSV**
-- Adicionar botão export com dados das contas.
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
 
-### Fase 3: Melhorias de qualidade (prioridade baixa)
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
 
-**J. Documentos — remover limite de 50**
-- Paginar corretamente no PDF em vez de truncar.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
 
-**K. Ativos — adicionar BOM UTF-8 e PDF**
-- Adicionar `\ufeff` no CSV e criar export PDF.
+---
 
-**L. Denúncias — adicionar PDF executivo**
-- Gerar PDF com gráficos e KPIs.
+## Resumo de Prioridade
 
-### Arquivos a criar/modificar
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
 
-| Arquivo | Ação |
-|---|---|
-| `src/components/relatorios/generateTemplatePDF.ts` | Corrigir queries ISO/Executivo/Compliance |
-| `src/components/controles/RelatoriosDialog.tsx` | Implementar export PDF/CSV real |
-| `src/components/contratos/RelatoriosContratos.tsx` | Implementar export PDF/CSV real |
-| `src/components/due-diligence/ReportsView.tsx` | Implementar onClick nos botões de export |
-| `src/pages/Incidentes.tsx` | Adicionar botão export + lógica PDF/CSV |
-| `src/pages/PlanosAcao.tsx` | Adicionar botão export CSV |
-| `src/pages/Politicas.tsx` | Adicionar botão export CSV |
-| `src/pages/Continuidade.tsx` | Adicionar botão export CSV |
-| `src/pages/ContasPrivilegiadas.tsx` | Adicionar botão export CSV |
-| `src/components/documentos/DocumentosRelatorios.tsx` | Remover limite 50 docs |
-| `src/pages/Ativos.tsx` | Adicionar BOM UTF-8 no CSV |
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 

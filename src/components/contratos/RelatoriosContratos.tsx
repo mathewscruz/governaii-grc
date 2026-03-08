@@ -12,6 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import { loadAkurisLogo, addAkurisHeader, addAkurisFooter, addSectionTitle, drawTableHeader, formatLabel, AKURIS_COLORS } from '@/lib/pdf-utils';
+import { exportCSV } from '@/lib/csv-utils';
 
 interface RelatorioData {
   contratos: any[];
@@ -160,26 +163,91 @@ export default function RelatoriosContratos() {
   };
 
   const exportarRelatorio = async (formato: 'excel' | 'pdf') => {
+    if (dados.contratos.length === 0) {
+      toast({ title: "Sem dados", description: "Nenhum contrato encontrado no periodo.", variant: "destructive" });
+      return;
+    }
+
+    if (formato === 'excel') {
+      exportCSV(
+        ['Numero', 'Nome', 'Tipo', 'Status', 'Valor Total', 'Data Inicio', 'Data Fim'],
+        dados.contratos.map((c: any) => [
+          c.numero_contrato || '',
+          c.nome || '',
+          formatLabel(c.tipo || ''),
+          formatLabel(c.status || ''),
+          c.valor_total ? Number(c.valor_total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '',
+          c.data_inicio ? format(new Date(c.data_inicio), 'dd/MM/yyyy') : '',
+          c.data_fim ? format(new Date(c.data_fim), 'dd/MM/yyyy') : '',
+        ]),
+        'relatorio_contratos'
+      );
+      toast({ title: "CSV exportado", description: `${dados.contratos.length} contratos exportados.` });
+      return;
+    }
+
     try {
-      // Aqui você implementaria a lógica de exportação
-      toast({
-        title: "Exportando...",
-        description: `Gerando relatório em ${formato.toUpperCase()}`,
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      const contentWidth = pageWidth - margin * 2;
+      const logo = await loadAkurisLogo();
+
+      let y = addAkurisHeader(doc, logo);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(AKURIS_COLORS.text);
+      doc.text('Relatorio de Contratos', pageWidth / 2, y, { align: 'center' });
+      y += 6;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(AKURIS_COLORS.textLight);
+      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} | Total: ${dados.contratos.length} contratos`, pageWidth / 2, y, { align: 'center' });
+      y += 12;
+
+      y = addSectionTitle(doc, 'Resumo', y, margin);
+      doc.setFontSize(10);
+      doc.setTextColor(AKURIS_COLORS.text);
+      const valorFormatado = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(estatisticasGerais.valorTotal);
+      doc.text(`Total: ${estatisticasGerais.totalContratos}  |  Ativos: ${estatisticasGerais.contratosAtivos}  |  Valor: ${valorFormatado}`, margin + 8, y);
+      y += 12;
+
+      y = addSectionTitle(doc, 'Lista de Contratos', y, margin);
+      drawTableHeader(doc, [
+        { text: 'Numero', x: margin + 2 },
+        { text: 'Nome', x: margin + 32 },
+        { text: 'Tipo', x: margin + 95 },
+        { text: 'Status', x: margin + 125 },
+        { text: 'Valor', x: margin + 150 },
+      ], y, margin, contentWidth);
+      y += 5;
+
+      doc.setFont('helvetica', 'normal');
+      dados.contratos.forEach((c: any, i: number) => {
+        if (y > pageHeight - 25) {
+          doc.addPage();
+          y = addAkurisHeader(doc, logo);
+        }
+        if (i % 2 === 0) {
+          doc.setFillColor(248, 247, 255);
+          doc.rect(margin, y - 3.5, contentWidth, 5.5, 'F');
+        }
+        doc.setFontSize(7);
+        doc.setTextColor(AKURIS_COLORS.text);
+        doc.text((c.numero_contrato || '-').substring(0, 16), margin + 2, y);
+        doc.text((c.nome || '-').substring(0, 34), margin + 32, y);
+        doc.text(formatLabel(c.tipo || ''), margin + 95, y);
+        doc.text(formatLabel(c.status || ''), margin + 125, y);
+        doc.text(c.valor_total ? Number(c.valor_total).toLocaleString('pt-BR') : '-', margin + 150, y);
+        y += 5.5;
       });
 
-      // Simular exportação
-      setTimeout(() => {
-        toast({
-          title: "Sucesso",
-          description: `Relatório exportado em ${formato.toUpperCase()}`,
-        });
-      }, 2000);
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao exportar relatório",
-        variant: "destructive"
-      });
+      addAkurisFooter(doc);
+      doc.save(`relatorio_contratos_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast({ title: "PDF gerado", description: "Relatorio de contratos baixado com sucesso." });
+    } catch {
+      toast({ title: "Erro", description: "Erro ao gerar PDF.", variant: "destructive" });
     }
   };
 

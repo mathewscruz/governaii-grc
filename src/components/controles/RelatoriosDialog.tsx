@@ -11,6 +11,10 @@ import { DateRange } from "react-day-picker";
 import { addDays } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
+import { loadAkurisLogo, addAkurisHeader, addAkurisFooter, addSectionTitle, drawTableHeader, formatLabel, AKURIS_COLORS } from "@/lib/pdf-utils";
+import { exportCSV } from "@/lib/csv-utils";
 
 interface RelatoriosDialogProps {
   open: boolean;
@@ -60,9 +64,91 @@ export function RelatoriosDialog({ open, onOpenChange }: RelatoriosDialogProps) 
     }
   });
 
+  const { toast } = useToast();
+
   const exportarRelatorio = async (formato: 'excel' | 'pdf') => {
-    // Implementação futura da exportação
-    console.log(`Exportando relatório em ${formato}`);
+    if (!controles || controles.length === 0) {
+      toast({ title: "Sem dados", description: "Nenhum controle encontrado para exportar.", variant: "destructive" });
+      return;
+    }
+
+    if (formato === 'excel') {
+      exportCSV(
+        ['Nome', 'Tipo', 'Criticidade', 'Status', 'Frequencia Teste', 'Responsavel'],
+        controles.map((c: any) => [
+          c.nome,
+          formatLabel(c.tipo || ''),
+          formatLabel(c.criticidade || ''),
+          formatLabel(c.status || ''),
+          formatLabel(c.frequencia_teste || ''),
+          c.responsavel || '',
+        ]),
+        'relatorio_controles'
+      );
+      toast({ title: "CSV exportado", description: `${controles.length} controles exportados.` });
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      const contentWidth = pageWidth - margin * 2;
+      const logo = await loadAkurisLogo();
+
+      let y = addAkurisHeader(doc, logo);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(AKURIS_COLORS.text);
+      doc.text('Relatorio de Controles', pageWidth / 2, y, { align: 'center' });
+      y += 6;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(AKURIS_COLORS.textLight);
+      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} | Total: ${controles.length} controles`, pageWidth / 2, y, { align: 'center' });
+      y += 12;
+
+      y = addSectionTitle(doc, 'Resumo', y, margin);
+      doc.setFontSize(10);
+      doc.setTextColor(AKURIS_COLORS.text);
+      doc.text(`Total: ${stats?.total || 0}  |  Ativos: ${stats?.ativos || 0}  |  Criticos: ${stats?.criticos || 0}  |  Preventivos: ${stats?.preventivos || 0}`, margin + 8, y);
+      y += 12;
+
+      y = addSectionTitle(doc, 'Lista de Controles', y, margin);
+      drawTableHeader(doc, [
+        { text: 'Nome', x: margin + 2 },
+        { text: 'Tipo', x: margin + 72 },
+        { text: 'Criticidade', x: margin + 102 },
+        { text: 'Status', x: margin + 140 },
+      ], y, margin, contentWidth);
+      y += 5;
+
+      doc.setFont('helvetica', 'normal');
+      controles.forEach((c: any, i: number) => {
+        if (y > pageHeight - 25) {
+          doc.addPage();
+          y = addAkurisHeader(doc, logo);
+        }
+        if (i % 2 === 0) {
+          doc.setFillColor(248, 247, 255);
+          doc.rect(margin, y - 3.5, contentWidth, 5.5, 'F');
+        }
+        doc.setFontSize(7);
+        doc.setTextColor(AKURIS_COLORS.text);
+        doc.text((c.nome || '').substring(0, 38), margin + 2, y);
+        doc.text(formatLabel(c.tipo || ''), margin + 72, y);
+        doc.text(formatLabel(c.criticidade || ''), margin + 102, y);
+        doc.text(formatLabel(c.status || ''), margin + 140, y);
+        y += 5.5;
+      });
+
+      addAkurisFooter(doc);
+      doc.save(`relatorio_controles_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast({ title: "PDF gerado", description: "Relatorio de controles baixado com sucesso." });
+    } catch {
+      toast({ title: "Erro", description: "Erro ao gerar PDF.", variant: "destructive" });
+    }
   };
 
   const salvarRelatorio = async () => {

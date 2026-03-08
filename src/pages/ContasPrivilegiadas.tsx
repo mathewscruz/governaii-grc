@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Edit, Trash2, MoreHorizontal } from 'lucide-react';
+import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Edit, Trash2, MoreHorizontal, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,7 @@ import { DataTable } from '@/components/ui/data-table';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
 import { capitalizeText, getItemStatusColor } from '@/lib/text-utils';
+import { exportCSV } from '@/lib/csv-utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -359,6 +360,23 @@ export default function ContasPrivilegiadas() {
       <PageHeader
         title="Contas Privilegiadas"
         description="Gerencie contas com acessos privilegiados aos sistemas"
+        actions={
+          <Button variant="outline" size="sm" onClick={() => {
+            if (contas.length === 0) return;
+            exportCSV(
+              ['Usuario', 'Email', 'Tipo Acesso', 'Nivel', 'Status', 'Data Concessao', 'Data Expiracao', 'Sistema'],
+              contas.map((c: any) => [
+                c.usuario_beneficiario || '', c.email_beneficiario || '',
+                c.tipo_acesso || '', c.nivel_privilegio || '', c.status || '',
+                c.data_concessao || '', c.data_expiracao || '',
+                c.sistemas_privilegiados?.nome_sistema || ''
+              ]),
+              'contas_privilegiadas'
+            );
+          }}>
+            <Download className="h-4 w-4 mr-2" />Exportar CSV
+          </Button>
+        }
       />
 
       <div className="grid gap-4 md:grid-cols-4">

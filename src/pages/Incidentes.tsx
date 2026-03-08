@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { logger } from '@/lib/logger';
+import { exportCSV } from '@/lib/csv-utils';
 import { useIncidentesStats } from '@/hooks/useIncidentesStats';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -35,6 +36,7 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
+  Download,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -376,7 +378,21 @@ export default function Incidentes() {
       <PageHeader
         title="Incidentes"
         description="Gerencie incidentes de segurança e acompanhe tratamentos"
-        actions={undefined}
+        actions={
+          <Button variant="outline" size="sm" onClick={() => {
+            if (incidentes.length === 0) return;
+            exportCSV(
+              ['Titulo', 'Tipo', 'Categoria', 'Criticidade', 'Status', 'Data Deteccao', 'Data Resolucao'],
+              incidentes.map((inc: any) => [
+                inc.titulo, inc.tipo || '', inc.categoria || '', inc.criticidade || '',
+                inc.status || '', inc.data_deteccao || '', inc.data_resolucao || ''
+              ]),
+              'incidentes'
+            );
+          }}>
+            <Download className="h-4 w-4 mr-2" />Exportar CSV
+          </Button>
+        }
       />
 
       {/* StatCards */}

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { exportCSV } from '@/lib/csv-utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { PageHeader } from '@/components/ui/page-header';
@@ -17,7 +18,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
-import { Plus, ListTodo, Clock, CheckCircle2, AlertTriangle, XCircle, Pencil, Trash2, LayoutGrid, List, Target, ExternalLink, MoreHorizontal } from 'lucide-react';
+import { Plus, ListTodo, Clock, CheckCircle2, AlertTriangle, XCircle, Pencil, Trash2, LayoutGrid, List, Target, ExternalLink, MoreHorizontal, Download } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 
 const statusConfig: Record<string, { label: string; variant: any; icon: any }> = {
@@ -446,6 +447,19 @@ export default function PlanosAcao() {
         breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Planos de Ação' }]}
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              if (planos.length === 0) return;
+              exportCSV(
+                ['Titulo', 'Status', 'Prioridade', 'Modulo', 'Prazo', 'Criado em'],
+                planos.map((p: any) => [
+                  p.titulo || p.nome || '', p.status || '', p.prioridade || '',
+                  p.modulo_origem || 'manual', p.prazo || '', p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : ''
+                ]),
+                'planos_acao'
+              );
+            }}>
+              <Download className="h-4 w-4 mr-2" />CSV
+            </Button>
             <div className="flex border rounded-md overflow-hidden">
               <Button variant={viewMode === 'lista' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('lista')} className="rounded-none">
                 <List className="h-4 w-4" />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Shield, FileCheck, Clock, TestTube, ListTodo, Edit, Trash2, Eye, MoreHorizontal } from 'lucide-react';
+import { Plus, Shield, FileCheck, Clock, TestTube, ListTodo, Edit, Trash2, Eye, MoreHorizontal, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/ui/page-header';
@@ -13,6 +13,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { useContinuidadeStats } from '@/hooks/useContinuidadeStats';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateOnly } from '@/lib/date-utils';
+import { exportCSV } from '@/lib/csv-utils';
 import { PlanoDialog } from '@/components/continuidade/PlanoDialog';
 import { PlanoDetalheDialog } from '@/components/continuidade/PlanoDetalheDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -144,9 +145,26 @@ export default function Continuidade() {
         title="Continuidade de Negócios"
         description="Gerencie planos de continuidade (BCP) e recuperação de desastres (DRP)"
         actions={
-          <Button onClick={() => setPlanoDialog({ open: true })}>
-            <Plus className="h-4 w-4 mr-2" /> Novo Plano
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              if (planos.length === 0) return;
+              exportCSV(
+                ['Nome', 'Tipo', 'Status', 'RTO', 'RPO', 'Criado em'],
+                planos.map((p: any) => [
+                  p.nome || '', tipoMap[p.tipo] || p.tipo || '',
+                  statusMap[p.status]?.label || p.status || '',
+                  p.rto || '', p.rpo || '',
+                  p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : ''
+                ]),
+                'continuidade_planos'
+              );
+            }}>
+              <Download className="h-4 w-4 mr-2" />CSV
+            </Button>
+            <Button onClick={() => setPlanoDialog({ open: true })}>
+              <Plus className="h-4 w-4 mr-2" /> Novo Plano
+            </Button>
+          </div>
         }
       />
 
