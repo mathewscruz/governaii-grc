@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Server, Activity, AlertTriangle, TrendingUp, Upload, Shield, CloudCog, Loader2, MoreHorizontal, Edit, Trash2, Wrench, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
