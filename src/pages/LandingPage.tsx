@@ -209,7 +209,7 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-[#0A1628] text-white overflow-x-hidden">
       {/* Accessibility */}
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-blue-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-md">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-[#7552FF] focus:text-white focus:px-4 focus:py-2 focus:rounded-md">
         Pular para o conteúdo principal
       </a>
 

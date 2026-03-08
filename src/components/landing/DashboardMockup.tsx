@@ -29,8 +29,8 @@ export function DashboardMockup() {
         <div className="flex">
           {/* Sidebar */}
           <div className="w-10 bg-[#080E1A] border-r border-[#1E2D45] py-3 flex flex-col items-center gap-3 shrink-0">
-            <div className="w-5 h-5 rounded bg-blue-600/30 flex items-center justify-center">
-              <Home className="w-3 h-3 text-blue-400" />
+            <div className="w-5 h-5 rounded bg-[#7552FF]/30 flex items-center justify-center">
+              <Home className="w-3 h-3 text-[#7552FF]" />
             </div>
             <Shield className="w-3.5 h-3.5 text-gray-600" />
             <AlertTriangle className="w-3.5 h-3.5 text-gray-600" />
@@ -60,7 +60,7 @@ export function DashboardMockup() {
               <div className="bg-[#111B2E] rounded-lg p-2.5 flex flex-col items-center justify-center border border-[#1E2D45]/50 w-[90px] shrink-0">
                 <svg width="60" height="38" viewBox="0 0 80 50">
                   <path d="M 8 45 A 35 35 0 0 1 72 45" fill="none" stroke="#1E2D45" strokeWidth="5" strokeLinecap="round" />
-                  <path d="M 8 45 A 35 35 0 0 1 72 45" fill="none" stroke="#3B82F6" strokeWidth="5" strokeLinecap="round" strokeDasharray="82.5 110" />
+                  <path d="M 8 45 A 35 35 0 0 1 72 45" fill="none" stroke="#7552FF" strokeWidth="5" strokeLinecap="round" strokeDasharray="82.5 110" />
                   <text x="40" y="38" textAnchor="middle" fill="#E2E8F0" fontSize="14" fontWeight="bold">75</text>
                 </svg>
                 <span className="text-[8px] text-gray-500 mt-0.5">Health Score</span>
@@ -70,7 +70,7 @@ export function DashboardMockup() {
               <div className="flex-1 grid grid-cols-2 gap-1.5">
                 {[
                   { label: 'Riscos', value: '24', color: 'text-red-400', bg: 'bg-red-500/10' },
-                  { label: 'Controles', value: '156', color: 'text-blue-400', bg: 'bg-blue-500/10' },
+                  { label: 'Controles', value: '156', color: 'text-[#7552FF]', bg: 'bg-[#7552FF]/10' },
                   { label: 'Incidentes', value: '3', color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
                   { label: 'Compliance', value: '87%', color: 'text-green-400', bg: 'bg-green-500/10' },
                 ].map((kpi) => (
@@ -94,7 +94,7 @@ export function DashboardMockup() {
                       className="flex-1 rounded-sm"
                       style={{
                         height: `${h}%`,
-                        background: h > 55 ? '#EF4444' : h > 40 ? '#3B82F6' : '#1E2D45',
+                        background: h > 55 ? '#EF4444' : h > 40 ? '#7552FF' : '#1E2D45',
                       }}
                     />
                   ))}
@@ -109,10 +109,10 @@ export function DashboardMockup() {
                   <polygon points="50,10 90,35 78,75 22,75 10,35" fill="none" stroke="#1E2D45" strokeWidth="1" />
                   <polygon points="50,25 75,40 68,65 32,65 25,40" fill="none" stroke="#1E2D45" strokeWidth="0.5" />
                   {/* Data shape */}
-                  <polygon points="50,18 82,38 70,70 28,68 18,38" fill="rgba(59,130,246,0.15)" stroke="#3B82F6" strokeWidth="1.5" />
+                  <polygon points="50,18 82,38 70,70 28,68 18,38" fill="rgba(117,82,255,0.15)" stroke="#7552FF" strokeWidth="1.5" />
                   {/* Dots */}
                   {[[50,18],[82,38],[70,70],[28,68],[18,38]].map(([cx,cy], i) => (
-                    <circle key={i} cx={cx} cy={cy} r="2" fill="#3B82F6" />
+                    <circle key={i} cx={cx} cy={cy} r="2" fill="#7552FF" />
                   ))}
                 </svg>
               </div>
@@ -137,7 +137,7 @@ export function DashboardMockup() {
       </div>
 
       {/* Glow effect behind */}
-      <div className="absolute -inset-4 bg-blue-500/5 rounded-2xl blur-2xl -z-10" />
+      <div className="absolute -inset-4 bg-[#7552FF]/5 rounded-2xl blur-2xl -z-10" />
     </div>
   );
 }
