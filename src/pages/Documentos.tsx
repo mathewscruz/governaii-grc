@@ -579,6 +579,8 @@ export default function Documentos() {
                       <SelectItem value="certificado">Certificado</SelectItem>
                       <SelectItem value="contrato">Contrato</SelectItem>
                       <SelectItem value="relatorio">Relatório</SelectItem>
+                      <SelectItem value="documento">Documento</SelectItem>
+                      <SelectItem value="manual">Manual</SelectItem>
                     </SelectContent>
                   </Select>
 
