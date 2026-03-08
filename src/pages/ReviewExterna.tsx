@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { ReviewExternalForm } from "@/components/revisao-acessos/ReviewExternalForm";
+import { logger } from '@/lib/logger';
 
 export default function ReviewExterna() {
   const { token } = useParams<{ token: string }>();
