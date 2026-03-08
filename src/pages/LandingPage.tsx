@@ -540,7 +540,7 @@ const LandingPage = () => {
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-4 text-gray-300">
                       <div className="w-10 h-10 rounded-lg bg-[#111B2E] border border-[#1E2D45] flex items-center justify-center shrink-0">
-                        <item.icon className="h-5 w-5 text-blue-400" />
+                        <item.icon className="h-5 w-5 text-[#7552FF]" />
                       </div>
                       <span className="text-sm sm:text-base">{item.text}</span>
                     </div>
