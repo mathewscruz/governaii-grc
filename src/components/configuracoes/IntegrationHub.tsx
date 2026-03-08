@@ -267,6 +267,7 @@ export function IntegrationHub() {
       }
     } catch (error) {
       console.error('Erro ao buscar integrações:', error);
+      toast.error('Erro ao carregar integrações');
     } finally {
       setLoading(false);
     }
