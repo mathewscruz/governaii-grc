@@ -408,7 +408,7 @@ const LandingPage = () => {
                     onClick={() => { setSelectedFeature(null); scrollToSection("contato"); }}
                     className="w-full bg-blue-600 hover:bg-blue-500"
                   >
-                    Fale com Vendas
+                    Fale Conosco
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
