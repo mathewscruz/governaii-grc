@@ -40,7 +40,7 @@ const Configuracoes = () => {
         if (error) throw error;
         if (data) setUserRole(data.role);
       } catch (error) {
-        console.error('Erro ao buscar perfil do usuário:', error);
+        logger.error('Erro ao buscar perfil do usuário', { module: 'Configuracoes', error: String(error) });
       } finally {
         setLoading(false);
       }

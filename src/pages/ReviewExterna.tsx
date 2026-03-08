@@ -60,7 +60,7 @@ export default function ReviewExterna() {
         setReview(data);
         setLoading(false);
       } catch (err: any) {
-        console.error("Erro ao carregar revisão:", err);
+        logger.error('Erro ao carregar revisão', { module: 'ReviewExterna', error: err.message });
         setError(err.message || "Erro ao carregar revisão");
         setLoading(false);
       }

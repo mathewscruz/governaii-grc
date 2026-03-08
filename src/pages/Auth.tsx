@@ -160,7 +160,7 @@ const Auth = () => {
             }
           }
         } catch (mfaError) {
-          console.error('Exceção MFA:', mfaError);
+          logger.error('Exceção MFA', { module: 'Auth', error: String(mfaError) });
           mfaInProgressRef.current = false;
           setMfaPending(false);
           setMfaPassword('');
