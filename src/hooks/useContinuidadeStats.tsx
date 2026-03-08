@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEmpresaId } from './useEmpresaId';
+import { useAuth } from '@/components/AuthProvider';
 
 export function useContinuidadeStats() {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
 
   return useQuery({
     queryKey: ['continuidade-stats', empresaId],
