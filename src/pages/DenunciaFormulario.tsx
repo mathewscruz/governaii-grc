@@ -123,7 +123,7 @@ export default function DenunciaFormulario() {
         setEmpresa(empresaData);
 
         // Buscar configurações da empresa
-        console.log('🔍 [DEBUG] Buscando configurações para empresa ID:', empresaData.id);
+        logger.debug('Buscando configurações para empresa', { module: 'DenunciaFormulario' });
         const { data: configData, error: configError } = await supabase
           .from('denuncias_configuracoes')
           .select('*')
