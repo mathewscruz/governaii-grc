@@ -44,8 +44,14 @@ export function ReminderSettings() {
 
   useEffect(() => {
     loadSettings()
-    loadStats()
   }, [])
+
+  // Load stats after settings are loaded (need empresa_id)
+  useEffect(() => {
+    if (settings.empresa_id) {
+      loadStats()
+    }
+  }, [settings.empresa_id])
 
   const loadSettings = async () => {
     try {
@@ -99,23 +105,29 @@ export function ReminderSettings() {
 
   const loadStats = async () => {
     try {
-      // Contar usuários convidados (com senha temporária)
+      const empresaId = settings.empresa_id;
+      if (!empresaId) return;
+
+      // Contar usuários convidados (com senha temporária) da empresa
       const { count: totalInvited } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
+        .eq('empresa_id', empresaId)
         .not('temporary_passwords', 'is', null)
 
-      // Contar lembretes pendentes (ativos)
+      // Contar lembretes pendentes (ativos) da empresa
       const { count: pendingReminders } = await supabase
         .from('user_invitation_reminders')
-        .select('*', { count: 'exact', head: true })
+        .select('*, profiles!inner(empresa_id)', { count: 'exact', head: true })
         .eq('status', 'active')
+        .eq('profiles.empresa_id', empresaId)
 
-      // Contar convites completados (usuários que fizeram login)
+      // Contar convites completados da empresa
       const { count: completedInvitations } = await supabase
         .from('user_invitation_reminders')
-        .select('*', { count: 'exact', head: true })
+        .select('*, profiles!inner(empresa_id)', { count: 'exact', head: true })
         .eq('status', 'completed')
+        .eq('profiles.empresa_id', empresaId)
 
       const effectiveness = totalInvited > 0 
         ? Math.round(((completedInvitations || 0) / totalInvited) * 100)
@@ -317,9 +329,9 @@ export function ReminderSettings() {
           </div>
 
           {/* Informações sobre funcionamento */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h4 className="font-medium text-blue-900 mb-2">Como funciona:</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
+          <div className="bg-muted p-4 rounded-lg border border-border">
+            <h4 className="font-medium text-foreground mb-2">Como funciona:</h4>
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Lembretes são enviados apenas para usuários com senhas temporárias ativas</li>
               <li>• O sistema para automaticamente após o número máximo de lembretes</li>
               <li>• Quando o usuário faz login, os lembretes param automaticamente</li>

@@ -5,13 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Building2, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, Building2, Upload, MoreHorizontal } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { PlanBadge } from '@/components/PlanBadge';
@@ -315,7 +315,7 @@ const GerenciamentoEmpresas = () => {
       label: 'Logo',
       sortable: false,
       render: (_, empresa) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           {empresa.logo_url ? (
             <img
               src={empresa.logo_url}
@@ -327,26 +327,6 @@ const GerenciamentoEmpresas = () => {
               <Building2 className="h-4 w-4 text-muted-foreground" />
             </div>
           )}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleLogoUpload(empresa.id, file);
-                    }}
-                    disabled={uploading}
-                  />
-                  <Upload className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                </label>
-              </TooltipTrigger>
-              <TooltipContent>Upload de logo</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
       ),
     },
@@ -417,38 +397,44 @@ const GerenciamentoEmpresas = () => {
     {
       key: 'actions',
       label: 'Ações',
-      className: 'w-24 text-right',
+      className: 'w-16 text-right',
       render: (_, empresa) => (
-        <div className="flex items-center justify-end gap-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEdit(empresa)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Editar empresa</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openDeleteDialog(empresa)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Excluir empresa</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleEdit(empresa)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Upload className="h-4 w-4" />
+                Upload Logo
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleLogoUpload(empresa.id, file);
+                  }}
+                  disabled={uploading}
+                />
+              </label>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => openDeleteDialog(empresa)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];

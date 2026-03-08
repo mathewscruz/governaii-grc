@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { DataTable } from '@/components/ui/data-table';
 import { toast } from 'sonner';
-import { Sparkles, Building2, RotateCcw, TrendingUp, History } from 'lucide-react';
+import { Sparkles, Building2, RotateCcw, TrendingUp, History, MoreHorizontal } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { formatDateOnly } from '@/lib/date-utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -173,19 +174,26 @@ export function CreditosIAManager() {
       key: 'actions',
       label: 'Ações',
       render: (_: any, row: EmpresaCredito) => (
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={() => openHistorico(row.id, row.nome)}>
-            <History className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setResetConfirm({ open: true, empresaId: row.id, empresaNome: row.nome })}
-            className="text-destructive hover:text-destructive"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => openHistorico(row.id, row.nome)}>
+              <History className="h-4 w-4 mr-2" />
+              Histórico
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setResetConfirm({ open: true, empresaId: row.id, empresaNome: row.nome })}
+              className="text-destructive focus:text-destructive"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Resetar Créditos
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     }
   ];

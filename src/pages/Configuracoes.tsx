@@ -1,12 +1,9 @@
-import { useState, useEffect } from 'react';
-import { logger } from '@/lib/logger';
 import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { Users, Building2, Settings, Shield, Plug, MessageSquare, CreditCard, Sparkles, Landmark } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
 import GerenciamentoUsuariosEnhanced from '@/components/configuracoes/GerenciamentoUsuariosEnhanced';
 import { PermissionMatrix } from '@/components/configuracoes/PermissionMatrix';
@@ -20,34 +17,11 @@ import { CreditosIAManager } from '@/components/configuracoes/CreditosIAManager'
 import { CompanyContextSettings } from '@/components/configuracoes/CompanyContextSettings';
 
 const Configuracoes = () => {
-  const { user } = useAuth();
+  const { profile, loading } = useAuth();
   const [searchParams] = useSearchParams();
-  const [userRole, setUserRole] = useState<string>('user');
-  const [loading, setLoading] = useState(true);
   const defaultTab = searchParams.get('tab') || 'usuarios';
 
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error) throw error;
-        if (data) setUserRole(data.role);
-      } catch (error) {
-        logger.error('Erro ao buscar perfil do usuário', { module: 'Configuracoes', error: String(error) });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserRole();
-  }, [user]);
+  const userRole = profile?.role || 'user';
 
   if (loading) {
     return (
