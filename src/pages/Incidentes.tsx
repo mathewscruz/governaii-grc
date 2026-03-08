@@ -157,6 +157,11 @@ export default function Incidentes() {
     setEvidenciaDialogOpen(true);
   };
 
+  const handleTratamentos = (incidente: Incidente) => {
+    setSelectedIncidente(incidente);
+    setTratamentoDialogOpen(true);
+  };
+
   const handleDelete = (id: string) => {
     setDeleteConfirm({ open: true, incidenteId: id });
   };
