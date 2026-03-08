@@ -27,8 +27,8 @@ interface PlanoAcao {
 }
 
 export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, frameworkName }) => {
-  const { empresaId } = useEmpresaId();
-  const navigate = useNavigate();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const [planos, setPlanos] = useState<PlanoAcao[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -90,6 +90,39 @@ async function callClaude(messages: { role: string; content: string }[], systemP
   return data.content?.[0]?.text || '';
 }
 
+// Fetch non-compliant gaps for the framework
+async function fetchFrameworkGaps(supabase: any, frameworkId: string, empresaId: string): Promise<string> {
+  try {
+    const { data: evals } = await supabase
+      .from('gap_analysis_evaluations')
+      .select('requirement_id, conformity_status')
+      .eq('framework_id', frameworkId)
+      .eq('empresa_id', empresaId)
+      .in('conformity_status', ['nao_conforme', 'parcialmente_conforme']);
+
+    if (!evals || evals.length === 0) return '';
+
+    const reqIds = evals.map((e: any) => e.requirement_id);
+    const { data: reqs } = await supabase
+      .from('gap_analysis_requirements')
+      .select('codigo, titulo, categoria')
+      .in('id', reqIds);
+
+    if (!reqs || reqs.length === 0) return '';
+
+    const gapLines = reqs.map((r: any) => {
+      const ev = evals.find((e: any) => e.requirement_id === r.id);
+      const status = ev?.conformity_status === 'nao_conforme' ? 'Não Conforme' : 'Parcialmente Conforme';
+      return `- [${r.codigo || 'S/C'}] ${r.titulo} (${r.categoria || 'Geral'}) — ${status}`;
+    });
+
+    return `\n\nGAPS IDENTIFICADOS NO FRAMEWORK (${gapLines.length} itens não conformes/parciais):\n${gapLines.join('\n')}`;
+  } catch (error) {
+    console.error('Error fetching framework gaps:', error);
+    return '';
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -112,10 +145,11 @@ serve(async (req) => {
       user_id, 
       empresa_id,
       action = 'chat',
-      doc_type_hint
+      doc_type_hint,
+      framework_context
     } = await req.json();
 
-    console.log('DocGen Chat request:', { message, conversation_id, action, user_id, empresa_id });
+    console.log('DocGen Chat request:', { message, conversation_id, action, user_id, empresa_id, framework_context });
 
     // Consume AI credit before processing
     if (user_id && empresa_id) {
@@ -147,6 +181,12 @@ serve(async (req) => {
       .eq('id', empresa_id)
       .single();
 
+    // Fetch framework gaps if context provided
+    let frameworkGapsText = '';
+    if (framework_context?.framework_id && empresa_id) {
+      frameworkGapsText = await fetchFrameworkGaps(supabase, framework_context.framework_id, empresa_id);
+    }
+
     // Buscar ou criar conversa
     let conversation;
     if (conversation_id) {
@@ -164,12 +204,15 @@ serve(async (req) => {
         .insert({
           empresa_id,
           user_id,
-          titulo: 'Nova Conversa DocGen',
+          titulo: framework_context?.framework_name 
+            ? `DocGen — ${framework_context.framework_name}` 
+            : 'Nova Conversa DocGen',
           mensagens: [],
           contexto: {
             user_name: profile?.nome || 'Usuário',
             empresa_nome: empresa?.nome || 'Empresa',
-            etapa_atual: 'inicio'
+            etapa_atual: 'inicio',
+            ...(framework_context && { framework_context })
           }
         })
         .select()
@@ -202,15 +245,20 @@ serve(async (req) => {
         console.log('Learning patterns not available:', error);
       }
 
+      const frameworkSection = framework_context?.framework_name
+        ? `\nCONTEXTO DO FRAMEWORK: O usuário está trabalhando com o framework "${framework_context.framework_name}". O documento gerado deve estar alinhado a este framework e endereçar os gaps identificados.${frameworkGapsText}`
+        : '';
+
       const systemPrompt = `Você é DocGen, um especialista em documentação corporativa altamente qualificado, com amplo conhecimento em frameworks de compliance, regulamentações e melhores práticas empresariais.
 
 CONTEXTO DA CONVERSA:
 - Empresa: ${context.empresa_nome}
 - Usuário: ${context.user_name}
 - Documento solicitado: ${doc_type_hint || 'documento corporativo'}
+${frameworkSection}
 
 SEU OBJETIVO:
-Ajudar o usuário a criar documentos corporativos de alta qualidade, fazendo perguntas inteligentes e específicas para coletar informações precisas.
+Ajudar o usuário a criar documentos corporativos de alta qualidade, fazendo perguntas inteligentes e específicas para coletar informações precisas.${framework_context?.framework_name ? ` O documento deve endereçar os gaps de conformidade do framework ${framework_context.framework_name}.` : ''}
 
 INSTRUÇÕES DE COMUNICAÇÃO:
 1. **Seja conversacional e profissional** - Use um tom amigável mas competente
@@ -318,14 +366,14 @@ IMPORTANTE: Sempre responda em português brasileiro. Responda SOMENTE com uma m
       const updatedContext = {
         ...context,
         tipo_documento_identificado: parsedResponse.tipo_documento_identificado || 
-                                   extractDocumentType(messageText) || 
-                                   context.tipo_documento_identificado,
+                                    extractDocumentType(messageText) || 
+                                    context.tipo_documento_identificado,
         documento_nome_identificado: parsedResponse.documento_nome_identificado || 
-                                   extractDocumentName(messageText) || 
-                                   (context as any).documento_nome_identificado,
+                                    extractDocumentName(messageText) || 
+                                    (context as any).documento_nome_identificado,
         frameworks_relacionados: parsedResponse.frameworks_relacionados || 
-                               extractFrameworks(messageText) || 
-                               (context as any).frameworks_relacionados,
+                                extractFrameworks(messageText) || 
+                                (context as any).frameworks_relacionados,
         etapa_atual: isDocumentReady ? 'pronto' : (parsedResponse.etapa_atual || 'coleta'),
         informacoes_coletadas: {
           ...context.informacoes_coletadas,
@@ -412,11 +460,16 @@ IMPORTANTE: Sempre responda em português brasileiro. Responda SOMENTE com uma m
         }
       } catch (_e) {}
 
+      const frameworkGapsSection = frameworkGapsText
+        ? `\n\nIMPORTANTE — O documento deve endereçar os seguintes gaps de conformidade identificados no framework "${framework_context?.framework_name}":\n${frameworkGapsText}\n\nInclua seções, controles ou procedimentos específicos que resolvam cada gap listado.`
+        : '';
+
       const documentPrompt = `Gere um documento COMPLETO e ESPECÍFICO do tipo solicitado.
 
 DOCUMENTO_EXATO: ${(context as any).documento_nome_identificado || doc_type_hint || context.tipo_documento_identificado}
-FRAMEWORKS_REQUERIDOS: ${JSON.stringify((context as any).frameworks_relacionados || [])}
+FRAMEWORKS_REQUERIDOS: ${JSON.stringify((context as any).frameworks_relacionados || (framework_context ? [framework_context.framework_name] : []))}
 EMPRESA: ${context.empresa_nome}
+${frameworkGapsSection}
 
 Use a estrutura do template abaixo e cubra explicitamente os requisitos do(s) framework(s) citado(s) quando aplicável.
 
