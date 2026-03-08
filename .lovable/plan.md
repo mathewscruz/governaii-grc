@@ -1,80 +1,45 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Ilustração do Sistema no Hero da Landing Page
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
+## Abordagem
 
----
+Vou criar um **mockup estático em SVG/HTML** que represente a interface do dashboard do Akuris — com visual enterprise limpo, sem parecer fake ou gerado por IA. O mockup será construído diretamente em JSX como um componente, mostrando elementos reais do sistema: score gauge, cards de KPI, gráfico radar e sidebar.
 
-## 1. ErrorBoundary ausente na maioria das paginas
+## O que será mostrado no mockup
 
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
+Baseado no dashboard real (`Dashboard.tsx`), o mockup incluirá:
+- Mini sidebar com ícones
+- Score de saúde (gauge circular)
+- Cards de KPI (Riscos, Controles, Incidentes)
+- Mini gráfico de barras
+- Visual com as cores reais do sistema (`#0A1628`, `#111B2E`, `#1E2D45`, azul primário)
 
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
+## Layout do Hero
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+O hero passará de **texto centralizado** para **split layout**: texto à esquerda + mockup à direita, padrão enterprise (Vanta, Drata, OneTrust).
 
----
+```text
+┌─────────────────────────────────────────────┐
+│  Gestão de Riscos,        │  ┌──────────┐   │
+│  Compliance e Governança  │  │ Dashboard │   │
+│                           │  │  Mockup   │   │
+│  [Teste Grátis] [Vendas]  │  │  (SVG)    │   │
+│                           │  └──────────┘   │
+└─────────────────────────────────────────────┘
+```
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+## Implementação
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+1. **Criar `src/components/landing/DashboardMockup.tsx`** — componente JSX puro que renderiza o mockup como divs estilizadas (sem imagens externas)
+2. **Atualizar `LandingPage.tsx`** — hero section com grid 2 colunas, texto à esquerda e mockup à direita
+3. O mockup terá uma leve sombra e rotação 3D (`perspective` + `rotateY`) para dar profundidade
+4. Em mobile, o mockup aparece abaixo do texto
 
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+## Arquivos
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
-
----
-
-## 3. Paginas sem EmptyState padronizado
-
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
-
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
-
----
-
-## 4. Ausencia de atalhos de teclado documentados para o usuario
-
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
-
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
-
----
-
-## 5. Botao de "Voltar" no header nao tem tooltip
-
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
-
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
-
----
-
-## Resumo de Prioridade
-
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
-
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+| Arquivo | Mudança |
+|---|---|
+| `src/components/landing/DashboardMockup.tsx` | Novo — mockup estático do dashboard |
+| `src/pages/LandingPage.tsx` | Hero split layout com mockup |
 
