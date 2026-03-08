@@ -597,12 +597,12 @@ const LandingPage = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="contact-company" className="block text-sm font-medium text-gray-500 mb-2">Empresa <span className="text-gray-400">(opcional)</span></label>
-                      <Input id="contact-company" name="company" value={formData.company} onChange={handleInputChange} placeholder="Nome da empresa" className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#7552FF] focus:ring-[#7552FF]" />
+                      <label htmlFor="contact-company" className="block text-sm font-medium text-gray-500 mb-2">Empresa <span className="text-red-500">*</span></label>
+                      <Input id="contact-company" name="company" value={formData.company} onChange={handleInputChange} placeholder="Nome da empresa" required className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                     <div>
-                      <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-500 mb-2">Telefone <span className="text-gray-400">(opcional)</span></label>
-                      <Input id="contact-phone" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="(00) 00000-0000" className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#7552FF] focus:ring-[#7552FF]" />
+                      <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-500 mb-2">Telefone <span className="text-red-500">*</span></label>
+                      <Input id="contact-phone" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="(00) 00000-0000" required className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#7552FF] focus:ring-[#7552FF]" />
                     </div>
                   </div>
 
