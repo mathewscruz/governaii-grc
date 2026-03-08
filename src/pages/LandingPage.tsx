@@ -321,7 +321,14 @@ const LandingPage = () => {
               </div>
 
               {/* Right — Dashboard Mockup */}
-              <div className="lp-fade-up lp-visible hidden md:block">
+              <div
+                className="lp-fade-up lp-visible hidden md:block will-change-transform"
+                style={{
+                  transform: `scale(${1 + mockupProgress * 0.5})`,
+                  opacity: 1 - mockupProgress,
+                  transition: 'none',
+                }}
+              >
                 <DashboardMockup />
               </div>
             </div>
