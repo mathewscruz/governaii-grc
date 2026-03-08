@@ -1,6 +1,5 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LanguageSelectorProps {
@@ -15,13 +14,13 @@ export function LanguageSelector({ variant = 'default' }: LanguageSelectorProps)
       variant="ghost"
       size="sm"
       className={cn(
-        "h-8 gap-1.5 text-xs font-medium",
-        variant === 'dark' && "text-white/60 hover:text-white hover:bg-white/10"
+        "h-8 gap-1.5 text-base px-2",
+        variant === 'dark' && "hover:bg-white/10"
       )}
       onClick={() => setLocale(locale === 'pt' ? 'en' : 'pt')}
+      title={locale === 'pt' ? 'Switch to English' : 'Mudar para Português'}
     >
-      <Globe className="h-3.5 w-3.5" />
-      {locale === 'pt' ? 'PT' : 'EN'}
+      {locale === 'pt' ? '🇧🇷' : '🇬🇧'}
     </Button>
   );
 }

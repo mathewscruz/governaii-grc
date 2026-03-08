@@ -3,42 +3,43 @@ import { LayoutDashboard, AlertTriangle, FileCheck, FileText, Settings, MoreHori
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   Database, BarChart3, Lock, CheckSquare, AlertCircle, 
-  FileBarChart, GraduationCap, MessageSquare, BookOpen, ListTodo, Handshake, Eye
+  FileBarChart, GraduationCap, BookOpen, ListTodo, Handshake, Eye
 } from 'lucide-react';
-
-const mainNavItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'Riscos', url: '/riscos', icon: AlertTriangle },
-  { title: 'Controles', url: '/governanca', icon: FileCheck },
-  { title: 'Docs', url: '/documentos', icon: FileText },
-];
-
-const moreNavItems = [
-  { title: 'Planos de Ação', url: '/planos-acao', icon: ListTodo },
-  { title: 'Contratos', url: '/contratos', icon: Handshake },
-  { title: 'Ativos', url: '/ativos', icon: Database },
-  { title: 'Gap Analysis', url: '/gap-analysis/frameworks', icon: BarChart3 },
-  { title: 'Segurança', url: '/contas-privilegiadas', icon: Lock },
-  { title: 'Incidentes', url: '/incidentes', icon: AlertCircle },
-  { title: 'Privacidade', url: '/privacidade', icon: Eye },
-  { title: 'Due Diligence', url: '/due-diligence', icon: BookOpen },
-  { title: 'Compliance', url: '/denuncia', icon: CheckSquare },
-  { title: 'Políticas', url: '/politicas', icon: GraduationCap },
-  { title: 'Relatórios', url: '/relatorios', icon: FileBarChart },
-  { title: 'Configurações', url: '/configuracoes', icon: Settings },
-];
 
 export function MobileBottomNav() {
   const isMobile = useIsMobile();
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { t } = useLanguage();
 
   if (!isMobile) return null;
 
   const isActive = (url: string) => location.pathname === url || location.pathname.startsWith(url + '/');
+
+  const mainNavItems = [
+    { title: t('sidebar.dashboard'), url: '/dashboard', icon: LayoutDashboard },
+    { title: t('sidebar.risks'), url: '/riscos', icon: AlertTriangle },
+    { title: t('sidebar.internalControls'), url: '/governanca', icon: FileCheck },
+    { title: t('sidebar.documents'), url: '/documentos', icon: FileText },
+  ];
+
+  const moreNavItems = [
+    { title: t('sidebar.actionPlans'), url: '/planos-acao', icon: ListTodo },
+    { title: t('sidebar.contracts'), url: '/contratos', icon: Handshake },
+    { title: t('sidebar.assets'), url: '/ativos', icon: Database },
+    { title: t('sidebar.gapAnalysis'), url: '/gap-analysis/frameworks', icon: BarChart3 },
+    { title: t('sidebar.security'), url: '/contas-privilegiadas', icon: Lock },
+    { title: t('sidebar.incidents'), url: '/incidentes', icon: AlertCircle },
+    { title: t('sidebar.privacy'), url: '/privacidade', icon: Eye },
+    { title: t('sidebar.dueDiligence'), url: '/due-diligence', icon: BookOpen },
+    { title: t('sidebar.compliance'), url: '/denuncia', icon: CheckSquare },
+    { title: t('sidebar.policies'), url: '/politicas', icon: GraduationCap },
+    { title: t('sidebar.reports'), url: '/relatorios', icon: FileBarChart },
+    { title: t('sidebar.settings'), url: '/configuracoes', icon: Settings },
+  ];
 
   return (
     <>
@@ -61,12 +62,12 @@ export function MobileBottomNav() {
             <SheetTrigger asChild>
               <button className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full">
                 <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-                <span className="text-[10px] font-medium text-muted-foreground">Mais</span>
+                <span className="text-[10px] font-medium text-muted-foreground">{t('notifications.more')}</span>
               </button>
             </SheetTrigger>
             <SheetContent side="bottom" className="pb-safe">
               <SheetHeader>
-                <SheetTitle>Mais módulos</SheetTitle>
+                <SheetTitle>{t('notifications.moreModules')}</SheetTitle>
               </SheetHeader>
               <div className="grid grid-cols-3 gap-3 mt-4 pb-4">
                 {moreNavItems.map(item => (
@@ -87,7 +88,6 @@ export function MobileBottomNav() {
           </Sheet>
         </div>
       </nav>
-      {/* Spacer to prevent content from being hidden behind bottom nav */}
       <div className="h-14 md:hidden" />
     </>
   );

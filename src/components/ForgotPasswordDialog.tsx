@@ -6,10 +6,9 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Mail } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
-
-const emailSchema = z.string().min(1, 'Email é obrigatório').email('Email inválido');
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -20,12 +19,14 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const { t } = useLanguage();
+
+  const emailSchema = z.string().min(1, t('forgotPassword.validationEmailRequired')).email(t('forgotPassword.validationEmailInvalid'));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEmailError(null);
     
-    // Validação com Zod
     const validation = emailSchema.safeParse(email.trim());
     if (!validation.success) {
       setEmailError(validation.error.errors[0].message);
@@ -37,44 +38,28 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
     try {
       logger.info('Iniciando processo de recuperação de senha', { email: email.trim(), module: 'Auth', action: 'password-reset' });
       
-      // Enviar diretamente para a edge function com o email
-      // A edge function faz a busca com SERVICE_ROLE_KEY (sem restrições de RLS)
       const { data, error } = await supabase.functions.invoke('send-password-reset', {
         body: { email: email.trim() }
       });
 
       if (error) {
         logger.error('Erro ao invocar send-password-reset', { 
-          email: email.trim(), 
-          error: error.message,
-          errorDetails: JSON.stringify(error),
-          module: 'Auth', 
-          action: 'password-reset' 
+          email: email.trim(), error: error.message, module: 'Auth', action: 'password-reset' 
         });
-        console.error('Detalhes do erro send-password-reset:', error);
       } else {
         logger.info('Reset de senha processado', { 
-          email: email.trim(),
-          response: JSON.stringify(data),
-          module: 'Auth', 
-          action: 'password-reset' 
+          email: email.trim(), module: 'Auth', action: 'password-reset' 
         });
       }
 
-      // SEMPRE mostrar mensagem de sucesso (proteção contra enumeração de emails)
-      toast.success('Se o e-mail estiver cadastrado, você receberá as instruções de recuperação. Verifique também a pasta de spam/lixo eletrônico.', { duration: 8000 });
+      toast.success(t('forgotPassword.successMessage'), { duration: 8000 });
       setEmail('');
       onOpenChange(false);
     } catch (error: any) {
       logger.error('Erro no processo de recuperação de senha', { 
-        error: error.message,
-        stack: error.stack,
-        module: 'Auth', 
-        action: 'password-reset' 
+        error: error.message, module: 'Auth', action: 'password-reset' 
       });
-      console.error('Erro completo no processo de recuperação:', error);
-      // Mesmo em caso de erro, mostrar mensagem genérica
-      toast.success('Se o e-mail estiver cadastrado, você receberá as instruções de recuperação.');
+      toast.success(t('forgotPassword.successMessage'));
       setEmail('');
       onOpenChange(false);
     } finally {
@@ -88,20 +73,20 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Recuperar Senha
+            {t('forgotPassword.title')}
           </DialogTitle>
           <DialogDescription>
-            Digite seu e-mail para receber instruções de recuperação de senha.
+            {t('forgotPassword.description')}
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="forgot-email">E-mail</Label>
+            <Label htmlFor="forgot-email">{t('forgotPassword.email')}</Label>
             <Input
               id="forgot-email"
               type="email"
-              placeholder="seu.email@empresa.com"
+              placeholder={t('forgotPassword.emailPlaceholder')}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -123,14 +108,14 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
               disabled={isLoading}
               className="flex-1"
             >
-              Cancelar
+              {t('forgotPassword.cancel')}
             </Button>
             <Button
               type="submit"
               disabled={isLoading}
               className="flex-1"
             >
-              {isLoading ? 'Enviando...' : 'Enviar'}
+              {isLoading ? t('forgotPassword.sending') : t('forgotPassword.send')}
             </Button>
           </div>
         </form>

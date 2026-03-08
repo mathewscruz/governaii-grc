@@ -12,32 +12,13 @@ import logoImage from '@/assets/akuris-logo.png';
 import { ForgotPasswordDialog } from '@/components/ForgotPasswordDialog';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { MFAVerification } from '@/components/MFAVerification';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
 
-const loginSchema = z.object({
-  email: z.string().min(1, 'Email é obrigatório').email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres')
-});
-
-const getErrorMessage = (error: any): string => {
-  const message = error?.message || '';
-  if (message.includes('Invalid login credentials')) return 'Email ou senha incorretos';
-  if (message.includes('Email not confirmed')) return 'Email não confirmado. Verifique sua caixa de entrada.';
-  if (message.includes('User not found')) return 'Usuário não encontrado';
-  if (message.includes('Too many requests')) return 'Muitas tentativas. Aguarde alguns minutos.';
-  if (message.includes('Network')) return 'Erro de conexão. Verifique sua internet.';
-  return 'Erro ao fazer login. Tente novamente.';
-};
-
-const features = [
-  { icon: Shield, title: 'Governança', desc: 'Políticas, documentos e conformidade centralizada' },
-  { icon: BarChart3, title: 'Riscos', desc: 'Matriz de riscos e tratamentos integrados' },
-  { icon: FileCheck, title: 'Compliance', desc: 'Gap analysis, auditorias e controles' },
-];
-
 const Auth = () => {
   const { user, loading } = useAuth();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,6 +34,27 @@ const Auth = () => {
   const [mfaUserId, setMfaUserId] = useState('');
   const [mfaEmail, setMfaEmail] = useState('');
   const [mfaPassword, setMfaPassword] = useState('');
+
+  const loginSchema = z.object({
+    email: z.string().min(1, t('auth.validationEmailRequired')).email(t('auth.validationEmailInvalid')),
+    password: z.string().min(6, t('auth.validationPasswordMin'))
+  });
+
+  const getErrorMessage = (error: any): string => {
+    const message = error?.message || '';
+    if (message.includes('Invalid login credentials')) return t('auth.errorInvalidCredentials');
+    if (message.includes('Email not confirmed')) return t('auth.errorEmailNotConfirmed');
+    if (message.includes('User not found')) return t('auth.errorUserNotFound');
+    if (message.includes('Too many requests')) return t('auth.errorTooManyRequests');
+    if (message.includes('Network')) return t('auth.errorNetwork');
+    return t('auth.errorGeneric');
+  };
+
+  const features = [
+    { icon: Shield, title: t('auth.featureGovernance'), desc: t('auth.featureGovernanceDesc') },
+    { icon: BarChart3, title: t('auth.featureRisks'), desc: t('auth.featureRisksDesc') },
+    { icon: FileCheck, title: t('auth.featureCompliance'), desc: t('auth.featureComplianceDesc') },
+  ];
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('akuris_remember_email');
@@ -70,7 +72,7 @@ const Auth = () => {
       <div className="min-h-screen flex items-center justify-center bg-[hsl(230,25%,7%)]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-          <p className="mt-4 text-muted-foreground">Carregando...</p>
+          <p className="mt-4 text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -106,11 +108,8 @@ const Auth = () => {
       }
 
       if (userId) {
-        // Destruir sessão ANTES de verificar MFA
-        // NÃO setar mfaPending aqui - só após confirmar que MFA é necessário
         await supabase.auth.signOut();
 
-        // Enviar código MFA
         try {
           const mfaResponse = await supabase.functions.invoke('send-mfa-code', {
             body: { userId, email: email.trim() },
@@ -124,12 +123,11 @@ const Auth = () => {
             const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
             if (!reAuthError) {
               setLoginSuccess(true);
-              toast.success('Login realizado com sucesso!');
+              toast.success(t('auth.loginSuccess'));
             } else {
-              toast.error('Erro ao autenticar. Tente novamente.');
+              toast.error(t('auth.errorAuth'));
             }
           } else if (mfaResponse.data?.success && mfaResponse.data?.skipped) {
-            // Sessão MFA válida encontrada - pular verificação e re-autenticar
             logger.debug('MFA skipped - sessão válida encontrada', { module: 'Auth' });
             mfaInProgressRef.current = false;
             setMfaPending(false);
@@ -137,12 +135,11 @@ const Auth = () => {
             const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
             if (!reAuthError) {
               setLoginSuccess(true);
-              toast.success('Login realizado com sucesso!');
+              toast.success(t('auth.loginSuccess'));
             } else {
-              toast.error('Erro ao autenticar. Tente novamente.');
+              toast.error(t('auth.errorAuth'));
             }
           } else if (mfaResponse.data?.success) {
-            // MFA realmente necessário - AGORA sim mostrar tela MFA
             setMfaPending(true);
             setMfaUserId(userId);
             setMfaEmail(email.trim());
@@ -167,7 +164,7 @@ const Auth = () => {
           const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
           if (!reAuthError) {
             setLoginSuccess(true);
-            toast.success('Login realizado com sucesso!');
+            toast.success(t('auth.loginSuccess'));
           }
         }
       }
@@ -181,29 +178,27 @@ const Auth = () => {
   };
 
   const handleMFAVerified = async () => {
-    // Código MFA validado - agora SIM criar a sessão real
     try {
       const { error } = await supabase.auth.signInWithPassword({ 
         email: mfaEmail, 
         password: mfaPassword 
       });
-      // Limpar senha da memória imediatamente
       setMfaPassword('');
       mfaInProgressRef.current = false;
       setMfaPending(false);
       
       if (error) {
-        toast.error('Erro ao autenticar após verificação. Tente novamente.');
+        toast.error(t('auth.errorAuthAfterMFA'));
         return;
       }
       
       setLoginSuccess(true);
-      toast.success('Login realizado com sucesso!');
+      toast.success(t('auth.loginSuccess'));
     } catch (err) {
       setMfaPassword('');
       mfaInProgressRef.current = false;
       setMfaPending(false);
-      toast.error('Erro ao autenticar. Tente novamente.');
+      toast.error(t('auth.errorAuth'));
     }
   };
 
@@ -213,11 +208,9 @@ const Auth = () => {
     setMfaUserId('');
     setMfaEmail('');
     setMfaPassword('');
-    // Não precisa signOut - usuário já não tem sessão
-    toast.info('Login cancelado');
+    toast.info(t('auth.loginCancelled'));
   };
 
-  // Mostrar tela MFA
   if (mfaPending) {
     return (
       <MFAVerification
@@ -233,28 +226,23 @@ const Auth = () => {
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* ===== BRAND PANEL (desktop only) ===== */}
       <div className="hidden lg:flex lg:w-[60%] relative flex-col items-center justify-center sidebar-gradient overflow-hidden">
-        {/* Grid background */}
         <div className="landing-grid-bg absolute inset-0 opacity-30" />
-
-        {/* Glow orbs */}
         <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-[hsl(252,100%,66%,0.08)] rounded-full blur-[100px] glow-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[hsl(252,100%,66%,0.06)] rounded-full blur-[120px] glow-pulse" style={{ animationDelay: '1s' }} />
 
-        {/* Content */}
         <div className="relative z-10 flex flex-col items-center gap-10 px-12 max-w-lg landing-fade-in-1">
           <img src={logoImage} alt="Akuris Logo" className="h-20 object-contain landing-fade-in-1" />
           <div className="text-center space-y-3 landing-fade-in-2">
             <h1 className="text-3xl font-bold text-white">
-              Plataforma de <span className="text-gradient">Governança, Risco e Compliance</span>
+              {t('auth.platformTitle')} <span className="text-gradient">{t('auth.platformHighlight')}</span>
             </h1>
-            <p className="text-white/50 text-sm">Gerencie todo o ciclo GRC da sua organização em um só lugar.</p>
+            <p className="text-white/50 text-sm">{t('auth.platformDesc')}</p>
           </div>
 
-          {/* Feature cards */}
           <div className="w-full space-y-3 landing-fade-in-3">
             {features.map((f, i) => (
               <div
-                key={f.title}
+                key={i}
                 className="flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-sm px-5 py-4 landing-fade-in-4"
                 style={{ animationDelay: `${0.5 + i * 0.15}s` }}
               >
@@ -273,37 +261,32 @@ const Auth = () => {
 
       {/* ===== LOGIN PANEL ===== */}
       <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[hsl(230,25%,7%)] to-[hsl(228,20%,9%)] px-6 py-12 relative overflow-hidden">
-        {/* Language selector */}
         <div className="absolute top-4 right-4 z-20">
           <LanguageSelector variant="dark" />
         </div>
-        {/* Subtle orb for mobile */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
 
         <div className="w-full max-w-sm relative z-10 space-y-8">
-          {/* Logo (mobile only) */}
           <div className="lg:hidden text-center landing-fade-in-1">
             <img src={logoImage} alt="Akuris Logo" className="h-16 mx-auto object-contain" />
-            <p className="text-white/40 text-xs mt-2">Governança, Risco e Compliance</p>
+            <p className="text-white/40 text-xs mt-2">{t('auth.mobileSubtitle')}</p>
           </div>
 
-          {/* Form card */}
           <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-md p-8 shadow-2xl space-y-6 landing-fade-in-2">
             <div className="text-center space-y-1">
-              <h2 className="text-xl font-bold text-white">Acesso ao Sistema</h2>
-              <p className="text-sm text-white/50">Entre com suas credenciais</p>
+              <h2 className="text-xl font-bold text-white">{t('auth.systemAccess')}</h2>
+              <p className="text-sm text-white/50">{t('auth.enterCredentials')}</p>
             </div>
 
             <form onSubmit={handleSignIn} className="space-y-5">
-              {/* Email */}
               <div className="space-y-1.5 landing-fade-in-3">
-                <Label htmlFor="email" className="text-white/70 text-sm font-medium">E-mail</Label>
+                <Label htmlFor="email" className="text-white/70 text-sm font-medium">{t('auth.email')}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="email@empresa.com.br"
+                    placeholder={t('auth.emailPlaceholder')}
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors(p => ({ ...p, email: undefined })); }}
                     autoFocus
@@ -313,9 +296,8 @@ const Auth = () => {
                 {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
               </div>
 
-              {/* Password */}
               <div className="space-y-1.5 landing-fade-in-4">
-                <Label htmlFor="password" className="text-white/70 text-sm font-medium">Senha</Label>
+                <Label htmlFor="password" className="text-white/70 text-sm font-medium">{t('auth.password')}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                   <Input
@@ -333,18 +315,16 @@ const Auth = () => {
                 {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
               </div>
 
-              {/* Remember / Forgot */}
               <div className="flex items-center justify-between landing-fade-in-5">
                 <div className="flex items-center space-x-2">
                   <Checkbox id="remember" checked={rememberMe} onCheckedChange={(c) => setRememberMe(c as boolean)} />
-                  <Label htmlFor="remember" className="text-xs text-white/50 cursor-pointer">Lembrar-me</Label>
+                  <Label htmlFor="remember" className="text-xs text-white/50 cursor-pointer">{t('auth.rememberMe')}</Label>
                 </div>
                 <button type="button" onClick={() => setForgotPasswordDialogOpen(true)} className="text-xs text-primary hover:text-primary/80 hover:underline transition-colors">
-                  Esqueci minha senha
+                  {t('auth.forgotPassword')}
                 </button>
               </div>
 
-              {/* Submit */}
               <Button
                 type="submit"
                 variant="gradient"
@@ -352,27 +332,26 @@ const Auth = () => {
                 disabled={isLoading || loginSuccess}
               >
                 {loginSuccess ? (
-                  <><CheckCircle2 className="mr-2 h-4 w-4 text-green-400" />Sucesso!</>
+                  <><CheckCircle2 className="mr-2 h-4 w-4 text-green-400" />{t('auth.success')}</>
                 ) : isLoading ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Entrando...</>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('auth.signingIn')}</>
                 ) : (
-                  'Entrar'
+                  t('auth.signIn')
                 )}
               </Button>
             </form>
 
           </div>
 
-          {/* Footer */}
           <div className="text-center space-y-2 landing-fade-in-5">
             <p className="text-white/40 text-sm">
-              Não tem uma conta?{' '}
-              <Link to="/registro" className="text-primary hover:text-primary/80 hover:underline font-medium">Criar conta grátis</Link>
+              {t('auth.noAccount')}{' '}
+              <Link to="/registro" className="text-primary hover:text-primary/80 hover:underline font-medium">{t('auth.createFreeAccount')}</Link>
             </p>
             <Link to="/politica-privacidade" target="_blank" className="text-white/30 hover:text-primary text-xs transition-colors block">
-              Política de Privacidade
+              {t('auth.privacyPolicy')}
             </Link>
-            <p className="text-white/20 text-xs">© {new Date().getFullYear()} Akuris — Todos os direitos reservados</p>
+            <p className="text-white/20 text-xs">© {new Date().getFullYear()} Akuris — {t('auth.allRightsReserved')}</p>
           </div>
         </div>
       </div>
