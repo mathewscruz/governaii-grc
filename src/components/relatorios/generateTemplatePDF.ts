@@ -122,8 +122,8 @@ async function fetchRiscosData(empresaId: string) {
 async function fetchIncidentesData(empresaId: string) {
   const { data: inc } = await supabase.from('incidentes').select('*').eq('empresa_id', empresaId).order('data_deteccao', { ascending: false });
   const i = inc || [];
-  const critica = i.filter(x => x.gravidade === 'critica').length;
-  const alta = i.filter(x => x.gravidade === 'alta').length;
+  const critica = i.filter(x => x.criticidade === 'critica').length;
+  const alta = i.filter(x => x.criticidade === 'alta').length;
   const resolvidos = i.filter(x => x.status === 'resolvido').length;
   return {
     sections: [
