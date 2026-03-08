@@ -43,30 +43,7 @@ const TeamsLogo = () => (
   </svg>
 );
 
-const OneDriveLogo = () => (
-  <svg viewBox="0 0 48 48" className="w-8 h-8">
-    <path fill="#1565C0" d="M26 33c-6.1 0-11-4.9-11-11 0-5.5 4.1-10.1 9.4-10.9C26.2 7.8 29.9 5 34.2 5 39.5 5 44 9.5 44 15c0 1-.2 2-.5 3h.5c2.2 0 4 1.8 4 4v7c0 2.2-1.8 4-4 4H26z"/>
-    <path fill="#42A5F5" d="M14 39c-4.4 0-8-3.6-8-8 0-3.6 2.4-6.7 5.7-7.7C12.5 21.5 14.5 20 17 20c3.3 0 6 2.7 6 6 0 .3 0 .7-.1 1h.1c2.8 0 5 2.2 5 5v3c0 2.2-1.8 4-4 4H14z"/>
-  </svg>
-);
-
-const GoogleDriveLogo = () => (
-  <svg viewBox="0 0 87.3 78" className="w-8 h-8">
-    <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
-    <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
-    <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
-    <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
-    <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
-    <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
-  </svg>
-);
-
-const ZapierLogo = () => (
-  <svg viewBox="0 0 200 200" className="w-8 h-8">
-    <path fill="#FF4A00" d="M134.9 100l-16.6-16.6c-4.3-4.3-4.3-11.3 0-15.6l32.1-32.1c4.3-4.3 4.3-11.3 0-15.6l-6.4-6.4c-4.3-4.3-11.3-4.3-15.6 0L96.3 45.8c-4.3 4.3-11.3 4.3-15.6 0L48.6 13.7c-4.3-4.3-11.3-4.3-15.6 0l-6.4 6.4c-4.3 4.3-4.3 11.3 0 15.6l32.1 32.1c4.3 4.3 4.3 11.3 0 15.6L42.1 100l16.6 16.6c4.3 4.3 4.3 11.3 0 15.6l-32.1 32.1c-4.3 4.3-4.3 11.3 0 15.6l6.4 6.4c4.3 4.3 11.3 4.3 15.6 0l32.1-32.1c4.3-4.3 11.3-4.3 15.6 0l32.1 32.1c4.3 4.3 11.3 4.3 15.6 0l6.4-6.4c4.3-4.3 4.3-11.3 0-15.6l-32.1-32.1c-4.3-4.3-4.3-11.3 0-15.6L134.9 100z"/>
-    <circle fill="#FF4A00" cx="100" cy="100" r="22"/>
-  </svg>
-);
+// Logos removidos: OneDrive, Google Drive, Zapier (placeholders sem funcionalidade)
 
 const JiraLogo = () => (
   <svg viewBox="0 0 32 32" className="w-8 h-8">
@@ -181,36 +158,6 @@ const INTEGRACOES_DISPONIVEIS: Integration[] = [
     cor: '#0078D4',
     Logo: AzureLogo
   },
-  {
-    id: 'onedrive',
-    tipo: 'onedrive',
-    nome: 'OneDrive',
-    descricao: 'Sincronize documentos aprovados com o OneDrive/SharePoint.',
-    categoria: 'armazenamento',
-    disponivel: false,
-    cor: '#0078D4',
-    Logo: OneDriveLogo
-  },
-  {
-    id: 'google-drive',
-    tipo: 'google-drive',
-    nome: 'Google Drive',
-    descricao: 'Backup automático de documentos e evidências no Google Drive.',
-    categoria: 'armazenamento',
-    disponivel: false,
-    cor: '#4285F4',
-    Logo: GoogleDriveLogo
-  },
-  {
-    id: 'zapier',
-    tipo: 'zapier',
-    nome: 'Zapier',
-    descricao: 'Conecte com milhares de apps via Zapier.',
-    categoria: 'automacao',
-    disponivel: false,
-    cor: '#FF4A00',
-    Logo: ZapierLogo
-  }
 ];
 
 const CATEGORIAS = {
@@ -218,7 +165,6 @@ const CATEGORIAS = {
   automacao: { nome: 'Automação', descricao: 'Plataformas de automação e webhooks' },
   itsm: { nome: 'ITSM / Gestão de TI', descricao: 'Ferramentas de gestão de serviços' },
   cloud: { nome: 'Cloud & Identidade', descricao: 'Provedores de nuvem e gestão de identidade' },
-  armazenamento: { nome: 'Armazenamento', descricao: 'Armazenamento e backup de documentos' }
 };
 
 export function IntegrationHub() {

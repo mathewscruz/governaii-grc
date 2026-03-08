@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -279,6 +280,8 @@ export default function PlanosAcao() {
     return result;
   }, [currentData, statusFilter, prioridadeFilter, search, sortField, sortDirection]);
 
+  const { notify } = useIntegrationNotify();
+
   const handleSave = async (data: any) => {
     if (!empresaId || !user?.id) return;
     setSaving(true);
@@ -295,6 +298,13 @@ export default function PlanosAcao() {
         });
         if (error) throw error;
         toast.success('Plano de ação criado');
+        notify('plano_acao_criado', {
+          titulo: `Novo plano de ação: ${data.titulo}`,
+          descricao: data.descricao,
+          link: `${window.location.origin}/planos-acao`,
+          dados: { prioridade: data.prioridade, modulo_origem: data.modulo_origem },
+          gravidade: data.prioridade === 'critica' ? 'critica' : data.prioridade === 'alta' ? 'alta' : 'media',
+        });
       }
       queryClient.invalidateQueries({ queryKey: ['planos-acao'] });
       setDialogOpen(false);

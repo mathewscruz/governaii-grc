@@ -30,21 +30,9 @@ interface WebhooksConfigDialogProps {
   onSaved: () => void;
 }
 
-const EVENTOS_DISPONIVEIS = [
-  { id: 'incidente_criado', label: 'Incidente criado', modulo: 'Incidentes' },
-  { id: 'incidente_atualizado', label: 'Incidente atualizado', modulo: 'Incidentes' },
-  { id: 'incidente_resolvido', label: 'Incidente resolvido', modulo: 'Incidentes' },
-  { id: 'risco_identificado', label: 'Risco identificado', modulo: 'Riscos' },
-  { id: 'risco_atualizado', label: 'Risco atualizado', modulo: 'Riscos' },
-  { id: 'documento_criado', label: 'Documento criado', modulo: 'Documentos' },
-  { id: 'documento_aprovado', label: 'Documento aprovado', modulo: 'Documentos' },
-  { id: 'documento_rejeitado', label: 'Documento rejeitado', modulo: 'Documentos' },
-  { id: 'controle_criado', label: 'Controle criado', modulo: 'Controles' },
-  { id: 'controle_atualizado', label: 'Controle atualizado', modulo: 'Controles' },
-  { id: 'auditoria_criada', label: 'Auditoria criada', modulo: 'Auditorias' },
-  { id: 'auditoria_item_atribuido', label: 'Item de auditoria atribuído', modulo: 'Auditorias' },
-  { id: 'denuncia_recebida', label: 'Denúncia recebida', modulo: 'Denúncias' },
-];
+import { INTEGRATION_EVENTS } from '@/lib/integration-events';
+
+const EVENTOS_DISPONIVEIS = INTEGRATION_EVENTS;
 
 const PAYLOAD_EXEMPLO = `{
   "evento": "incidente_criado",

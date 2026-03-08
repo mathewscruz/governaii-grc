@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
@@ -129,6 +130,8 @@ export default function Politicas() {
     return result;
   }, [politicas, categoriaFilter, statusFilter, search, sortField, sortDirection]);
 
+  const { notify } = useIntegrationNotify();
+
   const handleSave = async (data: any) => {
     if (!empresaId || !user?.id) return;
     setSaving(true);
@@ -137,12 +140,24 @@ export default function Politicas() {
         const { error } = await supabase.from('politicas').update(data).eq('id', editingPolitica.id);
         if (error) throw error;
         toast.success('Política atualizada');
+        notify('politica_atualizada', {
+          titulo: `Política atualizada: ${data.titulo}`,
+          descricao: data.descricao,
+          link: `${window.location.origin}/politicas`,
+          dados: { categoria: data.categoria },
+        });
       } else {
         const { error } = await supabase.from('politicas').insert({
           ...data, empresa_id: empresaId, created_by: user.id,
         });
         if (error) throw error;
         toast.success('Política criada');
+        notify('politica_criada', {
+          titulo: `Nova política: ${data.titulo}`,
+          descricao: data.descricao,
+          link: `${window.location.origin}/politicas`,
+          dados: { categoria: data.categoria },
+        });
       }
       queryClient.invalidateQueries({ queryKey: ['politicas'] });
       setDialogOpen(false);

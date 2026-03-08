@@ -173,6 +173,27 @@ export function ApiKeysManager() {
         </Card>
       )}
 
+      {/* API Documentation */}
+      <Card className="border-dashed">
+        <CardContent className="py-4 space-y-3">
+          <h4 className="font-medium text-sm">📖 Como usar a API</h4>
+          <div className="text-xs text-muted-foreground space-y-2">
+            <p>Envie requisições para a Edge Function <code className="bg-muted px-1 rounded">api-public</code> com o header <code className="bg-muted px-1 rounded">X-API-Key</code>.</p>
+            <div className="bg-muted rounded p-3 font-mono text-[11px] overflow-x-auto whitespace-pre">{`# Listar riscos
+curl -H "X-API-Key: gai_sua_chave_aqui" \\
+  "${window.location.origin.replace('://','://lnlkahtugwmkznasapfd.supabase.co/functions/v1/')?.split('.lovable')[0] || 'https://lnlkahtugwmkznasapfd.supabase.co/functions/v1'}/api-public/riscos"
+
+# Criar incidente
+curl -X POST -H "X-API-Key: gai_sua_chave_aqui" \\
+  -H "Content-Type: application/json" \\
+  -d '{"titulo":"Teste","tipo":"seguranca","gravidade":"media"}' \\
+  "https://lnlkahtugwmkznasapfd.supabase.co/functions/v1/api-public/incidentes"`}</div>
+            <p>Módulos disponíveis: <code className="bg-muted px-1 rounded">riscos</code>, <code className="bg-muted px-1 rounded">controles</code>, <code className="bg-muted px-1 rounded">incidentes</code>, <code className="bg-muted px-1 rounded">auditorias</code>, <code className="bg-muted px-1 rounded">documentos</code>, <code className="bg-muted px-1 rounded">ativos</code></p>
+            <p>Paginação: <code className="bg-muted px-1 rounded">?page=1&limit=50</code> (máx 100 por página)</p>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">API Keys</h3>

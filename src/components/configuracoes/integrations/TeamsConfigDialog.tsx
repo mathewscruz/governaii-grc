@@ -29,17 +29,9 @@ interface TeamsConfigDialogProps {
   onSaved: () => void;
 }
 
-const EVENTOS_DISPONIVEIS = [
-  { id: 'incidente_criado', label: 'Novo incidente criado', modulo: 'Incidentes' },
-  { id: 'incidente_critico', label: 'Incidente crítico detectado', modulo: 'Incidentes' },
-  { id: 'risco_identificado', label: 'Novo risco identificado', modulo: 'Riscos' },
-  { id: 'risco_nivel_alterado', label: 'Nível de risco alterado', modulo: 'Riscos' },
-  { id: 'documento_aprovado', label: 'Documento aprovado', modulo: 'Documentos' },
-  { id: 'documento_rejeitado', label: 'Documento rejeitado', modulo: 'Documentos' },
-  { id: 'controle_vencendo', label: 'Controle próximo do vencimento', modulo: 'Controles' },
-  { id: 'auditoria_item_atribuido', label: 'Item de auditoria atribuído', modulo: 'Auditorias' },
-  { id: 'denuncia_recebida', label: 'Nova denúncia recebida', modulo: 'Denúncias' },
-];
+import { INTEGRATION_EVENTS } from '@/lib/integration-events';
+
+const EVENTOS_DISPONIVEIS = INTEGRATION_EVENTS;
 
 const TeamsLogoInline = () => (
   <svg viewBox="0 0 48 48" className="h-6 w-6">

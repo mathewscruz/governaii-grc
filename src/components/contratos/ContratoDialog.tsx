@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -73,6 +74,7 @@ export function ContratoDialog({ contrato, open, onOpenChange, onSuccess, fornec
   const [loading, setLoading] = useState(false);
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const { toast } = useToast();
+  const { notify } = useIntegrationNotify();
 
   useEffect(() => {
     if (open) {
@@ -217,6 +219,15 @@ export function ContratoDialog({ contrato, open, onOpenChange, onSuccess, fornec
       }
 
       if (error) throw error;
+
+      if (!contrato) {
+        notify('contrato_criado', {
+          titulo: `Novo contrato: ${formData.nome}`,
+          descricao: formData.objeto,
+          link: `${window.location.origin}/contratos`,
+          dados: { tipo: formData.tipo, numero: formData.numero_contrato },
+        });
+      }
 
       toast({
         title: "Sucesso",

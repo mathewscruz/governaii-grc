@@ -302,10 +302,20 @@ serve(async (req) => {
         let success = false;
         let responseStatus = 0;
 
+        const fetchWithRetry = async (url: string, options: RequestInit, retries = 1): Promise<Response> => {
+          const response = await fetch(url, options);
+          if (!response.ok && response.status >= 500 && retries > 0) {
+            console.log(`Retrying ${url} after ${response.status}...`);
+            await new Promise(r => setTimeout(r, 2000));
+            return fetchWithRetry(url, options, retries - 1);
+          }
+          return response;
+        };
+
         switch (integration.tipo_integracao) {
           case 'slack': {
             const slackPayload = buildSlackPayload(titulo, descricao, evento, gravidade, link, dados, timestamp);
-            const slackResponse = await fetch(integration.webhook_url, {
+            const slackResponse = await fetchWithRetry(integration.webhook_url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(slackPayload)
@@ -317,7 +327,7 @@ serve(async (req) => {
 
           case 'teams': {
             const teamsPayload = buildTeamsPayload(titulo, descricao, evento, gravidade, link, dados, timestamp);
-            const teamsResponse = await fetch(integration.webhook_url, {
+            const teamsResponse = await fetchWithRetry(integration.webhook_url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(teamsPayload)
@@ -333,7 +343,7 @@ serve(async (req) => {
               'Content-Type': 'application/json',
               ...(integration.configuracoes?.headers || {})
             };
-            const webhookResponse = await fetch(integration.webhook_url, {
+            const webhookResponse = await fetchWithRetry(integration.webhook_url, {
               method: 'POST',
               headers: webhookHeaders,
               body: JSON.stringify(webhookPayload)
