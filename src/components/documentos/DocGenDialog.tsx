@@ -27,6 +27,8 @@ interface DocGenDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDocumentSaved?: () => void;
+  frameworkName?: string;
+  frameworkId?: string;
 }
 
 interface TooltipTerm {
