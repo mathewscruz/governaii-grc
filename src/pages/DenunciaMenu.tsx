@@ -53,7 +53,7 @@ export default function DenunciaMenu() {
           return;
         }
 
-        console.log('✅ [SUCCESS] Empresa encontrada:', empresaData);
+        logger.debug('Empresa encontrada', { module: 'DenunciaMenu' });
         setEmpresa(empresaData);
 
         // Usar logo_url da base de dados se disponível
