@@ -36,6 +36,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/AuthProvider';
 import { cn } from '@/lib/utils';
 
 const tratamentoSchema = z.object({
@@ -54,13 +55,25 @@ interface TratamentoDialogProps {
   tratamento?: any;
   onSuccess?: () => void;
   trigger?: React.ReactNode;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
-export function TratamentoDialog({ incidenteId, tratamento, onSuccess, trigger }: TratamentoDialogProps) {
-  const [open, setOpen] = useState(false);
+export function TratamentoDialog({ incidenteId, tratamento, onSuccess, trigger, externalOpen, onExternalOpenChange }: TratamentoDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (isControlled) {
+      onExternalOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const { toast } = useToast();
+  const { profile } = useAuth();
 
   const form = useForm<TratamentoFormData>({
     resolver: zodResolver(tratamentoSchema),
@@ -88,9 +101,12 @@ export function TratamentoDialog({ incidenteId, tratamento, onSuccess, trigger }
 
   useEffect(() => {
     const loadUsers = async () => {
+      if (!profile?.empresa_id) return;
       const { data } = await supabase
         .from('profiles')
         .select('user_id, nome, email')
+        .eq('empresa_id', profile.empresa_id)
+        .eq('ativo', true)
         .order('nome');
       if (data) setUsers(data);
     };
@@ -98,7 +114,7 @@ export function TratamentoDialog({ incidenteId, tratamento, onSuccess, trigger }
     if (open) {
       loadUsers();
     }
-  }, [open]);
+  }, [open, profile?.empresa_id]);
 
   const onSubmit = async (data: TratamentoFormData) => {
     setLoading(true);
@@ -149,14 +165,16 @@ export function TratamentoDialog({ incidenteId, tratamento, onSuccess, trigger }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Ação
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Ação
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>

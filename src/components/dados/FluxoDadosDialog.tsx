@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { logger } from "@/lib/logger";
 
 interface FluxoDadosDialogProps {
   isOpen: boolean;
@@ -36,6 +38,7 @@ export function FluxoDadosDialog({ isOpen, onClose, onSave, fluxo }: FluxoDadosD
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { empresaId } = useEmpresaId();
 
   useEffect(() => {
     if (isOpen) {
@@ -46,29 +49,34 @@ export function FluxoDadosDialog({ isOpen, onClose, onSave, fluxo }: FluxoDadosD
 
   const loadDadosPessoais = async () => {
     try {
+      if (!empresaId) return;
       const { data, error } = await supabase
         .from('dados_pessoais')
         .select('*')
+        .eq('empresa_id', empresaId)
         .order('nome');
       
       if (error) throw error;
       setDadosPessoais(data || []);
     } catch (error) {
-      console.error('Erro ao carregar dados pessoais:', error);
+      logger.error('Erro ao carregar dados pessoais', { error });
     }
   };
 
   const loadUsuarios = async () => {
     try {
+      if (!empresaId) return;
       const { data, error } = await supabase
         .from('profiles')
         .select('user_id, nome, email')
+        .eq('empresa_id', empresaId)
+        .eq('ativo', true)
         .order('nome');
       
       if (error) throw error;
       setUsuarios(data || []);
     } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
+      logger.error('Erro ao carregar usuários', { error });
     }
   };
 

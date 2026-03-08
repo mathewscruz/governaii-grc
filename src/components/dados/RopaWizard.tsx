@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { formatStatus, getSensibilidadeColorSimple, getCriticidadeColor } from "@/lib/text-utils";
 
@@ -21,6 +22,7 @@ interface RopaWizardProps {
 }
 
 export function RopaWizard({ isOpen, onClose, onSave, preSelectedDadoId }: RopaWizardProps) {
+  const { empresaId } = useEmpresaId();
   const [step, setStep] = useState(1);
   const [selectedDados, setSelectedDados] = useState<string[]>(preSelectedDadoId ? [preSelectedDadoId] : []);
   const [selectedAtivos, setSelectedAtivos] = useState<string[]>([]);
@@ -46,17 +48,21 @@ export function RopaWizard({ isOpen, onClose, onSave, preSelectedDadoId }: RopaW
   }, [isOpen]);
 
   const loadDados = async () => {
+    if (!empresaId) return;
     const { data } = await supabase
       .from('dados_pessoais')
       .select('*')
+      .eq('empresa_id', empresaId)
       .order('nome');
     setDadosPessoais(data || []);
   };
 
   const loadAtivos = async () => {
+    if (!empresaId) return;
     const { data } = await supabase
       .from('ativos')
       .select('*')
+      .eq('empresa_id', empresaId)
       .order('nome');
     setAtivos(data || []);
   };

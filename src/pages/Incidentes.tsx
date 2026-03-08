@@ -73,6 +73,7 @@ export default function Incidentes() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [comunicacaoDialogOpen, setComunicacaoDialogOpen] = useState(false);
   const [evidenciaDialogOpen, setEvidenciaDialogOpen] = useState(false);
+  const [tratamentoDialogOpen, setTratamentoDialogOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; incidenteId: string }>({
     open: false,
     incidenteId: ''
@@ -154,6 +155,11 @@ export default function Incidentes() {
   const handleEvidencias = (incidente: Incidente) => {
     setSelectedIncidente(incidente);
     setEvidenciaDialogOpen(true);
+  };
+
+  const handleTratamentos = (incidente: Incidente) => {
+    setSelectedIncidente(incidente);
+    setTratamentoDialogOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -280,6 +286,10 @@ export default function Incidentes() {
                 <FileText className="mr-2 h-4 w-4" />
                 Evidências
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleTratamentos(item)}>
+                <Shield className="mr-2 h-4 w-4" />
+                Tratamentos
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleDelete(item.id)} className="text-destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
                 Excluir
@@ -385,14 +395,28 @@ export default function Incidentes() {
       {/* Botão de ação */}
       <div className="flex justify-end">
         <IncidenteDialog 
-          incidente={selectedIncidente} 
+          onSuccess={() => {
+            invalidateIncidentes();
+          }}
+        />
+      </div>
+
+      {/* Dialog de Edição - controlado pelo dropdown */}
+      {selectedIncidente && editDialogOpen && (
+        <IncidenteDialog
+          incidente={selectedIncidente}
+          externalOpen={editDialogOpen}
+          onExternalOpenChange={(open) => {
+            setEditDialogOpen(open);
+            if (!open) setSelectedIncidente(null);
+          }}
           onSuccess={() => {
             invalidateIncidentes();
             setEditDialogOpen(false);
             setSelectedIncidente(null);
           }}
         />
-      </div>
+      )}
 
       {/* Lista de Incidentes com DataTable */}
       <Card className="rounded-lg border overflow-hidden">
@@ -440,6 +464,19 @@ export default function Incidentes() {
           externalOpen={evidenciaDialogOpen}
           onExternalOpenChange={(open) => {
             setEvidenciaDialogOpen(open);
+            if (!open) setSelectedIncidente(null);
+          }}
+        />
+      )}
+
+      {/* Dialog de Tratamentos - controlado pelo dropdown */}
+      {selectedIncidente && (
+        <TratamentoDialog
+          incidenteId={selectedIncidente.id}
+          onSuccess={invalidateIncidentes}
+          externalOpen={tratamentoDialogOpen}
+          onExternalOpenChange={(open) => {
+            setTratamentoDialogOpen(open);
             if (!open) setSelectedIncidente(null);
           }}
         />

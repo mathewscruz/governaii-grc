@@ -63,10 +63,21 @@ interface IncidenteDialogProps {
   incidente?: any;
   onSuccess?: () => void;
   trigger?: React.ReactNode;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
-export function IncidenteDialog({ incidente, onSuccess, trigger }: IncidenteDialogProps) {
-  const [open, setOpen] = useState(false);
+export function IncidenteDialog({ incidente, onSuccess, trigger, externalOpen, onExternalOpenChange }: IncidenteDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (isControlled) {
+      onExternalOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [ativos, setAtivos] = useState<any[]>([]);
   const [riscos, setRiscos] = useState<any[]>([]);
@@ -115,12 +126,16 @@ export function IncidenteDialog({ incidente, onSuccess, trigger }: IncidenteDial
 
   useEffect(() => {
     const loadAtivos = async () => {
-      const { data } = await supabase.from('ativos').select('id, nome').order('nome');
+      const { data: profile } = await supabase.from('profiles').select('empresa_id').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single();
+      if (!profile?.empresa_id) return;
+      const { data } = await supabase.from('ativos').select('id, nome').eq('empresa_id', profile.empresa_id).order('nome');
       if (data) setAtivos(data);
     };
 
     const loadRiscos = async () => {
-      const { data } = await supabase.from('riscos').select('id, nome').order('nome');
+      const { data: profile } = await supabase.from('profiles').select('empresa_id').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single();
+      if (!profile?.empresa_id) return;
+      const { data } = await supabase.from('riscos').select('id, nome').eq('empresa_id', profile.empresa_id).order('nome');
       if (data) setRiscos(data);
     };
 
@@ -218,14 +233,16 @@ export function IncidenteDialog({ incidente, onSuccess, trigger }: IncidenteDial
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Incidente
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Incidente
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
