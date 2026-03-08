@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { logger } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -85,7 +86,7 @@ export default function DenunciaConsulta() {
 
       setEmpresa(empresaData);
     } catch (error) {
-      console.error('Erro ao carregar empresa:', error);
+      logger.error('Erro ao carregar empresa', { module: 'DenunciaConsulta', error: String(error) });
       toast({
         title: "Erro",
         description: "Erro interno do sistema",
@@ -177,7 +178,7 @@ export default function DenunciaConsulta() {
 
       setShowDetails(true);
     } catch (error) {
-      console.error('Erro ao buscar denúncia:', error);
+      logger.error('Erro ao buscar denúncia', { module: 'DenunciaConsulta', error: String(error) });
       toast({
         title: "Erro",
         description: "Erro ao buscar denúncia. Tente novamente.",

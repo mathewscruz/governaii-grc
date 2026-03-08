@@ -122,6 +122,7 @@ export function Riscos() {
           categoria:riscos_categorias(nome, cor),
           matriz:riscos_matrizes(nome)
         `)
+        .eq('empresa_id', profile!.empresa_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

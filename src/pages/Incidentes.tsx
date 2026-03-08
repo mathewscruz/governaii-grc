@@ -96,6 +96,7 @@ export default function Incidentes() {
       const { data, error } = await supabase
         .from('incidentes')
         .select('*')
+        .eq('empresa_id', empresaId!)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

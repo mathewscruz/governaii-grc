@@ -117,7 +117,7 @@ const Auth = () => {
           });
 
           if (mfaResponse.error) {
-            console.error('Erro ao enviar MFA, login direto:', mfaResponse.error);
+            logger.error('Erro ao enviar MFA, login direto', { module: 'Auth', error: String(mfaResponse.error) });
             mfaInProgressRef.current = false;
             setMfaPending(false);
             setMfaPassword('');
@@ -130,7 +130,7 @@ const Auth = () => {
             }
           } else if (mfaResponse.data?.success && mfaResponse.data?.skipped) {
             // Sessão MFA válida encontrada - pular verificação e re-autenticar
-            console.log('MFA skipped - sessão válida encontrada');
+            logger.debug('MFA skipped - sessão válida encontrada', { module: 'Auth' });
             mfaInProgressRef.current = false;
             setMfaPending(false);
             setMfaPassword('');
@@ -160,7 +160,7 @@ const Auth = () => {
             }
           }
         } catch (mfaError) {
-          console.error('Exceção MFA:', mfaError);
+          logger.error('Exceção MFA', { module: 'Auth', error: String(mfaError) });
           mfaInProgressRef.current = false;
           setMfaPending(false);
           setMfaPassword('');

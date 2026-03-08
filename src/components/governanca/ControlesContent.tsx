@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { useLocation, useSearchParams } from "react-router-dom";
 import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Link, BarChart3, Activity, Target, TrendingUp, Edit, Trash2, Filter, TestTube, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,7 @@ export default function ControlesContent() {
   const [itemsPerPage] = useState(10);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useEmpresaId();
   
   // Reset page when filters change
   useEffect(() => {
@@ -115,14 +117,16 @@ export default function ControlesContent() {
 
   // Buscar auditorias para o filtro
   const { data: auditorias = [] } = useQuery({
-    queryKey: ['auditorias-lista'],
+    queryKey: ['auditorias-lista', empresaId],
     queryFn: async () => {
       const { data } = await supabase
         .from('auditorias')
         .select('id, nome')
+        .eq('empresa_id', empresaId!)
         .order('nome');
       return data || [];
-    }
+    },
+    enabled: !!empresaId,
   });
 
   // Buscar vínculos controles-auditorias
@@ -138,7 +142,7 @@ export default function ControlesContent() {
 
   // Buscar controles
   const { data: controles = [], isLoading } = useQuery({
-    queryKey: ['controles'],
+    queryKey: ['controles', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('controles')
@@ -146,6 +150,7 @@ export default function ControlesContent() {
           *,
           categoria:controles_categorias(nome, cor)
         `)
+        .eq('empresa_id', empresaId!)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -196,7 +201,8 @@ export default function ControlesContent() {
       }
       
       return data as Controle[];
-    }
+    },
+    enabled: !!empresaId,
   });
 
   // Detectar se veio com itemId do dashboard

@@ -4,6 +4,7 @@ import { Shield, FileText, Search } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface Empresa {
   id: string;
@@ -21,13 +22,13 @@ export default function DenunciaMenu() {
   useEffect(() => {
     const loadEmpresaData = async () => {
       if (!empresaSlug) {
-        console.error('❌ [ERROR] Slug da empresa não fornecido');
+        logger.debug('Slug da empresa não fornecido', { module: 'DenunciaMenu' });
         setLoading(false);
         return;
       }
 
       try {
-        console.log('🔍 [DEBUG] Carregando dados para empresa slug:', empresaSlug);
+        logger.debug('Carregando dados para empresa slug', { module: 'DenunciaMenu', action: empresaSlug });
         
         // Normalizar slug (lowercase e trim)
         const normalizedSlug = empresaSlug.toLowerCase().trim();
@@ -41,29 +42,29 @@ export default function DenunciaMenu() {
           .single();
 
         if (empresaError) {
-          console.error('❌ [ERROR] Erro ao buscar empresa:', empresaError);
+          logger.error('Erro ao buscar empresa', { module: 'DenunciaMenu', error: String(empresaError) });
           setLoading(false);
           return;
         }
 
         if (!empresaData) {
-          console.error('❌ [ERROR] Empresa não encontrada para slug:', normalizedSlug);
+          logger.error('Empresa não encontrada para slug', { module: 'DenunciaMenu', action: normalizedSlug });
           setLoading(false);
           return;
         }
 
-        console.log('✅ [SUCCESS] Empresa encontrada:', empresaData);
+        logger.debug('Empresa encontrada', { module: 'DenunciaMenu' });
         setEmpresa(empresaData);
 
         // Usar logo_url da base de dados se disponível
         if (empresaData.logo_url) {
-          console.log('✅ [SUCCESS] Logotipo encontrado na base de dados:', empresaData.logo_url);
+          logger.debug('Logotipo encontrado na base de dados', { module: 'DenunciaMenu' });
           setLogoUrl(empresaData.logo_url);
         } else {
-          console.log('ℹ️ [INFO] Nenhum logotipo cadastrado para esta empresa');
+          logger.debug('Nenhum logotipo cadastrado para esta empresa', { module: 'DenunciaMenu' });
         }
       } catch (error) {
-        console.error('❌ [ERROR] Erro geral ao carregar configuração:', error);
+        logger.error('Erro geral ao carregar configuração', { module: 'DenunciaMenu', error: String(error) });
       } finally {
         setLoading(false);
       }

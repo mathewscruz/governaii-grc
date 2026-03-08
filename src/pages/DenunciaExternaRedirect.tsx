@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export default function DenunciaExternaRedirect() {
   const { token } = useParams();
@@ -10,13 +11,13 @@ export default function DenunciaExternaRedirect() {
   useEffect(() => {
     const buscarEmpresaPorToken = async () => {
       if (!token) {
-        console.log('Token não encontrado na URL');
+        logger.debug('Token não encontrado na URL', { module: 'DenunciaExternaRedirect' });
         navigate('/404', { replace: true });
         return;
       }
 
       try {
-        console.log('Buscando empresa por token:', token);
+        logger.debug('Buscando empresa por token', { module: 'DenunciaExternaRedirect', action: token });
         
         // Primeiro buscar configuração para obter empresa_id
         const { data: config, error: configError } = await supabase
@@ -27,12 +28,12 @@ export default function DenunciaExternaRedirect() {
           .single();
 
         if (configError) {
-          console.error('Erro na consulta de configuração:', configError);
+          logger.error('Erro na consulta de configuração', { module: 'DenunciaExternaRedirect', error: String(configError) });
           throw configError;
         }
 
         if (!config) {
-          console.error('Configuração não encontrada para token:', token);
+          logger.error('Configuração não encontrada para token', { module: 'DenunciaExternaRedirect', action: token });
           navigate('/404', { replace: true });
           return;
         }
@@ -46,19 +47,19 @@ export default function DenunciaExternaRedirect() {
           .single();
 
         if (empresaError) {
-          console.error('Erro na consulta de empresa:', empresaError);
+          logger.error('Erro na consulta de empresa', { module: 'DenunciaExternaRedirect', error: String(empresaError) });
           throw empresaError;
         }
 
         if (empresa) {
-          console.log('Empresa encontrada:', empresa.nome, 'slug:', empresa.slug);
+          logger.debug('Empresa encontrada, redirecionando', { module: 'DenunciaExternaRedirect', action: empresa.slug });
           navigate(`/${empresa.slug}/denuncia`, { replace: true });
         } else {
-          console.error('Empresa não encontrada para ID:', config.empresa_id);
+          logger.error('Empresa não encontrada para ID', { module: 'DenunciaExternaRedirect', action: config.empresa_id });
           navigate('/404', { replace: true });
         }
       } catch (error) {
-        console.error('Erro ao buscar empresa:', error);
+        logger.error('Erro ao buscar empresa', { module: 'DenunciaExternaRedirect', error: String(error) });
         navigate('/404', { replace: true });
       } finally {
         setLoading(false);

@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import { ReviewExternalForm } from "@/components/revisao-acessos/ReviewExternalForm";
+import { logger } from '@/lib/logger';
 
 export default function ReviewExterna() {
   const { token } = useParams<{ token: string }>();
@@ -59,7 +60,7 @@ export default function ReviewExterna() {
         setReview(data);
         setLoading(false);
       } catch (err: any) {
-        console.error("Erro ao carregar revisão:", err);
+        logger.error('Erro ao carregar revisão', { module: 'ReviewExterna', error: err.message });
         setError(err.message || "Erro ao carregar revisão");
         setLoading(false);
       }

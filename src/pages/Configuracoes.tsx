@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +40,7 @@ const Configuracoes = () => {
         if (error) throw error;
         if (data) setUserRole(data.role);
       } catch (error) {
-        console.error('Erro ao buscar perfil do usuário:', error);
+        logger.error('Erro ao buscar perfil do usuário', { module: 'Configuracoes', error: String(error) });
       } finally {
         setLoading(false);
       }

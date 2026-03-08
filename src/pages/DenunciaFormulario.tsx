@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface Empresa {
   id: string;
@@ -87,13 +88,13 @@ export default function DenunciaFormulario() {
   useEffect(() => {
     const loadConfiguracao = async () => {
       if (!empresaSlug) {
-        console.error('❌ [ERROR] Slug da empresa não fornecido');
+        logger.debug('Slug da empresa não fornecido', { module: 'DenunciaFormulario' });
         setLoading(false);
         return;
       }
 
       try {
-        console.log('🔍 [DEBUG] Carregando configuração para empresa slug:', empresaSlug);
+        logger.debug('Carregando configuração para empresa slug', { module: 'DenunciaFormulario', action: empresaSlug });
         
         // Normalizar slug (lowercase e trim)
         const normalizedSlug = empresaSlug.toLowerCase().trim();
@@ -107,22 +108,22 @@ export default function DenunciaFormulario() {
           .single();
 
         if (empresaError) {
-          console.error('❌ [ERROR] Erro ao buscar empresa:', empresaError);
+          logger.error('Erro ao buscar empresa', { module: 'DenunciaFormulario', error: String(empresaError) });
           setLoading(false);
           return;
         }
 
         if (!empresaData) {
-          console.error('❌ [ERROR] Empresa não encontrada para slug:', normalizedSlug);
+          logger.error('Empresa não encontrada para slug', { module: 'DenunciaFormulario', action: normalizedSlug });
           setLoading(false);
           return;
         }
 
-        console.log('✅ [SUCCESS] Empresa encontrada:', empresaData);
+        logger.debug('Empresa encontrada', { module: 'DenunciaFormulario' });
         setEmpresa(empresaData);
 
         // Buscar configurações da empresa
-        console.log('🔍 [DEBUG] Buscando configurações para empresa ID:', empresaData.id);
+        logger.debug('Buscando configurações para empresa', { module: 'DenunciaFormulario' });
         const { data: configData, error: configError } = await supabase
           .from('denuncias_configuracoes')
           .select('*')
@@ -130,22 +131,22 @@ export default function DenunciaFormulario() {
           .single();
 
         if (configError) {
-          console.error('❌ [ERROR] Erro ao buscar configurações:', configError);
+          logger.error('Erro ao buscar configurações', { module: 'DenunciaFormulario', error: String(configError) });
           setLoading(false);
           return;
         }
 
         if (!configData?.ativo) {
-          console.error('❌ [ERROR] Canal de denúncia desativado');
+          logger.debug('Canal de denúncia desativado', { module: 'DenunciaFormulario' });
           setLoading(false);
           return;
         }
 
-        console.log('✅ [SUCCESS] Configurações carregadas:', configData);
+        logger.debug('Configurações carregadas', { module: 'DenunciaFormulario' });
         setConfig(configData);
 
         // Buscar categorias ativas da empresa
-        console.log('🔍 [DEBUG] Buscando categorias para empresa ID:', empresaData.id);
+        logger.debug('Buscando categorias', { module: 'DenunciaFormulario' });
         const { data: categoriasData, error: categoriasError } = await supabase
           .from('denuncias_categorias')
           .select('*')
@@ -154,19 +155,19 @@ export default function DenunciaFormulario() {
           .order('nome');
 
         if (!categoriasError && categoriasData) {
-          console.log('✅ [SUCCESS] Categorias carregadas:', categoriasData.length);
+          logger.debug('Categorias carregadas', { module: 'DenunciaFormulario' });
           setCategorias(categoriasData);
         }
 
         // Usar logo_url da base de dados se disponível
         if (empresaData.logo_url) {
-          console.log('✅ [SUCCESS] Logotipo encontrado na base de dados:', empresaData.logo_url);
+          logger.debug('Logotipo encontrado na base de dados', { module: 'DenunciaFormulario' });
           setLogoUrl(empresaData.logo_url);
         } else {
-          console.log('ℹ️ [INFO] Nenhum logotipo cadastrado para esta empresa');
+          logger.debug('Nenhum logotipo cadastrado para esta empresa', { module: 'DenunciaFormulario' });
         }
       } catch (error) {
-        console.error('❌ [ERROR] Erro geral ao carregar configuração:', error);
+        logger.error('Erro geral ao carregar configuração', { module: 'DenunciaFormulario', error: String(error) });
       } finally {
         setLoading(false);
       }
@@ -218,7 +219,7 @@ export default function DenunciaFormulario() {
       });
 
       if (denunciaError) {
-        console.error('Erro ao criar denúncia:', denunciaError);
+        logger.error('Erro ao criar denúncia', { module: 'DenunciaFormulario', error: String(denunciaError) });
         toast.error('Erro ao registrar denúncia');
         return;
       }
@@ -236,7 +237,7 @@ export default function DenunciaFormulario() {
             .upload(fileName, file);
 
           if (uploadError) {
-            console.error('Erro ao fazer upload:', uploadError);
+            logger.error('Erro ao fazer upload', { module: 'DenunciaFormulario', error: String(uploadError) });
           }
         }
       }
@@ -246,7 +247,7 @@ export default function DenunciaFormulario() {
       setAnexos([]);
       
     } catch (error) {
-      console.error('Erro geral:', error);
+      logger.error('Erro geral ao registrar denúncia', { module: 'DenunciaFormulario', error: String(error) });
       toast.error('Erro inesperado ao registrar denúncia');
     } finally {
       setSubmitting(false);

@@ -144,11 +144,12 @@ const Ativos = () => {
 
   // Fetch ativos with React Query
   const { data: ativos = [], isLoading: loading } = useQuery<Ativo[]>({
-    queryKey: ['ativos'],
+    queryKey: ['ativos', profile?.empresa_id],
     queryFn: async (): Promise<Ativo[]> => {
       const { data, error } = await supabase
         .from('ativos')
         .select('*')
+        .eq('empresa_id', profile!.empresa_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -174,6 +175,7 @@ const Ativos = () => {
       }
       return (data || []) as Ativo[];
     },
+    enabled: !!profile?.empresa_id,
   });
 
   // Azure integration

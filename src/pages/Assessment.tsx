@@ -12,17 +12,18 @@ import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescript
 import { CheckCircle, FileText, ArrowRight, ArrowLeft, AlertCircle, Upload, Building2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 // ETAPA 5: Sistema de logs para debugging
 const assessmentLogger = {
   info: (message: string, data?: any) => {
-    console.log(`[Assessment] ${message}`, data || '');
+    logger.info(`[Assessment] ${message}`, { module: 'Assessment', details: data });
   },
   warn: (message: string, data?: any) => {
-    console.warn(`[Assessment] ${message}`, data || '');
+    logger.warn(`[Assessment] ${message}`, { module: 'Assessment', details: data });
   },
   error: (message: string, error?: any) => {
-    console.error(`[Assessment] ${message}`, error || '');
+    logger.error(`[Assessment] ${message}`, { module: 'Assessment', error: String(error) });
   }
 };
 

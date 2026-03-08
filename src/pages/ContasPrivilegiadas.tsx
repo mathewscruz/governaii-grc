@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ContaDialog from '@/components/contas-privilegiadas/ContaDialog';
 import { Card, CardContent } from '@/components/ui/card';
@@ -53,10 +54,11 @@ export default function ContasPrivilegiadas() {
   }>({ open: false, id: '', nome: '' });
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useEmpresaId();
 
   // Buscar contas privilegiadas
   const { data: contas = [], isLoading } = useQuery({
-    queryKey: ['contas-privilegiadas'],
+    queryKey: ['contas-privilegiadas', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contas_privilegiadas' as any)
@@ -68,26 +70,30 @@ export default function ContasPrivilegiadas() {
             criticidade
           )
         `)
+        .eq('empresa_id', empresaId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return (data || []) as unknown as ContaPrivilegiada[];
     },
+    enabled: !!empresaId,
   });
 
   // Buscar sistemas para o dropdown no dialog
   const { data: sistemas = [] } = useQuery({
-    queryKey: ['sistemas-privilegiados'],
+    queryKey: ['sistemas-privilegiados', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sistemas_privilegiados' as any)
         .select('*')
+        .eq('empresa_id', empresaId)
         .eq('ativo', true)
         .order('nome_sistema');
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!empresaId,
   });
 
   // Calcular métricas do dashboard
