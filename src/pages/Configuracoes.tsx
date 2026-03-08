@@ -77,6 +77,12 @@ const Configuracoes = () => {
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">Assinatura</span>
           </TabsTrigger>
+          {isSuperAdmin && (
+            <TabsTrigger value="financeiro-ia" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              <span className="hidden sm:inline">Financeiro IA</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {isSuperAdmin && (
