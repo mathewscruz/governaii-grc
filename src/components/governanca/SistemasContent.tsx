@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Edit, Trash2, Server, Shield, Lock, Monitor } from 'lucide-react';
+import { Plus, Server, Shield, Lock, Monitor, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,13 +10,14 @@ import SistemaDialog from '@/components/contas-privilegiadas/SistemaDialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { formatStatus, capitalizeText, getCriticidadeColor } from '@/lib/text-utils';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SistemaPrivilegiado {
   id: string;
@@ -32,6 +33,7 @@ interface SistemaPrivilegiado {
 }
 
 export default function SistemasContent() {
+  const { empresaId } = useEmpresaId();
   const [showSistemaDialog, setShowSistemaDialog] = useState(false);
   const [selectedSistema, setSelectedSistema] = useState<SistemaPrivilegiado | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,21 +49,21 @@ export default function SistemasContent() {
   }>({ open: false, id: '', nome: '' });
   const { toast } = useToast();
 
-  // Buscar sistemas
   const { data: sistemas = [], refetch: refetchSistemas, isLoading } = useQuery({
-    queryKey: ['sistemas-privilegiados-governanca'],
+    queryKey: ['sistemas-privilegiados-governanca', empresaId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sistemas_privilegiados' as any)
         .select('*')
+        .eq('empresa_id', empresaId)
         .order('nome_sistema');
 
       if (error) throw error;
       return (data || []) as unknown as SistemaPrivilegiado[];
     },
+    enabled: !!empresaId,
   });
 
-  // Métricas
   const sistemasAtivos = sistemas.filter(s => s.ativo).length;
   const sistemasCriticos = sistemas.filter(s => s.criticidade === 'critica' || s.criticidade === 'alta').length;
 
@@ -77,11 +79,11 @@ export default function SistemasContent() {
   };
 
   const handleDeleteSistema = async (sistemaId: string, sistemaNome: string) => {
-    // Verificar se há contas vinculadas
     const { data: contasVinculadas } = await supabase
       .from('contas_privilegiadas' as any)
       .select('id')
-      .eq('sistema_id', sistemaId);
+      .eq('sistema_id', sistemaId)
+      .eq('empresa_id', empresaId);
 
     if (contasVinculadas && contasVinculadas.length > 0) {
       toast({
@@ -126,7 +128,6 @@ export default function SistemasContent() {
     );
   };
 
-  // Filtrar e ordenar
   const filteredAndSortedSistemas = useMemo(() => {
     let filtered = sistemas.filter(sistema => {
       const matchesSearch = searchTerm === '' || 
@@ -159,7 +160,6 @@ export default function SistemasContent() {
     return filtered;
   }, [sistemas, searchTerm, statusFilter, tipoFilter, criticidadeFilter, sortField, sortDirection]);
 
-  // Configuração das colunas
   const sistemasColumns = [
     {
       key: 'nome_sistema',
@@ -232,40 +232,30 @@ export default function SistemasContent() {
       key: 'acoes',
       label: 'Ações',
       render: (_: any, sistema: SistemaPrivilegiado) => (
-        <TooltipProvider>
-          <div className="flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEditSistema(sistema)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Editar</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteSistema(sistema.id, sistema.nome_sistema)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Excluir</TooltipContent>
-            </Tooltip>
-          </div>
-        </TooltipProvider>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleEditSistema(sistema)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleDeleteSistema(sistema.id, sistema.nome_sistema)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )
     }
   ];
 
-  // Configuração dos filtros
   const sistemasFilters = [
     {
       key: 'status',
@@ -314,7 +304,6 @@ export default function SistemasContent() {
 
   return (
     <div className="space-y-6">
-      {/* Dashboard Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total de Sistemas"
@@ -341,7 +330,6 @@ export default function SistemasContent() {
         />
       </div>
 
-      {/* Tabela de Sistemas */}
       <Card className="rounded-lg border overflow-hidden">
         <CardContent className="p-0">
           <div className="p-6 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -377,7 +365,6 @@ export default function SistemasContent() {
         </CardContent>
       </Card>
 
-      {/* Dialogs */}
       <SistemaDialog
         open={showSistemaDialog}
         onClose={handleCloseSistemaDialog}
