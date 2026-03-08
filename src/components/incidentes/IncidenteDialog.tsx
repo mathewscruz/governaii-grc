@@ -63,10 +63,21 @@ interface IncidenteDialogProps {
   incidente?: any;
   onSuccess?: () => void;
   trigger?: React.ReactNode;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
-export function IncidenteDialog({ incidente, onSuccess, trigger }: IncidenteDialogProps) {
-  const [open, setOpen] = useState(false);
+export function IncidenteDialog({ incidente, onSuccess, trigger, externalOpen, onExternalOpenChange }: IncidenteDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (isControlled) {
+      onExternalOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [ativos, setAtivos] = useState<any[]>([]);
   const [riscos, setRiscos] = useState<any[]>([]);
