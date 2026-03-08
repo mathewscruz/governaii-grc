@@ -135,21 +135,6 @@ export default function ControlesContent() {
     enabled: !!empresaId,
   });
 
-  // Buscar vínculos controles-auditorias (filtrado após controles carregarem)
-  const controleIds = useMemo(() => controles.map(c => c.id), [controles]);
-  const { data: vinculos = [] } = useQuery({
-    queryKey: ['controles-auditorias-vinculos', empresaId, controleIds],
-    queryFn: async () => {
-      if (controleIds.length === 0) return [];
-      const { data } = await supabase
-        .from('controles_auditorias')
-        .select('controle_id, auditoria_id')
-        .in('controle_id', controleIds);
-      return data || [];
-    },
-    enabled: !!empresaId && controleIds.length > 0
-  });
-
   // Buscar controles
   const { data: controles = [], isLoading } = useQuery({
     queryKey: ['controles', empresaId],
@@ -215,6 +200,21 @@ export default function ControlesContent() {
       return data as Controle[];
     },
     enabled: !!empresaId,
+  });
+
+  // Buscar vínculos controles-auditorias (filtrado pelos controles da empresa)
+  const controleIds = useMemo(() => controles.map(c => c.id), [controles]);
+  const { data: vinculos = [] } = useQuery({
+    queryKey: ['controles-auditorias-vinculos', empresaId, controleIds],
+    queryFn: async () => {
+      if (controleIds.length === 0) return [];
+      const { data } = await supabase
+        .from('controles_auditorias')
+        .select('controle_id, auditoria_id')
+        .in('controle_id', controleIds);
+      return data || [];
+    },
+    enabled: !!empresaId && controleIds.length > 0
   });
 
   // Detectar se veio com itemId do dashboard
