@@ -1,130 +1,80 @@
 
 
-# Varredura de Segurança Completa — Resultados
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-A varredura identificou **6 vulnerabilidades** no banco de dados e configuração, organizadas por severidade.
-
----
-
-## CRITICO — 1. Qualquer usuário pode inserir registros em `temporary_passwords`
-
-**Vulnerabilidade**: A policy `"Admins can insert temporary passwords"` usa `WITH CHECK (true)` para o role `public`. Qualquer pessoa (inclusive anônima) pode inserir um registro com `user_id` de um administrador, forçando um fluxo de "trocar senha" em contas que não controla.
-
-**Impacto**: Escalação de privilégios / manipulação de fluxo de autenticação.
-
-**Correção**: Restringir INSERT a admins autenticados da mesma empresa:
-```sql
-DROP POLICY "Admins can insert temporary passwords" ON temporary_passwords;
-CREATE POLICY "Admins can insert temporary passwords" ON temporary_passwords
-  FOR INSERT TO authenticated
-  WITH CHECK (is_admin_or_super_admin());
-```
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
 ---
 
-## ALTO — 2. Tabela `mfa_sessions` com RLS ativado mas ZERO policies
+## 1. ErrorBoundary ausente na maioria das paginas
 
-**Vulnerabilidade**: RLS está habilitado mas nenhuma policy existe. Resultado: ninguém consegue ler/inserir nessa tabela via client SDK. As edge functions usam `SUPABASE_SERVICE_ROLE_KEY` (bypass RLS), então funcionam — mas se algum código client tentar acessar, falhará silenciosamente.
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-**Correção**: Criar policies básicas:
-```sql
-CREATE POLICY "Users can view own mfa sessions" ON mfa_sessions
-  FOR SELECT TO authenticated USING (user_id = auth.uid());
-CREATE POLICY "Service can insert mfa sessions" ON mfa_sessions
-  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
-```
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
 ---
 
-## ALTO — 3. Denúncias: INSERT público sem validação de `empresa_id`
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-**Vulnerabilidade**: Duas policies permitem INSERT com `WITH CHECK (true)` — qualquer anônimo pode inserir denúncias com `empresa_id` arbitrário (incluindo empresas que não existem ou de terceiros).
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
 
-**Correção**: Validar que o `empresa_id` corresponde a uma empresa ativa com canal de denúncias habilitado:
-```sql
-DROP POLICY "Public can insert denuncias via token" ON denuncias;
-DROP POLICY "Public insert for denuncias" ON denuncias;
-CREATE POLICY "Public can insert denuncias for active companies" ON denuncias
-  FOR INSERT TO anon, authenticated
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM denuncias_configuracoes dc
-      WHERE dc.empresa_id = denuncias.empresa_id AND dc.ativo = true
-    )
-  );
-```
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
 
-Fazer o mesmo para `denuncias_anexos` — restringir INSERT público para anexos vinculados a denúncias existentes:
-```sql
-DROP POLICY "Public can insert anexos via denuncia" ON denuncias_anexos;
-CREATE POLICY "Public can insert anexos for existing denuncias" ON denuncias_anexos
-  FOR INSERT TO anon, authenticated
-  WITH CHECK (
-    EXISTS (SELECT 1 FROM denuncias WHERE id = denuncia_id)
-  );
-```
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
 
 ---
 
-## MEDIO — 4. `denuncias_configuracoes`: emails internos expostos publicamente
+## 3. Paginas sem EmptyState padronizado
 
-**Vulnerabilidade**: A policy `"Public can view basic denuncia config"` retorna todas as colunas para `anon`, incluindo `emails_notificacao` (emails internos de compliance) e `notificar_administradores`.
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
 
-**Correção**: Criar uma view pública que exclui colunas sensíveis e alterar a policy:
-```sql
-CREATE VIEW public.denuncias_configuracoes_public
-WITH (security_invoker = on) AS
-  SELECT id, empresa_id, ativo, token_publico, permitir_anonimas, 
-         requerer_email, texto_apresentacao, politica_privacidade
-  FROM public.denuncias_configuracoes;
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
 
--- Alterar policy para negar SELECT direto de anônimos
-DROP POLICY "Public can view basic denuncia config" ON denuncias_configuracoes;
-CREATE POLICY "Public can view basic denuncia config" ON denuncias_configuracoes
-  FOR SELECT TO authenticated USING (ativo = true);
--- Anônimos acessam apenas via view
-```
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
 
 ---
 
-## MEDIO — 5. `gap_analysis_requirements`: leitura cross-tenant
+## 4. Ausencia de atalhos de teclado documentados para o usuario
 
-**Vulnerabilidade**: A policy `"Users can view all requirements"` usa `USING (true)`, permitindo que qualquer autenticado veja requisitos de frameworks customizados de outras empresas (onde `empresa_id IS NOT NULL`).
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
 
-**Correção**: Filtrar para templates globais OU frameworks da empresa do usuário:
-```sql
-DROP POLICY "Users can view all requirements" ON gap_analysis_requirements;
-CREATE POLICY "Users can view requirements" ON gap_analysis_requirements
-  FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM gap_analysis_frameworks f
-      WHERE f.id = framework_id
-      AND (f.empresa_id IS NULL OR f.empresa_id = get_user_empresa_id())
-    )
-  );
-```
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
 
 ---
 
-## BAIXO — 6. Configurações de infraestrutura
+## 5. Botao de "Voltar" no header nao tem tooltip
 
-- **Leaked Password Protection desabilitada**: Recomendo ativar no painel Supabase (Auth > Settings) para rejeitar senhas já vazadas em data breaches.
-- **Postgres com patches de segurança disponíveis**: Recomendo fazer upgrade no painel Supabase (Settings > Infrastructure).
-- Duas functions sem `search_path` definido (risco de search_path hijacking em cenários edge).
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
 
 ---
 
-## Resumo
+## Resumo de Prioridade
 
-| # | Vulnerabilidade | Severidade | Tipo |
-|---|-----------------|------------|------|
-| 1 | `temporary_passwords` INSERT aberto | **Crítico** | Escalação de privilégios |
-| 2 | `mfa_sessions` sem policies | **Alto** | Funcional/Segurança |
-| 3 | `denuncias` INSERT sem validação | **Alto** | Injeção de dados cross-tenant |
-| 4 | Emails compliance expostos publicamente | **Médio** | Vazamento de PII |
-| 5 | Requirements leitura cross-tenant | **Médio** | Vazamento de dados |
-| 6 | Leaked password + Postgres upgrade | **Baixo** | Infraestrutura |
+| # | Melhoria | Impacto | Esforco |
+|---|----------|---------|---------|
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
 
-**Plano**: Implementar as correções SQL dos itens 1 a 5 via migration, e ajustar o código frontend para usar a view `denuncias_configuracoes_public` nas páginas públicas. Os itens de infraestrutura (6) requerem ação manual no painel Supabase.
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 
