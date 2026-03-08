@@ -1,80 +1,42 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Alternar seções clara/escura + trocar azul por roxo Akuris
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
+## Resumo
 
----
+Duas mudanças na Landing Page:
 
-## 1. ErrorBoundary ausente na maioria das paginas
+1. **Seções alternadas**: As seções atualmente são todas escuras. Alternar entre o fundo escuro atual (`#0A1628`) e um fundo ligeiramente mais claro (`#0D1F37` ou similar) para criar contraste visual claro entre blocos.
+2. **Trocar azul por roxo Akuris** (`#7552FF`): Todos os destaques em `blue-400`/`blue-500`/`blue-600` serão substituídos pelo roxo da marca.
 
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
+## Mapeamento das seções
 
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
+| Seção | Fundo atual | Novo fundo |
+|---|---|---|
+| Hero | `#0A1628` (escuro) | Mantém escuro |
+| Frameworks Strip | border only | Mantém (transição) |
+| Módulos | `#0A1628` (escuro) | **Claro** → `#0F1A2E` |
+| Como Funciona | `#0D1F37` (já diferente) | Mantém |
+| Testimonials | `#0A1628` | **Claro** → `#0F1A2E` |
+| Pricing CTA | `#0D1F37` | Mantém |
+| Contato | `#0A1628` | **Claro** → `#0F1A2E` |
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+## Substituição de cores (azul → roxo)
 
----
+Todas as ocorrências no arquivo:
+- `text-blue-400` → `text-[#7552FF]`
+- `bg-blue-600` → `bg-[#7552FF]`
+- `hover:bg-blue-500` → `hover:bg-[#8B6FFF]`
+- `focus:border-blue-500` → `focus:border-[#7552FF]`
+- `focus:ring-blue-500` → `focus:ring-[#7552FF]`
+- `rgba(59,130,246,...)` no hero gradient → `rgba(117,82,255,...)`
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+Também no `DashboardMockup.tsx`: substituir `#3B82F6` e `bg-blue-600/30` pelo roxo correspondente.
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+## Arquivo
 
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
-
----
-
-## 3. Paginas sem EmptyState padronizado
-
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
-
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
-
----
-
-## 4. Ausencia de atalhos de teclado documentados para o usuario
-
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
-
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
-
----
-
-## 5. Botao de "Voltar" no header nao tem tooltip
-
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
-
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
-
----
-
-## Resumo de Prioridade
-
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
-
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+| Arquivo | Mudança |
+|---|---|
+| `src/pages/LandingPage.tsx` | Backgrounds alternados + todas as cores azuis → roxo |
+| `src/components/landing/DashboardMockup.tsx` | Cores azuis → roxo no mockup |
 
