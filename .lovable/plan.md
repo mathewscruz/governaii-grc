@@ -1,80 +1,81 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Validacao Completa — Modulo Gap Analysis
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
-
----
-
-## 1. ErrorBoundary ausente na maioria das paginas
-
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
-
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+Analisei em profundidade todos os componentes do modulo: GapAnalysisFrameworks, GapAnalysisFrameworkDetail, GenericRequirementsTable, GenericScoreDashboard, NISTRequirementDetailDialog, SoATab, RemediationTab, FrameworkHistoryTab, AdherenceAssessmentView/Dialog/ResultView, FrameworkOnboarding, WelcomeHero, CategoryBarChart, CategoryStatusCards, JourneyProgressBar, ScoreEvolutionChart, FrameworkCard, FrameworkCatalog, AIRecommendationsCard, e os hooks useGapAnalysisStats, useFrameworkScore, useScoreHistory, useAdherenceStats.
 
 ---
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+## RLS Policies e Banco de Dados
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
-
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+**OK** — As tabelas `gap_analysis_frameworks`, `gap_analysis_requirements`, `gap_analysis_evaluations`, `gap_analysis_score_history`, `gap_analysis_soa`, `gap_analysis_adherence_assessments`, `gap_analysis_adherence_details`, `gap_analysis_audit_log`, `gap_analysis_assignments`, `gap_analysis_evidences`, `gap_evaluation_risks` possuem RLS ativo com policies corretas. A correcao cross-tenant de requirements ja foi aplicada na migration anterior.
 
 ---
 
-## 3. Paginas sem EmptyState padronizado
+## Problemas Identificados
 
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+### 1. SEGURANCA — `useGapAnalysisStats` sem filtro `empresa_id` e queryKey estatica
 
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+O hook busca `gap_analysis_frameworks` e `gap_analysis_evaluations` sem filtrar por `empresa_id`. Como os frameworks sao globais (`empresa_id IS NULL`), o count de frameworks esta correto, mas as evaluations sao buscadas sem `.eq('empresa_id', empresaId)` — depende apenas de RLS. A `cacheKey` e estatica (`'gap-analysis-stats'`), causando cache compartilhado entre empresas.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+**Correcao**: Importar `useEmpresaId`, filtrar evaluations por `empresa_id`, incluir `empresaId` na cacheKey.
+
+### 2. UX — SoATab usa `as any` para acessar `gap_analysis_soa`
+
+O `SoATab.tsx` usa `supabase.from('gap_analysis_soa' as any)` em 2 locais (linhas 83 e 175). A tabela existe no banco e no types.ts, entao o cast e desnecessario e esconde erros de tipo.
+
+**Correcao**: Remover `as any` dos 2 locais.
+
+### 3. FUNCIONAL — RemediationTab mostra `responsavel_id` bruto (UUID) em vez do nome
+
+Na linha 159, o componente exibe `plano.responsavel_id` diretamente, que e um UUID. O usuario ve um hash em vez do nome do responsavel.
+
+**Correcao**: Buscar profiles dos responsaveis e exibir o nome.
+
+### 4. UX — RemediationTab sem paginacao
+
+A lista de planos de acao nao tem paginacao. Com muitos requisitos nao conformes, a pagina fica longa e lenta.
+
+**Correcao**: Menor prioridade — manter por ora, mas documentar como melhoria futura.
+
+### 5. DADOS — `useGapAnalysisStats` query de evaluations pode ultrapassar limite de 1000 rows
+
+A query `supabase.from('gap_analysis_evaluations').select(...)` sem limit pode retornar dados truncados em frameworks grandes (ex: ISO 27001 com 121+ requisitos × N empresas). RLS filtra por empresa, mas o select nao tem limit explicito.
+
+**Correcao**: Ja que RLS limita os dados, e frameworks tem ~120 requisitos max, o risco e baixo. Documentar como melhoria.
+
+### 6. UX — NISTRequirementDetailDialog: nome "NIST" no componente mas usado para TODOS os frameworks
+
+O componente `NISTRequirementDetailDialog` e generico (usado por todos os frameworks) mas o nome sugere ser exclusivo do NIST. Isso e confuso para manutencao.
+
+**Correcao**: Menor prioridade — renomear seria ideal mas nao impacta o usuario. Manter.
+
+### 7. FUNCIONAL — FrameworkOnboarding nao tem fallback para frameworks sem onboarding especifico
+
+Quando um framework desconhecido e aberto (ex: ISO 14001, CCPA), o `getOnboardingData` retorna um fallback generico que funciona, entao nao ha bug. **OK**.
+
+### 8. DADOS — `useAdherenceStats` sem filtro empresa_id e queryKey estatica
+
+Similar ao item 1, o hook `useAdherenceStats` busca `gap_analysis_adherence_assessments` sem `.eq('empresa_id', empresaId)` e usa cacheKey estatica.
+
+**Correcao**: Adicionar filtro e incluir empresaId na cacheKey.
 
 ---
 
-## 4. Ausencia de atalhos de teclado documentados para o usuario
+## Resumo de Acoes a Implementar
 
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+| # | Problema | Tipo | Impacto |
+|---|----------|------|---------|
+| 1 | `useGapAnalysisStats` sem empresa_id | Seguranca/Cache | **Alto** |
+| 2 | SoATab `as any` desnecessario | Qualidade codigo | **Baixo** |
+| 3 | RemediationTab mostra UUID do responsavel | UX | **Medio** |
+| 4 | `useAdherenceStats` sem empresa_id | Seguranca/Cache | **Alto** |
 
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+Itens 1, 2, 3 e 4 serao implementados. Os demais sao cosmeticos ou de baixa prioridade.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
-
----
-
-## 5. Botao de "Voltar" no header nao tem tooltip
-
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
-
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
-
----
-
-## Resumo de Prioridade
-
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
-
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+### Arquivos a editar:
+- `src/hooks/useGapAnalysisStats.tsx` — adicionar empresa_id filter e cacheKey
+- `src/hooks/useAdherenceStats.tsx` — adicionar empresa_id filter e cacheKey
+- `src/components/gap-analysis/SoATab.tsx` — remover `as any`
+- `src/components/gap-analysis/RemediationTab.tsx` — resolver nome do responsavel
 
