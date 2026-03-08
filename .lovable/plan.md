@@ -1,80 +1,86 @@
 
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+# Validacao Completa — Modulo Gestao de Ativos e Sub-modulos
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
-
----
-
-## 1. ErrorBoundary ausente na maioria das paginas
-
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
-
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+Analisei em profundidade os 3 sub-modulos (Ativos, Licencas, Chaves Criptograficas) incluindo tabelas, dialogs, queries, stats hooks, RLS policies, fluxos e consistencia visual. Abaixo os problemas identificados:
 
 ---
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+## RLS Policies e Banco de Dados
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
-
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+**OK** — Todas as tabelas (`ativos`, `ativos_licencas`, `ativos_chaves_criptograficas`, `ativos_manutencoes`, `ativos_localizacoes`, `ativos_notificacoes_enviadas`) possuem policies corretas de SELECT/INSERT/UPDATE/DELETE com `empresa_id = get_user_empresa_id()`.
 
 ---
 
-## 3. Paginas sem EmptyState padronizado
+## Problemas Identificados
 
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+### 1. SEGURANCA — Licencas e Chaves: queries SEM filtro empresa_id (4 locais)
 
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+As paginas `AtivosLicencas.tsx` e `AtivosChaves.tsx` fazem queries sem `.eq('empresa_id', empresaId)`, dependendo apenas de RLS. Os stats hooks (`useLicencasStats`, `useChavesStats`) tambem nao filtram.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+| Arquivo | Query sem filtro |
+|---------|-----------------|
+| `AtivosLicencas.tsx` | `supabase.from('ativos_licencas').select('*').order(...)` |
+| `AtivosChaves.tsx` | `supabase.from('ativos_chaves_criptograficas').select('*').order(...)` |
+| `useLicencasStats.tsx` | `supabase.from('ativos_licencas').select('*')` |
+| `useChavesStats.tsx` | `supabase.from('ativos_chaves_criptograficas').select('*')` |
 
----
-
-## 4. Ausencia de atalhos de teclado documentados para o usuario
-
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
-
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+**Correcao**: Adicionar `useEmpresaId()` ou `useAuth()` e filtrar por `empresa_id`. Incluir `empresaId` na `queryKey` e `enabled: !!empresaId`.
 
 ---
 
-## 5. Botao de "Voltar" no header nao tem tooltip
+### 2. UX — Licencas e Chaves: acoes usam botoes inline em vez de DropdownMenu
 
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+As paginas Ativos (principal) usam `DropdownMenu` padrao para acoes de linha. Porem `AtivosLicencas.tsx` e `AtivosChaves.tsx` usam botoes `Edit` e `Trash` inline, quebrando a consistencia visual e o padrao documentado da aplicacao.
 
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+**Correcao**: Migrar para `DropdownMenu` com `MoreHorizontal` trigger, identico ao padrao em `Ativos.tsx`.
 
 ---
 
-## Resumo de Prioridade
+### 3. UX — Ativos: status "em_manutencao" existe no Azure sync mas nao no formulario
 
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+A funcao `mapIntuneDeviceToAtivo` na edge function `azure-integration` mapeia dispositivos para status `em_manutencao`, porem o formulario `AtivoDialog.tsx` e a pagina `Ativos.tsx` so oferecem `ativo | inativo | descontinuado`. Um ativo sincronizado pelo Azure pode ficar com status que nao aparece nos filtros nem pode ser editado no formulario.
 
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+**Correcao**: Adicionar `{ value: 'em_manutencao', label: 'Em Manutenção', color: 'warning' }` ao `statusOptions` em `Ativos.tsx` e `AtivoDialog.tsx`.
+
+---
+
+### 4. DADOS — Stats hooks (Licencas e Chaves): queryKey sem empresa_id causa cache compartilhado
+
+Os hooks `useLicencasStats` e `useChavesStats` usam queryKeys fixas (`['licencas-stats']`, `['chaves-stats']`). Se o usuario trocar de empresa, os dados cacheados da empresa anterior serao exibidos.
+
+**Correcao**: Incluir `empresaId` na queryKey: `['licencas-stats', empresaId]`.
+
+---
+
+### 5. UX — NotificationCenter: queries de licencas e chaves sem filtro empresa_id
+
+O `NotificationCenter.tsx` busca licencas e chaves para gerar notificacoes de vencimento mas nao filtra por `empresa_id`:
+- `supabase.from('ativos_licencas').select(...).eq('status', 'ativa')` — sem empresa_id
+- `supabase.from('ativos_chaves_criptograficas').select(...).eq('status', 'ativa')` — sem empresa_id
+
+**Correcao**: Adicionar `.eq('empresa_id', empresaId)` nas queries do NotificationCenter.
+
+---
+
+### 6. FUNCIONALIDADE — Licencas: campo `data_aquisicao` no formulario mas nao e exibido/utilizado
+
+O `LicencaDialog` tem campo `data_aquisicao` mas a tabela da pagina `AtivosLicencas.tsx` nao exibe essa informacao. O campo `data_inicio` (obrigatorio no banco) tambem nao e exibido na tabela.
+
+**Correcao**: Problema menor — manter como esta. Dados sao salvos e acessiveis na edicao.
+
+---
+
+## Resumo de Acoes
+
+| # | Problema | Tipo | Impacto | Esforco |
+|---|----------|------|---------|---------|
+| 1 | Queries sem empresa_id (Licencas/Chaves) | Seguranca | **Critico** | Baixo |
+| 2 | Botoes inline vs DropdownMenu | UX inconsistente | **Medio** | Baixo |
+| 3 | Status "em_manutencao" ausente | Dados | **Medio** | Baixo |
+| 4 | Stats hooks queryKey sem empresa_id | Cache incorreto | **Medio** | Baixo |
+| 5 | NotificationCenter sem empresa_id | Seguranca | **Alto** | Baixo |
+| 6 | Campo data_aquisicao nao exibido | UX menor | **Baixo** | Baixo |
+
+Recomendo implementar os itens 1 a 5 nesta rodada. O item 6 e cosmetico e pode ser mantido.
 
