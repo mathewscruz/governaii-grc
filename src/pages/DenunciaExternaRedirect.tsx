@@ -25,7 +25,7 @@ export default function DenunciaExternaRedirect() {
           .select('empresa_id')
           .eq('token_publico', token)
           .eq('ativo', true)
-          .single();
+          .single() as { data: { empresa_id: string } | null; error: any };
 
         if (configError) {
           logger.error('Erro na consulta de configuração', { module: 'DenunciaExternaRedirect', error: String(configError) });
