@@ -13,6 +13,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY") || supabaseKey;
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
 
     if (!lovableKey) {
@@ -22,6 +23,44 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Authenticate user and consume credit
+    const authHeader = req.headers.get('Authorization');
+    let userId: string | null = null;
+    let empresaId: string | null = null;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      const userClient = createClient(supabaseUrl, supabaseAnon, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(authHeader.replace('Bearer ', ''));
+      if (!claimsError && claimsData?.claims?.sub) {
+        userId = claimsData.claims.sub as string;
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('empresa_id')
+          .eq('user_id', userId)
+          .single();
+        empresaId = profile?.empresa_id || null;
+      }
+    }
+
+    // Consume credit before AI call
+    if (userId && empresaId) {
+      const { data: creditResult } = await supabase.rpc('consume_ai_credit', {
+        p_empresa_id: empresaId,
+        p_user_id: userId,
+        p_funcionalidade: 'populate-requirement-guidance',
+        p_descricao: 'Geração de orientações para requisito de framework'
+      });
+
+      if (creditResult === false) {
+        return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const body = await req.json().catch(() => ({}));
     const requirementId = body.requirement_id;
     const frameworkId = body.framework_id;
@@ -88,6 +127,20 @@ Deno.serve(async (req) => {
 
     let processed = 0;
     for (const r of requirements) {
+      // Consume credit per requirement in batch mode
+      if (userId && empresaId) {
+        const { data: batchCredit } = await supabase.rpc('consume_ai_credit', {
+          p_empresa_id: empresaId,
+          p_user_id: userId,
+          p_funcionalidade: 'populate-requirement-guidance-batch',
+          p_descricao: `Orientação requisito ${r.codigo || r.titulo}`
+        });
+        if (batchCredit === false) {
+          // Stop processing if credits exhausted
+          break;
+        }
+      }
+
       try {
         const guidance = await generateGuidance(r, lovableKey);
         if (!guidance) continue;

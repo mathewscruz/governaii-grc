@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +15,48 @@ serve(async (req) => {
     const { action, data } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnon = Deno.env.get('SUPABASE_ANON_KEY') || supabaseServiceKey;
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Authenticate user
+    const authHeader = req.headers.get('Authorization');
+    let userId: string | null = null;
+    let empresaId: string | null = null;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      const userClient = createClient(supabaseUrl, supabaseAnon, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(authHeader.replace('Bearer ', ''));
+      if (!claimsError && claimsData?.claims?.sub) {
+        userId = claimsData.claims.sub as string;
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('empresa_id')
+          .eq('user_id', userId)
+          .single();
+        empresaId = profile?.empresa_id || null;
+      }
+    }
+
+    // Consume AI credit if we have user context
+    if (userId && empresaId) {
+      const { data: creditResult } = await supabaseAdmin.rpc('consume_ai_credit', {
+        p_empresa_id: empresaId,
+        p_user_id: userId,
+        p_funcionalidade: `ai-assistant:${action}`,
+        p_descricao: `Assistente IA - ${action}`
+      });
+
+      if (creditResult === false) {
+        return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), {
+          status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
 
     let systemPrompt = "";
     let userPrompt = "";

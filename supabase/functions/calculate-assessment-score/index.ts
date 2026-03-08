@@ -25,6 +25,59 @@ serve(async (req) => {
 
     console.log('Calculating score for assessment:', assessment_id);
 
+    // Get empresa_id from assessment to consume credit
+    const { data: assessmentInfo, error: assessmentInfoError } = await supabase
+      .from('due_diligence_assessments')
+      .select('empresa_id')
+      .eq('id', assessment_id)
+      .single();
+
+    if (assessmentInfoError) throw assessmentInfoError;
+
+    const empresaId = assessmentInfo?.empresa_id;
+
+    // Try to get user from auth header, otherwise use a system context
+    let userId: string | null = null;
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const supabaseAnon = Deno.env.get('SUPABASE_ANON_KEY') || supabaseKey;
+      const userClient = createClient(supabaseUrl, supabaseAnon, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      const { data: claimsData } = await userClient.auth.getClaims(authHeader.replace('Bearer ', ''));
+      if (claimsData?.claims?.sub) {
+        userId = claimsData.claims.sub as string;
+      }
+    }
+
+    // If no authenticated user, find the assessment creator or any admin of the empresa
+    if (!userId && empresaId) {
+      const { data: adminProfile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('empresa_id', empresaId)
+        .limit(1)
+        .single();
+      userId = adminProfile?.user_id || null;
+    }
+
+    // Consume AI credit
+    if (empresaId && userId) {
+      const { data: creditResult } = await supabase.rpc('consume_ai_credit', {
+        p_empresa_id: empresaId,
+        p_user_id: userId,
+        p_funcionalidade: 'calculate-assessment-score',
+        p_descricao: 'Cálculo de score Due Diligence com IA'
+      });
+
+      if (creditResult === false) {
+        return new Response(JSON.stringify({ error: 'Créditos de IA esgotados.' }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     const { data: responses, error: responsesError } = await supabase
       .from('due_diligence_responses')
       .select(`
