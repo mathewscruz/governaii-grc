@@ -839,6 +839,7 @@ export default function Documentos() {
           open={categoriasDialog}
           onOpenChange={setCategoriasDialog}
           onSuccess={() => queryClient.invalidateQueries({ queryKey: ['documentos-categorias'] })}
+          empresaId={empresaId}
         />
 
         {vinculacoesDialog.documento && (
@@ -846,6 +847,7 @@ export default function Documentos() {
             open={vinculacoesDialog.open}
             onOpenChange={(open) => setVinculacoesDialog({ open })}
             documento={vinculacoesDialog.documento}
+            empresaId={empresaId}
           />
         )}
 
@@ -855,6 +857,7 @@ export default function Documentos() {
             onOpenChange={(open) => setAprovacaoDialog({ open })}
             documento={aprovacaoDialog.documento}
             onSuccess={invalidateDocumentos}
+            empresaId={empresaId}
           />
         )}
 
