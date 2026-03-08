@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { useAuth } from "@/components/AuthProvider";
 
 interface DocumentosStats {
   total: number;
