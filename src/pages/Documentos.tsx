@@ -71,7 +71,8 @@ interface Categoria {
 export default function Documentos() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
   const [documentosFiltrados, setDocumentosFiltrados] = useState<Documento[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);

@@ -60,7 +60,8 @@ export const useAuditoriaData = (auditoriaId?: string) => {
 };
 
 export const useUsuariosEmpresa = () => {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
 
   return useQuery({
     queryKey: ['usuarios-empresa', empresaId],

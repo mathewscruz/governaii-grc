@@ -1,15 +1,17 @@
-import { useOptimizedQuery } from "./useOptimizedQuery";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEmpresaId } from "./useEmpresaId";
+import { useAuth } from "@/components/AuthProvider";
 
 export const useReviewStats = () => {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
 
-  return useOptimizedQuery(
-    async () => {
-      if (!empresaId) {
-        return { data: null, error: "Empresa não encontrada" };
-      }
+  const query = useQuery({
+    queryKey: ['review-stats', empresaId],
+    enabled: !!empresaId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      if (!empresaId) return null;
 
       // Total de revisões
       const { count: totalReviews } = await supabase
@@ -50,22 +52,19 @@ export const useReviewStats = () => {
       const contasRevogadas = statsData?.reduce((acc, r) => acc + (r.contas_revogadas || 0), 0) || 0;
 
       return {
-        data: {
-          total: totalReviews || 0,
-          emAndamento: emAndamento || 0,
-          concluidas: concluidas || 0,
-          vencidas: vencidas || 0,
-          contasRevisadas,
-          contasAprovadas,
-          contasRevogadas,
-        },
-        error: null,
+        total: totalReviews || 0,
+        emAndamento: emAndamento || 0,
+        concluidas: concluidas || 0,
+        vencidas: vencidas || 0,
+        contasRevisadas,
+        contasAprovadas,
+        contasRevogadas,
       };
     },
-    [empresaId],
-    {
-      cacheKey: `review-stats-${empresaId}`,
-      cacheDuration: 60000,
-    }
-  );
+  });
+
+  return {
+    data: query.data,
+    loading: query.isLoading,
+  };
 };

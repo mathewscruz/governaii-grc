@@ -16,6 +16,7 @@ export const useDenunciasStats = () => {
   return useQuery({
     queryKey: ['denuncias-stats', empresaId],
     enabled: !!empresaId,
+    staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<DenunciasStats> => {
       try {
         const { data: denuncias, error } = await supabase

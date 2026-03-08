@@ -32,8 +32,8 @@ const templateConfigs: Record<string, { nome: string; descricao: string; icon: a
 };
 
 export default function Relatorios() {
-  const { empresaId } = useEmpresaId();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);

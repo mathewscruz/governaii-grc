@@ -10,9 +10,9 @@ export const useReviewData = () => {
   const queryClient = useQueryClient();
 
   const invalidateCache = () => {
-    queryClient.invalidateQueries({ queryKey: [`review-stats-${empresaId}`] });
-    queryClient.invalidateQueries({ queryKey: [`reviews-${empresaId}`] });
-    queryClient.invalidateQueries({ queryKey: [`review-items-`] });
+    queryClient.invalidateQueries({ queryKey: ['review-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['reviews'] });
+    queryClient.invalidateQueries({ queryKey: ['review-items'] });
   };
 
   const createReview = async (data: any) => {

@@ -89,7 +89,8 @@ const PILLAR_COLORS: Record<string, string> = {
 };
 
 export function useFrameworkScore(frameworkId: string, config: FrameworkConfig, refreshKey?: number): FrameworkScore {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [overallScore, setOverallScore] = useState(0);

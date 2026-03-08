@@ -74,11 +74,14 @@ export default function RevisaoAcessos() {
 
   // Buscar histórico (revisões concluídas ou canceladas)
   const {
-    data: historico,
-    loading: historicoLoading,
-  } = useOptimizedQuery(
-    async () => {
-      if (!empresaId) return { data: [], error: null };
+    data: historico = [],
+    isLoading: historicoLoading,
+  } = useQuery({
+    queryKey: ['reviews-historico', empresaId],
+    enabled: !!empresaId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      if (!empresaId) return [];
 
       const { data, error } = await supabase
         .from("access_reviews")
@@ -91,11 +94,10 @@ export default function RevisaoAcessos() {
         .in("status", ["concluida", "cancelada"])
         .order("data_conclusao", { ascending: false });
 
-      return { data: data || [], error };
+      if (error) throw error;
+      return data || [];
     },
-    [empresaId],
-    { cacheKey: `reviews-historico-${empresaId}` }
-  );
+  });
 
   const handleEdit = (review: any) => {
     setSelectedReview(review);

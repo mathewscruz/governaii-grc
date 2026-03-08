@@ -75,7 +75,8 @@ interface Framework {
 export default function GapAnalysisFrameworkDetail() {
   const { frameworkId } = useParams<{ frameworkId: string }>();
   const navigate = useNavigate();
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const [framework, setFramework] = useState<Framework | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);

@@ -31,7 +31,8 @@ const tipoMap: Record<string, string> = {
 };
 
 export default function Continuidade() {
-  const { empresaId } = useEmpresaId();
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: stats, isLoading: statsLoading } = useContinuidadeStats();
