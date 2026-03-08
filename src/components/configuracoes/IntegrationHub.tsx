@@ -158,36 +158,6 @@ const INTEGRACOES_DISPONIVEIS: Integration[] = [
     cor: '#0078D4',
     Logo: AzureLogo
   },
-  {
-    id: 'onedrive',
-    tipo: 'onedrive',
-    nome: 'OneDrive',
-    descricao: 'Sincronize documentos aprovados com o OneDrive/SharePoint.',
-    categoria: 'armazenamento',
-    disponivel: false,
-    cor: '#0078D4',
-    Logo: OneDriveLogo
-  },
-  {
-    id: 'google-drive',
-    tipo: 'google-drive',
-    nome: 'Google Drive',
-    descricao: 'Backup automático de documentos e evidências no Google Drive.',
-    categoria: 'armazenamento',
-    disponivel: false,
-    cor: '#4285F4',
-    Logo: GoogleDriveLogo
-  },
-  {
-    id: 'zapier',
-    tipo: 'zapier',
-    nome: 'Zapier',
-    descricao: 'Conecte com milhares de apps via Zapier.',
-    categoria: 'automacao',
-    disponivel: false,
-    cor: '#FF4A00',
-    Logo: ZapierLogo
-  }
 ];
 
 const CATEGORIAS = {
