@@ -178,7 +178,7 @@ export default function DenunciaConsulta() {
 
       setShowDetails(true);
     } catch (error) {
-      console.error('Erro ao buscar denúncia:', error);
+      logger.error('Erro ao buscar denúncia', { module: 'DenunciaConsulta', error: String(error) });
       toast({
         title: "Erro",
         description: "Erro ao buscar denúncia. Tente novamente.",
