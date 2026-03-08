@@ -200,7 +200,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           user_id: userInfo.user_id,
           empresa_id: userInfo.empresa_id,
           action: 'generate_document',
-          doc_type_hint: currentDocName || currentDocType
+          doc_type_hint: currentDocName || currentDocType,
+          ...(frameworkName && { framework_context: { framework_name: frameworkName, framework_id: frameworkId } }),
         }
       });
 
