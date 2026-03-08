@@ -130,6 +130,13 @@ function App() {
                 </ProtectedRoute>
               </Layout>
             } />
+            <Route path="/continuidade" element={
+              <Layout>
+                <ProtectedRoute moduleName="continuidade" fallbackToRoleCheck={false}>
+                  <Continuidade />
+                </ProtectedRoute>
+              </Layout>
+            } />
             <Route path="/gap-analysis" element={
               <Navigate to="/gap-analysis/frameworks" replace />
             } />

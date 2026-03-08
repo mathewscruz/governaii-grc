@@ -130,6 +130,12 @@ const getMenuItems = (t: (key: string) => string) => [
     ],
   },
   {
+    title: t('sidebar.businessContinuity'),
+    url: '/continuidade',
+    icon: ShieldAlert,
+    moduleName: 'continuidade',
+  },
+  {
     title: t('sidebar.reports'),
     url: '/relatorios',
     icon: FileBarChart,

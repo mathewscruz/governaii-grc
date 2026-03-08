@@ -59,6 +59,7 @@ export const pt = {
     whistleblowing: 'Canal de Denúncia',
     policies: 'Políticas',
     reports: 'Relatórios',
+    businessContinuity: 'Continuidade',
     settings: 'Configurações',
     logout: 'Sair',
     confirmLogout: 'Confirmar saída',

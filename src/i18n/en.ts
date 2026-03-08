@@ -59,6 +59,7 @@ export const en = {
     whistleblowing: 'Whistleblowing Channel',
     policies: 'Policies',
     reports: 'Reports',
+    businessContinuity: 'Business Continuity',
     settings: 'Settings',
     logout: 'Logout',
     confirmLogout: 'Confirm logout',
