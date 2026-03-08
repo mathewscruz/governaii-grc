@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
 import { 
-  Plus, FileText, Download, Pencil, Trash2, Eye, 
+  Plus, FileText, Download, Pencil, Trash2, Eye, MoreHorizontal,
   FileBarChart, BarChart3, Shield, AlertTriangle, BookOpen, Clock, Loader2
 } from 'lucide-react';
 
