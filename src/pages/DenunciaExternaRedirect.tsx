@@ -55,7 +55,7 @@ export default function DenunciaExternaRedirect() {
           logger.debug('Empresa encontrada, redirecionando', { module: 'DenunciaExternaRedirect', action: empresa.slug });
           navigate(`/${empresa.slug}/denuncia`, { replace: true });
         } else {
-          console.error('Empresa não encontrada para ID:', config.empresa_id);
+          logger.error('Empresa não encontrada para ID', { module: 'DenunciaExternaRedirect', action: config.empresa_id });
           navigate('/404', { replace: true });
         }
       } catch (error) {
