@@ -58,14 +58,15 @@
     <meta name="twitter:image:alt" content="Akuris - Plataforma GRC" />
 
     <!-- Preload Critical Resources -->
-    <link rel="preload" as="image" href="https://akuris.com.br/akuris-logo.png" />
+    <link rel="preload" as="image" href="/akuris-logo.png" />
     <link rel="preconnect" href="https://lnlkahtugwmkznasapfd.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://lnlkahtugwmkznasapfd.supabase.co" />
 
-    <!-- Google Fonts - DM Sans (Akuris Identity) -->
+    <!-- Google Fonts - DM Sans (Akuris Identity) - Non-blocking -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400;1,9..40,500&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400;1,9..40,500&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400;1,9..40,500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 
     <!-- Structured Data - JSON-LD -->
     <script type="application/ld+json">

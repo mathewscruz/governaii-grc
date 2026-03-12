@@ -1,64 +1,80 @@
 
 
-# Melhorias e Otimizações Identificadas
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-Analisei o codebase completo e identifiquei melhorias em 3 categorias: **Performance**, **Qualidade de Código** e **UX**.
-
----
-
-## 1. Code Splitting com React.lazy (Performance -- Alto Impacto)
-
-O `App.tsx` importa **todas as 30+ páginas sincronamente**. Isso significa que o bundle inicial carrega todo o código de Riscos, Contratos, Documentos, etc., mesmo quando o usuário está na Landing Page. Com `React.lazy` + `Suspense`, cada página é carregada apenas quando acessada.
-
-**Arquivo:** `src/App.tsx`
-- Converter todos os imports de páginas para `React.lazy(() => import(...))`
-- Envolver as `<Routes>` com `<Suspense fallback={<PageSkeleton />}>`
-- Resultado esperado: bundle inicial ~60% menor, carregamento da Landing Page muito mais rápido
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
 ---
 
-## 2. LanguageProvider duplicado (Bug)
+## 1. ErrorBoundary ausente na maioria das paginas
 
-O `LanguageProvider` está instanciado **duas vezes**: uma em `main.tsx` e outra em `App.tsx`. Isso cria dois contextos aninhados desnecessariamente, desperdiçando memória e potencialmente causando inconsistências.
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-**Correção:** Remover o `LanguageProvider` de `main.tsx` (manter apenas em `App.tsx` que já envolve tudo).
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
----
-
-## 3. QueryClient sem configuração de cache (Performance)
-
-O `QueryClient` em `App.tsx` é criado sem nenhuma configuração `defaultOptions`. Isso significa `staleTime: 0` (padrão), fazendo com que toda navegação entre páginas re-fetche dados. Os hooks individuais configuram `staleTime`, mas uma configuração global garante consistência.
-
-**Arquivo:** `src/App.tsx`
-- Adicionar `defaultOptions: { queries: { staleTime: 2 * 60 * 1000, retry: 1, refetchOnWindowFocus: false } }`
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
 ---
 
-## 4. Preload da fonte Google Fonts bloqueante (Performance)
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-O `index.html` carrega Google Fonts com `<link rel="stylesheet">` que é render-blocking. Usar `media="print" onload="this.media='all'"` ou `font-display: swap` + `preload` eliminaria o bloqueio.
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
 
-**Arquivo:** `index.html`
-- Converter o link de fonts para carregamento assíncrono
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
 
 ---
 
-## 5. Preconnect para Supabase já existe, mas falta preload do logo (Performance)
+## 3. Paginas sem EmptyState padronizado
 
-O logo Akuris (`/akuris-logo.png`) é carregado via import em vários componentes. Um `<link rel="preload">` para o asset local (não o URL externo) ajudaria no LCP.
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
 
-**Arquivo:** `index.html`
-- Trocar o preload de `https://akuris.com.br/akuris-logo.png` para o asset local usado no hero
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+
+---
+
+## 4. Ausencia de atalhos de teclado documentados para o usuario
+
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+
+---
+
+## 5. Botao de "Voltar" no header nao tem tooltip
+
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
 
 ---
 
 ## Resumo de Prioridade
 
-| # | Melhoria | Impacto | Esforço |
+| # | Melhoria | Impacto | Esforco |
 |---|----------|---------|---------|
-| 1 | Code splitting (React.lazy) | Alto (bundle -60%) | Médio |
-| 2 | Remover LanguageProvider duplicado | Médio (bug fix) | Baixo |
-| 3 | QueryClient defaultOptions | Médio (menos refetches) | Baixo |
-| 4 | Fonts não-bloqueantes | Médio (LCP melhor) | Baixo |
-| 5 | Preload do logo local | Baixo | Baixo |
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 

@@ -1,52 +1,60 @@
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LanguageProvider } from '@/contexts/LanguageContext';
-
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/components/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
-import Auth from '@/pages/Auth';
-import Dashboard from '@/pages/Dashboard';
-import Ativos from '@/pages/Ativos';
-import AtivosLicencas from '@/pages/AtivosLicencas';
-import AtivosChaves from '@/pages/AtivosChaves';
-import { Riscos } from '@/pages/Riscos';
-import RiscosAceite from '@/pages/RiscosAceite';
-import Continuidade from '@/pages/Continuidade';
-import GapAnalysisFrameworks from '@/pages/GapAnalysisFrameworks';
-import GapAnalysisFrameworkDetail from '@/pages/GapAnalysisFrameworkDetail';
+import { PageSkeleton } from '@/components/ui/page-skeleton';
 
+// Lazy-loaded pages
+const Auth = React.lazy(() => import('@/pages/Auth'));
+const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
+const Ativos = React.lazy(() => import('@/pages/Ativos'));
+const AtivosLicencas = React.lazy(() => import('@/pages/AtivosLicencas'));
+const AtivosChaves = React.lazy(() => import('@/pages/AtivosChaves'));
+const Riscos = React.lazy(() => import('@/pages/Riscos').then(m => ({ default: m.Riscos })));
+const RiscosAceite = React.lazy(() => import('@/pages/RiscosAceite'));
+const Continuidade = React.lazy(() => import('@/pages/Continuidade'));
+const GapAnalysisFrameworks = React.lazy(() => import('@/pages/GapAnalysisFrameworks'));
+const GapAnalysisFrameworkDetail = React.lazy(() => import('@/pages/GapAnalysisFrameworkDetail'));
+const Contratos = React.lazy(() => import('@/pages/Contratos'));
+const Governanca = React.lazy(() => import('@/pages/Governanca'));
+const Sistemas = React.lazy(() => import('@/pages/Sistemas'));
+const Documentos = React.lazy(() => import('@/pages/Documentos'));
+const ContasPrivilegiadas = React.lazy(() => import('@/pages/ContasPrivilegiadas'));
+const Incidentes = React.lazy(() => import('@/pages/Incidentes'));
+const Privacidade = React.lazy(() => import('@/pages/Privacidade'));
+const DueDiligence = React.lazy(() => import('@/pages/DueDiligence'));
+const Assessment = React.lazy(() => import('@/pages/Assessment'));
+const RevisaoAcessos = React.lazy(() => import('@/pages/RevisaoAcessos'));
+const ReviewExterna = React.lazy(() => import('@/pages/ReviewExterna'));
+const Denuncia = React.lazy(() => import('@/pages/Denuncia'));
+const DenunciaExternaRedirect = React.lazy(() => import('@/pages/DenunciaExternaRedirect'));
+const DenunciaMenu = React.lazy(() => import('@/pages/DenunciaMenu'));
+const DenunciaFormulario = React.lazy(() => import('@/pages/DenunciaFormulario'));
+const DenunciaConsulta = React.lazy(() => import('@/pages/DenunciaConsulta'));
+const Configuracoes = React.lazy(() => import('@/pages/Configuracoes'));
+const NotFound = React.lazy(() => import('@/pages/NotFound'));
+const LandingPage = React.lazy(() => import('@/pages/LandingPage'));
+const PoliticaPrivacidade = React.lazy(() => import('@/pages/PoliticaPrivacidade'));
+const PlanosAcao = React.lazy(() => import('@/pages/PlanosAcao'));
+const Relatorios = React.lazy(() => import('@/pages/Relatorios'));
+const Politicas = React.lazy(() => import('@/pages/Politicas'));
+const Registro = React.lazy(() => import('@/pages/Registro'));
+const CheckoutSuccess = React.lazy(() => import('@/pages/CheckoutSuccess'));
+const DefinirSenha = React.lazy(() => import('@/pages/DefinirSenha'));
 
-import Contratos from '@/pages/Contratos';
-import Governanca from '@/pages/Governanca';
-import Sistemas from '@/pages/Sistemas';
-import Documentos from '@/pages/Documentos';
-import ContasPrivilegiadas from '@/pages/ContasPrivilegiadas';
-import Incidentes from '@/pages/Incidentes';
-import Privacidade from '@/pages/Privacidade';
-import DueDiligence from '@/pages/DueDiligence';
-import Assessment from '@/pages/Assessment';
-import RevisaoAcessos from '@/pages/RevisaoAcessos';
-import ReviewExterna from '@/pages/ReviewExterna';
-import Denuncia from '@/pages/Denuncia';
-import DenunciaExternaRedirect from '@/pages/DenunciaExternaRedirect';
-import DenunciaMenu from '@/pages/DenunciaMenu';
-import DenunciaFormulario from '@/pages/DenunciaFormulario';
-import DenunciaConsulta from '@/pages/DenunciaConsulta';
-import Configuracoes from '@/pages/Configuracoes';
-import NotFound from '@/pages/NotFound';
-import LandingPage from '@/pages/LandingPage';
-import PoliticaPrivacidade from '@/pages/PoliticaPrivacidade';
-import PlanosAcao from '@/pages/PlanosAcao';
-import Relatorios from '@/pages/Relatorios';
-import Politicas from '@/pages/Politicas';
-
-import Registro from '@/pages/Registro';
-import CheckoutSuccess from '@/pages/CheckoutSuccess';
-import DefinirSenha from '@/pages/DefinirSenha';
-
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
@@ -54,6 +62,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-background"><PageSkeleton variant="dashboard" /></div>}>
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/definir-senha" element={<DefinirSenha />} />
@@ -243,6 +252,7 @@ function App() {
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </Router>
         
         <SonnerToaster />
