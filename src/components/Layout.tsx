@@ -14,6 +14,7 @@ import { ChangelogPopover } from '@/components/ChangelogPopover';
 import PageTransition from '@/components/PageTransition';
 import TrialBanner from '@/components/TrialBanner';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { PageSkeleton } from '@/components/ui/page-skeleton';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
@@ -53,18 +54,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [company]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <img src={akurisLogo} alt="Akuris" className="h-10 animate-pulse" />
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:0ms]" />
-            <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:150ms]" />
-            <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:300ms]" />
-          </div>
-        </div>
-      </div>
-    );
+    return <PageSkeleton fullScreen />;
   }
 
   if (!user) {
