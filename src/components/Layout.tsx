@@ -54,7 +54,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [company]);
 
   if (loading) {
-    return <PageSkeleton fullScreen />;
+    return <PageSkeleton />;
   }
 
   if (!user) {

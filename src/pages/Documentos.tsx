@@ -412,7 +412,7 @@ export default function Documentos() {
           title="Documentos"
           description="Gerencie documentos, políticas e procedimentos da empresa de forma centralizada"
         />
-        <PageSkeleton variant="table" />
+        <PageSkeleton />
       </div>
     );
   }

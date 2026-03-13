@@ -322,7 +322,7 @@ export default function Contratos() {
   }, [filteredFornecedores, currentPageFornecedores, itemsPerPage]);
 
   if (loading) {
-    return <PageSkeleton variant="table" />;
+    return <PageSkeleton />;
   }
 
   return (

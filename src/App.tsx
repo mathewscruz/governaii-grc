@@ -6,7 +6,7 @@ import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/components/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
-import { PageSkeleton } from '@/components/ui/page-skeleton';
+
 
 // Lazy-loaded pages
 const Auth = React.lazy(() => import('@/pages/Auth'));
@@ -62,7 +62,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
-          <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-background"><PageSkeleton /></div>}>
+          <Suspense fallback={null}>
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/definir-senha" element={<DefinirSenha />} />
