@@ -1,94 +1,68 @@
 
 
-# Avaliacao de Melhorias e Otimizacoes
+# Varredura Geral — Oportunidades de Melhoria de UX
 
-Apos analisar o codebase, identifiquei as seguintes oportunidades organizadas por impacto e esforco:
-
----
-
-## 1. Acessibilidade e UX
-
-### 1.1 Prefetch de rotas no hover da sidebar
-**Problema**: Ao clicar em um modulo, o chunk JS precisa ser carregado (lazy loading), causando micro-delay.
-**Solucao**: Adicionar `onMouseEnter` nos links da sidebar para chamar o import dinamico da pagina correspondente, fazendo prefetch do chunk antes do clique.
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/AppSidebar.tsx` | Adicionar prefetch via `import()` no `onMouseEnter` dos links |
-
-### 1.2 Skeleton de carregamento por modulo (ao invés de tela branca)
-**Problema**: Enquanto dados carregam via React Query, varios modulos mostram nada ou StatCards com "0" que piscam. Apenas Dashboard usa `<Skeleton>` adequadamente.
-**Solucao**: Criar um componente `ModuleLoadingSkeleton` com variantes (stat-cards + tabela) e aplicar nos modulos que fazem fetch pesado (Riscos, Incidentes, PlanosAcao, Continuidade, etc).
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/module-loading-skeleton.tsx` | Novo componente com layout skeleton (4 stat cards + tabela) |
-| Paginas principais | Usar skeleton enquanto `isLoading` |
+Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
 
 ---
 
-## 2. Performance
+## 1. ErrorBoundary ausente na maioria das paginas
 
-### 2.1 React Query: deduplicar fetches redundantes
-**Problema**: Varias paginas fazem queries separadas para stats E lista de dados, quando muitas vezes os stats poderiam ser derivados da lista. Alem disso, hooks como `useDashboardStats` fazem 4 queries em paralelo que poderiam ser consolidadas.
-**Solucao**: Nos modulos onde stats sao contagens simples da propria lista (Riscos, Incidentes), derivar stats do `useQuery` principal ao inves de ter um hook separado.
+**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas que usam stats hook + query separada | Consolidar em uma unica query |
-
-### 2.2 Virtualizar tabelas grandes
-**Problema**: Modulos como Riscos, Documentos, Contratos carregam todos os registros e renderizam no DOM. Com 100+ registros, isso afeta scroll e re-renders.
-**Solucao**: Adicionar paginacao server-side ou virtualizar com `@tanstack/react-virtual` no `DataTable`.
+**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/components/ui/data-table.tsx` | Adicionar paginacao server-side ou virtualizacao |
+| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
 
 ---
 
-## 3. Robustez
+## 2. Feedback de "carregando" inconsistente entre modulos
 
-### 3.1 Tratamento de erros em Edge Functions
-**Problema**: Varios componentes que chamam Edge Functions (AkurIAChatbot, DocGenDialog, AIRecommendationsCard) tratam erros de forma inconsistente - alguns mostram toast, outros falham silenciosamente.
-**Solucao**: Criar um wrapper `invokeEdgeFunction()` centralizado que trata CORS, 402 (creditos), 429 (rate limit), e erros de rede de forma padronizada.
+**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/lib/edge-function-utils.ts` | Novo utilitario para invocar edge functions |
-| Componentes que usam `supabase.functions.invoke` | Migrar para o wrapper |
-
-### 3.2 Retry automatico em falhas de rede
-**Problema**: O `QueryClient` tem `retry: 1`, mas nao diferencia erros de rede (retriable) de erros de negocio (nao-retriable).
-**Solucao**: Configurar `retry` com funcao que so faz retry em erros de rede/timeout.
+**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/App.tsx` | `retry: (count, error) => isNetworkError(error) && count < 2` |
+| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
 
 ---
 
-## 4. UX de Primeiro Uso
+## 3. Paginas sem EmptyState padronizado
 
-### 4.1 Tooltips contextuais nos StatCards vazios
-**Problema**: Novos usuarios veem todos os StatCards com "0" e nao entendem o que significam.
-**Solucao**: Quando stats == 0, mostrar um tooltip ou mensagem sutil no StatCard indicando "Cadastre seu primeiro risco" etc.
+**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+
+**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/components/ui/stat-card.tsx` | Prop opcional `emptyHint` |
+| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
 
 ---
 
-## 5. Seguranca
+## 4. Ausencia de atalhos de teclado documentados para o usuario
 
-### 5.1 Sanitizacao de HTML no chatbot
-**Problema**: O `AkurIAChatbot` usa `dangerouslySetInnerHTML` com `DOMPurify.sanitize()`, mas o `DocGenDialog` faz o mesmo com formatacao markdown customizada que pode ter edge cases.
-**Solucao**: Auditar e padronizar o uso de DOMPurify em ambos componentes, garantindo que a config de sanitizacao seja a mesma e restritiva.
+**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+
+**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/lib/sanitize-utils.ts` | Configuracao centralizada do DOMPurify |
+| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+
+---
+
+## 5. Botao de "Voltar" no header nao tem tooltip
+
+**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+
+**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
 
 ---
 
@@ -96,14 +70,11 @@ Apos analisar o codebase, identifiquei as seguintes oportunidades organizadas po
 
 | # | Melhoria | Impacto | Esforco |
 |---|----------|---------|---------|
-| 1.1 | Prefetch de rotas na sidebar | Alto (navegacao instantanea) | Baixo |
-| 1.2 | Skeleton de carregamento por modulo | Alto (percepçao de velocidade) | Medio |
-| 2.1 | Deduplicar fetches stats | Medio (menos requests) | Medio |
-| 2.2 | Virtualizar/paginar tabelas | Alto (performance com muitos dados) | Alto |
-| 3.1 | Wrapper Edge Functions | Medio (consistencia erros) | Medio |
-| 3.2 | Retry inteligente | Baixo (resilencia) | Baixo |
-| 4.1 | Hints nos StatCards vazios | Medio (onboarding) | Baixo |
-| 5.1 | Sanitizacao centralizada | Medio (seguranca) | Baixo |
+| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
+| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
+| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
+| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
+| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
 
-Recomendo comecar por **1.1** (prefetch na sidebar, rapido e alto impacto), depois **3.2** (retry inteligente), e **1.2** (skeletons por modulo).
+Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
 

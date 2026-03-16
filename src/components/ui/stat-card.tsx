@@ -48,6 +48,8 @@ interface StatCardProps
   }
   actions?: React.ReactNode
   loading?: boolean
+  /** Hint text shown when value is 0, to guide new users */
+  emptyHint?: string
 }
 
 export function StatCard({
@@ -62,6 +64,7 @@ export function StatCard({
   badge,
   actions,
   loading = false,
+  emptyHint,
   onClick,
   ...props
 }: StatCardProps) {
@@ -132,6 +135,13 @@ export function StatCard({
           </span>
           {actions && <div className="ml-auto">{actions}</div>}
         </div>
+
+        {/* Empty hint for new users when value is 0 */}
+        {emptyHint && (value === 0 || value === '0') && (
+          <p className="mt-1.5 text-xs text-muted-foreground/70 italic">
+            {emptyHint}
+          </p>
+        )}
 
         {(description || trend) && (
           <div className="mt-2 flex items-center gap-3 text-sm">

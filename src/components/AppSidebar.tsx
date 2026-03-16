@@ -48,6 +48,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/AuthProvider';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { prefetchRoute } from '@/lib/route-prefetch';
 
 const getMenuItems = (t: (key: string) => string) => [
   {
@@ -336,6 +337,7 @@ export function AppSidebar() {
                               >
                                  <NavLink 
                                    to={subItem.url} 
+                                   onMouseEnter={() => prefetchRoute(subItem.url)}
                                    className={({ isActive }) => getNavCls({ isActive })}
                                  >
                                    <subItem.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
@@ -358,6 +360,7 @@ export function AppSidebar() {
                       <NavLink 
                         to={item.url} 
                         onClick={handleNavClick}
+                        onMouseEnter={() => prefetchRoute(item.url)}
                         className={({ isActive }) => `flex items-center w-full min-w-0 ${getNavCls({ isActive })}`}
                       >
                         <div className="flex items-center min-w-0">
