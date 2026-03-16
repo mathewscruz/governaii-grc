@@ -337,6 +337,7 @@ export function AppSidebar() {
                               >
                                  <NavLink 
                                    to={subItem.url} 
+                                   onMouseEnter={() => prefetchRoute(subItem.url)}
                                    className={({ isActive }) => getNavCls({ isActive })}
                                  >
                                    <subItem.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
