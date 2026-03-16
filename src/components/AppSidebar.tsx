@@ -48,6 +48,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/AuthProvider';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { prefetchRoute } from '@/lib/route-prefetch';
 
 const getMenuItems = (t: (key: string) => string) => [
   {

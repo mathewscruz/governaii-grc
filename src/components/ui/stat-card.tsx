@@ -48,6 +48,8 @@ interface StatCardProps
   }
   actions?: React.ReactNode
   loading?: boolean
+  /** Hint text shown when value is 0, to guide new users */
+  emptyHint?: string
 }
 
 export function StatCard({

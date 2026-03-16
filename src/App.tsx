@@ -46,11 +46,22 @@ const Registro = React.lazy(() => import('@/pages/Registro'));
 const CheckoutSuccess = React.lazy(() => import('@/pages/CheckoutSuccess'));
 const DefinirSenha = React.lazy(() => import('@/pages/DefinirSenha'));
 
+const isNetworkError = (error: unknown): boolean => {
+  if (!navigator.onLine) return true;
+  if (error instanceof TypeError && error.message.includes('fetch')) return true;
+  if (error instanceof Error && error.message.includes('NetworkError')) return true;
+  return false;
+};
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 2 * 60 * 1000,
-      retry: 1,
+      retry: (failureCount, error) => {
+        // Only retry on network errors, max 2 times
+        if (!isNetworkError(error)) return false;
+        return failureCount < 2;
+      },
       refetchOnWindowFocus: false,
     },
   },
