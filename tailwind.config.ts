@@ -174,7 +174,7 @@ export default {
 					'100%': { transform: 'rotate(1080deg)' }
 				},
 				'page-enter': {
-					'0%': { opacity: '0.6' },
+					'0%': { opacity: '0.85' },
 					'100%': { opacity: '1' }
 				}
 			},
@@ -188,7 +188,7 @@ export default {
 				'shimmer': 'shimmer 2s infinite linear',
 				'pulse-subtle': 'pulse-subtle 3s infinite ease-in-out',
 				'spin-burst': 'spin-burst 5s ease-in-out infinite',
-				'page-enter': 'page-enter 0.18s ease-out'
+				'page-enter': 'page-enter 0.12s ease-out'
 			},
 			spacing: {
 				'xs': 'var(--spacing-xs)',
