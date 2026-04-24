@@ -7058,6 +7058,16 @@ export type Database = {
       gerar_protocolo_denuncia: { Args: never; Returns: string }
       gerar_token_publico: { Args: never; Returns: string }
       gerar_token_revisao: { Args: never; Returns: string }
+      get_assessment_empresa_info: {
+        Args: { p_token: string }
+        Returns: {
+          assessment_id: string
+          data_expiracao: string
+          empresa_id: string
+          empresa_logo_url: string
+          empresa_nome: string
+        }[]
+      }
       get_empresa_by_slug: { Args: { empresa_slug: string }; Returns: string }
       get_profiles_by_text_ids: {
         Args: { text_ids: string[] }

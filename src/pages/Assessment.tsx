@@ -181,25 +181,8 @@ const TopBar = ({
           </div>
         </div>
 
-        {/* Right: Save indicator */}
-        <div className="flex items-center gap-2 shrink-0 text-xs">
-          {saving ? (
-            <span className="flex items-center gap-1.5 text-white/50">
-              <div className="animate-spin rounded-full h-3 w-3 border border-white/30 border-t-white/80"></div>
-              <span className="hidden sm:inline">Salvando...</span>
-            </span>
-          ) : savedAt ? (
-            <span className="flex items-center gap-1.5 text-emerald-400/80">
-              <Save className="h-3 w-3" />
-              <span className="hidden sm:inline">Salvo às {formatTime(savedAt)}</span>
-            </span>
-          ) : (
-            <span className="flex items-center gap-1.5 text-white/40">
-              <Save className="h-3 w-3" />
-              <span className="hidden sm:inline">Auto-save ativo</span>
-            </span>
-          )}
-        </div>
+        {/* Right: spacer to balance layout */}
+        <div className="shrink-0 w-8" />
       </div>
     </header>
   );
@@ -417,17 +400,20 @@ export default function Assessment() {
 
       const assessment = assessmentData[0];
 
-      let empresaData = { nome: 'Empresa', logo_url: null };
+      let empresaData: { nome: string; logo_url: string | null } = { nome: 'Empresa', logo_url: null };
       try {
-        const empresaResponse = await supabaseRequest(
-          `empresas?select=nome,logo_url&id=eq.${assessment.empresa_id}`,
-          { method: 'GET' }
-        );
-        if (empresaResponse && empresaResponse.length > 0) {
-          empresaData = empresaResponse[0];
+        const { data: empresaInfo, error: empresaErr } = await supabase
+          .rpc('get_assessment_empresa_info', { p_token: token });
+        if (!empresaErr && empresaInfo && empresaInfo.length > 0) {
+          empresaData = {
+            nome: empresaInfo[0].empresa_nome || 'Empresa',
+            logo_url: empresaInfo[0].empresa_logo_url || null,
+          };
+        } else if (empresaErr) {
+          assessmentLogger.warn('RPC empresa info erro:', empresaErr);
         }
       } catch (error) {
-        assessmentLogger.warn('Erro ao carregar dados da empresa, usando fallback:', error);
+        assessmentLogger.warn('Erro ao carregar dados da empresa via RPC:', error);
       }
 
       let templateData = { nome: 'Assessment', descricao: null };
@@ -889,9 +875,9 @@ export default function Assessment() {
                             <Save className="h-3.5 w-3.5" />
                             Último salvamento
                           </span>
-                          <span className="font-semibold text-slate-700">
+                          <span className="font-semibold text-slate-700 text-right">
                             {savedAt
-                              ? savedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                              ? savedAt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
                               : '—'}
                           </span>
                         </div>
@@ -909,7 +895,7 @@ export default function Assessment() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2">
-                  <ScrollArea className="max-h-[40vh] min-h-[180px]">
+                  <ScrollArea className="h-[280px]">
                     <div className="space-y-1 pr-2">
                       {Array.from({ length: totalPages }).map((_, idx) => {
                         const status = pageStatuses[idx];
