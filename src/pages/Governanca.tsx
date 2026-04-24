@@ -5,11 +5,13 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ControlesContent from "@/components/governanca/ControlesContent";
 import AuditoriasContent from "@/components/governanca/AuditoriasContent";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Governanca() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  
+  const { t } = useLanguage();
+
   // Detectar a aba inicial baseado no path ou query param
   const getInitialTab = () => {
     const tabParam = searchParams.get('tab');
@@ -41,16 +43,16 @@ export default function Governanca() {
 
   const getPageTitle = () => {
     switch (activeTab) {
-      case 'controles': return 'Controles Internos';
-      case 'auditorias': return 'Auditorias';
-      default: return 'Governança';
+      case 'controles': return t('modules.governanca.controlsTitle');
+      case 'auditorias': return t('modules.governanca.auditsTitle');
+      default: return t('modules.governanca.title');
     }
   };
 
   const getPageDescription = () => {
     switch (activeTab) {
-      case 'controles': return 'Gerencie os controles internos da organização';
-      case 'auditorias': return 'Gerencie auditorias e acompanhe evidências';
+      case 'controles': return t('modules.governanca.controlsDesc');
+      case 'auditorias': return t('modules.governanca.auditsDesc');
       default: return '';
     }
   };
@@ -66,11 +68,11 @@ export default function Governanca() {
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="controles" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
-            Controles
+            {t('modules.governanca.controls')}
           </TabsTrigger>
           <TabsTrigger value="auditorias" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Auditorias
+            {t('modules.governanca.audits')}
           </TabsTrigger>
         </TabsList>
         
