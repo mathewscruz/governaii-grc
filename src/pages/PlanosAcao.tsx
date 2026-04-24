@@ -110,7 +110,7 @@ export default function PlanosAcao() {
       if (!empresaId) return [];
       const { data, error } = await supabase
         .from('planos_acao')
-        .select('*, profiles:responsavel_id(nome_completo, avatar_url)')
+        .select('*, profiles:responsavel_id(nome, foto_url)')
         .eq('empresa_id', empresaId)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -126,7 +126,7 @@ export default function PlanosAcao() {
       if (!empresaId || !user?.id) return [];
       const { data, error } = await supabase
         .from('controles')
-        .select('id, nome, status, criticidade, proxima_avaliacao, responsavel_id, created_at, profiles:responsavel_id(nome_completo)')
+        .select('id, nome, status, criticidade, proxima_avaliacao, responsavel_id, created_at, profiles:responsavel_id(nome)')
         .eq('empresa_id', empresaId)
         .eq('responsavel_id', user.id)
         .in('status', ['ativo', 'em_revisao']);
@@ -158,7 +158,7 @@ export default function PlanosAcao() {
       if (!empresaId || !user?.id) return [];
       const { data, error } = await supabase
         .from('auditoria_itens')
-        .select('id, titulo, status, prioridade, prazo, responsavel_id, created_at, profiles:responsavel_id(nome_completo), auditorias!inner(empresa_id)')
+        .select('id, titulo, status, prioridade, prazo, responsavel_id, created_at, profiles:responsavel_id(nome), auditorias!inner(empresa_id)')
         .eq('auditorias.empresa_id', empresaId)
         .eq('responsavel_id', user.id)
         .not('status', 'in', '("concluido","cancelado","nao_aplicavel")');
@@ -379,7 +379,7 @@ export default function PlanosAcao() {
       key: 'responsavel_id',
       label: 'Responsável',
       render: (_: any, item: any) => (
-        <span className="text-sm">{item.profiles?.nome_completo || '-'}</span>
+        <span className="text-sm">{item.profiles?.nome || '-'}</span>
       ),
     },
     {
