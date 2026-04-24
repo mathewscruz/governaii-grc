@@ -49,6 +49,7 @@ import { ComunicacaoDialog } from '@/components/incidentes/ComunicacaoDialog';
 import { EvidenciaDialog } from '@/components/incidentes/EvidenciaDialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/components/AuthProvider';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Incidente {
   id: string;
@@ -70,6 +71,7 @@ interface Incidente {
 }
 
 export default function Incidentes() {
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIncidente, setSelectedIncidente] = useState<Incidente | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -376,8 +378,8 @@ export default function Incidentes() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Incidentes"
-        description="Gerencie incidentes de segurança e acompanhe tratamentos"
+        title={t('modules.incidentes.title')}
+        description={t('modules.incidentes.description')}
         actions={
           <Button variant="outline" size="sm" onClick={() => {
             if (incidentes.length === 0) return;
