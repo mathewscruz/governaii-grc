@@ -89,7 +89,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Erro na função send-approval-notification:", error);
-    return new Response(JSON.stringify({ error: error.message, success: false }), {
+    return new Response(JSON.stringify({ error: (error instanceof Error ? error.message : String(error)), success: false }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });

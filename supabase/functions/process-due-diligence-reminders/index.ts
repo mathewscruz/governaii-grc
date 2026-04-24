@@ -64,7 +64,7 @@ const handler = async (req: Request): Promise<Response> => {
         });
 
         if (response.error) {
-          throw new Error(`Erro ao enviar email: ${response.error.message}`);
+          throw new Error(`Erro ao enviar email: ${response.(error instanceof Error ? error.message : String(error))}`);
         }
 
         successCount++;
@@ -96,7 +96,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Erro no processamento de lembretes:", error);
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: (error instanceof Error ? error.message : String(error)),
         success: false
       }),
       {

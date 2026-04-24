@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
     console.error('Erro na função get-user-access-info:', error)
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: (error instanceof Error ? error.message : String(error)),
         details: 'Falha ao obter informações de acesso dos usuários'
       }),
       {

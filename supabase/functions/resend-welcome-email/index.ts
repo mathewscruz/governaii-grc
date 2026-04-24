@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
     console.error('Erro na função resend-welcome-email:', error)
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: (error instanceof Error ? error.message : String(error)),
         details: 'Falha ao reenviar e-mail de boas-vindas'
       }),
       {

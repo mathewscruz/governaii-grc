@@ -180,7 +180,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Erro ao testar conexão' 
+        error: (error instanceof Error ? error.message : String(error)) || 'Erro ao testar conexão' 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

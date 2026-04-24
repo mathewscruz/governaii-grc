@@ -169,7 +169,7 @@ serve(async (req) => {
     console.error('Erro na renovação do documento:', error);
     return new Response(
       JSON.stringify({
-        error: error.message || 'Erro ao renovar documento',
+        error: (error instanceof Error ? error.message : String(error)) || 'Erro ao renovar documento',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

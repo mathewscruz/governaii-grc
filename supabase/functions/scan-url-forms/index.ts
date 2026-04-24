@@ -531,7 +531,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error scanning URL:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Erro ao escanear URL' }),
+      JSON.stringify({ success: false, error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Erro ao escanear URL' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

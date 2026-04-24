@@ -69,7 +69,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(JSON.stringify({ success: true, messageId: emailResponse.data?.id }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
   } catch (error: any) {
     console.error("Erro ao enviar e-mail:", error);
-    return new Response(JSON.stringify({ error: error.message, success: false }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    return new Response(JSON.stringify({ error: (error instanceof Error ? error.message : String(error)), success: false }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
   }
 };
 

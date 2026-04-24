@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error('Erro na função send-mfa-code:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) }),
       { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     )
   }

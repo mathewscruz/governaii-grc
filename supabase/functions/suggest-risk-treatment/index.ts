@@ -145,7 +145,7 @@ Seja específico e prático, focando em ações implementáveis no contexto empr
     console.error('Error in suggest-risk-treatment function:', error);
     return new Response(JSON.stringify({ 
       success: false,
-      error: error.message || 'Erro interno do servidor'
+      error: (error instanceof Error ? error.message : String(error)) || 'Erro interno do servidor'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

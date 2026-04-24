@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
     console.error('Erro na função send-password-reset:', error)
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: (error instanceof Error ? error.message : String(error)),
         details: 'Falha ao enviar e-mail de reset de senha',
       }),
       {

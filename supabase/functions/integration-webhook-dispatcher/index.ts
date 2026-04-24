@@ -430,11 +430,11 @@ serve(async (req) => {
           payload: { titulo, descricao, link, dados, gravidade },
           status_code: 0,
           sucesso: false,
-          resposta: { error: integrationError.message },
+          resposta: { error: (integrationError instanceof Error ? integrationError.message : String(integrationError)) },
           empresa_id
         });
 
-        results.push({ tipo: integration.tipo_integracao, success: false, error: integrationError.message });
+        results.push({ tipo: integration.tipo_integracao, success: false, error: (integrationError instanceof Error ? integrationError.message : String(integrationError)) });
       }
     }
 
@@ -450,7 +450,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Dispatcher error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }

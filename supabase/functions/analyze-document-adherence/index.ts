@@ -341,7 +341,7 @@ FORMATO JSON OBRIGATÓRIO (retorne APENAS JSON válido, sem markdown):
           .update({
             status: 'erro',
             metadados_analise: { 
-              erro: error.message,
+              erro: (error instanceof Error ? error.message : String(error)),
               timestamp_erro: new Date().toISOString()
             }
           })
@@ -352,7 +352,7 @@ FORMATO JSON OBRIGATÓRIO (retorne APENAS JSON válido, sem markdown):
     }
 
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

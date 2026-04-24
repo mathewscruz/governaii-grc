@@ -268,7 +268,7 @@ ${contextSummary}`;
 
   } catch (error) {
     console.error("akuria-chat error:", error);
-    return new Response(JSON.stringify({ error: error.message || "Erro interno" }), {
+    return new Response(JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) || "Erro interno" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
