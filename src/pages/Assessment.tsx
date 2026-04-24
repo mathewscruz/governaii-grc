@@ -227,76 +227,76 @@ const WelcomeScreen = ({
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="space-y-6 animate-fade-in">
         {/* Hero */}
-        <Card className="bg-white/5 backdrop-blur-sm border-white/10 shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-br from-[hsl(250,80%,60%)]/20 via-transparent to-[hsl(250,80%,60%)]/5 p-8 sm:p-10">
+        <Card className="bg-white border-slate-200 shadow-xl overflow-hidden">
+          <div className="bg-gradient-to-br from-[hsl(250,80%,60%)]/10 via-transparent to-[hsl(250,80%,60%)]/5 p-8 sm:p-10">
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="h-4 w-4 text-[hsl(250,80%,70%)]" />
-              <span className="text-xs font-medium uppercase tracking-wider text-[hsl(250,80%,70%)]">
+              <Sparkles className="h-4 w-4 text-[hsl(250,80%,55%)]" />
+              <span className="text-xs font-medium uppercase tracking-wider text-[hsl(250,80%,55%)]">
                 Questionário de Due Diligence
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 leading-tight">
               Olá, {assessment.fornecedor_nome.split(' ')[0]} 👋
             </h1>
-            <p className="text-base text-white/70 leading-relaxed max-w-xl">
-              <span className="text-white font-medium">{assessment.empresa.nome}</span> precisa
+            <p className="text-base text-slate-600 leading-relaxed max-w-xl">
+              <span className="text-slate-900 font-medium">{assessment.empresa.nome}</span> precisa
               de algumas informações sobre sua empresa para concluir o processo de avaliação.
               Suas respostas são confidenciais e serão analisadas pela equipe responsável.
             </p>
           </div>
 
-          <CardContent className="p-6 sm:p-8 border-t border-white/10">
+          <CardContent className="p-6 sm:p-8 border-t border-slate-200">
             {/* Stats grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-              <div className="flex items-center gap-3 p-4 bg-white/[0.03] border border-white/10 rounded-xl">
+              <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div className="h-10 w-10 rounded-lg bg-[hsl(250,80%,60%)]/15 flex items-center justify-center shrink-0">
-                  <ListChecks className="h-5 w-5 text-[hsl(250,80%,70%)]" />
+                  <ListChecks className="h-5 w-5 text-[hsl(250,80%,55%)]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-white/50">Perguntas</p>
-                  <p className="text-base font-semibold text-white">{totalQuestions} no total</p>
+                  <p className="text-xs text-slate-500">Perguntas</p>
+                  <p className="text-base font-semibold text-slate-900">{totalQuestions} no total</p>
                   {totalRequired > 0 && (
-                    <p className="text-[11px] text-white/40">{totalRequired} obrigatórias</p>
+                    <p className="text-[11px] text-slate-500">{totalRequired} obrigatórias</p>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-4 bg-white/[0.03] border border-white/10 rounded-xl">
+              <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div className="h-10 w-10 rounded-lg bg-[hsl(250,80%,60%)]/15 flex items-center justify-center shrink-0">
-                  <Clock className="h-5 w-5 text-[hsl(250,80%,70%)]" />
+                  <Clock className="h-5 w-5 text-[hsl(250,80%,55%)]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-white/50">Tempo estimado</p>
-                  <p className="text-base font-semibold text-white">~{estimatedMinutes} min</p>
-                  <p className="text-[11px] text-white/40">Pode pausar e voltar</p>
+                  <p className="text-xs text-slate-500">Tempo estimado</p>
+                  <p className="text-base font-semibold text-slate-900">~{estimatedMinutes} min</p>
+                  <p className="text-[11px] text-slate-500">Pode pausar e voltar</p>
                 </div>
               </div>
 
               <div className={cn(
                 "flex items-center gap-3 p-4 border rounded-xl",
                 overdue
-                  ? "bg-red-500/5 border-red-500/30"
+                  ? "bg-red-50 border-red-200"
                   : daysLeft <= 3
-                    ? "bg-amber-500/5 border-amber-500/30"
-                    : "bg-white/[0.03] border-white/10"
+                    ? "bg-amber-50 border-amber-200"
+                    : "bg-slate-50 border-slate-200"
               )}>
                 <div className={cn(
                   "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
-                  overdue ? "bg-red-500/15" : daysLeft <= 3 ? "bg-amber-500/15" : "bg-[hsl(250,80%,60%)]/15"
+                  overdue ? "bg-red-100" : daysLeft <= 3 ? "bg-amber-100" : "bg-[hsl(250,80%,60%)]/15"
                 )}>
                   <Calendar className={cn(
                     "h-5 w-5",
-                    overdue ? "text-red-400" : daysLeft <= 3 ? "text-amber-400" : "text-[hsl(250,80%,70%)]"
+                    overdue ? "text-red-600" : daysLeft <= 3 ? "text-amber-600" : "text-[hsl(250,80%,55%)]"
                   )} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-white/50">Prazo</p>
-                  <p className="text-base font-semibold text-white">
+                  <p className="text-xs text-slate-500">Prazo</p>
+                  <p className="text-base font-semibold text-slate-900">
                     {deadline.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                   </p>
                   <p className={cn(
                     "text-[11px]",
-                    overdue ? "text-red-400" : daysLeft <= 3 ? "text-amber-400" : "text-white/40"
+                    overdue ? "text-red-600" : daysLeft <= 3 ? "text-amber-600" : "text-slate-500"
                   )}>
                     {overdue ? 'Em atraso' : daysLeft === 0 ? 'Vence hoje' : `Faltam ${daysLeft} dias`}
                   </p>
@@ -306,23 +306,23 @@ const WelcomeScreen = ({
 
             {/* Instructions */}
             <div className="space-y-2 mb-6">
-              <h3 className="text-sm font-semibold text-white/80">Antes de começar:</h3>
-              <ul className="space-y-1.5 text-sm text-white/60">
+              <h3 className="text-sm font-semibold text-slate-800">Antes de começar:</h3>
+              <ul className="space-y-1.5 text-sm text-slate-600">
                 <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Suas respostas são <strong className="text-white/80">salvas automaticamente</strong> a cada alteração.</span>
+                  <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>Suas respostas são <strong className="text-slate-900">salvas automaticamente</strong> a cada alteração.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Você pode <strong className="text-white/80">fechar e voltar</strong> a qualquer momento usando o mesmo link.</span>
+                  <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>Você pode <strong className="text-slate-900">fechar e voltar</strong> a qualquer momento usando o mesmo link.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Algumas perguntas podem solicitar <strong className="text-white/80">evidências</strong> ou anexo de documentos.</span>
+                  <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>Algumas perguntas podem solicitar <strong className="text-slate-900">evidências</strong> ou anexo de documentos.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Após finalizar, <strong className="text-white/80">não será possível editar</strong> as respostas.</span>
+                  <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>Após finalizar, <strong className="text-slate-900">não será possível editar</strong> as respostas.</span>
                 </li>
               </ul>
             </div>
@@ -330,7 +330,7 @@ const WelcomeScreen = ({
             <Button
               onClick={onStart}
               size="lg"
-              className="w-full bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] hover:from-[hsl(250,80%,55%)] hover:to-[hsl(250,80%,45%)] text-white shadow-lg shadow-[hsl(250,80%,60%)]/20"
+              className="w-full bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] hover:from-[hsl(250,80%,55%)] hover:to-[hsl(250,80%,45%)] text-white shadow-lg shadow-[hsl(250,80%,60%)]/30"
             >
               Começar questionário
               <ArrowRight className="h-4 w-4 ml-2" />
