@@ -852,10 +852,14 @@ export default function Assessment() {
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-2.5">
                   {(() => {
-                    const deadline = new Date(assessment.data_limite);
+                    const deadlineRaw = assessment.data_limite ? new Date(assessment.data_limite) : null;
+                    const validDeadline = deadlineRaw && !isNaN(deadlineRaw.getTime()) ? deadlineRaw : null;
                     const now = new Date();
-                    const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                    const overdue = daysLeft < 0;
+                    const daysLeft = validDeadline
+                      ? Math.ceil((validDeadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+                      : null;
+                    const overdue = daysLeft !== null && daysLeft < 0;
+                    const urgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
                     const remainingQuestions = questions.length - answeredCount;
                     const estimatedMinutes = Math.max(1, Math.round(remainingQuestions * 0.75));
 
@@ -868,9 +872,15 @@ export default function Assessment() {
                           </span>
                           <span className={cn(
                             'font-semibold',
-                            overdue ? 'text-red-600' : daysLeft <= 3 ? 'text-amber-600' : 'text-slate-700'
+                            overdue ? 'text-[hsl(250,80%,45%)]' : urgent ? 'text-slate-900' : 'text-slate-700'
                           )}>
-                            {overdue ? 'Em atraso' : daysLeft === 0 ? 'Vence hoje' : `${daysLeft}d restantes`}
+                            {daysLeft === null
+                              ? 'Sem prazo'
+                              : overdue
+                                ? 'Em atraso'
+                                : daysLeft === 0
+                                  ? 'Vence hoje'
+                                  : `${daysLeft}d restantes`}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
