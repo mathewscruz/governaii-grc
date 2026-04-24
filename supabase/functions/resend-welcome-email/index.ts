@@ -117,8 +117,8 @@ Deno.serve(async (req) => {
         userName: userProfile.nome,
         userEmail: userProfile.email,
         setupPasswordUrl,
-        companyName: userProfile.empresa?.nome,
-        companyLogoUrl: userProfile.empresa?.logo_url
+        companyName: (userProfile.empresa as any)?.nome,
+        companyLogoUrl: (userProfile.empresa as any)?.logo_url
       })
     )
 
