@@ -1,17 +1,10 @@
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogShell } from '@/components/ui/dialog-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, CheckCircle2, XCircle, ExternalLink, Send, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, ExternalLink, Send, AlertCircle, Ticket } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -171,24 +164,44 @@ export function JiraConfigDialog({
     }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <img
-              src="https://cdn.worldvectorlogo.com/logos/jira-1.svg"
-              alt="Jira"
-              className="h-6 w-6"
-            />
-            Configurar Jira Service Management
-          </DialogTitle>
-          <DialogDescription>
-            Crie tickets no Jira automaticamente a partir de incidentes e riscos.
-          </DialogDescription>
-        </DialogHeader>
+  const footer = (
+    <div className="flex flex-col sm:flex-row gap-2 w-full">
+      {existingConfig && (
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={handleDisconnect}
+          disabled={saving}
+          className="sm:mr-auto"
+        >
+          Desconectar
+        </Button>
+      )}
+      <div className="flex gap-2 sm:ml-auto">
+        <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={saving}>
+          Cancelar
+        </Button>
+        <Button size="sm" onClick={handleSave} disabled={saving || !instanceUrl || !email || !projectKey}>
+          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Salvar
+        </Button>
+      </div>
+    </div>
+  );
 
-        <div className="space-y-6 py-4">
+  return (
+    <DialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Configurar Jira Service Management"
+      description="Crie tickets no Jira automaticamente a partir de incidentes e riscos."
+      icon={Ticket}
+      size="md"
+      footer={footer}
+      onSubmit={handleSave}
+      isDirty={!!(instanceUrl || email || apiToken || projectKey)}
+    >
+      <div className="space-y-6">
           {/* Informação sobre o que a integração faz */}
           <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
             <h4 className="font-medium text-sm flex items-center gap-2 text-primary">
@@ -312,28 +325,7 @@ export function JiraConfigDialog({
           {testResult === 'error' && (
             <p className="text-xs text-destructive">✗ Falha na conexão - verifique as credenciais</p>
           )}
-        </div>
-
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          {existingConfig && (
-            <Button
-              variant="destructive"
-              onClick={handleDisconnect}
-              disabled={saving}
-              className="sm:mr-auto"
-            >
-              Desconectar
-            </Button>
-          )}
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={saving || !instanceUrl || !email || !projectKey}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Salvar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </DialogShell>
   );
 }
