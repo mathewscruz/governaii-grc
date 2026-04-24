@@ -17,20 +17,20 @@ export function RiscoDialog({ open, onOpenChange, risco, onSuccess }: RiscoDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-full sm:max-w-5xl max-h-[100dvh] sm:max-h-[90vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4">
-          <DialogTitle>
+      <DialogContent className="max-w-full sm:max-w-6xl max-h-[100dvh] sm:max-h-[92vh] overflow-hidden flex flex-col p-0 gap-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
+          <DialogTitle className="flex items-center gap-3">
             {risco ? 'Editar Risco' : 'Novo Risco'}
           </DialogTitle>
           <DialogDescription>
             {risco 
-              ? 'Atualize as informações do risco conforme necessário.' 
-              : 'Preencha os campos abaixo para cadastrar um novo risco. Você pode preencher na ordem que preferir.'
+              ? 'Atualize as informações do risco navegando entre as abas.' 
+              : 'Navegue entre as abas para preencher cada seção. Você pode preencher na ordem que preferir.'
             }
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 pb-6">
+        <div className="flex-1 overflow-hidden">
           <RiscoFormWizard risco={risco} onSuccess={handleSuccess} />
         </div>
       </DialogContent>
