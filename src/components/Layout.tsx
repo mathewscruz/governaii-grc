@@ -15,6 +15,7 @@ import PageTransition from '@/components/PageTransition';
 import TrialBanner from '@/components/TrialBanner';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { PageSkeleton } from '@/components/ui/page-skeleton';
+import { ModuleLoadingSkeleton } from '@/components/ui/module-loading-skeleton';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
