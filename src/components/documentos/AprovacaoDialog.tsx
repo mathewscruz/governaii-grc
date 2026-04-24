@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -6,14 +6,27 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { CheckCircle, XCircle, Clock, User, Plus, MessageSquare, FileText, Eye, Loader2, ExternalLink } from 'lucide-react';
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  User,
+  Plus,
+  MessageSquare,
+  FileText,
+  Eye,
+  Loader2,
+  ExternalLink,
+  ShieldCheck,
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
+import { logger } from '@/lib/logger';
+import { MasterDetailDialog, type MasterDetailItem } from '@/components/ui/master-detail-dialog';
+import { Separator } from '@/components/ui/separator';
 
 interface Documento {
   id: string;
@@ -34,6 +47,8 @@ interface Aprovacao {
   data_aprovacao?: string;
   created_at: string;
   aprovador_nome?: string;
+  tipo_acao?: string;
+  solicitado_por?: string;
 }
 
 interface Profile {
@@ -51,19 +66,23 @@ interface AprovacaoDialogProps {
   empresaId?: string | null;
 }
 
+const STATUS_INFO: Record<string, { label: string; icon: typeof Clock; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  pendente: { label: 'Pendente', icon: Clock, variant: 'secondary' },
+  aprovado: { label: 'Aprovado', icon: CheckCircle, variant: 'default' },
+  rejeitado: { label: 'Rejeitado', icon: XCircle, variant: 'destructive' },
+};
+
 export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empresaId }: AprovacaoDialogProps) {
   const [aprovacoes, setAprovacoes] = useState<Aprovacao[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
-  const [formData, setFormData] = useState({
-    aprovador_id: '',
-    status: 'pendente',
-    comentarios: ''
-  });
+  const [formData, setFormData] = useState({ aprovador_id: '', comentarios: '' });
   const [actionModal, setActionModal] = useState<{
     open: boolean;
     type: 'aprovar' | 'rejeitar' | 'alteracoes' | null;
@@ -73,70 +92,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
   const { toast } = useToast();
   const { notify } = useIntegrationNotify();
 
-  // Carregar preview do documento
-  useEffect(() => {
-    const loadPreview = async () => {
-      if (!open || !documento?.arquivo_url) {
-        setPreviewUrl(null);
-        return;
-      }
-
-      setLoadingPreview(true);
-      try {
-        // Se for URL do Supabase Storage, gerar signed URL
-        if (documento.arquivo_url.includes('supabase')) {
-          const path = documento.arquivo_url.split('/documentos/')[1];
-          if (path) {
-            const { data, error } = await supabase.storage
-              .from('documentos')
-              .createSignedUrl(path, 3600); // 1 hora de validade
-
-            if (!error && data?.signedUrl) {
-              setPreviewUrl(data.signedUrl);
-            } else {
-              setPreviewUrl(documento.arquivo_url);
-            }
-          } else {
-            setPreviewUrl(documento.arquivo_url);
-          }
-        } else {
-          setPreviewUrl(documento.arquivo_url);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar preview:', error);
-        setPreviewUrl(documento.arquivo_url);
-      } finally {
-        setLoadingPreview(false);
-      }
-    };
-
-    loadPreview();
-  }, [open, documento?.arquivo_url]);
-
-  // Verificar se o arquivo pode ser visualizado
-  const canPreview = () => {
-    if (!documento?.arquivo_tipo && !documento?.arquivo_nome) return false;
-    const tipo = documento.arquivo_tipo?.toLowerCase() || '';
-    const nome = documento.arquivo_nome?.toLowerCase() || '';
-    return tipo.includes('pdf') || tipo.includes('image') || 
-           nome.endsWith('.pdf') || nome.endsWith('.png') || 
-           nome.endsWith('.jpg') || nome.endsWith('.jpeg');
-  };
-
-  const isPdf = () => {
-    const tipo = documento?.arquivo_tipo?.toLowerCase() || '';
-    const nome = documento?.arquivo_nome?.toLowerCase() || '';
-    return tipo.includes('pdf') || nome.endsWith('.pdf');
-  };
-
-  const isImage = () => {
-    const tipo = documento?.arquivo_tipo?.toLowerCase() || '';
-    const nome = documento?.arquivo_nome?.toLowerCase() || '';
-    return tipo.includes('image') || nome.endsWith('.png') || 
-           nome.endsWith('.jpg') || nome.endsWith('.jpeg');
-  };
-
-  // Obter ID do usuário atual
+  // ============ Lifecycle ============
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -145,66 +101,71 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
     getCurrentUser();
   }, []);
 
-  const openActionModal = (type: 'aprovar' | 'rejeitar' | 'alteracoes', aprovacaoId: string) => {
-    setActionModal({ open: true, type, aprovacaoId });
-    setActionComment('');
-  };
-
-  const closeActionModal = () => {
-    setActionModal({ open: false, type: null, aprovacaoId: '' });
-    setActionComment('');
-  };
-
-  const executeAction = async () => {
-    if (!actionModal.aprovacaoId || !actionModal.type) return;
-
-    // Validar comentário obrigatório para rejeição/alterações
-    if ((actionModal.type === 'rejeitar' || actionModal.type === 'alteracoes') && !actionComment.trim()) {
-      toast({
-        title: "Comentário obrigatório",
-        description: actionModal.type === 'rejeitar' 
-          ? "Por favor, informe o motivo da rejeição." 
-          : "Por favor, descreva as alterações necessárias.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const novoStatus = actionModal.type === 'aprovar' ? 'aprovado' 
-                     : actionModal.type === 'rejeitar' ? 'rejeitado' 
-                     : 'pendente'; // alteracoes mantém pendente
-
-    await handleStatusChange(actionModal.aprovacaoId, novoStatus, actionComment.trim() || undefined);
-    closeActionModal();
-  };
-
-  // Se documento não requer aprovação, mostrar mensagem
-  if (!(documento as any).requer_aprovacao) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Sistema de Aprovação Desabilitado</DialogTitle>
-            <DialogDescription>
-              Este documento não requer aprovação. Para habilitar o sistema de aprovação,
-              edite o documento e marque a opção "Requer Aprovação".
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => onOpenChange(false)}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   useEffect(() => {
-    if (open) {
+    if (open && (documento as any)?.requer_aprovacao) {
       fetchAprovacoes();
       fetchProfiles();
     }
   }, [open, documento.id]);
 
+  // Preview lazy: só carrega quando o usuário abre o sub-dialog
+  useEffect(() => {
+    if (!previewOpen || !documento?.arquivo_url) return;
+
+    const loadPreview = async () => {
+      setLoadingPreview(true);
+      try {
+        if (documento.arquivo_url!.includes('supabase')) {
+          const path = documento.arquivo_url!.split('/documentos/')[1];
+          if (path) {
+            const { data, error } = await supabase.storage.from('documentos').createSignedUrl(path, 3600);
+            if (!error && data?.signedUrl) {
+              setPreviewUrl(data.signedUrl);
+            } else {
+              setPreviewUrl(documento.arquivo_url!);
+            }
+          } else {
+            setPreviewUrl(documento.arquivo_url!);
+          }
+        } else {
+          setPreviewUrl(documento.arquivo_url!);
+        }
+      } catch (error) {
+        logger.error('Erro ao carregar preview:', error);
+        setPreviewUrl(documento.arquivo_url!);
+      } finally {
+        setLoadingPreview(false);
+      }
+    };
+
+    loadPreview();
+  }, [previewOpen, documento?.arquivo_url]);
+
+  // ============ Helpers ============
+  const canPreview = () => {
+    const tipo = documento?.arquivo_tipo?.toLowerCase() || '';
+    const nome = documento?.arquivo_nome?.toLowerCase() || '';
+    return (
+      tipo.includes('pdf') ||
+      tipo.includes('image') ||
+      nome.endsWith('.pdf') ||
+      nome.endsWith('.png') ||
+      nome.endsWith('.jpg') ||
+      nome.endsWith('.jpeg')
+    );
+  };
+  const isPdf = () => {
+    const tipo = documento?.arquivo_tipo?.toLowerCase() || '';
+    const nome = documento?.arquivo_nome?.toLowerCase() || '';
+    return tipo.includes('pdf') || nome.endsWith('.pdf');
+  };
+  const isImage = () => {
+    const tipo = documento?.arquivo_tipo?.toLowerCase() || '';
+    const nome = documento?.arquivo_nome?.toLowerCase() || '';
+    return tipo.includes('image') || nome.endsWith('.png') || nome.endsWith('.jpg') || nome.endsWith('.jpeg');
+  };
+
+  // ============ Data fetch ============
   const fetchAprovacoes = async () => {
     setLoading(true);
     try {
@@ -216,7 +177,6 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
 
       if (error) throw error;
 
-      // Buscar nomes dos aprovadores
       const aprovacoesComNomes = await Promise.all(
         (data || []).map(async (aprovacao) => {
           try {
@@ -225,28 +185,20 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
               .select('nome')
               .eq('user_id', aprovacao.aprovador_id)
               .single();
-
-            return {
-              ...aprovacao,
-              aprovador_nome: profileData?.nome || 'Usuário não encontrado'
-            };
-          } catch (error) {
-            return {
-              ...aprovacao,
-              aprovador_nome: 'Usuário não encontrado'
-            };
+            return { ...aprovacao, aprovador_nome: profileData?.nome || 'Usuário não encontrado' };
+          } catch {
+            return { ...aprovacao, aprovador_nome: 'Usuário não encontrado' };
           }
         })
       );
 
       setAprovacoes(aprovacoesComNomes);
+      if (aprovacoesComNomes.length > 0 && !selectedId) {
+        setSelectedId(aprovacoesComNomes[0].id);
+      }
     } catch (error) {
-      console.error('Erro ao buscar aprovações:', error);
-      toast({
-        title: "Erro ao carregar aprovações",
-        description: "Tente novamente em alguns instantes.",
-        variant: "destructive",
-      });
+      logger.error('Erro ao buscar aprovações:', error);
+      toast({ title: 'Erro ao carregar aprovações', description: 'Tente novamente em alguns instantes.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -259,37 +211,28 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
         .select('user_id, nome, email, role')
         .in('role', ['admin', 'super_admin']);
 
-      if (empresaId) {
-        query = query.eq('empresa_id', empresaId);
-      }
+      if (empresaId) query = query.eq('empresa_id', empresaId);
 
       const { data, error } = await query.order('nome');
-
       if (error) throw error;
       setProfiles(data || []);
     } catch (error) {
-      console.error('Erro ao buscar profiles:', error);
+      logger.error('Erro ao buscar profiles:', error);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // ============ Mutations ============
+  const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.aprovador_id) {
-      toast({
-        title: "Aprovador obrigatório",
-        description: "Por favor, selecione um aprovador.",
-        variant: "destructive",
-      });
+      toast({ title: 'Aprovador obrigatório', description: 'Por favor, selecione um aprovador.', variant: 'destructive' });
       return;
     }
 
     setLoading(true);
-
     try {
       const { data: userData } = await supabase.auth.getUser();
-      
-      // Verificar se já existe solicitação para este aprovador
+
       const { data: existente, error: checkError } = await supabase
         .from('documentos_aprovacoes')
         .select('id, status')
@@ -297,22 +240,21 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
         .eq('aprovador_id', formData.aprovador_id)
         .maybeSingle();
 
-      if (checkError) {
-        console.error('Erro ao verificar aprovação existente:', checkError);
-      }
+      if (checkError) logger.error('Erro ao verificar aprovação existente:', checkError);
 
       if (existente) {
         toast({
-          title: "Solicitação já existe",
-          description: existente.status === 'pendente' 
-            ? "Já existe uma solicitação pendente para este aprovador. Cancele a anterior antes de enviar uma nova."
-            : "Este aprovador já avaliou este documento. Cancele a aprovação anterior se desejar reenviar.",
-          variant: "destructive",
+          title: 'Solicitação já existe',
+          description:
+            existente.status === 'pendente'
+              ? 'Já existe uma solicitação pendente para este aprovador. Cancele a anterior antes de enviar uma nova.'
+              : 'Este aprovador já avaliou este documento. Cancele a aprovação anterior se desejar reenviar.',
+          variant: 'destructive',
         });
         setLoading(false);
         return;
       }
-      
+
       const aprovacaoData = {
         documento_id: documento.id,
         aprovador_id: formData.aprovador_id,
@@ -321,48 +263,35 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
         data_aprovacao: null,
         tipo_acao: 'solicitacao',
         solicitado_por: userData.user?.id || null,
-        data_solicitacao: new Date().toISOString()
+        data_solicitacao: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('documentos_aprovacoes')
-        .insert([aprovacaoData]);
-
+      const { error } = await supabase.from('documentos_aprovacoes').insert([aprovacaoData]);
       if (error) throw error;
 
-      // Enviar e-mail de notificação
       try {
-        const { error: emailError } = await supabase.functions.invoke('send-approval-notification', {
-          body: {
-            documento_id: documento.id,
-            aprovador_id: formData.aprovador_id,
-            solicitante_id: userData.user?.id
-          }
+        await supabase.functions.invoke('send-approval-notification', {
+          body: { documento_id: documento.id, aprovador_id: formData.aprovador_id, solicitante_id: userData.user?.id },
         });
-
-        if (emailError) {
-          console.error('Erro ao enviar e-mail de notificação:', emailError);
-        } else {
-          console.log('E-mail de notificação enviado com sucesso');
-        }
       } catch (emailError) {
-        console.error('Erro ao chamar edge function:', emailError);
+        logger.error('Erro ao chamar edge function:', emailError);
       }
 
       toast({
-        title: "Solicitação enviada",
-        description: "A solicitação de aprovação foi enviada com sucesso. O aprovador receberá uma notificação.",
+        title: 'Solicitação enviada',
+        description: 'A solicitação de aprovação foi enviada com sucesso. O aprovador receberá uma notificação.',
       });
 
-      resetForm();
+      setFormData({ aprovador_id: '', comentarios: '' });
+      setRequestOpen(false);
       fetchAprovacoes();
       onSuccess();
     } catch (error) {
-      console.error('Erro ao processar:', error);
+      logger.error('Erro ao processar:', error);
       toast({
-        title: "Erro ao solicitar aprovação",
-        description: error instanceof Error ? error.message : "Tente novamente em alguns instantes.",
-        variant: "destructive",
+        title: 'Erro ao solicitar aprovação',
+        description: error instanceof Error ? error.message : 'Tente novamente em alguns instantes.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -371,26 +300,14 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
 
   const handleCancelarSolicitacao = async (aprovacaoId: string) => {
     try {
-      const { error } = await supabase
-        .from('documentos_aprovacoes')
-        .delete()
-        .eq('id', aprovacaoId);
-
+      const { error } = await supabase.from('documentos_aprovacoes').delete().eq('id', aprovacaoId);
       if (error) throw error;
-
-      toast({
-        title: "Solicitação cancelada",
-        description: "A solicitação de aprovação foi cancelada com sucesso.",
-      });
-
+      toast({ title: 'Solicitação cancelada', description: 'A solicitação de aprovação foi cancelada com sucesso.' });
+      if (selectedId === aprovacaoId) setSelectedId(null);
       fetchAprovacoes();
     } catch (error) {
-      console.error('Erro ao cancelar solicitação:', error);
-      toast({
-        title: "Erro ao cancelar solicitação",
-        description: "Tente novamente em alguns instantes.",
-        variant: "destructive",
-      });
+      logger.error('Erro ao cancelar solicitação:', error);
+      toast({ title: 'Erro ao cancelar solicitação', description: 'Tente novamente em alguns instantes.', variant: 'destructive' });
     }
   };
 
@@ -407,408 +324,372 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
 
       if (error) throw error;
 
-      // Notify integrations
       if (novoStatus === 'aprovado') {
         notify('documento_aprovado', {
           titulo: `Documento aprovado: ${documento.nome}`,
           descricao: comentarios || 'Documento foi aprovado com sucesso',
           link: '/documentos',
-          gravidade: 'baixa'
+          gravidade: 'baixa',
         });
       } else if (novoStatus === 'rejeitado') {
         notify('documento_rejeitado', {
           titulo: `Documento rejeitado: ${documento.nome}`,
           descricao: comentarios || 'Documento foi rejeitado',
           link: '/documentos',
-          gravidade: 'media'
+          gravidade: 'media',
         });
       }
 
-      toast({
-        title: "Status atualizado",
-        description: "O status da aprovação foi atualizado com sucesso.",
-      });
-
+      toast({ title: 'Status atualizado', description: 'O status da aprovação foi atualizado com sucesso.' });
       fetchAprovacoes();
       onSuccess();
     } catch (error) {
-      console.error('Erro ao atualizar status:', error);
-      toast({
-        title: "Erro ao atualizar status",
-        description: "Tente novamente em alguns instantes.",
-        variant: "destructive",
-      });
+      logger.error('Erro ao atualizar status:', error);
+      toast({ title: 'Erro ao atualizar status', description: 'Tente novamente em alguns instantes.', variant: 'destructive' });
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      aprovador_id: '',
-      status: 'pendente',
-      comentarios: ''
-    });
-    setShowForm(false);
+  // ============ Action modal ============
+  const openActionModal = (type: 'aprovar' | 'rejeitar' | 'alteracoes', aprovacaoId: string) => {
+    setActionModal({ open: true, type, aprovacaoId });
+    setActionComment('');
+  };
+  const closeActionModal = () => {
+    setActionModal({ open: false, type: null, aprovacaoId: '' });
+    setActionComment('');
+  };
+  const executeAction = async () => {
+    if (!actionModal.aprovacaoId || !actionModal.type) return;
+    if ((actionModal.type === 'rejeitar' || actionModal.type === 'alteracoes') && !actionComment.trim()) {
+      toast({
+        title: 'Comentário obrigatório',
+        description:
+          actionModal.type === 'rejeitar' ? 'Por favor, informe o motivo da rejeição.' : 'Por favor, descreva as alterações necessárias.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const novoStatus = actionModal.type === 'aprovar' ? 'aprovado' : actionModal.type === 'rejeitar' ? 'rejeitado' : 'pendente';
+    await handleStatusChange(actionModal.aprovacaoId, novoStatus, actionComment.trim() || undefined);
+    closeActionModal();
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      'pendente': { 
-        icon: Clock, 
-        className: 'border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
-        label: 'Pendente'
-      },
-      'aprovado': { 
-        icon: CheckCircle, 
-        className: 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
-        label: 'Aprovado'
-      },
-      'rejeitado': { 
-        icon: XCircle, 
-        className: 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
-        label: 'Rejeitado'
-      }
-    };
+  // ============ Early return: requer aprovação desabilitado ============
+  if (!(documento as any).requer_aprovacao) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sistema de Aprovação Desabilitado</DialogTitle>
+            <DialogDescription>
+              Este documento não requer aprovação. Para habilitar o sistema de aprovação, edite o documento e marque a opção "Requer
+              Aprovação".
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => onOpenChange(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
-    const config = variants[status as keyof typeof variants] || variants.pendente;
-    const Icon = config.icon;
+  // ============ Master-detail items ============
+  const items: (MasterDetailItem & { raw: Aprovacao })[] = useMemo(
+    () =>
+      aprovacoes.map((a) => {
+        const info = STATUS_INFO[a.status] ?? STATUS_INFO.pendente;
+        return {
+          id: a.id,
+          label: a.aprovador_nome || 'Aprovador',
+          description: format(new Date(a.data_aprovacao || a.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }),
+          badge: (
+            <Badge variant={info.variant} className="text-[10px] px-1.5 py-0 h-5">
+              {info.label}
+            </Badge>
+          ),
+          icon: User,
+          raw: a,
+        };
+      }),
+    [aprovacoes]
+  );
+
+  const statusGeral =
+    aprovacoes.length > 0
+      ? aprovacoes.some((a) => a.status === 'aprovado')
+        ? 'aprovado'
+        : aprovacoes.some((a) => a.status === 'rejeitado')
+        ? 'rejeitado'
+        : 'pendente'
+      : null;
+
+  const renderDetail = (item: (MasterDetailItem & { raw: Aprovacao }) | null) => {
+    if (!item) return null;
+    const a = item.raw;
+    const info = STATUS_INFO[a.status] ?? STATUS_INFO.pendente;
+    const StatusIcon = info.icon;
+    const isAprovador = currentUserId === a.aprovador_id;
+    const isSolicitante = currentUserId === a.solicitado_por;
 
     return (
-      <Badge className={`flex items-center gap-1 border ${config.className}`}>
-        <Icon className="h-3 w-3" />
-        {config.label}
-      </Badge>
+      <div className="space-y-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold tracking-tight">{a.aprovador_nome}</h2>
+            <p className="text-sm text-muted-foreground">
+              {a.tipo_acao === 'solicitacao' ? 'Solicitação de aprovação' : 'Registro de aprovação'}
+            </p>
+          </div>
+          <Badge variant={info.variant} className="gap-1">
+            <StatusIcon className="h-3 w-3" />
+            {info.label}
+          </Badge>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Solicitada em</p>
+            <p className="text-sm">{format(new Date(a.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+          </div>
+          {a.data_aprovacao && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Decidida em</p>
+              <p className="text-sm">{format(new Date(a.data_aprovacao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+            </div>
+          )}
+        </div>
+
+        {a.comentarios && (
+          <>
+            <Separator />
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Comentários</p>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed bg-muted/40 rounded-md p-3 border">{a.comentarios}</p>
+            </div>
+          </>
+        )}
+
+        {a.status === 'pendente' && a.tipo_acao === 'solicitacao' && (
+          <>
+            <Separator />
+            <div className="flex flex-wrap gap-2">
+              {isAprovador && (
+                <>
+                  <Button size="sm" onClick={() => openActionModal('aprovar', a.id)}>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Aprovar
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => openActionModal('alteracoes', a.id)}>
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Solicitar Alterações
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => openActionModal('rejeitar', a.id)}>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Rejeitar
+                  </Button>
+                </>
+              )}
+              {isSolicitante && (
+                <Button variant="outline" size="sm" onClick={() => handleCancelarSolicitacao(a.id)}>
+                  Cancelar Solicitação
+                </Button>
+              )}
+              {!isAprovador && !isSolicitante && (
+                <p className="text-xs text-muted-foreground italic">
+                  Apenas o aprovador designado ou quem solicitou pode agir nesta aprovação.
+                </p>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     );
   };
 
-  const getActionModalTitle = () => {
-    switch (actionModal.type) {
-      case 'aprovar': return 'Aprovar Documento';
-      case 'rejeitar': return 'Rejeitar Documento';
-      case 'alteracoes': return 'Solicitar Alterações';
-      default: return '';
-    }
-  };
-
-  const getActionModalDescription = () => {
-    switch (actionModal.type) {
-      case 'aprovar': return 'Confirme a aprovação do documento. Você pode adicionar um comentário opcional.';
-      case 'rejeitar': return 'Informe o motivo da rejeição. Este campo é obrigatório.';
-      case 'alteracoes': return 'Descreva as alterações necessárias. O documento permanecerá pendente até as correções serem realizadas.';
-      default: return '';
-    }
-  };
-
-  const statusAprovacao = aprovacoes.length > 0 
-    ? aprovacoes.some(a => a.status === 'aprovado') 
-      ? 'aprovado' 
-      : aprovacoes.some(a => a.status === 'rejeitado')
-        ? 'rejeitado'
-        : 'pendente'
-    : 'sem_aprovacao';
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5" />
-            Aprovação do Documento
-          </DialogTitle>
-          <DialogDescription>
-            Gerencie as aprovações do documento "{documento.nome}".
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <MasterDetailDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title="Aprovação do Documento"
+        description={documento.nome}
+        icon={ShieldCheck}
+        items={items}
+        selectedId={selectedId}
+        onSelect={(it) => setSelectedId(it.id)}
+        renderDetail={(it) => renderDetail(it as (MasterDetailItem & { raw: Aprovacao }) | null)}
+        onCreate={() => setRequestOpen(true)}
+        createLabel="Nova Solicitação"
+        searchPlaceholder="Buscar aprovador..."
+        emptyState={
+          <div className="space-y-2">
+            <CheckCircle className="h-8 w-8 mx-auto text-muted-foreground/60" />
+            <p>Nenhuma aprovação registrada</p>
+            <p className="text-xs">Use "Nova Solicitação" para começar</p>
+          </div>
+        }
+        emptySelection="Selecione uma aprovação à esquerda para ver os detalhes."
+        size="xl"
+        footer={
+          <>
+            {statusGeral && (
+              <Badge variant={STATUS_INFO[statusGeral].variant} className="mr-auto gap-1">
+                {React.createElement(STATUS_INFO[statusGeral].icon, { className: 'h-3 w-3' })}
+                Status geral: {STATUS_INFO[statusGeral].label}
+              </Badge>
+            )}
+            {documento.arquivo_url && (
+              <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)}>
+                <Eye className="h-4 w-4 mr-2" />
+                Visualizar Documento
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+              Fechar
+            </Button>
+          </>
+        }
+      />
 
-        <Tabs defaultValue="aprovacao" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="flex-shrink-0 grid w-full grid-cols-2">
-            <TabsTrigger value="documento" className="flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              Visualizar Documento
-            </TabsTrigger>
-            <TabsTrigger value="aprovacao" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Aprovação
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Aba de Visualização do Documento */}
-          <TabsContent value="documento" className="flex-1 overflow-hidden mt-4">
-            <div className="h-full border rounded-lg overflow-hidden bg-muted/30">
-              {loadingPreview ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : !documento?.arquivo_url ? (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <FileText className="h-16 w-16 mb-4" />
-                  <p className="text-lg font-medium">Documento sem arquivo anexado</p>
-                  <p className="text-sm">Este documento não possui um arquivo para visualização.</p>
-                </div>
-              ) : !canPreview() ? (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <FileText className="h-16 w-16 mb-4" />
-                  <p className="text-lg font-medium">Visualização não disponível</p>
-                  <p className="text-sm mb-4">Este tipo de arquivo não pode ser visualizado no navegador.</p>
-                  <Button variant="outline" onClick={() => previewUrl && window.open(previewUrl, '_blank')}>
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Baixar Documento
-                  </Button>
-                </div>
-              ) : isPdf() ? (
-                <iframe 
-                  src={previewUrl || ''} 
-                  className="w-full h-full min-h-[500px]"
-                  title="Preview do documento"
-                />
-              ) : isImage() ? (
-                <div className="flex items-center justify-center h-full p-4">
-                  <img 
-                    src={previewUrl || ''} 
-                    alt={documento.nome}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <FileText className="h-16 w-16 mb-4" />
-                  <p className="text-sm mb-4">Não foi possível carregar a visualização.</p>
-                  <Button variant="outline" onClick={() => previewUrl && window.open(previewUrl, '_blank')}>
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Abrir em Nova Aba
-                  </Button>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Aba de Aprovação */}
-          <TabsContent value="aprovacao" className="flex-1 overflow-y-auto mt-4">
-            <div className="space-y-6">
-              {/* Status geral */}
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">Status do Documento</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {statusAprovacao === 'aprovado' && 'Documento aprovado'}
-                        {statusAprovacao === 'rejeitado' && 'Documento rejeitado'}
-                        {statusAprovacao === 'pendente' && 'Aguardando aprovação'}
-                        {statusAprovacao === 'sem_aprovacao' && 'Nenhuma aprovação solicitada'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {statusAprovacao !== 'sem_aprovacao' && getStatusBadge(statusAprovacao)}
-                      {documento.data_aprovacao && (
-                        <span className="text-sm text-muted-foreground">
-                          em {format(new Date(documento.data_aprovacao), 'dd/MM/yyyy', { locale: ptBR })}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-          {!showForm ? (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium">Histórico de Aprovações</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowForm(true)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Solicitar Aprovação
-                  </Button>
-              </div>
-
-              {loading ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : aprovacoes.length === 0 ? (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center h-32">
-                    <CheckCircle className="h-12 w-12 text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">Nenhuma aprovação registrada ainda</p>
-                    <p className="text-sm text-muted-foreground">Use "Solicitar Aprovação" para enviar uma solicitação</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {aprovacoes.map((aprovacao) => (
-                    <Card key={aprovacao.id}>
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              <User className="h-4 w-4 shrink-0" />
-                              <span className="font-medium truncate">{aprovacao.aprovador_nome}</span>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <Badge variant="outline" className="shrink-0">
-                                {(aprovacao as any).tipo_acao === 'solicitacao' ? 'Solicitação' : 'Aprovação'}
-                              </Badge>
-                              {getStatusBadge(aprovacao.status)}
-                            </div>
-                          </div>
-                          
-                          {aprovacao.comentarios && (
-                            <div className="text-sm text-muted-foreground">
-                              <span className="font-medium">Comentários:</span> {aprovacao.comentarios}
-                            </div>
-                          )}
-                          
-                          <div className="text-sm text-muted-foreground">
-                            {aprovacao.data_aprovacao 
-                              ? format(new Date(aprovacao.data_aprovacao), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-                              : format(new Date(aprovacao.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-                            }
-                          </div>
-                          
-                          {aprovacao.status === 'pendente' && (aprovacao as any).tipo_acao === 'solicitacao' && (
-                            <div className="flex flex-wrap gap-2 pt-2">
-                              {/* Botões para o APROVADOR - só quem foi designado pode aprovar/rejeitar */}
-                              {currentUserId === aprovacao.aprovador_id && (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => openActionModal('aprovar', aprovacao.id)}
-                                    className="text-green-600 hover:text-green-700"
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Aprovar
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => openActionModal('alteracoes', aprovacao.id)}
-                                    className="text-orange-600 hover:text-orange-700"
-                                  >
-                                    <MessageSquare className="h-4 w-4 mr-1" />
-                                    Solicitar Alterações
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => openActionModal('rejeitar', aprovacao.id)}
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <XCircle className="h-4 w-4 mr-1" />
-                                    Rejeitar
-                                  </Button>
-                                </>
-                              )}
-                              
-                              {/* Botão Cancelar - só quem solicitou pode cancelar */}
-                              {currentUserId === (aprovacao as any).solicitado_por && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleCancelarSolicitacao(aprovacao.id)}
-                                  className="text-gray-600 hover:text-gray-700"
-                                >
-                                  Cancelar Solicitação
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Solicitar Aprovação</h3>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Voltar
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="aprovador_id">Aprovador *</Label>
-                <Select value={formData.aprovador_id} onValueChange={(value) => setFormData(prev => ({ ...prev, aprovador_id: value }))}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o aprovador">
-                      {formData.aprovador_id && (
-                        <div className="flex items-center gap-2 min-w-0">
-                          <User className="h-4 w-4 shrink-0" />
-                          <span className="truncate">
-                            {profiles.find(p => p.user_id === formData.aprovador_id)?.nome || 'Aprovador'}
-                          </span>
-                        </div>
-                      )}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-w-[calc(100vw-2rem)]">
-                    {profiles.map((profile) => (
-                      <SelectItem key={profile.user_id} value={profile.user_id}>
-                        <div className="flex items-center gap-2 min-w-0">
-                          <User className="h-4 w-4 shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate">{profile.nome}</div>
-                            <div className="text-sm text-muted-foreground truncate">{profile.email}</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="comentarios">Observações da Solicitação</Label>
-                <Textarea
-                  id="comentarios"
-                  value={formData.comentarios}
-                  onChange={(e) => setFormData(prev => ({ ...prev, comentarios: e.target.value }))}
-                  placeholder="Descreva o motivo da solicitação ou observações importantes"
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Enviando...
-                    </>
-                  ) : (
-                    'Enviar Solicitação'
-                  )}
-                </Button>
-              </div>
-            </form>
-          )}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        <DialogFooter className="flex-shrink-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Fechar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-
-      {/* Modal de Ação */}
-      <Dialog open={actionModal.open} onOpenChange={(open) => !open && closeActionModal()}>
+      {/* Sub-dialog: nova solicitação */}
+      <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{getActionModalTitle()}</DialogTitle>
-            <DialogDescription>{getActionModalDescription()}</DialogDescription>
+            <DialogTitle>Nova Solicitação de Aprovação</DialogTitle>
+            <DialogDescription>Selecione um aprovador e adicione observações se necessário.</DialogDescription>
           </DialogHeader>
-          
+
+          <form onSubmit={handleSubmitRequest} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="aprovador_id">Aprovador *</Label>
+              <Select
+                value={formData.aprovador_id}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, aprovador_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o aprovador" />
+                </SelectTrigger>
+                <SelectContent>
+                  {profiles.map((profile) => (
+                    <SelectItem key={profile.user_id} value={profile.user_id}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <User className="h-4 w-4 shrink-0" />
+                        <div className="min-w-0">
+                          <div className="truncate">{profile.nome}</div>
+                          <div className="text-xs text-muted-foreground truncate">{profile.email}</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="comentarios">Observações da Solicitação</Label>
+              <Textarea
+                id="comentarios"
+                value={formData.comentarios}
+                onChange={(e) => setFormData((prev) => ({ ...prev, comentarios: e.target.value }))}
+                placeholder="Descreva o motivo da solicitação ou observações importantes"
+                rows={3}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setRequestOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Enviar Solicitação
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sub-dialog: preview do documento */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              {documento.nome}
+            </DialogTitle>
+            <DialogDescription>{documento.arquivo_nome || 'Visualização do documento'}</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden bg-muted/20">
+            {loadingPreview ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : !documento?.arquivo_url ? (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                <FileText className="h-16 w-16 mb-4" />
+                <p className="text-lg font-medium">Documento sem arquivo anexado</p>
+              </div>
+            ) : !canPreview() ? (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                <FileText className="h-16 w-16 mb-4" />
+                <p className="text-lg font-medium">Visualização não disponível</p>
+                <p className="text-sm mb-4">Este tipo de arquivo não pode ser visualizado no navegador.</p>
+                <Button variant="outline" onClick={() => previewUrl && window.open(previewUrl, '_blank')}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Baixar Documento
+                </Button>
+              </div>
+            ) : isPdf() ? (
+              <iframe src={previewUrl || ''} className="w-full h-full" title="Preview do documento" />
+            ) : isImage() ? (
+              <div className="flex items-center justify-center h-full p-4">
+                <img src={previewUrl || ''} alt={documento.nome} className="max-w-full max-h-full object-contain" />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                <FileText className="h-16 w-16 mb-4" />
+                <Button variant="outline" onClick={() => previewUrl && window.open(previewUrl, '_blank')}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Abrir em Nova Aba
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="border-t px-6 py-3 flex justify-end">
+            <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sub-dialog: ação (aprovar / rejeitar / solicitar alterações) */}
+      <Dialog open={actionModal.open} onOpenChange={(o) => !o && closeActionModal()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {actionModal.type === 'aprovar' && 'Aprovar Documento'}
+              {actionModal.type === 'rejeitar' && 'Rejeitar Documento'}
+              {actionModal.type === 'alteracoes' && 'Solicitar Alterações'}
+            </DialogTitle>
+            <DialogDescription>
+              {actionModal.type === 'aprovar' && 'Confirme a aprovação do documento. Você pode adicionar um comentário opcional.'}
+              {actionModal.type === 'rejeitar' && 'Informe o motivo da rejeição. Este campo é obrigatório.'}
+              {actionModal.type === 'alteracoes' &&
+                'Descreva as alterações necessárias. O documento permanecerá pendente até as correções serem realizadas.'}
+            </DialogDescription>
+          </DialogHeader>
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="action-comment">
@@ -821,7 +702,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
                 value={actionComment}
                 onChange={(e) => setActionComment(e.target.value)}
                 placeholder={
-                  actionModal.type === 'alteracoes' 
+                  actionModal.type === 'alteracoes'
                     ? 'Descreva detalhadamente as alterações necessárias...'
                     : actionModal.type === 'rejeitar'
                     ? 'Informe o motivo da rejeição...'
@@ -831,16 +712,12 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={closeActionModal}>
               Cancelar
             </Button>
-            <Button 
-              onClick={executeAction}
-              variant={actionModal.type === 'rejeitar' ? 'destructive' : 'default'}
-              className={actionModal.type === 'alteracoes' ? 'bg-orange-600 hover:bg-orange-700' : ''}
-            >
+            <Button onClick={executeAction} variant={actionModal.type === 'rejeitar' ? 'destructive' : 'default'}>
               {actionModal.type === 'aprovar' && 'Confirmar Aprovação'}
               {actionModal.type === 'rejeitar' && 'Confirmar Rejeição'}
               {actionModal.type === 'alteracoes' && 'Enviar Solicitação'}
@@ -848,6 +725,6 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Dialog>
+    </>
   );
 }
