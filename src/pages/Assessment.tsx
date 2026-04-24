@@ -895,7 +895,7 @@ export default function Assessment() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2">
-                  <ScrollArea className="max-h-[40vh] min-h-[180px]">
+                  <ScrollArea className="h-[280px]">
                     <div className="space-y-1 pr-2">
                       {Array.from({ length: totalPages }).map((_, idx) => {
                         const status = pageStatuses[idx];
