@@ -218,10 +218,11 @@ const WelcomeScreen = ({
   onStart: () => void;
 }) => {
   const estimatedMinutes = Math.max(5, Math.round(totalQuestions * 0.75));
-  const deadline = new Date(assessment.data_limite);
+  const deadlineRaw = assessment.data_limite ? new Date(assessment.data_limite) : null;
+  const deadline = deadlineRaw && !isNaN(deadlineRaw.getTime()) ? deadlineRaw : null;
   const now = new Date();
-  const daysLeft = Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-  const overdue = deadline.getTime() < now.getTime();
+  const daysLeft = deadline ? Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+  const overdue = deadline ? deadline.getTime() < now.getTime() : false;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
