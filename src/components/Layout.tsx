@@ -17,6 +17,8 @@ import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { PageSkeleton } from '@/components/ui/page-skeleton';
 import { ModuleLoadingSkeleton } from '@/components/ui/module-loading-skeleton';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { AkurIAChatbot } from '@/components/dashboard/AkurIAChatbot';
+import { AkurIAActionListener } from '@/components/dashboard/akuria/AkurIAActionListener';
 
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import { prefetchAllRoutes } from '@/lib/route-prefetch';
@@ -245,6 +247,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         
         {/* Bottom Navigation Mobile */}
         {isMobile && <MobileBottomNav />}
+
+        {/* AkurIA — assistente global em todas as páginas */}
+        <AkurIAChatbot />
+        <AkurIAActionListener />
       </div>
     </SidebarProvider>
   );

@@ -8,7 +8,7 @@ import { RecentActivities } from '@/components/dashboard/RecentActivities';
 import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
 import AlertsDetailDialog from '@/components/dashboard/AlertsDetailDialog';
 import { UpcomingExpirations } from '@/components/dashboard/UpcomingExpirations';
-import { AkurIAChatbot } from '@/components/dashboard/AkurIAChatbot';
+
 
 import { useTrendData } from '@/components/dashboard/TrendIndicators';
 import { HeroScoreBanner } from '@/components/dashboard/HeroScoreBanner';
@@ -145,9 +145,6 @@ export default function Dashboard() {
           controlesVencendo={dashboardData?.controlesVencendo || 0}
           incidentesCriticos={dashboardData?.incidentesCriticos || 0}
         />
-
-        {/* AkurIA Chatbot */}
-        <AkurIAChatbot />
       </div>
     </TooltipProvider>
   );
