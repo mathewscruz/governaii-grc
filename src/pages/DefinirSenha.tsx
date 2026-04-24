@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,16 +8,17 @@ import { toast } from 'sonner';
 import { Eye, EyeOff, Lock, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import logoImage from '@/assets/akuris-logo.png';
 import { z } from 'zod';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-const passwordSchema = z.object({
+const buildPasswordSchema = (t: (k: string) => string) => z.object({
   password: z.string()
-    .min(8, 'Senha deve ter no mínimo 8 caracteres')
-    .regex(/[A-Z]/, 'Deve conter pelo menos uma letra maiúscula')
-    .regex(/[a-z]/, 'Deve conter pelo menos uma letra minúscula')
-    .regex(/[0-9]/, 'Deve conter pelo menos um número'),
+    .min(8, t('defineSenhaPage.reqMinChars'))
+    .regex(/[A-Z]/, t('defineSenhaPage.reqUppercase'))
+    .regex(/[a-z]/, t('defineSenhaPage.reqLowercase'))
+    .regex(/[0-9]/, t('defineSenhaPage.reqNumber')),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: 'As senhas não coincidem',
+  message: t('passwordChange.passwordsDontMatch'),
   path: ['confirmPassword'],
 });
 
