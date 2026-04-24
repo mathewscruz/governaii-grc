@@ -979,39 +979,37 @@ export default function Assessment() {
 
               {/* Pendencies — only show when there are missing required */}
               {missingRequiredList.length > 0 && (
-                <Card className="bg-amber-50 border-amber-200 shadow-sm">
+                <Card className="bg-white border-slate-200 shadow-sm">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs font-medium text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <AlertTriangle className="h-3.5 w-3.5" />
+                    <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <AlertTriangle className="h-3.5 w-3.5 text-[hsl(250,80%,55%)]" />
                       Pendências obrigatórias
+                      <span className="ml-auto text-[10px] font-semibold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+                        {missingRequiredList.length}
+                      </span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-2">
-                    <ScrollArea className="max-h-[160px]">
+                    <ScrollArea className="h-[260px]">
                       <ul className="space-y-1 pr-2">
-                        {missingRequiredList.slice(0, 6).map((q) => {
+                        {missingRequiredList.map((q) => {
                           const qIdx = questions.findIndex(x => x.id === q.id);
                           const pageOfQ = Math.floor(qIdx / questionsPerPage);
                           return (
                             <li key={q.id}>
                               <button
                                 onClick={() => setCurrentPage(pageOfQ)}
-                                className="w-full text-left flex items-center gap-2 text-xs text-amber-900 hover:text-amber-950 p-2 rounded hover:bg-amber-100/70 transition-colors"
+                                className="w-full text-left flex items-center gap-2 text-xs text-slate-700 hover:text-slate-900 p-2 rounded hover:bg-slate-50 transition-colors"
                               >
-                                <ChevronRight className="h-3 w-3 text-amber-600 shrink-0" />
+                                <ChevronRight className="h-3 w-3 text-slate-400 shrink-0" />
                                 <span className="flex-1 truncate" title={q.titulo || q.pergunta}>
                                   {q.titulo || q.pergunta}
                                 </span>
-                                <span className="text-[10px] text-amber-700 shrink-0">Pág. {pageOfQ + 1}</span>
+                                <span className="text-[10px] text-slate-500 shrink-0">Pág. {pageOfQ + 1}</span>
                               </button>
                             </li>
                           );
                         })}
-                        {missingRequiredList.length > 6 && (
-                          <li className="text-[11px] text-amber-700 px-2 pt-1">
-                            +{missingRequiredList.length - 6} pendência(s)
-                          </li>
-                        )}
                       </ul>
                     </ScrollArea>
                   </CardContent>
