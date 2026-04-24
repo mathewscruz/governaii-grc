@@ -286,7 +286,7 @@ const WelcomeScreen = ({
                 <div className="min-w-0">
                   <p className="text-xs text-slate-500">Prazo</p>
                   <p className="text-base font-semibold text-slate-900">
-                    {deadline.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                    {deadline ? deadline.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : 'Sem prazo'}
                   </p>
                   <p className={cn(
                     "text-[11px]",
