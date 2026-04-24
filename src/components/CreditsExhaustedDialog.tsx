@@ -1,5 +1,6 @@
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { AlertTriangle, Mail, Phone } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CreditsExhaustedDialogProps {
   open: boolean;
@@ -11,9 +12,12 @@ interface CreditsExhaustedDialogProps {
 export function CreditsExhaustedDialog({ 
   open, 
   onOpenChange,
-  planName = 'seu plano atual',
+  planName,
   creditsLimit = 0
 }: CreditsExhaustedDialogProps) {
+  const { t } = useLanguage();
+  const resolvedPlan = planName || t('creditsExhausted.currentPlan');
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-md">
@@ -23,21 +27,21 @@ export function CreditsExhaustedDialog({
               <AlertTriangle className="h-6 w-6 text-amber-600" />
             </div>
             <AlertDialogTitle className="text-xl">
-              Créditos de IA Esgotados
+              {t('creditsExhausted.title')}
             </AlertDialogTitle>
           </div>
           <AlertDialogDescription className="text-left space-y-3 pt-2">
             <p className="text-base">
-              Sua empresa atingiu o limite de <strong>{creditsLimit} créditos de IA</strong> do plano <strong>{planName}</strong>.
+              {t('creditsExhausted.description', { limit: String(creditsLimit), plan: resolvedPlan })}
             </p>
             
             <div className="bg-muted p-4 rounded-lg space-y-2">
               <p className="font-medium text-foreground">
-                Para continuar utilizando funcionalidades de IA:
+                {t('creditsExhausted.toContinue')}
               </p>
               <ul className="space-y-1.5 text-sm">
-                <li>• Entre em contato com a Akuris</li>
-                <li>• Solicite upgrade de plano ou créditos extras</li>
+                <li>• {t('creditsExhausted.contactItem')}</li>
+                <li>• {t('creditsExhausted.upgradeItem')}</li>
               </ul>
             </div>
 
@@ -59,7 +63,7 @@ export function CreditsExhaustedDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogAction onClick={() => onOpenChange(false)}>
-            Entendi
+            {t('creditsExhausted.understood')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

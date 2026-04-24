@@ -5,6 +5,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { toast } from 'sonner';
 import { Loader2, Mail, RefreshCw, ShieldCheck } from 'lucide-react';
 import logoImage from '@/assets/akuris-logo.png';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface MFAVerificationProps {
   userId: string;
@@ -19,6 +20,7 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
   onVerified,
   onCancel,
 }) => {
+  const { t } = useLanguage();
   const [code, setCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -36,7 +38,7 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
 
   const handleVerify = async () => {
     if (code.length !== 6) {
-      toast.error('Digite o código completo de 6 dígitos');
+      toast.error(t('mfaScreen.enterFullCode'));
       return;
     }
 
@@ -52,11 +54,11 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
       if (data.success) {
         onVerified();
       } else {
-        toast.error(data.error || 'Código inválido');
+        toast.error(data.error || t('mfaScreen.invalidCode'));
         setCode('');
       }
     } catch (error: any) {
-      toast.error('Erro ao verificar código');
+      toast.error(t('mfaScreen.verifyError'));
       setCode('');
     } finally {
       setIsVerifying(false);
@@ -74,15 +76,15 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
 
       const data = response.data;
       if (data.success) {
-        toast.success('Novo código enviado!');
+        toast.success(t('mfaScreen.newCodeSent'));
         setCountdown(60);
         setCanResend(false);
         setCode('');
       } else {
-        toast.error(data.error || 'Erro ao reenviar código');
+        toast.error(data.error || t('mfaScreen.resendError'));
       }
     } catch (error: any) {
-      toast.error('Erro ao reenviar código');
+      toast.error(t('mfaScreen.resendError'));
     } finally {
       setIsResending(false);
     }
@@ -109,10 +111,10 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
             <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/15 flex items-center justify-center">
               <ShieldCheck className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="text-xl font-bold text-white">Verificação de Segurança</h2>
+            <h2 className="text-xl font-bold text-white">{t('mfaScreen.title')}</h2>
             <div className="space-y-1">
               <p className="text-sm text-white/50">
-                Enviamos um código de 6 dígitos para:
+                {t('mfaScreen.description')}
               </p>
               <div className="flex items-center justify-center gap-2">
                 <Mail className="w-4 h-4 text-primary" />
@@ -147,9 +149,9 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
             disabled={isVerifying || code.length !== 6}
           >
             {isVerifying ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Verificando...</>
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('mfaScreen.verifying')}</>
             ) : (
-              'Verificar Código'
+              t('mfaScreen.verify')
             )}
           </Button>
 
@@ -160,11 +162,11 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
               className="text-sm text-primary hover:text-primary/80 disabled:text-white/30 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-1"
             >
               {isResending ? (
-                <><Loader2 className="w-3 h-3 animate-spin" /> Reenviando...</>
+                <><Loader2 className="w-3 h-3 animate-spin" /> {t('mfaScreen.resending')}</>
               ) : canResend ? (
-                <><RefreshCw className="w-3 h-3" /> Reenviar código</>
+                <><RefreshCw className="w-3 h-3" /> {t('mfaScreen.resendCode')}</>
               ) : (
-                <>Reenviar em {countdown}s</>
+                <>{t('mfaScreen.resendIn', { seconds: String(countdown) })}</>
               )}
             </button>
 
@@ -172,12 +174,12 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
               onClick={onCancel}
               className="block w-full text-xs text-white/30 hover:text-white/50 transition-colors"
             >
-              Cancelar e voltar ao login
+              {t('mfaScreen.cancelBack')}
             </button>
           </div>
         </div>
 
-        <p className="text-white/20 text-xs text-center">© {new Date().getFullYear()} Akuris — Todos os direitos reservados</p>
+        <p className="text-white/20 text-xs text-center">© {new Date().getFullYear()} Akuris — {t('mfaScreen.allRightsReserved')}</p>
       </div>
     </div>
   );

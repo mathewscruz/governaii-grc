@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { AlertTriangle, Eye, EyeOff, Check, X } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { logger } from '@/lib/logger';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PasswordChangeRequiredProps {
   open: boolean;
@@ -16,7 +17,7 @@ interface PasswordChangeRequiredProps {
 }
 
 // Função para calcular força da senha
-const calculatePasswordStrength = (password: string): { score: number; label: string; color: string } => {
+const calculatePasswordStrength = (password: string, t: (k: string) => string): { score: number; label: string; color: string } => {
   let score = 0;
   
   if (password.length >= 6) score += 20;
@@ -26,14 +27,15 @@ const calculatePasswordStrength = (password: string): { score: number; label: st
   if (/[0-9]/.test(password)) score += 15;
   if (/[^a-zA-Z0-9]/.test(password)) score += 15;
 
-  if (score <= 20) return { score, label: 'Muito fraca', color: 'bg-red-500' };
-  if (score <= 40) return { score, label: 'Fraca', color: 'bg-orange-500' };
-  if (score <= 60) return { score, label: 'Regular', color: 'bg-yellow-500' };
-  if (score <= 80) return { score, label: 'Boa', color: 'bg-blue-500' };
-  return { score, label: 'Forte', color: 'bg-green-500' };
+  if (score <= 20) return { score, label: t('passwordChange.strengthVeryWeak'), color: 'bg-red-500' };
+  if (score <= 40) return { score, label: t('passwordChange.strengthWeak'), color: 'bg-orange-500' };
+  if (score <= 60) return { score, label: t('passwordChange.strengthFair'), color: 'bg-yellow-500' };
+  if (score <= 80) return { score, label: t('passwordChange.strengthGood'), color: 'bg-blue-500' };
+  return { score, label: t('passwordChange.strengthStrong'), color: 'bg-green-500' };
 };
 
 const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, onPasswordChanged }) => {
+  const { t } = useLanguage();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -43,7 +45,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
   const [loading, setLoading] = useState(false);
 
   // Cálculo de força da senha
-  const passwordStrength = useMemo(() => calculatePasswordStrength(newPassword), [newPassword]);
+  const passwordStrength = useMemo(() => calculatePasswordStrength(newPassword, t), [newPassword, t]);
 
   // Requisitos da senha
   const requirements = useMemo(() => ({
@@ -58,22 +60,22 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
     e.preventDefault();
     
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error('Por favor, preencha todos os campos');
+      toast.error(t('passwordChange.fillAllFields'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error('As senhas não coincidem');
+      toast.error(t('passwordChange.passwordsDontMatch'));
       return;
     }
 
     if (newPassword.length < 6) {
-      toast.error('A nova senha deve ter pelo menos 6 caracteres');
+      toast.error(t('passwordChange.minLengthError'));
       return;
     }
 
     if (newPassword === currentPassword) {
-      toast.error('A nova senha deve ser diferente da senha atual');
+      toast.error(t('passwordChange.mustBeDifferent'));
       return;
     }
 
@@ -90,7 +92,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
       });
 
       if (reAuthError) {
-        toast.error('Senha atual incorreta. Verifique e tente novamente.');
+        toast.error(t('passwordChange.incorrectCurrent'));
         return;
       }
 
@@ -110,11 +112,11 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
           .eq('user_id', user.data.user.id);
       }
 
-      toast.success('Senha alterada com sucesso!');
+      toast.success(t('passwordChange.success'));
       onPasswordChanged();
     } catch (error: any) {
       logger.error('Erro ao alterar senha', { module: 'Auth', action: 'change-password' });
-      toast.error(error.message || 'Erro ao alterar senha');
+      toast.error(error.message || t('passwordChange.error'));
     } finally {
       setLoading(false);
     }
@@ -131,9 +133,9 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
             <AlertTriangle className="h-6 w-6 text-amber-600" />
           </div>
-          <DialogTitle className="text-xl">Alteração de Senha Obrigatória</DialogTitle>
+          <DialogTitle className="text-xl">{t('passwordChange.title')}</DialogTitle>
           <DialogDescription>
-            Por segurança, você deve alterar sua senha temporária antes de continuar.
+            {t('passwordChange.description')}
           </DialogDescription>
         </DialogHeader>
         
@@ -141,20 +143,20 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Esta é a primeira vez que você acessa o sistema. Por favor, defina uma nova senha segura.
+              {t('passwordChange.alertMessage')}
             </AlertDescription>
           </Alert>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="currentPassword">Senha Atual (Temporária)</Label>
+              <Label htmlFor="currentPassword">{t('passwordChange.currentPassword')}</Label>
               <div className="relative">
                 <Input
                   id="currentPassword"
                   type={showCurrentPassword ? 'text' : 'password'}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Digite sua senha temporária"
+                  placeholder={t('passwordChange.currentPasswordPlaceholder')}
                   className="pr-10"
                 />
                 <button
@@ -172,14 +174,14 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="newPassword">Nova Senha</Label>
+              <Label htmlFor="newPassword">{t('passwordChange.newPassword')}</Label>
               <div className="relative">
                 <Input
                   id="newPassword"
                   type={showNewPassword ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Digite sua nova senha"
+                  placeholder={t('passwordChange.newPasswordPlaceholder')}
                   className="pr-10"
                 />
                 <button
@@ -213,14 +215,14 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+              <Label htmlFor="confirmPassword">{t('passwordChange.confirmPassword')}</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirme sua nova senha"
+                  placeholder={t('passwordChange.confirmPasswordPlaceholder')}
                   className="pr-10"
                 />
                 <button
@@ -239,7 +241,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
 
             {/* Lista de requisitos */}
             <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Requisitos da senha:</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('passwordChange.requirements')}</p>
               <ul className="space-y-1">
                 <li className="flex items-center gap-2 text-sm">
                   {requirements.minLength ? (
@@ -248,7 +250,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
                     <X className="h-4 w-4 text-muted-foreground" />
                   )}
                   <span className={requirements.minLength ? 'text-green-700' : 'text-muted-foreground'}>
-                    Mínimo 6 caracteres
+                    {t('passwordChange.reqMinLength')}
                   </span>
                 </li>
                 <li className="flex items-center gap-2 text-sm">
@@ -258,7 +260,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
                     <X className="h-4 w-4 text-muted-foreground" />
                   )}
                   <span className={requirements.differentFromCurrent ? 'text-green-700' : 'text-muted-foreground'}>
-                    Diferente da senha atual
+                    {t('passwordChange.reqDifferent')}
                   </span>
                 </li>
                 <li className="flex items-center gap-2 text-sm">
@@ -268,7 +270,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
                     <X className="h-4 w-4 text-muted-foreground" />
                   )}
                   <span className={requirements.passwordsMatch ? 'text-green-700' : 'text-muted-foreground'}>
-                    Senhas coincidem
+                    {t('passwordChange.reqMatch')}
                   </span>
                 </li>
               </ul>
@@ -279,7 +281,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
               className="w-full" 
               disabled={loading || !allRequirementsMet}
             >
-              {loading ? 'Alterando senha...' : 'Alterar Senha'}
+              {loading ? t('passwordChange.saving') : t('passwordChange.save')}
             </Button>
           </form>
         </div>

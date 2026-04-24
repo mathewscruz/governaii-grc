@@ -324,6 +324,15 @@ export const pt = {
     daysLeftPlural: 'Licença Trial - Restam {days} dias de teste.',
     viewPlans: 'Ver planos',
   },
+  creditsExhausted: {
+    title: 'Créditos de IA Esgotados',
+    description: 'Sua empresa atingiu o limite de {limit} créditos de IA do plano {plan}.',
+    currentPlan: 'seu plano atual',
+    toContinue: 'Para continuar utilizando funcionalidades de IA:',
+    contactItem: 'Entre em contato com a Akuris',
+    upgradeItem: 'Solicite upgrade de plano ou créditos extras',
+    understood: 'Entendi',
+  },
   commandPalette: {
     placeholder: 'Buscar comandos, módulos, ações...',
     noResults: 'Nenhum resultado encontrado',

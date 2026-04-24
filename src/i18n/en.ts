@@ -324,6 +324,15 @@ export const en = {
     daysLeftPlural: 'Trial License - {days} days left.',
     viewPlans: 'View plans',
   },
+  creditsExhausted: {
+    title: 'AI Credits Exhausted',
+    description: 'Your company has reached the limit of {limit} AI credits on the {plan} plan.',
+    currentPlan: 'your current plan',
+    toContinue: 'To continue using AI features:',
+    contactItem: 'Contact Akuris',
+    upgradeItem: 'Request a plan upgrade or extra credits',
+    understood: 'Got it',
+  },
   commandPalette: {
     placeholder: 'Search commands, modules, actions...',
     noResults: 'No results found',

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,10 +12,11 @@ import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
-import { Upload, User, Eye, EyeOff, Bell } from 'lucide-react';
+import { Upload, Eye, EyeOff, Bell } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-const perfilSchema = z.object({
-  nome: z.string().min(1, 'Nome é obrigatório'),
+const buildPerfilSchema = (t: (k: string) => string) => z.object({
+  nome: z.string().min(1, t('userProfilePopover.nameRequired')),
   senha_atual: z.string().optional(),
   nova_senha: z.string().optional(),
   confirmar_senha: z.string().optional(),
@@ -25,7 +26,7 @@ const perfilSchema = z.object({
   }
   return true;
 }, {
-  message: "As senhas não coincidem ou senha atual não foi informada",
+  message: t('userProfilePopover.passwordsAndCurrent'),
   path: ["confirmar_senha"],
 }).refine((data) => {
   if (data.nova_senha && data.nova_senha.length > 0 && data.nova_senha.length < 6) {
@@ -33,17 +34,24 @@ const perfilSchema = z.object({
   }
   return true;
 }, {
-  message: "A nova senha deve ter pelo menos 6 caracteres",
+  message: t('userProfilePopover.newPasswordMin'),
   path: ["nova_senha"],
 });
 
-type PerfilForm = z.infer<typeof perfilSchema>;
+type PerfilForm = {
+  nome: string;
+  senha_atual?: string;
+  nova_senha?: string;
+  confirmar_senha?: string;
+};
 
 interface UserProfilePopoverProps {
   onClose?: () => void;
 }
 
 export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
+  const { t } = useLanguage();
+  const perfilSchema = useMemo(() => buildPerfilSchema(t), [t]);
   const { user, profile, refetchProfile } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [fotoUrl, setFotoUrl] = useState((profile as any)?.foto_url);
@@ -90,11 +98,11 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
 
   const validateImageFile = (file: File): string | null => {
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      return 'Formato de arquivo não suportado. Use: JPG, PNG, GIF, SVG ou WebP';
+      return t('userProfilePopover.invalidImageFormat');
     }
     
     if (file.size > MAX_FILE_SIZE) {
-      return 'Arquivo muito grande. Tamanho máximo: 5MB';
+      return t('userProfilePopover.fileTooLarge');
     }
     
     return null;
@@ -134,10 +142,10 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
 
       setFotoUrl(urlData.publicUrl);
       await refetchProfile();
-      toast.success('Foto atualizada com sucesso');
+      toast.success(t('userProfilePopover.photoUpdated'));
     } catch (error) {
       console.error('Erro ao fazer upload da foto:', error);
-      toast.error('Erro ao fazer upload da foto');
+      toast.error(t('userProfilePopover.photoError'));
     } finally {
       setUploading(false);
     }
@@ -166,7 +174,7 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
         });
 
         if (reAuthError) {
-          toast.error('Senha atual incorreta. Verifique e tente novamente.');
+          toast.error(t('userProfilePopover.incorrectCurrentPassword'));
           return;
         }
 
@@ -178,7 +186,7 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
       }
 
       await refetchProfile();
-      toast.success('Perfil atualizado com sucesso');
+      toast.success(t('userProfilePopover.profileUpdated'));
       
       // Limpar campos de senha
       form.reset({
@@ -194,7 +202,7 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
       }
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
-      toast.error('Erro ao atualizar perfil');
+      toast.error(t('userProfilePopover.profileError'));
     }
   };
 
@@ -249,10 +257,10 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
           disabled={uploading}
         >
           <Upload className="h-4 w-4 mr-2" />
-          Alterar Foto
+          {t('userProfilePopover.changePhoto')}
         </Button>
         <p className="text-xs text-muted-foreground text-center">
-          JPG, PNG, GIF, SVG, WebP (máx. 5MB)
+          {t('userProfilePopover.photoFormats')}
         </p>
       </div>
 
@@ -264,9 +272,9 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
             name="nome"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome</FormLabel>
+                <FormLabel>{t('userProfilePopover.name')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Seu nome completo" {...field} />
+                  <Input placeholder={t('userProfilePopover.namePlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -276,7 +284,7 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
           {/* Separador */}
           <div className="pt-4">
             <Separator className="my-5" />
-            <h3 className="text-sm font-semibold mb-5">Alterar Senha</h3>
+            <h3 className="text-sm font-semibold mb-5">{t('userProfilePopover.changePassword')}</h3>
           </div>
 
           <div className="space-y-4">
@@ -286,12 +294,12 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
               name="senha_atual"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Senha Atual</FormLabel>
+                  <FormLabel>{t('userProfilePopover.currentPassword')}</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
                         type={showPasswords.atual ? "text" : "password"}
-                        placeholder="Digite sua senha atual"
+                        placeholder={t('userProfilePopover.currentPasswordPlaceholder')}
                         {...field}
                       />
                       <Button
@@ -319,12 +327,12 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
               name="nova_senha"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nova Senha</FormLabel>
+                  <FormLabel>{t('userProfilePopover.newPassword')}</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
                         type={showPasswords.nova ? "text" : "password"}
-                        placeholder="Digite a nova senha"
+                        placeholder={t('userProfilePopover.newPasswordPlaceholder')}
                         {...field}
                       />
                       <Button
@@ -352,12 +360,12 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
               name="confirmar_senha"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirmar Nova Senha</FormLabel>
+                  <FormLabel>{t('userProfilePopover.confirmNewPassword')}</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
                         type={showPasswords.confirmar ? "text" : "password"}
-                        placeholder="Confirme a nova senha"
+                        placeholder={t('userProfilePopover.confirmNewPasswordPlaceholder')}
                         {...field}
                       />
                       <Button
@@ -384,7 +392,7 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
           {/* Botão Salvar */}
           <div className="pt-2">
             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+              {form.formState.isSubmitting ? t('userProfilePopover.saving') : t('userProfilePopover.saveChanges')}
             </Button>
           </div>
         </form>
@@ -395,13 +403,13 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
         <Separator className="my-5" />
         <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
           <Bell className="h-4 w-4" />
-          Notificações
+          {t('userProfilePopover.notifications')}
         </h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="pp-email-notif" className="text-sm">Email</Label>
-              <p className="text-xs text-muted-foreground">Alertas por email</p>
+              <Label htmlFor="pp-email-notif" className="text-sm">{t('userProfilePopover.emailNotif')}</Label>
+              <p className="text-xs text-muted-foreground">{t('userProfilePopover.emailNotifDesc')}</p>
             </div>
             <Switch
               id="pp-email-notif"
@@ -413,8 +421,8 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="pp-inapp-notif" className="text-sm">In-App</Label>
-              <p className="text-xs text-muted-foreground">Notificações no sino</p>
+              <Label htmlFor="pp-inapp-notif" className="text-sm">{t('userProfilePopover.inAppNotif')}</Label>
+              <p className="text-xs text-muted-foreground">{t('userProfilePopover.inAppNotifDesc')}</p>
             </div>
             <Switch
               id="pp-inapp-notif"
@@ -425,12 +433,12 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-sm">Frequência</Label>
+            <Label className="text-sm">{t('userProfilePopover.frequency')}</Label>
             <div className="flex gap-1.5">
               {[
-                { value: 'realtime' as const, label: 'Tempo Real' },
-                { value: 'daily' as const, label: 'Diário' },
-                { value: 'weekly' as const, label: 'Semanal' },
+                { value: 'realtime' as const, label: t('userProfilePopover.realtime') },
+                { value: 'daily' as const, label: t('userProfilePopover.daily') },
+                { value: 'weekly' as const, label: t('userProfilePopover.weekly') },
               ].map((opt) => (
                 <Button
                   key={opt.value}
