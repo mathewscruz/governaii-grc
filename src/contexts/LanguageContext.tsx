@@ -62,10 +62,22 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
         if (!mounted) return;
         const pref = (data as any)?.preferred_locale;
-        if (pref === 'pt' || pref === 'en') {
-          setLocaleState(pref);
-          try { localStorage.setItem(STORAGE_KEY, pref); } catch {}
+        if (pref !== 'pt' && pref !== 'en') return;
+
+        // Se o usuário escolheu o idioma manualmente há pouco tempo (ex: na tela de login),
+        // respeitamos essa escolha e atualizamos o profile para refletir a preferência.
+        const currentLocal = (localStorage.getItem(STORAGE_KEY) as Locale | null);
+        if (hasRecentManualChoice() && currentLocal && currentLocal !== pref) {
+          supabase
+            .from('profiles')
+            .update({ preferred_locale: currentLocal } as any)
+            .eq('user_id', userId)
+            .then(() => {});
+          return;
         }
+
+        setLocaleState(pref);
+        try { localStorage.setItem(STORAGE_KEY, pref); } catch {}
       } catch {
         // silent: keep local locale
       }
@@ -87,7 +99,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
-    try { localStorage.setItem(STORAGE_KEY, newLocale); } catch {}
+    try {
+      localStorage.setItem(STORAGE_KEY, newLocale);
+      localStorage.setItem(MANUAL_KEY, String(Date.now()));
+    } catch {}
 
     // Persist to profile if logged in
     supabase.auth.getUser().then(({ data: { user } }) => {
