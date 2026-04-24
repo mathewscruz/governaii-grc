@@ -56,7 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
             assessment_id: assessment.id,
             fornecedor_nome: assessment.fornecedor_nome,
             fornecedor_email: assessment.fornecedor_email,
-            template_nome: assessment.due_diligence_templates.nome,
+            template_nome: (assessment.due_diligence_templates as any)?.nome ?? (Array.isArray(assessment.due_diligence_templates) ? assessment.due_diligence_templates[0]?.nome : ''),
             assessment_link: assessmentLink,
             data_expiracao: assessment.data_expiracao,
             empresa_nome: 'Akuris'
