@@ -1,13 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { DialogShell } from "@/components/ui/dialog-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,54 +41,50 @@ export function EmailTestDialog({ open, onOpenChange }: EmailTestDialogProps) {
     }
   };
 
+  const footer = (
+    <div className="flex justify-end gap-2 w-full">
+      <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={loading}>
+        Cancelar
+      </Button>
+      <Button size="sm" onClick={handleSendTest} disabled={loading}>
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Enviando...
+          </>
+        ) : (
+          <>
+            <Mail className="mr-2 h-4 w-4" />
+            Enviar Teste
+          </>
+        )}
+      </Button>
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Enviar E-mail de Teste
-          </DialogTitle>
-          <DialogDescription>
-            Envie um e-mail de teste para visualizar o novo layout profissional
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">E-mail de destino</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSendTest()}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
-          <Button onClick={handleSendTest} disabled={loading}>
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              <>
-                <Mail className="mr-2 h-4 w-4" />
-                Enviar Teste
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <DialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Enviar E-mail de Teste"
+      description="Envie um e-mail de teste para visualizar o novo layout profissional"
+      icon={Mail}
+      size="sm"
+      footer={footer}
+      onSubmit={handleSendTest}
+      isDirty={!!email}
+    >
+      <div className="grid gap-2">
+        <Label htmlFor="email">E-mail de destino</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="seu@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSendTest()}
+        />
+      </div>
+    </DialogShell>
   );
 }

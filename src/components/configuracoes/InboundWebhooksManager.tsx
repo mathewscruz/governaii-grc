@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { DialogShell } from '@/components/ui/dialog-shell';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
@@ -319,80 +319,73 @@ export function InboundWebhooksManager() {
       )}
 
       {/* Create Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Novo Webhook de Entrada</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Nome</Label>
-              <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Splunk SIEM Alerts" />
-            </div>
-            <div>
-              <Label>Descrição</Label>
-              <Textarea value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Descrição opcional..." rows={2} />
-            </div>
-            <div>
-              <Label>Tipo de Evento</Label>
-              <Select value={tipoEvento} onValueChange={setTipoEvento}>
-                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                <SelectContent>
-                  {TIPOS_EVENTO.map(t => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Módulo Destino</Label>
-              <Select value={moduloDestino} onValueChange={setModuloDestino}>
-                <SelectTrigger><SelectValue placeholder="Para onde enviar..." /></SelectTrigger>
-                <SelectContent>
-                  {MODULOS_DESTINO.map(m => (
-                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {moduloDestino && (
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Payload JSON esperado para {MODULOS_DESTINO.find(m => m.value === moduloDestino)?.label}</Label>
-                <pre className="text-xs bg-muted p-3 rounded-lg overflow-x-auto font-mono">
-                  {getPayloadForModule(moduloDestino)}
-                </pre>
-              </div>
-            )}
+      <DialogShell
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        title="Novo Webhook de Entrada"
+        icon={Webhook}
+        size="md"
+        onSubmit={handleCreate}
+        submitLabel="Criar Webhook"
+        submitDisabled={!nome.trim() || !tipoEvento || !moduloDestino || saving}
+        isSubmitting={saving}
+        isDirty={!!(nome || descricao || tipoEvento || moduloDestino)}
+      >
+        <div className="space-y-4">
+          <div>
+            <Label>Nome</Label>
+            <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Splunk SIEM Alerts" />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreate} disabled={!nome.trim() || !tipoEvento || !moduloDestino || saving}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Criar Webhook
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <div>
+            <Label>Descrição</Label>
+            <Textarea value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Descrição opcional..." rows={2} />
+          </div>
+          <div>
+            <Label>Tipo de Evento</Label>
+            <Select value={tipoEvento} onValueChange={setTipoEvento}>
+              <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+              <SelectContent>
+                {TIPOS_EVENTO.map(t => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Módulo Destino</Label>
+            <Select value={moduloDestino} onValueChange={setModuloDestino}>
+              <SelectTrigger><SelectValue placeholder="Para onde enviar..." /></SelectTrigger>
+              <SelectContent>
+                {MODULOS_DESTINO.map(m => (
+                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {moduloDestino && (
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Payload JSON esperado para {MODULOS_DESTINO.find(m => m.value === moduloDestino)?.label}</Label>
+              <pre className="text-xs bg-muted p-3 rounded-lg overflow-x-auto font-mono">
+                {getPayloadForModule(moduloDestino)}
+              </pre>
+            </div>
+          )}
+        </div>
+      </DialogShell>
 
       {/* Payload Example Dialog */}
-      <Dialog open={!!payloadDialogOpen} onOpenChange={() => setPayloadDialogOpen(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Payload de Exemplo</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground mb-2">
-            Envie um JSON com esta estrutura via POST para a URL do webhook:
-          </p>
-          <pre className="text-xs bg-muted p-4 rounded-lg overflow-x-auto font-mono">
-            {payloadDialogOpen ? getPayloadForModule(payloadDialogOpen) : ''}
-          </pre>
-          <p className="text-xs text-muted-foreground">
-            Os campos <code className="bg-muted px-1 rounded">title</code>/<code className="bg-muted px-1 rounded">nome</code> e <code className="bg-muted px-1 rounded">description</code>/<code className="bg-muted px-1 rounded">descricao</code> são aceitos em inglês ou português.
-          </p>
-          <DialogFooter>
+      <DialogShell
+        open={!!payloadDialogOpen}
+        onOpenChange={(o) => !o && setPayloadDialogOpen(null)}
+        title="Payload de Exemplo"
+        icon={Code}
+        size="md"
+        footer={
+          <div className="flex justify-end w-full">
             <Button
               variant="outline"
+              size="sm"
               onClick={() => {
                 navigator.clipboard.writeText(payloadDialogOpen ? getPayloadForModule(payloadDialogOpen) : '');
                 toast.info('Payload copiado!');
@@ -400,9 +393,19 @@ export function InboundWebhooksManager() {
             >
               <Copy className="h-4 w-4 mr-2" /> Copiar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        }
+      >
+        <p className="text-sm text-muted-foreground mb-2">
+          Envie um JSON com esta estrutura via POST para a URL do webhook:
+        </p>
+        <pre className="text-xs bg-muted p-4 rounded-lg overflow-x-auto font-mono">
+          {payloadDialogOpen ? getPayloadForModule(payloadDialogOpen) : ''}
+        </pre>
+        <p className="text-xs text-muted-foreground mt-3">
+          Os campos <code className="bg-muted px-1 rounded">title</code>/<code className="bg-muted px-1 rounded">nome</code> e <code className="bg-muted px-1 rounded">description</code>/<code className="bg-muted px-1 rounded">descricao</code> são aceitos em inglês ou português.
+        </p>
+      </DialogShell>
 
       <ConfirmDialog
         open={!!deleteConfirm}

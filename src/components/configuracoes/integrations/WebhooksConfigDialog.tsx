@@ -1,17 +1,9 @@
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogShell } from '@/components/ui/dialog-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, CheckCircle2, XCircle, Send, Webhook, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -212,20 +204,44 @@ export function WebhooksConfigDialog({
     });
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Webhook className="h-5 w-5 text-primary" />
-            Configurar Webhooks
-          </DialogTitle>
-          <DialogDescription>
-            Receba eventos do Akuris via HTTP POST em qualquer sistema.
-          </DialogDescription>
-        </DialogHeader>
+  const footer = (
+    <div className="flex flex-col sm:flex-row gap-2 w-full">
+      {existingConfig && (
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={handleDisconnect}
+          disabled={saving}
+          className="sm:mr-auto"
+        >
+          Remover
+        </Button>
+      )}
+      <div className="flex gap-2 sm:ml-auto">
+        <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={saving}>
+          Cancelar
+        </Button>
+        <Button size="sm" onClick={handleSave} disabled={saving || !webhookUrl || selectedEvents.length === 0}>
+          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Salvar
+        </Button>
+      </div>
+    </div>
+  );
 
-        <div className="space-y-6 py-4">
+  return (
+    <DialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Configurar Webhooks"
+      description="Receba eventos do Akuris via HTTP POST em qualquer sistema."
+      icon={Webhook}
+      size="lg"
+      footer={footer}
+      onSubmit={handleSave}
+      isDirty={!!webhookUrl}
+    >
+      <div className="space-y-6">
           {/* Webhook URL */}
           <div className="space-y-2">
             <Label htmlFor="webhook-url">URL do Webhook *</Label>
@@ -339,29 +355,8 @@ export function WebhooksConfigDialog({
               readOnly
               className="font-mono text-xs h-36"
             />
-          </div>
         </div>
-
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          {existingConfig && (
-            <Button
-              variant="destructive"
-              onClick={handleDisconnect}
-              disabled={saving}
-              className="sm:mr-auto"
-            >
-              Remover
-            </Button>
-          )}
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={saving || !webhookUrl || selectedEvents.length === 0}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Salvar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </DialogShell>
   );
 }

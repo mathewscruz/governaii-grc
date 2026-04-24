@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogShell } from '@/components/ui/dialog-shell';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, UserCog } from 'lucide-react';
 
 interface Module {
   id: string;
@@ -219,95 +219,99 @@ export const UserPermissionDialog: React.FC<Props> = ({
     PERM_KEYS.some(k => isCustomized(m.id, k))
   );
 
+  const footer = (
+    <div className="flex justify-end gap-2 w-full">
+      <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
+      <Button size="sm" onClick={handleSave} disabled={saving}>
+        {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+        Salvar
+      </Button>
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Permissões de {userName}</DialogTitle>
-        </DialogHeader>
-
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin" />
+    <DialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title={`Permissões de ${userName}`}
+      icon={UserCog}
+      size="lg"
+      footer={footer}
+      onSubmit={handleSave}
+    >
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div>
+            <Label>Perfil de Permissão</Label>
+            <Select value={selectedProfileId} onValueChange={handleProfileChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um perfil" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem perfil (personalizado)</SelectItem>
+                {profiles.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Selecionar um perfil aplica as permissões automaticamente. Você pode ajustar individualmente abaixo.
+            </p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <Label>Perfil de Permissão</Label>
-              <Select value={selectedProfileId} onValueChange={handleProfileChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um perfil" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sem perfil (personalizado)</SelectItem>
-                  {profiles.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+
+          {hasCustomizations && (
+            <div className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm text-muted-foreground">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              Algumas permissões diferem do perfil base
+            </div>
+          )}
+
+          <Separator />
+
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left px-3 py-2 font-medium">Módulo</th>
+                  {PERM_KEYS.map(k => (
+                    <th key={k} className="text-center px-2 py-2 font-medium">{PERM_LABELS[k]}</th>
                   ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1">
-                Selecionar um perfil aplica as permissões automaticamente. Você pode ajustar individualmente abaixo.
-              </p>
-            </div>
-
-            {hasCustomizations && (
-              <div className="flex items-center gap-2 p-2 bg-muted rounded-lg text-sm text-muted-foreground">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                Algumas permissões diferem do perfil base
-              </div>
-            )}
-
-            <Separator />
-
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left px-3 py-2 font-medium">Módulo</th>
-                    {PERM_KEYS.map(k => (
-                      <th key={k} className="text-center px-2 py-2 font-medium">{PERM_LABELS[k]}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {modules.map(module => {
-                    const perm = getPerm(module.id);
-                    return (
-                      <tr key={module.id} className="border-b last:border-0 hover:bg-muted/30">
-                        <td className="px-3 py-2 font-medium">{module.display_name}</td>
-                        {PERM_KEYS.map(key => (
-                          <td key={key} className="text-center px-2 py-2">
-                            <div className="flex items-center justify-center gap-1">
-                              <Switch
-                                checked={perm[key] as boolean}
-                                onCheckedChange={v => updatePerm(module.id, key, v)}
-                                className="scale-75"
-                              />
-                              {isCustomized(module.id, key) && (
-                                <Badge variant="outline" className="text-[10px] px-1 py-0 text-primary">
-                                  ✎
-                                </Badge>
-                              )}
-                            </div>
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button onClick={handleSave} disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                Salvar
-              </Button>
-            </div>
+                </tr>
+              </thead>
+              <tbody>
+                {modules.map(module => {
+                  const perm = getPerm(module.id);
+                  return (
+                    <tr key={module.id} className="border-b last:border-0 hover:bg-muted/30">
+                      <td className="px-3 py-2 font-medium">{module.display_name}</td>
+                      {PERM_KEYS.map(key => (
+                        <td key={key} className="text-center px-2 py-2">
+                          <div className="flex items-center justify-center gap-1">
+                            <Switch
+                              checked={perm[key] as boolean}
+                              onCheckedChange={v => updatePerm(module.id, key, v)}
+                              className="scale-75"
+                            />
+                            {isCustomized(module.id, key) && (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0 text-primary">
+                                ✎
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+        </div>
+      )}
+    </DialogShell>
   );
 };

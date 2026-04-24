@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogShell } from '@/components/ui/dialog-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, CheckSquare, Square, BookOpen } from 'lucide-react';
+import { Loader2, CheckSquare, Square, BookOpen, ShieldCheck } from 'lucide-react';
 
 interface Module {
   id: string;
@@ -215,103 +214,108 @@ export const PermissionProfileDialog: React.FC<Props> = ({
     }
   };
 
+  const footer = (
+    <div className="flex justify-end gap-2 w-full">
+      <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
+      <Button size="sm" onClick={handleSave} disabled={saving}>
+        {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+        {profile ? 'Atualizar' : 'Criar'}
+      </Button>
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{profile ? 'Editar Perfil de Permissão' : 'Novo Perfil de Permissão'}</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label>Nome</Label>
-              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Auditor Interno" />
-            </div>
-            <div className="flex items-end gap-2">
-              <div className="flex items-center gap-2">
-                <Switch checked={isDefault} onCheckedChange={setIsDefault} />
-                <Label>Perfil padrão</Label>
-              </div>
-            </div>
-          </div>
-
+    <DialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title={profile ? 'Editar Perfil de Permissão' : 'Novo Perfil de Permissão'}
+      icon={ShieldCheck}
+      size="lg"
+      footer={footer}
+      onSubmit={handleSave}
+      isDirty={!!name}
+    >
+      <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label>Descrição</Label>
-            <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descreva o perfil..." rows={2} />
+            <Label>Nome</Label>
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Auditor Interno" />
           </div>
-
-          <Separator />
-
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setAllPermissions(true)}>
-              <CheckSquare className="h-3.5 w-3.5 mr-1" />
-              Marcar Todos
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={setReadOnly}>
-              <BookOpen className="h-3.5 w-3.5 mr-1" />
-              Somente Leitura
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => setAllPermissions(false)}>
-              <Square className="h-3.5 w-3.5 mr-1" />
-              Desmarcar Todos
-            </Button>
-          </div>
-
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
+          <div className="flex items-end gap-2">
+            <div className="flex items-center gap-2">
+              <Switch checked={isDefault} onCheckedChange={setIsDefault} />
+              <Label>Perfil padrão</Label>
             </div>
-          ) : (
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left px-3 py-2 font-medium">Módulo</th>
-                    {PERM_LABELS.map(p => (
-                      <th key={p.key} className="text-center px-2 py-2 font-medium">{p.label}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {modules.map(module => {
-                    const perm = getPermission(module.id);
-                    return (
-                      <tr key={module.id} className="border-b last:border-0 hover:bg-muted/30">
-                        <td className="px-3 py-2 font-medium">{module.display_name}</td>
-                        {PERM_LABELS.map(({ key }) => (
-                          <td key={key} className="text-center px-2 py-2">
-                            <Switch
-                              checked={perm[key] as boolean}
-                              onCheckedChange={v => updatePermission(module.id, key, v)}
-                              className="scale-75"
-                            />
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {profile && (
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-              <Switch checked={propagate} onCheckedChange={setPropagate} />
-              <Label className="text-sm">Aplicar alterações a todos os usuários deste perfil</Label>
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {profile ? 'Atualizar' : 'Criar'}
-            </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <div>
+          <Label>Descrição</Label>
+          <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descreva o perfil..." rows={2} />
+        </div>
+
+        <Separator />
+
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => setAllPermissions(true)}>
+            <CheckSquare className="h-3.5 w-3.5 mr-1" />
+            Marcar Todos
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={setReadOnly}>
+            <BookOpen className="h-3.5 w-3.5 mr-1" />
+            Somente Leitura
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => setAllPermissions(false)}>
+            <Square className="h-3.5 w-3.5 mr-1" />
+            Desmarcar Todos
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : (
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left px-3 py-2 font-medium">Módulo</th>
+                  {PERM_LABELS.map(p => (
+                    <th key={p.key} className="text-center px-2 py-2 font-medium">{p.label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {modules.map(module => {
+                  const perm = getPermission(module.id);
+                  return (
+                    <tr key={module.id} className="border-b last:border-0 hover:bg-muted/30">
+                      <td className="px-3 py-2 font-medium">{module.display_name}</td>
+                      {PERM_LABELS.map(({ key }) => (
+                        <td key={key} className="text-center px-2 py-2">
+                          <Switch
+                            checked={perm[key] as boolean}
+                            onCheckedChange={v => updatePermission(module.id, key, v)}
+                            className="scale-75"
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {profile && (
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+            <Switch checked={propagate} onCheckedChange={setPropagate} />
+            <Label className="text-sm">Aplicar alterações a todos os usuários deste perfil</Label>
+          </div>
+        )}
+      </div>
+    </DialogShell>
   );
 };

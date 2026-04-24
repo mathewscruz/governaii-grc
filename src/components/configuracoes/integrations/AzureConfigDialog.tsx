@@ -1,19 +1,12 @@
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { DialogShell } from '@/components/ui/dialog-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, CheckCircle2, XCircle, ExternalLink, Send, AlertCircle, RefreshCw, Monitor } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Loader2, CheckCircle2, XCircle, ExternalLink, Send, AlertCircle, RefreshCw, Monitor, Cloud } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -227,30 +220,52 @@ export function AzureConfigDialog({
     );
   };
 
+  const footer = (
+    <div className="flex flex-col sm:flex-row gap-2 w-full">
+      {existingConfig && (
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={handleDisconnect}
+          disabled={saving}
+          className="sm:mr-auto"
+        >
+          Desconectar
+        </Button>
+      )}
+      <div className="flex gap-2 sm:ml-auto">
+        <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={saving}>
+          Cancelar
+        </Button>
+        <Button size="sm" onClick={handleSave} disabled={saving || !tenantId || !clientId}>
+          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Salvar
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Microsoft_Azure.svg"
-              alt="Azure"
-              className="h-6 w-6"
-            />
-            Configurar Microsoft Azure / Intune
-          </DialogTitle>
-          <DialogDescription>
-            Sincronize dispositivos do Intune e Azure AD com o módulo de Ativos.
-          </DialogDescription>
-        </DialogHeader>
+    <DialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Configurar Microsoft Azure / Intune"
+      description="Sincronize dispositivos do Intune e Azure AD com o módulo de Ativos."
+      icon={Cloud}
+      size="lg"
+      footer={footer}
+      onSubmit={handleSave}
+      noScroll
+      isDirty={!!(tenantId || clientId || clientSecret)}
+    >
+      <Tabs defaultValue="config" className="w-full h-full flex flex-col">
+        <TabsList className="grid w-full grid-cols-2 flex-shrink-0 mx-6 mt-4" style={{ width: 'calc(100% - 3rem)' }}>
+          <TabsTrigger value="config">Configuração</TabsTrigger>
+          <TabsTrigger value="sync">Sincronização</TabsTrigger>
+        </TabsList>
 
-        <Tabs defaultValue="config" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="config">Configuração</TabsTrigger>
-            <TabsTrigger value="sync">Sincronização</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="config" className="space-y-6 py-4">
+        <ScrollArea className="flex-1 min-h-0">
+          <TabsContent value="config" className="space-y-6 px-6 py-4 mt-0">
             {/* Instruções */}
             <div className="p-3 rounded-lg bg-muted/50 border space-y-2">
               <h4 className="font-medium text-sm flex items-center gap-2">
@@ -357,7 +372,7 @@ export function AzureConfigDialog({
             </a>
           </TabsContent>
 
-          <TabsContent value="sync" className="space-y-6 py-4">
+          <TabsContent value="sync" className="space-y-6 px-6 py-4 mt-0">
             {/* Opções de sincronização */}
             <div className="space-y-3">
               <Label>O que sincronizar</Label>
@@ -456,28 +471,8 @@ export function AzureConfigDialog({
               </div>
             </div>
           </TabsContent>
-        </Tabs>
-
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          {existingConfig && (
-            <Button
-              variant="destructive"
-              onClick={handleDisconnect}
-              disabled={saving}
-              className="sm:mr-auto"
-            >
-              Desconectar
-            </Button>
-          )}
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={saving || !tenantId || !clientId}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Salvar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ScrollArea>
+      </Tabs>
+    </DialogShell>
   );
 }
