@@ -181,25 +181,8 @@ const TopBar = ({
           </div>
         </div>
 
-        {/* Right: Save indicator */}
-        <div className="flex items-center gap-2 shrink-0 text-xs">
-          {saving ? (
-            <span className="flex items-center gap-1.5 text-white/50">
-              <div className="animate-spin rounded-full h-3 w-3 border border-white/30 border-t-white/80"></div>
-              <span className="hidden sm:inline">Salvando...</span>
-            </span>
-          ) : savedAt ? (
-            <span className="flex items-center gap-1.5 text-emerald-400/80">
-              <Save className="h-3 w-3" />
-              <span className="hidden sm:inline">Salvo às {formatTime(savedAt)}</span>
-            </span>
-          ) : (
-            <span className="flex items-center gap-1.5 text-white/40">
-              <Save className="h-3 w-3" />
-              <span className="hidden sm:inline">Auto-save ativo</span>
-            </span>
-          )}
-        </div>
+        {/* Right: spacer to balance layout */}
+        <div className="shrink-0 w-8" />
       </div>
     </header>
   );
