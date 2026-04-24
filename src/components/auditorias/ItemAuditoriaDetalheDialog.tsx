@@ -1,12 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { DialogShell } from "@/components/ui/dialog-shell";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -374,30 +369,33 @@ export function ItemAuditoriaDetalheDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="outline" className="font-mono">
-                    {item.codigo}
-                  </Badge>
-                  <Badge className={`${getPrioridadeColor(item.prioridade)} border whitespace-nowrap`}>
-                    {getPrioridadeLabel(item.prioridade)}
-                  </Badge>
-                  <Badge className={`${getStatusColor(item.status)} border whitespace-nowrap`}>
-                    {getStatusLabel(item.status)}
-                  </Badge>
-                </div>
-                <DialogTitle className="text-xl">{item.titulo}</DialogTitle>
-              </div>
-              <Button variant="outline" size="sm" onClick={onEdit} className="mr-10">
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
-              </Button>
+      <DialogShell
+        open={open}
+        onOpenChange={onOpenChange}
+        title={item.titulo}
+        icon={FileText}
+        size="lg"
+        hideFooter
+        disableShortcuts
+      >
+        <div className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="font-mono">
+                {item.codigo}
+              </Badge>
+              <Badge className={`${getPrioridadeColor(item.prioridade)} border whitespace-nowrap`}>
+                {getPrioridadeLabel(item.prioridade)}
+              </Badge>
+              <Badge className={`${getStatusColor(item.status)} border whitespace-nowrap`}>
+                {getStatusLabel(item.status)}
+              </Badge>
             </div>
-          </DialogHeader>
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          </div>
 
           {/* Info do item */}
           <div className="flex-shrink-0 bg-muted/50 rounded-lg p-4 space-y-2">
@@ -605,8 +603,8 @@ export function ItemAuditoriaDetalheDialog({
               </ScrollArea>
             </TabsContent>
           </Tabs>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </DialogShell>
 
       <ConfirmDialog
         open={!!deleteTarget}

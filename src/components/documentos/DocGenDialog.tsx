@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DOMPurify from 'dompurify';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogShell } from '@/components/ui/dialog-shell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -627,20 +627,17 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   }, [generatedDocument, companyInfo]);
 
   return (
-    <Dialog open={open} onOpenChange={handleDialogClose}>
-      <DialogContent className="max-w-5xl h-[85vh] md:h-[80vh] flex flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-primary" />
-            DocGen 🧠 - Gerador Inteligente de Documentos
-            {currentDocType && (
-              <Badge variant="secondary" className="ml-2">
-                {currentDocType}
-              </Badge>
-            )}
-          </DialogTitle>
-        </DialogHeader>
-
+    <DialogShell
+      open={open}
+      onOpenChange={handleDialogClose}
+      title={`DocGen — Gerador Inteligente de Documentos${currentDocType ? ` · ${currentDocType}` : ''}`}
+      icon={Brain}
+      size="xl"
+      noScroll
+      hideFooter
+      disableShortcuts
+    >
+      <div className="flex flex-col h-full p-6 gap-4 min-h-0">
         <div className="flex-1 flex gap-4 min-h-0">
           {/* Chat Area */}
           <div className="flex-1 flex flex-col min-h-0">
@@ -814,7 +811,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
             classificacao: generatedDocument?.metadados?.classificacao || 'interna',
           }}
         />
-      </DialogContent>
-    </Dialog>
+      </div>
+    </DialogShell>
   );
 };

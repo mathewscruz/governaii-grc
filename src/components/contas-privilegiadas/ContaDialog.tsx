@@ -2,7 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogShell } from "@/components/ui/dialog-shell";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, KeyRound } from "lucide-react";
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -136,21 +136,15 @@ export default function ContaDialog({ open, onClose, conta, sistemas }: ContaDia
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {conta ? 'Editar Conta Privilegiada' : 'Nova Conta Privilegiada'}
-          </DialogTitle>
-          <DialogDescription>
-            {conta 
-              ? 'Edite as informações da conta privilegiada'
-              : 'Registre uma nova concessão de acesso privilegiado'
-            }
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
+    <DialogShell
+        open={open}
+        onOpenChange={onClose}
+        title={`${conta?.id ? "Editar" : "Nova"} Conta Privilegiada`}
+        icon={KeyRound}
+        size="lg"
+        onSubmit={handleSave}
+      >
+<Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <div className="grid grid-cols-2 gap-5">
               <FormField
@@ -413,7 +407,6 @@ export default function ContaDialog({ open, onClose, conta, sistemas }: ContaDia
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </DialogShell>
   );
 }

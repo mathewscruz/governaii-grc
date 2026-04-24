@@ -1,3 +1,4 @@
+import { Eye } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -160,15 +161,15 @@ export function ReviewDialog({ open, onClose, review, onSuccess }: ReviewDialogP
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {review ? "Editar Revisão" : "Nova Revisão de Acesso"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <Form {...form}>
+    <DialogShell
+        open={open}
+        onOpenChange={onClose}
+        title={`${review?.id ? "Editar" : "Nova"} Revisão de Acessos`}
+        icon={Eye}
+        size="lg"
+        onSubmit={handleSave}
+      >
+<Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
@@ -327,7 +328,6 @@ export function ReviewDialog({ open, onClose, review, onSuccess }: ReviewDialogP
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </DialogShell>
   );
 }

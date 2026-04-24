@@ -1,3 +1,4 @@
+import { UserCog } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -197,15 +198,15 @@ export function SistemaUsuarioDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {usuario ? "Editar Usuário do Sistema" : "Novo Usuário do Sistema"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <Form {...form}>
+    <DialogShell
+        open={open}
+        onOpenChange={onClose}
+        title={`${usuario?.id ? "Editar" : "Novo"} Usuário do Sistema`}
+        icon={UserCog}
+        size="lg"
+        onSubmit={handleSave}
+      >
+<Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -429,7 +430,6 @@ export function SistemaUsuarioDialog({
             </DialogFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </DialogShell>
   );
 }

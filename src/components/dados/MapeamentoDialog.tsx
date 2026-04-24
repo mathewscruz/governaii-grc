@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { DialogShell } from "@/components/ui/dialog-shell";
+import { Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -111,15 +112,15 @@ export function MapeamentoDialog({ isOpen, onClose, onSave, mapeamento }: Mapeam
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {mapeamento?.id ? "Editar Mapeamento" : "Novo Mapeamento Dados x Ativo"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="grid gap-4 py-4">
+    <DialogShell
+        open={isOpen}
+        onOpenChange={onClose}
+        title={`${mapeamento?.id ? "Editar" : "Novo"} Mapeamento de Dados`}
+        icon={Map}
+        size="lg"
+        onSubmit={handleSave}
+      >
+<div className="grid gap-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="dados_pessoais_id">Dados Pessoais *</Label>
@@ -248,15 +249,6 @@ export function MapeamentoDialog({ isOpen, onClose, onSave, mapeamento }: Mapeam
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? "Salvando..." : "Salvar"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogShell>
   );
 }

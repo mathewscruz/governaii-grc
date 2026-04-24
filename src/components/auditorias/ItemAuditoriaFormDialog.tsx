@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
-import { Loader2 } from "lucide-react";
+import { ListChecks, Loader2 } from "lucide-react";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { ControleSelect } from "./ControleSelect";
 import { AreaSistemaSelect } from "./AreaSistemaSelect";
@@ -215,15 +215,15 @@ export function ItemAuditoriaFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {item ? "Editar Item de Verificação" : "Adicionar Item de Verificação"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <Form {...form}>
+    <DialogShell
+        open={open}
+        onOpenChange={onOpenChange}
+        title={`${item?.id ? "Editar" : "Novo"} Item de Auditoria`}
+        icon={ListChecks}
+        size="lg"
+        onSubmit={handleSubmit}
+      >
+<Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* Vinculação a Controle Existente */}
             <FormField
@@ -428,7 +428,6 @@ export function ItemAuditoriaFormDialog({
             </DialogFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </DialogShell>
   );
 }

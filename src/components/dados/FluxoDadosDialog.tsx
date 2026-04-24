@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { DialogShell } from "@/components/ui/dialog-shell";
+import { GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -131,15 +132,15 @@ export function FluxoDadosDialog({ isOpen, onClose, onSave, fluxo }: FluxoDadosD
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {fluxo?.id ? "Editar Fluxo de Dados" : "Novo Fluxo de Dados"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="grid gap-4 py-4">
+    <DialogShell
+        open={isOpen}
+        onOpenChange={onClose}
+        title={`${fluxo?.id ? "Editar" : "Novo"} Fluxo de Dados`}
+        icon={GitBranch}
+        size="lg"
+        onSubmit={handleSave}
+      >
+<div className="grid gap-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="nome_fluxo">Nome do Fluxo *</Label>
@@ -304,15 +305,6 @@ export function FluxoDadosDialog({ isOpen, onClose, onSave, fluxo }: FluxoDadosD
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? "Salvando..." : "Salvar"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogShell>
   );
 }

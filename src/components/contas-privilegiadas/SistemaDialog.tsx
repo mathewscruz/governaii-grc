@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogShell } from "@/components/ui/dialog-shell";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -228,21 +228,15 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {sistema ? 'Editar Sistema' : 'Novo Sistema'}
-          </DialogTitle>
-          <DialogDescription>
-            {sistema 
-              ? 'Edite as informações do sistema'
-              : 'Registre um novo sistema na organização'
-            }
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
+    <DialogShell
+        open={open}
+        onOpenChange={onClose}
+        title={`${sistema?.id ? "Editar" : "Novo"} Sistema Privilegiado`}
+        icon={Server}
+        size="lg"
+        onSubmit={handleSave}
+      >
+<Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             {/* Upload de Imagem */}
             <FormItem>
@@ -491,7 +485,6 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </DialogShell>
   );
 }

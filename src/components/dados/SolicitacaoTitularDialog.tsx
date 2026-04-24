@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { DialogShell } from "@/components/ui/dialog-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, UserCheck } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -176,15 +176,15 @@ export function SolicitacaoTitularDialog({ isOpen, onClose, onSave, solicitacao 
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {solicitacao?.id ? "Editar Solicitação" : "Nova Solicitação de Titular"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="grid gap-4 py-4">
+    <DialogShell
+        open={isOpen}
+        onOpenChange={onClose}
+        title={`${solicitacao?.id ? "Editar" : "Nova"} Solicitação de Titular`}
+        icon={UserCheck}
+        size="lg"
+        onSubmit={handleSave}
+      >
+<div className="grid gap-4 py-4">
           {/* Dados do Titular - Campos separados */}
           <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
             <h3 className="font-medium text-sm text-muted-foreground">Dados do Titular</h3>
@@ -383,15 +383,6 @@ export function SolicitacaoTitularDialog({ isOpen, onClose, onSave, solicitacao 
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? "Salvando..." : "Salvar"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogShell>
   );
 }

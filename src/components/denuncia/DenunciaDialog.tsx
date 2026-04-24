@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogShell } from '@/components/ui/dialog-shell';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -258,18 +258,16 @@ export function DenunciaDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Denúncia {denuncia.protocolo}
-          </DialogTitle>
-          <DialogDescription>
-            Gerencie e acompanhe esta denúncia
-          </DialogDescription>
-        </DialogHeader>
-
+    <DialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      title={`Denúncia ${denuncia.protocolo}`}
+      description="Gerencie e acompanhe esta denúncia"
+      icon={Shield}
+      size="lg"
+      hideFooter
+      disableShortcuts
+    >
         <Tabs defaultValue="detalhes" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
@@ -538,7 +536,6 @@ export function DenunciaDialog({
             </div>
           </TabsContent>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+    </DialogShell>
   );
 }
