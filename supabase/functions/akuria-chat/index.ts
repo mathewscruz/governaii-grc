@@ -93,6 +93,7 @@ serve(async (req) => {
     const auditorias = auditoriaRes.data || [];
     const documentos = documentosRes.data || [];
     const frameworks = frameworksRes.data || [];
+    const evaluations = evaluationsRes.data || [];
     const contratos = contratosRes.data || [];
     const ativos = ativosRes.data || [];
     const contas = contasRes.data || [];
@@ -101,37 +102,65 @@ serve(async (req) => {
     const planos = planosRes.data || [];
     const fornecedores = fornecedoresRes.data || [];
 
+    // Continuidade de Negócios (BCP/DRP)
+    const [planosBCPRes, tarefasBCPRes, testesBCPRes] = await Promise.all([
+      supabase.from('continuidade_planos').select('id, nome, tipo, status, rto_horas, rpo_horas, proxima_revisao').eq('empresa_id', empresaId),
+      supabase.from('continuidade_tarefas').select('id, status').eq('empresa_id', empresaId),
+      supabase.from('continuidade_testes').select('id, resultado, data_teste').eq('empresa_id', empresaId),
+    ]);
+    const planosBCP = planosBCPRes.data || [];
+    const tarefasBCP = tarefasBCPRes.data || [];
+    const testesBCP = testesBCPRes.data || [];
+
     const now = new Date();
     const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    // Score de conformidade por framework (a partir de evaluations)
+    const frameworkScores = frameworks.map((f: any) => {
+      const evs = evaluations.filter((e: any) => e.framework_id === f.id);
+      if (evs.length === 0) return `${f.nome}: sem avaliações`;
+      const conformes = evs.filter((e: any) => e.conformity_status === 'conforme').length;
+      const score = Math.round((conformes / evs.length) * 100);
+      return `${f.nome}: ${score}% (${conformes}/${evs.length} conformes)`;
+    });
 
     const contextSummary = `
 DADOS DA EMPRESA (use APENAS estes dados, NUNCA invente):
 
 RISCOS (${riscos.length} total):
-- ${riscos.filter(r => ['Crítico', 'Muito Alto', 'Alto'].includes(r.nivel_risco_inicial || '')).length} altos/críticos
-- ${riscos.filter(r => !r.status_tratamento || r.status_tratamento === 'pendente').length} sem tratamento
+- ${riscos.filter(r => ['critico', 'muito_alto', 'alto', 'Crítico', 'Muito Alto', 'Alto'].includes(r.nivel_risco_inicial || '')).length} altos/críticos
+- ${riscos.filter(r => r.aceito === true).length} aceitos formalmente
+- ${riscos.filter(r => !r.status || r.status === 'identificado').length} identificados (sem tratamento)
+- ${riscos.filter(r => r.status === 'em_tratamento' || r.status === 'tratado').length} em tratamento ou tratados
 - Itens: ${listItems(riscos, 'nome')}
 
 CONTROLES (${controles.length} total):
 - ${controles.filter(c => c.status === 'ativo').length} ativos
-- ${controles.filter(c => c.proxima_avaliacao && new Date(c.proxima_avaliacao) <= thirtyDays && new Date(c.proxima_avaliacao) >= now).length} vencendo em 30 dias
+- ${controles.filter(c => c.criticidade === 'critico').length} críticos
+- ${controles.filter(c => c.proxima_avaliacao && new Date(c.proxima_avaliacao) <= thirtyDays && new Date(c.proxima_avaliacao) >= now).length} com avaliação vencendo em 30 dias
 - Itens: ${listItems(controles, 'nome')}
 
 INCIDENTES (${incidentes.length} total):
-- ${incidentes.filter(i => ['aberto', 'investigacao', 'em_investigacao'].includes(i.status || '')).length} abertos
+- ${incidentes.filter(i => ['aberto', 'investigacao', 'em_investigacao', 'em_andamento'].includes(i.status || '')).length} abertos/em andamento
 - ${incidentes.filter(i => i.criticidade === 'critica').length} críticos
+- ${incidentes.filter(i => i.status === 'resolvido').length} resolvidos
 - Itens: ${listItems(incidentes, 'titulo')}
 
 DENÚNCIAS (${denuncias.length} total):
-- ${denuncias.filter(d => ['nova', 'em_investigacao'].includes(d.status || '')).length} pendentes
+- ${denuncias.filter(d => ['nova', 'em_investigacao', 'em_analise'].includes(d.status || '')).length} pendentes
+- ${denuncias.filter(d => d.gravidade === 'alta' || d.gravidade === 'critica').length} graves
+- ${denuncias.filter(d => d.anonima === true).length} anônimas
 - Itens: ${listItems(denuncias, 'titulo')}
 
 AUDITORIAS (${auditorias.length} total):
 - ${auditorias.filter(a => a.status === 'em_andamento').length} em andamento
+- ${auditorias.filter(a => a.status === 'concluida').length} concluídas
 - Itens: ${listItems(auditorias, 'nome')}
 
 DOCUMENTOS (${documentos.length} total):
-- ${documentos.filter(d => d.data_validade && new Date(d.data_validade) < now).length} vencidos
+- ${documentos.filter(d => d.data_vencimento && new Date(d.data_vencimento) < now).length} vencidos
+- ${documentos.filter(d => d.data_vencimento && new Date(d.data_vencimento) <= thirtyDays && new Date(d.data_vencimento) >= now).length} vencendo em 30 dias
+- ${documentos.filter(d => d.arquivo_url || d.arquivo_url_externa).length} com arquivo/URL anexado
 - Itens: ${listItems(documentos, 'nome')}
 
 ATIVOS (${ativos.length} total):
@@ -141,18 +170,22 @@ ATIVOS (${ativos.length} total):
 
 CONTAS PRIVILEGIADAS (${contas.length} total):
 - ${contas.filter(c => c.status === 'ativo' || c.status === 'ativa').length} ativas
+- ${contas.filter(c => c.data_expiracao && new Date(c.data_expiracao) <= thirtyDays && new Date(c.data_expiracao) >= now).length} expirando em 30 dias
 - Itens: ${contas.slice(0, 15).map(c => `${c.usuario_beneficiario} (${c.tipo_acesso})`).join(', ') || 'Nenhuma'}
 
-DADOS PESSOAIS (${dados.length} total):
-- ${dados.filter(d => d.sensibilidade === 'critico').length} críticos
+DADOS PESSOAIS - LGPD (${dados.length} total):
+- ${dados.filter(d => d.sensibilidade === 'critico' || d.sensibilidade === 'sensivel').length} sensíveis/críticos
 - Itens: ${listItems(dados, 'nome')}
 
 POLÍTICAS (${politicas.length} total):
-- ${politicas.filter(p => p.status === 'ativo' || p.status === 'vigente').length} vigentes
+- ${politicas.filter(p => p.status === 'ativa' || p.status === 'vigente' || p.status === 'ativo').length} vigentes
+- ${politicas.filter(p => p.data_validade && new Date(p.data_validade) < now).length} vencidas
 - Itens: ${listItems(politicas, 'titulo')}
 
 PLANOS DE AÇÃO (${planos.length} total):
-- ${planos.filter(p => p.status === 'em_andamento' || p.status === 'aberto').length} em andamento
+- ${planos.filter(p => ['em_andamento', 'aberto', 'pendente'].includes(p.status || '')).length} em andamento/abertos
+- ${planos.filter(p => p.status === 'concluido').length} concluídos
+- ${planos.filter(p => p.prazo && new Date(p.prazo) < now && p.status !== 'concluido').length} atrasados
 - Itens: ${listItems(planos, 'titulo')}
 
 FORNECEDORES (${fornecedores.length} total):
@@ -160,10 +193,20 @@ FORNECEDORES (${fornecedores.length} total):
 - Itens: ${listItems(fornecedores, 'nome')}
 
 CONTRATOS (${contratos.length} total):
+- ${contratos.filter(c => c.status === 'ativo').length} ativos
 - ${contratos.filter(c => c.data_fim && new Date(c.data_fim) <= thirtyDays && new Date(c.data_fim) >= now).length} vencendo em 30 dias
-- Itens: ${listItems(contratos, 'nome_contrato')}
+- Valor total contratado: R$ ${contratos.reduce((s, c) => s + (Number(c.valor) || 0), 0).toLocaleString('pt-BR')}
+- Itens: ${listItems(contratos, 'nome')}
 
-FRAMEWORKS: ${frameworks.map(f => `${f.nome}: ${f.score_atual || 0}%`).join(', ') || 'Nenhum configurado'}
+CONTINUIDADE DE NEGÓCIOS - BCP/DRP (${planosBCP.length} planos):
+- ${planosBCP.filter(p => p.status === 'ativo').length} planos ativos
+- ${planosBCP.filter(p => p.status === 'em_revisao').length} em revisão
+- ${tarefasBCP.filter(t => t.status === 'pendente').length} tarefas pendentes
+- ${testesBCP.length} testes registrados (${testesBCP.filter(t => t.resultado === 'aprovado').length} aprovados)
+- Itens: ${listItems(planosBCP, 'nome')}
+
+FRAMEWORKS DE COMPLIANCE (${frameworks.length}): 
+${frameworkScores.length > 0 ? frameworkScores.join(' | ') : 'Nenhum framework com avaliações'}
     `.trim();
 
     const systemPrompt = `Você é a AkurIA, assistente inteligente de GRC (Governança, Risco e Compliance) da plataforma Akuris.
