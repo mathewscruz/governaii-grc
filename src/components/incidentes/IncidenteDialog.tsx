@@ -218,12 +218,14 @@ export function IncidenteDialog({ incidente, onSuccess, trigger, externalOpen, o
     }
   };
 
-  // Tab states based on validation
+  // 'complete' apenas com campos sem default preenchidos (tipo_incidente/criticidade têm defaults).
   const identState: WizardTabState =
     errors.titulo || errors.tipo_incidente || errors.criticidade
       ? 'error'
-      : watched.titulo && watched.tipo_incidente && watched.criticidade
+      : watched.titulo && watched.descricao
       ? 'complete'
+      : watched.titulo
+      ? 'partial'
       : 'pending';
   const detectState: WizardTabState = watched.origem_deteccao || watched.responsavel_deteccao || watched.data_ocorrencia ? 'complete' : 'pending';
   const impactoState: WizardTabState = watched.impacto_estimado || watched.dados_afetados ? 'complete' : 'pending';
