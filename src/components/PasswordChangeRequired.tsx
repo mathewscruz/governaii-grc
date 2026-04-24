@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { AlertTriangle, Eye, EyeOff, Check, X } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { logger } from '@/lib/logger';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PasswordChangeRequiredProps {
   open: boolean;
@@ -16,7 +17,7 @@ interface PasswordChangeRequiredProps {
 }
 
 // Função para calcular força da senha
-const calculatePasswordStrength = (password: string): { score: number; label: string; color: string } => {
+const calculatePasswordStrength = (password: string, t: (k: string) => string): { score: number; label: string; color: string } => {
   let score = 0;
   
   if (password.length >= 6) score += 20;
@@ -26,11 +27,11 @@ const calculatePasswordStrength = (password: string): { score: number; label: st
   if (/[0-9]/.test(password)) score += 15;
   if (/[^a-zA-Z0-9]/.test(password)) score += 15;
 
-  if (score <= 20) return { score, label: 'Muito fraca', color: 'bg-red-500' };
-  if (score <= 40) return { score, label: 'Fraca', color: 'bg-orange-500' };
-  if (score <= 60) return { score, label: 'Regular', color: 'bg-yellow-500' };
-  if (score <= 80) return { score, label: 'Boa', color: 'bg-blue-500' };
-  return { score, label: 'Forte', color: 'bg-green-500' };
+  if (score <= 20) return { score, label: t('passwordChange.strengthVeryWeak'), color: 'bg-red-500' };
+  if (score <= 40) return { score, label: t('passwordChange.strengthWeak'), color: 'bg-orange-500' };
+  if (score <= 60) return { score, label: t('passwordChange.strengthFair'), color: 'bg-yellow-500' };
+  if (score <= 80) return { score, label: t('passwordChange.strengthGood'), color: 'bg-blue-500' };
+  return { score, label: t('passwordChange.strengthStrong'), color: 'bg-green-500' };
 };
 
 const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, onPasswordChanged }) => {
