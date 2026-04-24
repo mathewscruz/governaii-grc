@@ -4,9 +4,11 @@ import { CheckCircle2, Loader2, LogIn } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import logoImage from '@/assets/akuris-logo.png';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const CheckoutSuccess = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [countdown, setCountdown] = useState(5);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
@@ -17,8 +19,8 @@ const CheckoutSuccess = () => {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated === null) return; // still checking
-    if (!isAuthenticated) return; // don't auto-redirect if not logged in
+    if (isAuthenticated === null) return;
+    if (!isAuthenticated) return;
 
     const timer = setInterval(() => {
       setCountdown(prev => {
@@ -40,7 +42,7 @@ const CheckoutSuccess = () => {
         <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
           <CheckCircle2 className="w-8 h-8 text-green-400" />
         </div>
-        <h1 className="text-2xl font-bold text-white">Assinatura confirmada!</h1>
+        <h1 className="text-2xl font-bold text-white">{t('checkoutSuccessPage.title')}</h1>
 
         {isAuthenticated === null && (
           <Loader2 className="w-5 h-5 text-primary animate-spin mx-auto" />
@@ -49,7 +51,7 @@ const CheckoutSuccess = () => {
         {isAuthenticated === true && (
           <>
             <p className="text-white/50 text-sm">
-              Sua conta está pronta. Você será redirecionado para o dashboard em {countdown} segundos...
+              {t('checkoutSuccessPage.redirectMessage', { seconds: countdown })}
             </p>
             <Loader2 className="w-5 h-5 text-primary animate-spin mx-auto" />
           </>
@@ -58,14 +60,11 @@ const CheckoutSuccess = () => {
         {isAuthenticated === false && (
           <>
             <p className="text-white/50 text-sm">
-              Sua assinatura foi confirmada com sucesso! Faça login para acessar o sistema.
+              {t('checkoutSuccessPage.notLoggedMessage')}
             </p>
-            <Button
-              onClick={() => navigate('/auth')}
-              className="gap-2"
-            >
+            <Button onClick={() => navigate('/auth')} className="gap-2">
               <LogIn className="w-4 h-4" />
-              Fazer login
+              {t('checkoutSuccessPage.loginButton')}
             </Button>
           </>
         )}

@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Zap, Shield } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { formatDate } from '@/lib/i18n-format';
 
 interface ChangelogItem {
   type: 'feature' | 'improvement' | 'fix';
@@ -20,18 +22,19 @@ interface ChangelogEntry {
   created_at: string;
 }
 
-const typeConfig = {
-  feature: { label: 'Novo', variant: 'default' as const },
-  improvement: { label: 'Melhoria', variant: 'secondary' as const },
-  fix: { label: 'Correção', variant: 'outline' as const },
-};
-
 const SEEN_KEY = 'changelog_last_seen_version';
 
 export function ChangelogPopover() {
+  const { t, locale } = useLanguage();
   const [entries, setEntries] = useState<ChangelogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasNew, setHasNew] = useState(false);
+
+  const typeConfig = {
+    feature: { label: t('changelog.feature'), variant: 'default' as const },
+    improvement: { label: t('changelog.improvement'), variant: 'secondary' as const },
+    fix: { label: t('changelog.fix'), variant: 'outline' as const },
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -43,7 +46,6 @@ export function ChangelogPopover() {
           .limit(10);
 
         if (error) {
-          console.warn('Changelog not available:', error.message);
           setEntries([]);
         } else {
           const parsed = (data || []).map((d: any) => ({
@@ -73,15 +75,6 @@ export function ChangelogPopover() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    try {
-      const d = new Date(dateStr + 'T00:00:00');
-      return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch {
-      return dateStr;
-    }
-  };
-
   return (
     <Popover onOpenChange={handleOpen}>
       <PopoverTrigger asChild>
@@ -94,8 +87,8 @@ export function ChangelogPopover() {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="p-4 border-b">
-          <h4 className="font-semibold text-sm">Novidades</h4>
-          <p className="text-xs text-muted-foreground">Últimas atualizações da plataforma</p>
+          <h4 className="font-semibold text-sm">{t('changelog.title')}</h4>
+          <p className="text-xs text-muted-foreground">{t('changelog.subtitle')}</p>
         </div>
         <ScrollArea className="h-80">
           <div className="p-4 space-y-6">
@@ -106,13 +99,13 @@ export function ChangelogPopover() {
                 <Skeleton className="h-3 w-3/4" />
               </div>
             ) : entries.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma atualização disponível</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t('changelog.noUpdates')}</p>
             ) : (
               entries.map((entry) => (
                 <div key={entry.id} className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-xs font-mono">{entry.version}</Badge>
-                    <span className="text-xs text-muted-foreground">{formatDate(entry.release_date)}</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(entry.release_date + 'T00:00:00', locale)}</span>
                   </div>
                   <ul className="space-y-2">
                     {entry.items.map((item, i) => {

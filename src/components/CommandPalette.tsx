@@ -58,6 +58,7 @@ const MODULES = [
 
 export function CommandPaletteButton() {
   const [open, setOpen] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <>
@@ -68,7 +69,7 @@ export function CommandPaletteButton() {
         onClick={() => setOpen(true)}
       >
         <Search className="h-3.5 w-3.5" />
-        <span className="text-xs">Buscar...</span>
+        <span className="text-xs">{t('commandPalette.searchButton')}</span>
       </Button>
       <Button
         variant="ghost"
@@ -94,10 +95,10 @@ function CommandPaletteDialog({ open, onOpenChange }: { open: boolean; onOpenCha
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <CommandInput placeholder={t('common.search') + '...'} />
+      <CommandInput placeholder={t('commandPalette.placeholder')} />
       <CommandList>
-        <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
-        <CommandGroup heading="Módulos">
+        <CommandEmpty>{t('commandPalette.noResultsFound')}</CommandEmpty>
+        <CommandGroup heading={t('commandPalette.modules')}>
           {MODULES.map((module) => (
             <CommandItem
               key={module.path}
@@ -111,18 +112,18 @@ function CommandPaletteDialog({ open, onOpenChange }: { open: boolean; onOpenCha
           ))}
         </CommandGroup>
         <CommandSeparator />
-        <CommandGroup heading="Atalhos de Teclado">
+        <CommandGroup heading={t('commandPalette.keyboardShortcuts')}>
           <CommandItem className="flex items-center justify-between cursor-default" value="atalho busca cmd k">
             <div className="flex items-center gap-3">
               <Keyboard className="h-4 w-4 text-muted-foreground" />
-              <span>Busca Rápida</span>
+              <span>{t('commandPalette.quickSearch')}</span>
             </div>
             <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">⌘K</kbd>
           </CommandItem>
           <CommandItem className="flex items-center justify-between cursor-default" value="atalho sidebar ctrl b">
             <div className="flex items-center gap-3">
               <Keyboard className="h-4 w-4 text-muted-foreground" />
-              <span>Abrir/Fechar Menu</span>
+              <span>{t('commandPalette.toggleMenu')}</span>
             </div>
             <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">Ctrl+B</kbd>
           </CommandItem>
