@@ -156,7 +156,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
                   type={showCurrentPassword ? 'text' : 'password'}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Digite sua senha temporária"
+                  placeholder={t('passwordChange.currentPasswordPlaceholder')}
                   className="pr-10"
                 />
                 <button
@@ -174,14 +174,14 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="newPassword">Nova Senha</Label>
+              <Label htmlFor="newPassword">{t('passwordChange.newPassword')}</Label>
               <div className="relative">
                 <Input
                   id="newPassword"
                   type={showNewPassword ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Digite sua nova senha"
+                  placeholder={t('passwordChange.newPasswordPlaceholder')}
                   className="pr-10"
                 />
                 <button
@@ -215,14 +215,14 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+              <Label htmlFor="confirmPassword">{t('passwordChange.confirmPassword')}</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirme sua nova senha"
+                  placeholder={t('passwordChange.confirmPasswordPlaceholder')}
                   className="pr-10"
                 />
                 <button
@@ -241,7 +241,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
 
             {/* Lista de requisitos */}
             <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Requisitos da senha:</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('passwordChange.requirements')}</p>
               <ul className="space-y-1">
                 <li className="flex items-center gap-2 text-sm">
                   {requirements.minLength ? (
@@ -250,7 +250,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
                     <X className="h-4 w-4 text-muted-foreground" />
                   )}
                   <span className={requirements.minLength ? 'text-green-700' : 'text-muted-foreground'}>
-                    Mínimo 6 caracteres
+                    {t('passwordChange.reqMinLength')}
                   </span>
                 </li>
                 <li className="flex items-center gap-2 text-sm">
@@ -260,7 +260,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
                     <X className="h-4 w-4 text-muted-foreground" />
                   )}
                   <span className={requirements.differentFromCurrent ? 'text-green-700' : 'text-muted-foreground'}>
-                    Diferente da senha atual
+                    {t('passwordChange.reqDifferent')}
                   </span>
                 </li>
                 <li className="flex items-center gap-2 text-sm">
@@ -270,7 +270,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
                     <X className="h-4 w-4 text-muted-foreground" />
                   )}
                   <span className={requirements.passwordsMatch ? 'text-green-700' : 'text-muted-foreground'}>
-                    Senhas coincidem
+                    {t('passwordChange.reqMatch')}
                   </span>
                 </li>
               </ul>
@@ -281,7 +281,7 @@ const PasswordChangeRequired: React.FC<PasswordChangeRequiredProps> = ({ open, o
               className="w-full" 
               disabled={loading || !allRequirementsMet}
             >
-              {loading ? 'Alterando senha...' : 'Alterar Senha'}
+              {loading ? t('passwordChange.saving') : t('passwordChange.save')}
             </Button>
           </form>
         </div>
