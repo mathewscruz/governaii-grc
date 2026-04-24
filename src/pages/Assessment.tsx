@@ -875,9 +875,9 @@ export default function Assessment() {
                             <Save className="h-3.5 w-3.5" />
                             Último salvamento
                           </span>
-                          <span className="font-semibold text-slate-700">
+                          <span className="font-semibold text-slate-700 text-right">
                             {savedAt
-                              ? savedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                              ? savedAt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
                               : '—'}
                           </span>
                         </div>
