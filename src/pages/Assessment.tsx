@@ -146,7 +146,7 @@ const TopBar = ({
 }) => {
   const formatTime = (d: Date) => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   return (
-    <header className="relative z-10 border-b border-white/10 bg-white/[0.02] backdrop-blur-sm">
+    <header className="relative z-20 border-b border-white/10 bg-[hsl(230,25%,7%)]">
       <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
         {/* Left: Akuris brand */}
         <div className="flex items-center gap-2 shrink-0">
