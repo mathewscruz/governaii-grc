@@ -181,8 +181,10 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
     saveControleMutation.mutate(formData);
   };
 
-  const identState: WizardTabState = formData.nome ? 'complete' : 'pending';
-  const classifState: WizardTabState = formData.tipo && formData.criticidade ? 'complete' : 'partial';
+  // 'complete' só quando campos sem default foram preenchidos pelo usuário.
+  // tipo/criticidade/status têm defaults hardcoded — não contam isoladamente.
+  const identState: WizardTabState = formData.nome.trim() && formData.codigo.trim() ? 'complete' : (formData.nome.trim() || formData.codigo.trim() ? 'partial' : 'pending');
+  const classifState: WizardTabState = formData.frequencia || formData.area.trim() ? 'complete' : 'pending';
   const respState: WizardTabState = formData.responsavel_id ? 'complete' : 'pending';
   const vincState: WizardTabState = formData.risco_id || formData.auditorias_ids.length > 0 ? 'complete' : 'pending';
 

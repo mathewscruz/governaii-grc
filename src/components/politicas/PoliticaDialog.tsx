@@ -116,9 +116,11 @@ export function PoliticaDialog({ open, onOpenChange, onSave, politica, loading }
   };
 
   // Tab states
-  const identState: WizardTabState = titulo.trim() ? 'complete' : 'pending';
+  // 'complete' apenas com dados sem default (categoria tem default 'seguranca').
+  const identState: WizardTabState = titulo.trim() && descricao.trim() ? 'complete' : (titulo.trim() ? 'partial' : 'pending');
   const conteudoState: WizardTabState = conteudo.trim().length > 50 ? 'complete' : conteudo.trim() ? 'partial' : 'pending';
-  const validacaoState: WizardTabState = requerAceite || requerQuestionario ? 'complete' : 'partial';
+  // requerAceite tem default true — não basta isoladamente; exige questionário ou alteração explícita.
+  const validacaoState: WizardTabState = requerQuestionario ? 'complete' : 'pending';
 
   const tabs: WizardTab[] = useMemo(
     () => [

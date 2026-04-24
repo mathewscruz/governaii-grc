@@ -146,9 +146,10 @@ export function PlanoAcaoDialog({ open, onOpenChange, onSave, plano, loading }: 
     clearDraft();
   };
 
-  const identState: WizardTabState = titulo.trim() ? 'complete' : 'pending';
+  // 'complete' apenas quando há dados além dos defaults (status/prioridade/moduloOrigem têm defaults).
+  const identState: WizardTabState = titulo.trim() && descricao.trim() ? 'complete' : (titulo.trim() ? 'partial' : 'pending');
   const planejamentoState: WizardTabState = responsavelId && prazo ? 'complete' : (responsavelId || prazo ? 'partial' : 'pending');
-  const origemState: WizardTabState = moduloOrigem === 'manual' ? 'complete' : registroOrigemTitulo.trim() ? 'complete' : 'partial';
+  const origemState: WizardTabState = moduloOrigem !== 'manual' && registroOrigemTitulo.trim() ? 'complete' : (observacoes.trim() ? 'complete' : 'pending');
 
   const tabs: WizardTab[] = useMemo(
     () => [

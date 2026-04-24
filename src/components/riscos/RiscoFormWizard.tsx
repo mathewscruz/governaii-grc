@@ -527,7 +527,12 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
       return watchProbabilidade && watchImpacto ? 'completed' : 'pending';
     }
     if (key === 'detalhes') {
-      return watchStatus ? 'completed' : 'pending';
+      // status tem default 'identificado' — exigir pelo menos um campo livre preenchido.
+      const causas = form.getValues('causas');
+      const consequencias = form.getValues('consequencias');
+      const controles = form.getValues('controles_existentes');
+      const ativos = form.getValues('ativos_vinculados');
+      return (causas?.trim() || consequencias?.trim() || controles?.trim() || (ativos && ativos.length > 0)) ? 'completed' : 'pending';
     }
     if (key === 'residual') {
       return watchProbabilidadeResidual && watchImpactoResidual ? 'completed' : 'pending';
