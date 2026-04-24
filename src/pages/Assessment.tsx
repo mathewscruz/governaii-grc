@@ -272,21 +272,14 @@ const WelcomeScreen = ({
                 </div>
               </div>
 
-              <div className={cn(
-                "flex items-center gap-3 p-4 border rounded-xl",
-                overdue
-                  ? "bg-red-50 border-red-200"
-                  : daysLeft <= 3
-                    ? "bg-amber-50 border-amber-200"
-                    : "bg-slate-50 border-slate-200"
-              )}>
+              <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div className={cn(
                   "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
-                  overdue ? "bg-red-100" : daysLeft <= 3 ? "bg-amber-100" : "bg-[hsl(250,80%,60%)]/15"
+                  "bg-[hsl(250,80%,60%)]/15"
                 )}>
                   <Calendar className={cn(
                     "h-5 w-5",
-                    overdue ? "text-red-600" : daysLeft <= 3 ? "text-amber-600" : "text-[hsl(250,80%,55%)]"
+                    "text-[hsl(250,80%,55%)]"
                   )} />
                 </div>
                 <div className="min-w-0">
@@ -296,7 +289,7 @@ const WelcomeScreen = ({
                   </p>
                   <p className={cn(
                     "text-[11px]",
-                    overdue ? "text-red-600" : daysLeft <= 3 ? "text-amber-600" : "text-slate-500"
+                    overdue ? "text-[hsl(250,80%,45%)] font-medium" : "text-slate-500"
                   )}>
                     {overdue ? 'Em atraso' : daysLeft === 0 ? 'Vence hoje' : `Faltam ${daysLeft} dias`}
                   </p>
