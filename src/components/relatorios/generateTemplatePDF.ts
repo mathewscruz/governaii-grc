@@ -83,6 +83,13 @@ export async function fetchTemplateData(templateBase: string, empresaId: string)
     case 'iso27001_auditoria': return fetchISO27001Data(empresaId);
     case 'executivo_trimestral': return fetchExecutivoData(empresaId);
     case 'compliance_geral': return fetchComplianceData(empresaId);
+    case 'continuidade_bcp': return fetchContinuidadeData(empresaId);
+    case 'contratos_geral': return fetchContratosData(empresaId);
+    case 'ativos_inventario': return fetchAtivosData(empresaId);
+    case 'auditoria_interna': return fetchAuditoriaInternaData(empresaId);
+    case 'due_diligence_fornecedores': return fetchDueDiligenceData(empresaId);
+    case 'documentos_governanca': return fetchDocumentosData(empresaId);
+    case 'denuncias_canal_etica': return fetchDenunciasData(empresaId);
     default: return { sections: [] as Section[] };
   }
 }
