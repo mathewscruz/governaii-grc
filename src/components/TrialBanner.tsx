@@ -3,9 +3,11 @@ import { AlertCircle } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { differenceInDays } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const TrialBanner: React.FC = () => {
   const { company } = useAuth();
+  const { t } = useLanguage();
 
   if (!company || company.status_licenca !== 'trial' || !company.data_inicio_trial) {
     return null;
@@ -27,13 +29,13 @@ const TrialBanner: React.FC = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
         <AlertCircle className="h-4 w-4 flex-shrink-0" />
         <p className="text-sm font-medium">
-          {diasRestantes === 1 
-            ? 'Licença Trial - Resta 1 dia de teste.'
-            : `Licença Trial - Restam ${diasRestantes} dias de teste.`
+          {diasRestantes === 1
+            ? t('trialBanner.daysLeftSingular')
+            : t('trialBanner.daysLeftPlural', { days: diasRestantes })
           }
         </p>
         <Link to="/planos" className="text-sm font-semibold underline hover:no-underline ml-1">
-          Ver planos
+          {t('trialBanner.viewPlans')}
         </Link>
       </div>
     </div>
