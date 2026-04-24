@@ -99,30 +99,30 @@ async function buildContextSummary(supabase: any, empresaId: string): Promise<st
     supabase.from('fornecedores').select('id, nome, status, categoria').eq('empresa_id', empresaId),
   ]);
 
-  const riscos = riscosRes.data || [];
-  const controles = controlesRes.data || [];
-  const incidentes = incidentesRes.data || [];
-  const denuncias = denunciasRes.data || [];
-  const auditorias = auditoriaRes.data || [];
-  const documentos = documentosRes.data || [];
-  const frameworks = frameworksRes.data || [];
-  const evaluations = evaluationsRes.data || [];
-  const contratos = contratosRes.data || [];
-  const ativos = ativosRes.data || [];
-  const contas = contasRes.data || [];
-  const dados = dadosRes.data || [];
-  const politicas = politicasRes.data || [];
-  const planos = planosRes.data || [];
-  const fornecedores = fornecedoresRes.data || [];
+  const riscos: any[] = riscosRes.data || [];
+  const controles: any[] = controlesRes.data || [];
+  const incidentes: any[] = incidentesRes.data || [];
+  const denuncias: any[] = denunciasRes.data || [];
+  const auditorias: any[] = auditoriaRes.data || [];
+  const documentos: any[] = documentosRes.data || [];
+  const frameworks: any[] = frameworksRes.data || [];
+  const evaluations: any[] = evaluationsRes.data || [];
+  const contratos: any[] = contratosRes.data || [];
+  const ativos: any[] = ativosRes.data || [];
+  const contas: any[] = contasRes.data || [];
+  const dados: any[] = dadosRes.data || [];
+  const politicas: any[] = politicasRes.data || [];
+  const planos: any[] = planosRes.data || [];
+  const fornecedores: any[] = fornecedoresRes.data || [];
 
   const [planosBCPRes, tarefasBCPRes, testesBCPRes] = await Promise.all([
     supabase.from('continuidade_planos').select('id, nome, tipo, status, rto_horas, rpo_horas, proxima_revisao').eq('empresa_id', empresaId),
     supabase.from('continuidade_tarefas').select('id, status').eq('empresa_id', empresaId),
     supabase.from('continuidade_testes').select('id, resultado, data_teste').eq('empresa_id', empresaId),
   ]);
-  const planosBCP = planosBCPRes.data || [];
-  const tarefasBCP = tarefasBCPRes.data || [];
-  const testesBCP = testesBCPRes.data || [];
+  const planosBCP: any[] = planosBCPRes.data || [];
+  const tarefasBCP: any[] = tarefasBCPRes.data || [];
+  const testesBCP: any[] = testesBCPRes.data || [];
 
   const now = new Date();
   const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
