@@ -64,7 +64,7 @@ const handler = async (req: Request): Promise<Response> => {
         });
 
         if (response.error) {
-          throw new Error(`Erro ao enviar email: ${response.(error instanceof Error ? error.message : String(error))}`);
+          throw new Error(`Erro ao enviar email: ${response.error.message || String(response.error)}`);
         }
 
         successCount++;
