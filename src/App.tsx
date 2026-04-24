@@ -73,22 +73,23 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
-          <Suspense fallback={<div className="min-h-screen bg-background" />}>
           <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/definir-senha" element={<DefinirSenha />} />
-            <Route path="/assessment/:token" element={<Assessment />} />
-            {/* Rotas antigas para compatibilidade */}
-            <Route path="/denuncia/externa/:token" element={<DenunciaExternaRedirect />} />
-            {/* Novas rotas amigáveis para canal de denúncias */}
-            <Route path="/:empresa/denuncia" element={<DenunciaMenu />} />
-            <Route path="/:empresa/denuncia/registrar" element={<DenunciaFormulario />} />
-            <Route path="/:empresa/denuncia/consulta" element={<DenunciaConsulta />} />
-            <Route path="/404" element={<NotFound />} />
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
-            <Route path="/registro" element={<Registro />} />
-            <Route path="/checkout-success" element={<CheckoutSuccess />} />
+            {/* Rotas públicas com Suspense individual (não tem sidebar para preservar) */}
+            <Route path="/auth" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><Auth /></Suspense>} />
+            <Route path="/definir-senha" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DefinirSenha /></Suspense>} />
+            <Route path="/assessment/:token" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><Assessment /></Suspense>} />
+            <Route path="/denuncia/externa/:token" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DenunciaExternaRedirect /></Suspense>} />
+            <Route path="/:empresa/denuncia" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DenunciaMenu /></Suspense>} />
+            <Route path="/:empresa/denuncia/registrar" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DenunciaFormulario /></Suspense>} />
+            <Route path="/:empresa/denuncia/consulta" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DenunciaConsulta /></Suspense>} />
+            <Route path="/404" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><NotFound /></Suspense>} />
+            <Route path="/" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><LandingPage /></Suspense>} />
+            <Route path="/politica-privacidade" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><PoliticaPrivacidade /></Suspense>} />
+            <Route path="/registro" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><Registro /></Suspense>} />
+            <Route path="/checkout-success" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><CheckoutSuccess /></Suspense>} />
+            <Route path="/review/:token" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><ReviewExterna /></Suspense>} />
+
+            {/* Rotas autenticadas - Layout traz seu próprio Suspense interno para preservar sidebar/header */}
             <Route path="/dashboard" element={
               <Layout>
                 <ProtectedRoute moduleName="dashboard" fallbackToRoleCheck={false}>
@@ -176,7 +177,6 @@ function App() {
                 </ProtectedRoute>
               </Layout>
             } />
-            {/* Redirect antiga rota de aderência para frameworks */}
             <Route path="/gap-analysis/avaliacao-aderencia" element={<Navigate to="/gap-analysis/frameworks" replace />} />
             <Route path="/governanca" element={
               <Layout>
@@ -192,7 +192,6 @@ function App() {
                 </ProtectedRoute>
               </Layout>
             } />
-            {/* Redirects para rotas antigas */}
             <Route path="/controles" element={<Navigate to="/governanca?tab=controles" replace />} />
             <Route path="/auditorias" element={<Navigate to="/governanca?tab=auditorias" replace />} />
             <Route path="/contratos" element={
@@ -230,7 +229,6 @@ function App() {
                 </ProtectedRoute>
               </Layout>
             } />
-            {/* Redirect antigo /dados para /privacidade */}
             <Route path="/dados" element={<Navigate to="/privacidade" replace />} />
             <Route path="/due-diligence" element={
               <Layout>
@@ -239,7 +237,6 @@ function App() {
                 </ProtectedRoute>
               </Layout>
             } />
-            <Route path="/review/:token" element={<ReviewExterna />} />
             <Route path="/revisao-acessos" element={
               <Layout>
                 <ProtectedRoute moduleName="contas-privilegiadas" fallbackToRoleCheck={false}>
@@ -261,9 +258,8 @@ function App() {
                 </ProtectedRoute>
               </Layout>
             } />
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><NotFound /></Suspense>} />
           </Routes>
-          </Suspense>
         </Router>
         
         <SonnerToaster />
