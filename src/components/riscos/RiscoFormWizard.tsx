@@ -82,16 +82,14 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
   const [selectedMatriz, setSelectedMatriz] = useState<Matriz | null>(null);
   const [anexosAceite, setAnexosAceite] = useState<any[]>([]);
   
-  const [openSections, setOpenSections] = useState({
-    basico: true,
-    avaliacao: true,
-    detalhes: true,
-    residual: false,
-    aceite: false
-  });
+  const TABS = ['identificacao', 'avaliacao', 'detalhes', 'residual', 'aceite'] as const;
+  type TabKey = typeof TABS[number];
+  const [activeTab, setActiveTab] = useState<TabKey>('identificacao');
 
-  const toggleSection = (section: keyof typeof openSections) => {
-    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  const goToTab = (direction: 'prev' | 'next') => {
+    const idx = TABS.indexOf(activeTab);
+    const nextIdx = direction === 'next' ? Math.min(idx + 1, TABS.length - 1) : Math.max(idx - 1, 0);
+    setActiveTab(TABS[nextIdx]);
   };
 
   const form = useForm<RiscoForm>({
