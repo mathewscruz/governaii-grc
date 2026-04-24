@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
 import { Plus, BookOpen, Users, CheckCircle2, Clock, Pencil, Trash2, Send, Eye, Award, BarChart3, MoreHorizontal, Download } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const categoriaLabels: Record<string, string> = {
   seguranca: 'Segurança', privacidade: 'Privacidade', compliance: 'Compliance',
@@ -33,6 +34,7 @@ const statusConfig: Record<string, { label: string; variant: any }> = {
 };
 
 export default function Politicas() {
+  const { t } = useLanguage();
   const { user, profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
@@ -268,8 +270,8 @@ export default function Politicas() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Políticas e Treinamentos"
-        description="Gerencie políticas corporativas, aceites e questionários de validação"
+        title={t('modules.politicas.title')}
+        description={t('modules.politicas.description')}
         breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Políticas e Treinamentos' }]}
         actions={
           <div className="flex gap-2">

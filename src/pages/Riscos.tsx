@@ -36,6 +36,7 @@ import { TrilhaAuditoriaRiscos } from '@/components/riscos/TrilhaAuditoriaRiscos
 import { HistoricoAvaliacoesDialog } from '@/components/riscos/HistoricoAvaliacoesDialog';
 import { AprovacaoRiscoDialog } from '@/components/riscos/AprovacaoRiscoDialog';
 import { exportRiscosPDF, exportRiscosCSV } from '@/components/riscos/ExportRiscosPDF';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Risco {
   id: string;
@@ -76,6 +77,7 @@ interface MatrizConfig {
 
 export function Riscos() {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const location = useLocation();
   const { data: stats, refetch: refetchStats } = useRiscosStats();
@@ -612,8 +614,8 @@ export function Riscos() {
     <TooltipProvider>
       <div className="space-y-6">
         <PageHeader
-          title="Gestão de Riscos"
-          description="Identifique, avalie e monitore riscos organizacionais de forma estruturada"
+          title={t('modules.riscos.title')}
+          description={t('modules.riscos.description')}
         />
 
         {/* KPI Cards */}
@@ -625,7 +627,7 @@ export function Riscos() {
             return (
               <>
                 <StatCard
-                  title="Total de Riscos"
+                  title={t('modules.riscos.total')}
                   value={stats?.total || 0}
                   description={`${stats?.criticos || 0} críticos, ${stats?.altos || 0} altos`}
                   icon={

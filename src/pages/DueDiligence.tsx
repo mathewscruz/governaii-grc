@@ -6,8 +6,10 @@ import { FornecedoresManager } from '@/components/due-diligence/FornecedoresMana
 import { DueDiligenceDashboard } from '@/components/due-diligence/DueDiligenceDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/ui/page-header';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function DueDiligence() {
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('fornecedores');
   const [assessmentFilter, setAssessmentFilter] = useState<{ fornecedorId?: string; fornecedorNome?: string } | null>(null);
@@ -42,8 +44,8 @@ export default function DueDiligence() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Due Diligence"
-        description="Gerencie avaliações digitais de fornecedores com questionários personalizados e scoring automático"
+        title={t('modules.dueDiligence.title')}
+        description={t('modules.dueDiligence.description')}
       />
 
       {/* Dashboard always visible on top */}
@@ -51,9 +53,9 @@ export default function DueDiligence() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="fornecedores">Fornecedores</TabsTrigger>
-          <TabsTrigger value="assessments">Avaliações</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="fornecedores">{t('modules.dueDiligence.suppliers')}</TabsTrigger>
+          <TabsTrigger value="assessments">{t('modules.dueDiligence.newAssessment')}</TabsTrigger>
+          <TabsTrigger value="templates">{t('modules.dueDiligence.templates')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="fornecedores" className="space-y-6">

@@ -28,6 +28,7 @@ import { RenovarDocumentoDialog } from '@/components/documentos/RenovarDocumento
 import { HistoricoVersoesDialog } from '@/components/documentos/HistoricoVersoesDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/components/AuthProvider';
 import { logger } from '@/lib/logger';
@@ -69,6 +70,7 @@ interface Categoria {
 }
 
 export default function Documentos() {
+  const { t } = useLanguage();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useAuth();
@@ -409,8 +411,8 @@ export default function Documentos() {
     return (
       <div className="space-y-6">
         <PageHeader
-          title="Documentos"
-          description="Gerencie documentos, políticas e procedimentos da empresa de forma centralizada"
+          title={t('modules.documentos.title')}
+          description={t('modules.documentos.description')}
         />
         <PageSkeleton />
       </div>
@@ -421,8 +423,8 @@ export default function Documentos() {
     <TooltipProvider>
       <div className="space-y-6">
           <PageHeader
-          title="Documentos"
-          description="Gerencie documentos, políticas e procedimentos da empresa de forma centralizada"
+          title={t('modules.documentos.title')}
+          description={t('modules.documentos.description')}
         />
 
         {/* KPI Cards */}

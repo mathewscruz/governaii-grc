@@ -26,8 +26,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function RevisaoAcessos() {
+  const { t } = useLanguage();
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const { data: stats, loading: statsLoading } = useReviewStats();
@@ -298,8 +300,8 @@ export default function RevisaoAcessos() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Revisão de Acessos"
-        description="Gerencie revisões periódicas de acessos privilegiados"
+        title={t('modules.revisaoAcessos.title')}
+        description={t('modules.revisaoAcessos.description')}
       />
 
       <div className="grid gap-4 md:grid-cols-4">

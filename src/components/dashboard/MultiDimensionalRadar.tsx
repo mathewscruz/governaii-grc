@@ -114,17 +114,11 @@ export const MultiDimensionalRadar = () => {
   }
 
   const StatusIcon = statusConfig.icon;
-  const modulesWithData = data?.filter(d => d.hasData).length || 0;
 
   return (
     <Card className="h-full w-full flex flex-col overflow-hidden min-w-0">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold">{t('dashboard.maturity')}</CardTitle>
-          <Badge variant="outline" className="text-[10px]">
-            {modulesWithData}/{data?.length || 0} {t('dashboard.modules') || 'módulos'}
-          </Badge>
-        </div>
+        <CardTitle className="text-sm font-semibold">{t('dashboard.maturity')}</CardTitle>
         <div className="flex items-center gap-2 mt-2">
           <span className={`text-2xl font-bold ${statusConfig.color}`}>{averageScore}%</span>
           <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />

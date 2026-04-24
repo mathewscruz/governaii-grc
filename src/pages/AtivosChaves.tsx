@@ -18,6 +18,7 @@ import { useChavesStats } from '@/hooks/useChavesStats';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { formatDateOnly } from '@/lib/date-utils';
 import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/text-utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ChaveCriptografica {
   id: string;
@@ -41,6 +42,7 @@ interface ChaveCriptografica {
 }
 
 export default function AtivosChaves() {
+  const { t } = useLanguage();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedChave, setSelectedChave] = useState<ChaveCriptografica | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -386,8 +388,8 @@ export default function AtivosChaves() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Chaves Criptográficas"
-        description="Gerencie e monitore chaves criptográficas e rotações"
+        title={t('modules.chaves.title')}
+        description={t('modules.chaves.description')}
       />
 
       {/* StatCards */}

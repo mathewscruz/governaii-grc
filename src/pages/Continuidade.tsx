@@ -18,6 +18,7 @@ import { exportCSV } from '@/lib/csv-utils';
 import { PlanoDialog } from '@/components/continuidade/PlanoDialog';
 import { PlanoDetalheDialog } from '@/components/continuidade/PlanoDetalheDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const statusMap: Record<string, { label: string; variant: any }> = {
   rascunho: { label: 'Rascunho', variant: 'secondary' },
@@ -33,6 +34,7 @@ const tipoMap: Record<string, string> = {
 };
 
 export default function Continuidade() {
+  const { t } = useLanguage();
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const { toast } = useToast();

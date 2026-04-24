@@ -8,8 +8,10 @@ import { useDenunciasStats } from '@/hooks/useDenunciasStats';
 import { Shield, AlertTriangle, Clock, CheckCircle, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Denuncia() {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const [denunciaIdToOpen, setDenunciaIdToOpen] = useState<string | null>(null);
@@ -27,8 +29,8 @@ export default function Denuncia() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Canal de Denúncia"
-        description="Gerencie denúncias e mantenha um ambiente ético e transparente"
+        title={t('modules.denuncia.title')}
+        description={t('modules.denuncia.description')}
         actions={
           <Button variant="outline" onClick={() => setRelatoriosOpen(true)}>
             <BarChart3 className="h-4 w-4 mr-2" />

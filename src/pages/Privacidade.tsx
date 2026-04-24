@@ -24,8 +24,10 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
 import { formatStatus, getSensibilidadeColor, getItemStatusColor, getWorkflowStatusColor } from '@/lib/text-utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Privacidade() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { empresaId } = useEmpresaId();
   const queryClient = useQueryClient();
@@ -510,8 +512,8 @@ export default function Privacidade() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Privacidade"
-        description="Proteção de dados pessoais, mapeamento e ROPA (LGPD)"
+        title={t('modules.privacidade.title')}
+        description={t('modules.privacidade.description')}
       />
 
       {/* KPI Cards */}

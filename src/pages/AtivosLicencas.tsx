@@ -18,6 +18,7 @@ import { useLicencasStats } from '@/hooks/useLicencasStats';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { formatDateOnly } from '@/lib/date-utils';
 import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/text-utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Licenca {
   id: string;
@@ -38,6 +39,7 @@ interface Licenca {
 }
 
 export default function AtivosLicencas() {
+  const { t } = useLanguage();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedLicenca, setSelectedLicenca] = useState<Licenca | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -367,8 +369,8 @@ export default function AtivosLicencas() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Licenças de Software"
-        description="Gerencie e monitore licenças e suas renovações"
+        title={t('modules.licencas.title')}
+        description={t('modules.licencas.description')}
       />
 
       {/* StatCards */}

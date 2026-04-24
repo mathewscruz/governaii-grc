@@ -23,6 +23,7 @@ import TrilhaAuditoriaAtivos from '@/components/ativos/TrilhaAuditoriaAtivos';
 import { formatDateOnly } from '@/lib/date-utils';
 import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/text-utils';
 import { logger } from '@/lib/logger';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Ativo {
   id: string;
@@ -120,6 +121,7 @@ const initialFormData = {
 };
 
 const Ativos = () => {
+  const { t } = useLanguage();
   const { profile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -475,8 +477,8 @@ const Ativos = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Gestão de Ativos"
-        description="Gerencie todos os ativos da organização de forma centralizada"
+        title={t('modules.ativos.title')}
+        description={t('modules.ativos.description')}
         actions={
           <div className="flex items-center gap-2">
             {azureIntegration && (
@@ -485,7 +487,7 @@ const Ativos = () => {
                   <TooltipTrigger asChild>
                     <Button variant="outline" onClick={handleAzureSync} disabled={azureSyncing} className="gap-2">
                       {azureSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudCog className="h-4 w-4" />}
-                      Sincronizar Azure
+                      Azure Sync
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent><p>Sincronizar dispositivos do Microsoft Intune/Azure AD</p></TooltipContent>
@@ -494,7 +496,7 @@ const Ativos = () => {
             )}
             <Button variant="outline" size="sm" onClick={() => setTrilhaDialog({ open: true })}>
               <History className="h-4 w-4 mr-2" />
-              Trilha de Auditoria
+              {t('modules.ativos.auditTrail')}
             </Button>
           </div>
         }
@@ -512,7 +514,7 @@ const Ativos = () => {
       {/* Cards de Indicadores */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total de Ativos"
+          title={t('modules.ativos.total')}
           value={stats?.total || 0}
           description={`Críticos: ${stats?.criticos || 0} | Altos: ${stats?.altos || 0}`}
           icon={<Server className="h-4 w-4 text-muted-foreground" />}
