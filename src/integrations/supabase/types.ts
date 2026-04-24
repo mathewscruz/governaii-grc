@@ -6973,6 +6973,36 @@ export type Database = {
         }
         Relationships: []
       }
+      denuncias_configuracoes_publicas: {
+        Row: {
+          ativo: boolean | null
+          empresa_id: string | null
+          id: string | null
+          permitir_anonimas: boolean | null
+          politica_privacidade: string | null
+          requerer_email: boolean | null
+          texto_apresentacao: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          empresa_id?: string | null
+          id?: string | null
+          permitir_anonimas?: boolean | null
+          politica_privacidade?: string | null
+          requerer_email?: boolean | null
+          texto_apresentacao?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          empresa_id?: string | null
+          id?: string | null
+          permitir_anonimas?: boolean | null
+          politica_privacidade?: string | null
+          requerer_email?: boolean | null
+          texto_apresentacao?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_default_permissions_for_user: {
@@ -7136,6 +7166,7 @@ export type Database = {
       }
       risco_pertence_empresa: { Args: { risco_id: string }; Returns: boolean }
       ropa_pertence_empresa: { Args: { ropa_id: string }; Returns: boolean }
+      validate_denuncia_token: { Args: { p_token: string }; Returns: string }
     }
     Enums: {
       app_role: "user" | "admin" | "super_admin"
