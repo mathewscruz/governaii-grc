@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,13 +8,14 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { CheckCircle, FileText, ArrowRight, ArrowLeft, AlertCircle, Upload, Building2, Check } from 'lucide-react';
+import { CheckCircle, FileText, ArrowRight, ArrowLeft, AlertCircle, Upload, Building2, Check, Clock, Calendar, ListChecks, ShieldCheck, Save, Sparkles, ChevronRight, FileQuestion, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
 
-// ETAPA 5: Sistema de logs para debugging
 const assessmentLogger = {
   info: (message: string, data?: any) => {
     logger.info(`[Assessment] ${message}`, { module: 'Assessment', details: data });
@@ -111,19 +112,235 @@ const AssessmentShell = ({ children }: { children: React.ReactNode }) => (
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[radial-gradient(ellipse_at_center,hsl(250,80%,55%,0.15),transparent_70%)]" />
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(ellipse_at_center,hsl(220,80%,40%,0.08),transparent_70%)]" />
     </div>
-    {/* Akuris logo header */}
-    <div className="relative z-10 flex justify-center pt-8 pb-4">
-      <img src="/akuris-logo.png" alt="Akuris" className="h-10 w-auto opacity-90" />
-    </div>
     <div className="relative z-10">
       {children}
     </div>
     {/* Footer */}
     <div className="relative z-10 text-center pb-6 pt-8">
-      <p className="text-xs text-white/30">Powered by <span className="font-semibold text-white/50">Akuris</span></p>
+      <div className="flex items-center justify-center gap-2 text-xs text-white/30">
+        <ShieldCheck className="h-3 w-3" />
+        <span>Plataforma segura — Powered by</span>
+        <span className="font-semibold text-white/50">Akuris</span>
+      </div>
     </div>
   </div>
 );
+
+// === Top Bar (A + H kept) ===
+const TopBar = ({
+  assessment,
+  logoError,
+  logoLoading,
+  onLogoLoad,
+  onLogoError,
+  savedAt,
+  saving,
+}: {
+  assessment: AssessmentData;
+  logoError: boolean;
+  logoLoading: boolean;
+  onLogoLoad: () => void;
+  onLogoError: () => void;
+  savedAt: Date | null;
+  saving: boolean;
+}) => {
+  const formatTime = (d: Date) => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return (
+    <header className="relative z-10 border-b border-white/10 bg-white/[0.02] backdrop-blur-sm">
+      <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+        {/* Left: Akuris brand */}
+        <div className="flex items-center gap-2 shrink-0">
+          <img src="/akuris-logo.png" alt="Akuris" className="h-7 w-auto opacity-90" />
+        </div>
+
+        {/* Center: Company + template */}
+        <div className="flex items-center gap-3 min-w-0 flex-1 justify-center">
+          {assessment.empresa.logo_url && !logoError ? (
+            <div className="relative h-8 w-8 shrink-0">
+              {logoLoading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[hsl(250,80%,60%)]"></div>
+                </div>
+              )}
+              <img
+                src={assessment.empresa.logo_url}
+                alt={`Logo ${assessment.empresa.nome}`}
+                className={cn('h-8 w-8 object-contain rounded', logoLoading ? 'opacity-0' : 'opacity-100', 'transition-opacity duration-300')}
+                onLoad={onLogoLoad}
+                onError={onLogoError}
+              />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-8 w-8 bg-white/10 rounded shrink-0">
+              <Building2 className="h-4 w-4 text-white/40" />
+            </div>
+          )}
+          <div className="min-w-0 hidden sm:block">
+            <p className="text-xs text-white/40 leading-tight">Solicitado por</p>
+            <p className="text-sm text-white font-medium leading-tight truncate">{assessment.empresa.nome}</p>
+          </div>
+        </div>
+
+        {/* Right: Save indicator */}
+        <div className="flex items-center gap-2 shrink-0 text-xs">
+          {saving ? (
+            <span className="flex items-center gap-1.5 text-white/50">
+              <div className="animate-spin rounded-full h-3 w-3 border border-white/30 border-t-white/80"></div>
+              <span className="hidden sm:inline">Salvando...</span>
+            </span>
+          ) : savedAt ? (
+            <span className="flex items-center gap-1.5 text-emerald-400/80">
+              <Save className="h-3 w-3" />
+              <span className="hidden sm:inline">Salvo às {formatTime(savedAt)}</span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-white/40">
+              <Save className="h-3 w-3" />
+              <span className="hidden sm:inline">Auto-save ativo</span>
+            </span>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+};
+
+// === Welcome Screen (B) ===
+const WelcomeScreen = ({
+  assessment,
+  totalQuestions,
+  totalRequired,
+  onStart,
+}: {
+  assessment: AssessmentData;
+  totalQuestions: number;
+  totalRequired: number;
+  onStart: () => void;
+}) => {
+  const estimatedMinutes = Math.max(5, Math.round(totalQuestions * 0.75));
+  const deadline = new Date(assessment.data_limite);
+  const now = new Date();
+  const daysLeft = Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  const overdue = deadline.getTime() < now.getTime();
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <div className="space-y-6 animate-fade-in">
+        {/* Hero */}
+        <Card className="bg-white/5 backdrop-blur-sm border-white/10 shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-br from-[hsl(250,80%,60%)]/20 via-transparent to-[hsl(250,80%,60%)]/5 p-8 sm:p-10">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="h-4 w-4 text-[hsl(250,80%,70%)]" />
+              <span className="text-xs font-medium uppercase tracking-wider text-[hsl(250,80%,70%)]">
+                Questionário de Due Diligence
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 leading-tight">
+              Olá, {assessment.fornecedor_nome.split(' ')[0]} 👋
+            </h1>
+            <p className="text-base text-white/70 leading-relaxed max-w-xl">
+              <span className="text-white font-medium">{assessment.empresa.nome}</span> precisa
+              de algumas informações sobre sua empresa para concluir o processo de avaliação.
+              Suas respostas são confidenciais e serão analisadas pela equipe responsável.
+            </p>
+          </div>
+
+          <CardContent className="p-6 sm:p-8 border-t border-white/10">
+            {/* Stats grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+              <div className="flex items-center gap-3 p-4 bg-white/[0.03] border border-white/10 rounded-xl">
+                <div className="h-10 w-10 rounded-lg bg-[hsl(250,80%,60%)]/15 flex items-center justify-center shrink-0">
+                  <ListChecks className="h-5 w-5 text-[hsl(250,80%,70%)]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-white/50">Perguntas</p>
+                  <p className="text-base font-semibold text-white">{totalQuestions} no total</p>
+                  {totalRequired > 0 && (
+                    <p className="text-[11px] text-white/40">{totalRequired} obrigatórias</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-4 bg-white/[0.03] border border-white/10 rounded-xl">
+                <div className="h-10 w-10 rounded-lg bg-[hsl(250,80%,60%)]/15 flex items-center justify-center shrink-0">
+                  <Clock className="h-5 w-5 text-[hsl(250,80%,70%)]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-white/50">Tempo estimado</p>
+                  <p className="text-base font-semibold text-white">~{estimatedMinutes} min</p>
+                  <p className="text-[11px] text-white/40">Pode pausar e voltar</p>
+                </div>
+              </div>
+
+              <div className={cn(
+                "flex items-center gap-3 p-4 border rounded-xl",
+                overdue
+                  ? "bg-red-500/5 border-red-500/30"
+                  : daysLeft <= 3
+                    ? "bg-amber-500/5 border-amber-500/30"
+                    : "bg-white/[0.03] border-white/10"
+              )}>
+                <div className={cn(
+                  "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
+                  overdue ? "bg-red-500/15" : daysLeft <= 3 ? "bg-amber-500/15" : "bg-[hsl(250,80%,60%)]/15"
+                )}>
+                  <Calendar className={cn(
+                    "h-5 w-5",
+                    overdue ? "text-red-400" : daysLeft <= 3 ? "text-amber-400" : "text-[hsl(250,80%,70%)]"
+                  )} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-white/50">Prazo</p>
+                  <p className="text-base font-semibold text-white">
+                    {deadline.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                  </p>
+                  <p className={cn(
+                    "text-[11px]",
+                    overdue ? "text-red-400" : daysLeft <= 3 ? "text-amber-400" : "text-white/40"
+                  )}>
+                    {overdue ? 'Em atraso' : daysLeft === 0 ? 'Vence hoje' : `Faltam ${daysLeft} dias`}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="space-y-2 mb-6">
+              <h3 className="text-sm font-semibold text-white/80">Antes de começar:</h3>
+              <ul className="space-y-1.5 text-sm text-white/60">
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Suas respostas são <strong className="text-white/80">salvas automaticamente</strong> a cada alteração.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Você pode <strong className="text-white/80">fechar e voltar</strong> a qualquer momento usando o mesmo link.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Algumas perguntas podem solicitar <strong className="text-white/80">evidências</strong> ou anexo de documentos.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Após finalizar, <strong className="text-white/80">não será possível editar</strong> as respostas.</span>
+                </li>
+              </ul>
+            </div>
+
+            <Button
+              onClick={onStart}
+              size="lg"
+              className="w-full bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] hover:from-[hsl(250,80%,55%)] hover:to-[hsl(250,80%,45%)] text-white shadow-lg shadow-[hsl(250,80%,60%)]/20"
+            >
+              Começar questionário
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
 
 export default function Assessment() {
   const { token } = useParams();
@@ -133,13 +350,16 @@ export default function Assessment() {
   const [assessment, setAssessment] = useState<AssessmentData | null>(null);
   const [questions, setQuestions] = useState<QuestionData[]>([]);
   const [responses, setResponses] = useState<Record<string, any>>({});
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(-1); // -1 = welcome screen
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const [logoLoading, setLogoLoading] = useState(true);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [saving, setSaving] = useState(false);
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const questionsPerPage = 5;
   const totalPages = Math.ceil(questions.length / questionsPerPage);
@@ -148,33 +368,38 @@ export default function Assessment() {
     (currentPage + 1) * questionsPerPage
   );
 
+  const isAnswered = useCallback((qId: string) => {
+    const v = responses[qId];
+    return v !== undefined && v !== null && v.toString().trim() !== '';
+  }, [responses]);
+
   const calculateProgress = () => {
     if (questions.length === 0) return 0;
-    const answeredQuestions = questions.filter(q => 
-      responses[q.id] && responses[q.id].toString().trim() !== ''
-    ).length;
+    const answeredQuestions = questions.filter(q => isAnswered(q.id)).length;
     return (answeredQuestions / questions.length) * 100;
   };
 
-  const validateStatusTransition = useCallback((currentStatus: string, newStatus: string): boolean => {
-    const validTransitions = {
-      'enviado': ['em_andamento', 'concluido'],
-      'em_andamento': ['concluido'],
-      'concluido': []
-    };
-    assessmentLogger.info(`Validando transição de status: ${currentStatus} -> ${newStatus}`);
-    if (currentStatus === newStatus) return true;
-    return validTransitions[currentStatus as keyof typeof validTransitions]?.includes(newStatus) || false;
-  }, []);
+  const totalRequired = useMemo(() => questions.filter(q => q.obrigatoria).length, [questions]);
+
+  // Page status for sidebar
+  const pageStatuses = useMemo(() => {
+    const statuses: { answered: number; total: number; required: number; missingRequired: number }[] = [];
+    for (let p = 0; p < totalPages; p++) {
+      const slice = questions.slice(p * questionsPerPage, (p + 1) * questionsPerPage);
+      const answered = slice.filter(q => isAnswered(q.id)).length;
+      const required = slice.filter(q => q.obrigatoria).length;
+      const missingRequired = slice.filter(q => q.obrigatoria && !isAnswered(q.id)).length;
+      statuses.push({ answered, total: slice.length, required, missingRequired });
+    }
+    return statuses;
+  }, [questions, totalPages, isAnswered]);
 
   const handleLogoLoad = useCallback(() => {
-    assessmentLogger.info('Logo carregado com sucesso');
     setLogoLoading(false);
     setLogoError(false);
   }, []);
 
   const handleLogoError = useCallback(() => {
-    assessmentLogger.warn('Erro ao carregar logo da empresa');
     setLogoLoading(false);
     setLogoError(true);
   }, []);
@@ -187,31 +412,25 @@ export default function Assessment() {
 
     try {
       setLoading(true);
-      assessmentLogger.info('Iniciando busca do assessment', { token });
-
       const assessmentData = await supabaseRequest(
         `due_diligence_assessments?select=*&link_token=eq.${token}`,
         { method: 'GET' }
       );
 
       if (!assessmentData || assessmentData.length === 0) {
-        assessmentLogger.error('Assessment não encontrado');
         throw new Error('Assessment não encontrado');
       }
 
       const assessment = assessmentData[0];
-      assessmentLogger.info('Assessment básico carregado', { id: assessment.id, status: assessment.status });
 
       let empresaData = { nome: 'Empresa', logo_url: null };
       try {
-        assessmentLogger.info('Buscando dados da empresa');
         const empresaResponse = await supabaseRequest(
           `empresas?select=nome,logo_url&id=eq.${assessment.empresa_id}`,
           { method: 'GET' }
         );
         if (empresaResponse && empresaResponse.length > 0) {
           empresaData = empresaResponse[0];
-          assessmentLogger.info('Dados da empresa carregados', { nome: empresaData.nome });
         }
       } catch (error) {
         assessmentLogger.warn('Erro ao carregar dados da empresa, usando fallback:', error);
@@ -219,21 +438,18 @@ export default function Assessment() {
 
       let templateData = { nome: 'Assessment', descricao: null };
       try {
-        assessmentLogger.info('Buscando dados do template');
         const templateResponse = await supabaseRequest(
           `due_diligence_templates?select=nome,descricao&id=eq.${assessment.template_id}`,
           { method: 'GET' }
         );
         if (templateResponse && templateResponse.length > 0) {
           templateData = templateResponse[0];
-          assessmentLogger.info('Dados do template carregados', { nome: templateData.nome });
         }
       } catch (error) {
         assessmentLogger.warn('Erro ao carregar dados do template, usando fallback:', error);
       }
 
       if (assessment.status === 'concluido') {
-        assessmentLogger.info('Assessment já concluído');
         setIsFinished(true);
         setAssessment({
           id: assessment.id,
@@ -250,7 +466,6 @@ export default function Assessment() {
       }
 
       if (assessment.status === 'enviado') {
-        assessmentLogger.info('Marcando assessment como em andamento');
         try {
           await supabaseRequest(`due_diligence_assessments?id=eq.${assessment.id}`, {
             method: 'PATCH',
@@ -260,47 +475,32 @@ export default function Assessment() {
             })
           });
           assessment.status = 'em_andamento';
-          assessmentLogger.info('Status atualizado para em_andamento');
         } catch (error) {
           assessmentLogger.warn('Erro ao atualizar status para em_andamento:', error);
         }
       }
 
-      assessmentLogger.info('Buscando perguntas e respostas em paralelo');
       const [questionsData, responsesData] = await Promise.all([
         supabaseRequest(
           `due_diligence_questions?template_id=eq.${assessment.template_id}&order=ordem.asc`,
           { method: 'GET' }
-        ).catch(error => {
-          assessmentLogger.error('Erro ao carregar perguntas:', error);
-          throw error;
-        }),
+        ),
         supabaseRequest(
           `due_diligence_responses?select=question_id,resposta,pontuacao,evidencia,justificativa,arquivo_url&assessment_id=eq.${assessment.id}`,
           { method: 'GET' }
-        ).catch(error => {
-          assessmentLogger.warn('Erro ao carregar respostas existentes:', error);
-          return [];
-        })
+        ).catch(() => [])
       ]);
 
       if (!questionsData || questionsData.length === 0) {
-        assessmentLogger.error('Nenhuma pergunta encontrada para o template');
         throw new Error('Este questionário não possui perguntas configuradas. Por favor, entre em contato com o remetente.');
       }
 
       const responsesMap: Record<string, any> = {};
       responsesData.forEach((response: any) => {
         responsesMap[response.question_id] = response.resposta || response.pontuacao;
-        if (response.evidencia) {
-          responsesMap[`${response.question_id}_evidencia`] = response.evidencia;
-        }
-        if (response.justificativa) {
-          responsesMap[`${response.question_id}_justificativa`] = response.justificativa;
-        }
-        if (response.arquivo_url) {
-          responsesMap[`${response.question_id}_arquivo`] = response.arquivo_url;
-        }
+        if (response.evidencia) responsesMap[`${response.question_id}_evidencia`] = response.evidencia;
+        if (response.justificativa) responsesMap[`${response.question_id}_justificativa`] = response.justificativa;
+        if (response.arquivo_url) responsesMap[`${response.question_id}_arquivo`] = response.arquivo_url;
       });
 
       setAssessment({
@@ -328,12 +528,12 @@ export default function Assessment() {
         configuracoes: q.configuracoes
       })));
       setResponses(responsesMap);
-      
-      assessmentLogger.info('Assessment carregado com sucesso completamente', {
-        questionsCount: questionsData.length,
-        responsesCount: Object.keys(responsesMap).length
-      });
 
+      // If user already has any responses, skip welcome screen
+      if (Object.keys(responsesMap).length > 0) {
+        setCurrentPage(0);
+      }
+      
     } catch (error) {
       assessmentLogger.error('Erro ao carregar assessment:', error);
       toast.error('Erro ao carregar o questionário. Por favor, verifique o link.');
@@ -346,8 +546,7 @@ export default function Assessment() {
     if (!assessment) return;
 
     try {
-      assessmentLogger.info('Salvando resposta', { questionId, value });
-
+      setSaving(true);
       const isEvidencia = questionId.endsWith('_evidencia');
       const isJustificativa = questionId.endsWith('_justificativa');
       const isArquivo = questionId.endsWith('_arquivo');
@@ -388,6 +587,7 @@ export default function Assessment() {
         } catch (error) {
           assessmentLogger.error('Erro ao salvar evidência/justificativa:', error);
         }
+        setSavedAt(new Date());
         return;
       }
 
@@ -418,19 +618,20 @@ export default function Assessment() {
           method: 'POST', body: JSON.stringify(responseData)
         });
       }
-
-      assessmentLogger.info('Resposta salva com sucesso');
+      setSavedAt(new Date());
     } catch (error) {
       assessmentLogger.error('Erro ao salvar resposta:', error);
+    } finally {
+      setSaving(false);
     }
   }, [assessment, questions, supabaseRequest]);
 
   const handleResponseChange = useCallback((questionId: string, value: any) => {
     setResponses(prev => ({ ...prev, [questionId]: value }));
-    const timeoutId = setTimeout(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
       saveResponse(questionId, value);
     }, 1000);
-    return () => clearTimeout(timeoutId);
   }, [saveResponse]);
 
   const submitAssessment = useCallback(async () => {
@@ -438,33 +639,27 @@ export default function Assessment() {
 
     try {
       setSubmitting(true);
-      assessmentLogger.info('Iniciando finalização do assessment');
 
       if (assessment.status === 'concluido') {
-        assessmentLogger.warn('Assessment já está concluído');
         setIsFinished(true);
         return;
       }
 
       const requiredQuestions = questions.filter(q => q.obrigatoria);
-      const missingRequired = requiredQuestions.filter(q => !responses[q.id] || !responses[q.id].toString().trim());
+      const missingRequired = requiredQuestions.filter(q => !isAnswered(q.id));
 
       if (missingRequired.length > 0) {
-        const missingTitles = missingRequired.map(q => q.pergunta || q.titulo).join(', ');
-        assessmentLogger.warn('Perguntas obrigatórias não respondidas:', missingTitles);
-        toast.error(`Por favor, responda as seguintes perguntas obrigatórias: ${missingTitles}`);
+        toast.error(`Existem ${missingRequired.length} pergunta(s) obrigatória(s) sem resposta.`);
         return;
       }
 
-      assessmentLogger.info('Salvando respostas finais');
       for (const [questionId, value] of Object.entries(responses)) {
         if (value && value.toString().trim()) {
           await saveResponse(questionId, value);
         }
       }
 
-      assessmentLogger.info('Finalizando assessment', { assessmentId: assessment.id, token });
-      const { data: updateData, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('due_diligence_assessments')
         .update({
           status: 'concluido',
@@ -475,26 +670,13 @@ export default function Assessment() {
         .select();
 
       if (updateError) {
-        assessmentLogger.error('Erro ao finalizar assessment:', updateError);
         throw new Error(`Erro ao finalizar assessment: ${updateError.message}`);
       }
 
-      assessmentLogger.info('Assessment atualizado com sucesso:', updateData);
-
-      assessmentLogger.info('Iniciando cálculo de score com IA...');
       try {
-        const { data: scoreData, error: scoreError } = await supabase.functions.invoke('calculate-assessment-score', {
+        await supabase.functions.invoke('calculate-assessment-score', {
           body: { assessment_id: assessment.id }
         });
-        if (scoreError) {
-          if (scoreError.message?.includes('402') || (scoreError as any).status === 402) {
-            assessmentLogger.warn('Créditos de IA esgotados para cálculo de score');
-          } else {
-            assessmentLogger.warn('Erro no cálculo de score:', scoreError);
-          }
-        } else {
-          assessmentLogger.info('Score calculado com sucesso');
-        }
       } catch (scoreError) {
         assessmentLogger.warn('Erro ao calcular score:', scoreError);
       }
@@ -506,7 +688,6 @@ export default function Assessment() {
       } : null);
 
       setIsFinished(true);
-      assessmentLogger.info('Assessment finalizado com sucesso');
       toast.success('Questionário enviado com sucesso e está sendo avaliado!');
 
     } catch (error: any) {
@@ -516,7 +697,7 @@ export default function Assessment() {
       setSubmitting(false);
       setShowConfirmDialog(false);
     }
-  }, [assessment, questions, responses, saveResponse, token]);
+  }, [assessment, questions, responses, saveResponse, token, isAnswered]);
 
   useEffect(() => {
     fetchAssessment();
@@ -526,7 +707,7 @@ export default function Assessment() {
   if (loading) {
     return (
       <AssessmentShell>
-        <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex items-center justify-center min-h-[80vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(250,80%,60%)] mx-auto mb-4"></div>
             <p className="text-white/60 text-sm">Carregando questionário...</p>
@@ -540,7 +721,7 @@ export default function Assessment() {
   if (!assessment) {
     return (
       <AssessmentShell>
-        <div className="flex items-center justify-center min-h-[60vh] p-4">
+        <div className="flex items-center justify-center min-h-[80vh] p-4">
           <Card className="w-full max-w-md bg-white/5 backdrop-blur-sm border-white/10 shadow-2xl">
             <CardContent className="pt-6 text-center">
               <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
@@ -555,73 +736,12 @@ export default function Assessment() {
     );
   }
 
-  // === RENDER: Completed (status === 'concluido') ===
-  if (assessment.status === 'concluido') {
+  // === RENDER: Completed ===
+  if (assessment.status === 'concluido' || isFinished) {
     return (
       <AssessmentShell>
-        <div className="flex items-center justify-center min-h-[60vh] p-4">
+        <div className="flex items-center justify-center min-h-[80vh] p-4">
           <div className="text-center max-w-lg mx-auto">
-            <div className="relative mb-8 animate-scale-in">
-              <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/30">
-                <Check className="w-12 h-12 text-white animate-fade-in" />
-              </div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] rounded-full animate-pulse"></div>
-            </div>
-            
-            <div className="space-y-4 animate-fade-in">
-              <h2 className="text-3xl font-bold text-white">
-                Questionário Enviado!
-              </h2>
-              <p className="text-lg text-white/60 max-w-md mx-auto leading-relaxed">
-                Obrigado por responder ao questionário. Suas respostas foram enviadas com sucesso e estão sendo analisadas.
-              </p>
-              
-              <div className="mt-8 p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
-                <div className="flex items-center justify-center space-x-2 text-emerald-400">
-                  <CheckCircle className="w-5 h-5" />
-                  <span className="font-medium">Concluído com sucesso</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </AssessmentShell>
-    );
-  }
-
-  // === RENDER: Finished (isFinished) ===
-  if (isFinished) {
-    return (
-      <AssessmentShell>
-        <div className="flex items-center justify-center min-h-[60vh] p-4">
-          <div className="text-center max-w-lg mx-auto">
-            {/* Company logo */}
-            <div className="mb-8 animate-fade-in">
-              <div className="flex items-center justify-center mb-6">
-                {assessment.empresa.logo_url && !logoError ? (
-                  <div className="relative p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10">
-                    {logoLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(250,80%,60%)]"></div>
-                      </div>
-                    )}
-                    <img
-                      src={assessment.empresa.logo_url}
-                      alt={`Logo ${assessment.empresa.nome}`}
-                      className={`h-16 w-auto object-contain ${logoLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
-                      onLoad={handleLogoLoad}
-                      onError={handleLogoError}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-20 w-20 bg-white/10 rounded-2xl border border-white/10">
-                    <Building2 className="h-10 w-10 text-white/40" />
-                  </div>
-                )}
-              </div>
-              <p className="text-white/50 text-lg font-medium">Due Diligence - {assessment.template.nome}</p>
-            </div>
-
             <div className="relative mb-8 animate-scale-in">
               <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/30">
                 <CheckCircle className="w-12 h-12 text-white animate-fade-in" />
@@ -630,12 +750,10 @@ export default function Assessment() {
             </div>
             
             <div className="space-y-6 animate-fade-in">
-              <h2 className="text-3xl font-bold text-white">
-                Questionário Concluído!
-              </h2>
+              <h2 className="text-3xl font-bold text-white">Questionário Enviado!</h2>
               <p className="text-lg text-white/60 max-w-md mx-auto leading-relaxed">
-                Obrigado por responder ao nosso questionário de due diligence. 
-                Suas respostas foram enviadas com sucesso e estão sendo analisadas.
+                Obrigado por responder ao questionário de due diligence. 
+                Suas respostas foram enviadas com sucesso e estão sendo analisadas pela equipe da {assessment.empresa.nome}.
               </p>
               
               <div className="mt-8 p-6 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl">
@@ -643,12 +761,12 @@ export default function Assessment() {
                   <CheckCircle className="w-5 h-5" />
                   <span className="font-medium">Concluído com sucesso</span>
                 </div>
-                <p className="text-sm text-white/40">
-                  <strong className="text-white/60">Concluído em:</strong> {assessment.data_conclusao ? 
-                    new Date(assessment.data_conclusao).toLocaleString('pt-BR') : 
-                    'Agora'
-                  }
-                </p>
+                {assessment.data_conclusao && (
+                  <p className="text-sm text-white/40">
+                    <strong className="text-white/60">Concluído em:</strong>{' '}
+                    {new Date(assessment.data_conclusao).toLocaleString('pt-BR')}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -657,381 +775,619 @@ export default function Assessment() {
     );
   }
 
-  // === RENDER: Main form ===
   const progress = calculateProgress();
+  const answeredCount = questions.filter(q => isAnswered(q.id)).length;
+  const missingRequiredList = questions.filter(q => q.obrigatoria && !isAnswered(q.id));
 
+  // === RENDER: Welcome screen (B) ===
+  if (currentPage === -1) {
+    return (
+      <AssessmentShell>
+        <TopBar
+          assessment={assessment}
+          logoError={logoError}
+          logoLoading={logoLoading}
+          onLogoLoad={handleLogoLoad}
+          onLogoError={handleLogoError}
+          savedAt={savedAt}
+          saving={saving}
+        />
+        <WelcomeScreen
+          assessment={assessment}
+          totalQuestions={questions.length}
+          totalRequired={totalRequired}
+          onStart={() => setCurrentPage(0)}
+        />
+      </AssessmentShell>
+    );
+  }
+
+  // === RENDER: Main form with sidebar (C) ===
   return (
     <AssessmentShell>
-      <div className="container mx-auto px-4 py-4 max-w-4xl">
-        {/* Header with company logo */}
-        <div className="mb-8 text-center animate-fade-in">
-          <Card className="inline-block p-6 shadow-2xl border-white/10 bg-white/5 backdrop-blur-sm">
-            <div className="flex items-center justify-center mb-4">
-              {assessment.empresa.logo_url && !logoError ? (
-                <div className="relative p-3 bg-white/10 rounded-xl">
-                  {logoLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(250,80%,60%)]"></div>
-                    </div>
-                  )}
-                  <img
-                    src={assessment.empresa.logo_url}
-                    alt={`Logo ${assessment.empresa.nome}`}
-                    className={`h-16 w-auto object-contain ${logoLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
-                    onLoad={handleLogoLoad}
-                    onError={handleLogoError}
+      <TopBar
+        assessment={assessment}
+        logoError={logoError}
+        logoLoading={logoLoading}
+        onLogoLoad={handleLogoLoad}
+        onLogoError={handleLogoError}
+        savedAt={savedAt}
+        saving={saving}
+      />
+
+      <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+          {/* === Sidebar (C) === */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-6 space-y-4">
+              {/* Progress card */}
+              <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-medium text-white/50 uppercase tracking-wider">Progresso</span>
+                    <span className="text-xs font-semibold text-white">{Math.round(progress)}%</span>
+                  </div>
+                  <Progress
+                    value={progress}
+                    className="h-2 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(250,80%,60%)] [&>div]:to-[hsl(250,80%,50%)] mb-3"
                   />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-20 w-20 bg-white/10 rounded-xl">
-                  <Building2 className="h-10 w-10 text-white/40" />
-                </div>
-              )}
-            </div>
-            <h1 className="text-xl font-semibold text-white">
-              Due Diligence - {assessment.template.nome}
-            </h1>
-          </Card>
-        </div>
-
-        {/* Progress bar */}
-        <div className="mb-8 animate-fade-in">
-          <Card className="p-6 shadow-lg border-white/10 bg-white/5 backdrop-blur-sm">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-sm font-medium text-white/50">
-                Página {currentPage + 1} de {totalPages}
-              </span>
-              <span className="text-sm font-medium text-white/50">
-                {Math.round(progress)}% das perguntas respondidas
-              </span>
-            </div>
-            <div className="relative">
-              <Progress value={progress} className="w-full h-3 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(250,80%,60%)] [&>div]:to-[hsl(250,80%,50%)]" />
-            </div>
-          </Card>
-        </div>
-
-        {/* Questions */}
-        <Card className="mb-8 shadow-2xl border-white/10 bg-white/5 backdrop-blur-sm animate-fade-in">
-          <CardHeader className="border-b border-white/10">
-            <CardTitle className="text-xl flex items-center space-x-3 text-white">
-              {assessment.empresa.logo_url && !logoError ? (
-                <div className="relative flex-shrink-0">
-                  {logoLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[hsl(250,80%,60%)]"></div>
-                    </div>
-                  )}
-                  <img
-                    src={assessment.empresa.logo_url}
-                    alt={`Logo ${assessment.empresa.nome}`}
-                    className={`h-8 w-auto object-contain ${logoLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
-                    onLoad={handleLogoLoad}
-                    onError={handleLogoError}
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-8 w-8 bg-white/10 rounded-lg flex-shrink-0">
-                  <Building2 className="h-4 w-4 text-white/40" />
-                </div>
-              )}
-              <span>Questionário</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-8 space-y-8">
-            {currentQuestions.map((question, index) => (
-              <div key={question.id} className="space-y-4 p-6 bg-white/[0.03] rounded-xl border border-white/10 hover:border-white/20 transition-all duration-300 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-white/50 block">
-                    {question.titulo}
-                    {question.obrigatoria && <span className="text-red-400 ml-2">*</span>}
-                  </Label>
-                  {question.descricao && (
-                    <p className="text-lg font-semibold text-white leading-relaxed">
-                      {question.descricao}
-                    </p>
-                  )}
-                </div>
-
-                {question.tipo === 'texto' && (
-                  <Textarea
-                    value={responses[question.id] || ''}
-                    onChange={(e) => handleResponseChange(question.id, e.target.value)}
-                    placeholder="Digite sua resposta..."
-                    className="min-h-[120px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
-                  />
-                )}
-
-                {question.tipo === 'radio' && question.opcoes && (
-                  <RadioGroup
-                    value={responses[question.id] || ''}
-                    onValueChange={(value) => handleResponseChange(question.id, value)}
-                    className="space-y-3"
-                  >
-                    {question.opcoes.map((opcao, idx) => (
-                      <div key={idx} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors duration-200">
-                        <RadioGroupItem value={opcao} id={`${question.id}-${idx}`} className="border-white/30 text-[hsl(250,80%,60%)]" />
-                        <Label htmlFor={`${question.id}-${idx}`} className="text-sm font-medium cursor-pointer flex-1 text-white/80">{opcao}</Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                )}
-
-                {question.tipo === 'numerico' && (
-                  <Input
-                    type="number"
-                    value={responses[question.id] || ''}
-                    onChange={(e) => handleResponseChange(question.id, e.target.value)}
-                    placeholder="Digite um número..."
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
-                  />
-                )}
-
-                {question.tipo === 'booleano' && (
-                  <RadioGroup
-                    value={responses[question.id] || ''}
-                    onValueChange={(value) => handleResponseChange(question.id, value)}
-                    className="flex space-x-6"
-                  >
-                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors duration-200">
-                      <RadioGroupItem value="sim" id={`${question.id}-sim`} className="border-white/30 text-[hsl(250,80%,60%)]" />
-                      <Label htmlFor={`${question.id}-sim`} className="text-sm font-medium cursor-pointer text-white/80">Sim</Label>
-                    </div>
-                    <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors duration-200">
-                      <RadioGroupItem value="nao" id={`${question.id}-nao`} className="border-white/30 text-[hsl(250,80%,60%)]" />
-                      <Label htmlFor={`${question.id}-nao`} className="text-sm font-medium cursor-pointer text-white/80">Não</Label>
-                    </div>
-                  </RadioGroup>
-                )}
-
-                {question.tipo === 'select' && question.opcoes && (
-                  <Select
-                    value={responses[question.id] || ''}
-                    onValueChange={(value) => handleResponseChange(question.id, value)}
-                  >
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200">
-                      <SelectValue placeholder="Selecione uma opção..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {question.opcoes.map((opcao, idx) => (
-                        <SelectItem key={idx} value={opcao}>
-                          {opcao}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-
-                {question.tipo === 'arquivo' && (
-                  <div className="space-y-3">
-                    <div className="border-2 border-dashed border-white/10 hover:border-[hsl(250,80%,60%)]/30 rounded-xl p-8 text-center transition-colors duration-200 bg-white/[0.02]">
-                      <Upload className="h-10 w-10 text-white/30 mx-auto mb-3" />
-                      <p className="text-sm text-white/40 mb-3">
-                        Arraste um arquivo ou clique para selecionar
-                      </p>
-                      <Input
-                        type="file"
-                        className="bg-white/5 border-white/10 text-white/70"
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          if (file.size > 10 * 1024 * 1024) {
-                            toast.error('Arquivo deve ter no máximo 10MB.');
-                            return;
-                          }
-                          try {
-                            toast.info('Enviando arquivo...');
-                            const fileName = `${Date.now()}-${file.name}`;
-                            const filePath = `${assessment?.id || 'temp'}/${question.id}/${fileName}`;
-                            const { error: uploadError } = await supabase.storage
-                              .from('due-diligence-evidencias')
-                              .upload(filePath, file);
-                            if (uploadError) throw uploadError;
-                            const { data: { publicUrl } } = supabase.storage
-                              .from('due-diligence-evidencias')
-                              .getPublicUrl(filePath);
-                            handleResponseChange(question.id, file.name);
-                            handleResponseChange(`${question.id}_arquivo`, publicUrl);
-                            toast.success('Arquivo enviado com sucesso!');
-                          } catch (err: any) {
-                            assessmentLogger.error('Erro no upload:', err);
-                            toast.error('Erro ao enviar arquivo. Tente novamente.');
-                          }
-                        }}
-                      />
-                    </div>
-                    {responses[question.id] && (
-                      <div className="flex items-center space-x-3 text-sm text-white/60 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                        <FileText className="h-4 w-4 text-emerald-400" />
-                        <span className="font-medium">{responses[question.id]}</span>
-                        {responses[`${question.id}_arquivo`] && (
-                          <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,60%)] underline text-xs ml-auto">
-                            Ver arquivo
-                          </a>
-                        )}
-                      </div>
+                  <div className="flex items-center justify-between text-xs text-white/50">
+                    <span>{answeredCount} de {questions.length}</span>
+                    {missingRequiredList.length > 0 && (
+                      <span className="flex items-center gap-1 text-amber-400">
+                        <AlertTriangle className="h-3 w-3" />
+                        {missingRequiredList.length} obrig.
+                      </span>
                     )}
                   </div>
-                )}
+                </CardContent>
+              </Card>
 
-                {/* Conditional evidence and justification fields */}
-                {question.configuracoes && responses[question.id] && (
-                  <>
-                    {question.configuracoes.mostrar_evidencia_quando && 
-                     question.configuracoes.mostrar_evidencia_quando.split(',').includes(responses[question.id]) && (
-                      <div className="mt-4 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-lg animate-fade-in">
-                        <Label className="text-sm font-medium text-emerald-400 mb-3 block">
-                          {question.configuracoes.label_evidencia || 'Evidência:'}
-                        </Label>
-                        <Textarea
-                          value={responses[`${question.id}_evidencia`] || ''}
-                          onChange={(e) => handleResponseChange(`${question.id}_evidencia`, e.target.value)}
-                          placeholder="Descreva as evidências que comprovam sua resposta..."
-                          className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 mb-4"
-                        />
-                        
-                        <div className="space-y-3">
-                          <Label className="text-sm font-medium text-emerald-400 block">
-                            Anexar documento (opcional):
-                          </Label>
-                          <div className="border-2 border-dashed border-emerald-500/20 hover:border-emerald-500/40 rounded-lg p-4 text-center transition-colors duration-200 bg-white/[0.02]">
-                            <Upload className="h-6 w-6 text-emerald-400/40 mx-auto mb-2" />
-                            <p className="text-xs text-emerald-400/40 mb-2">
-                              Clique para selecionar um arquivo
-                            </p>
-                            <Input
-                              type="file"
-                              className="text-xs bg-white/5 border-white/10 text-white/70 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-emerald-500/10 file:text-emerald-400"
-                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                if (file.size > 10 * 1024 * 1024) {
-                                  toast.error('Arquivo deve ter no máximo 10MB.');
-                                  return;
-                                }
-                                try {
-                                  toast.info('Enviando evidência...');
-                                  const fileName = `${Date.now()}-${file.name}`;
-                                  const filePath = `${assessment?.id || 'temp'}/evidencias/${question.id}/${fileName}`;
-                                  const { error: uploadError } = await supabase.storage
-                                    .from('due-diligence-evidencias')
-                                    .upload(filePath, file);
-                                  if (uploadError) throw uploadError;
-                                  const { data: { publicUrl } } = supabase.storage
-                                    .from('due-diligence-evidencias')
-                                    .getPublicUrl(filePath);
-                                  handleResponseChange(`${question.id}_arquivo`, publicUrl);
-                                  toast.success('Evidência anexada com sucesso!');
-                                } catch (err: any) {
-                                  assessmentLogger.error('Erro no upload de evidência:', err);
-                                  toast.error('Erro ao enviar arquivo. Tente novamente.');
-                                }
-                              }}
-                            />
-                          </div>
-                          {responses[`${question.id}_arquivo`] && (
-                            <div className="flex items-center space-x-2 text-xs text-emerald-400 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
-                              <FileText className="h-3 w-3" />
-                              <span>Evidência anexada</span>
-                              <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,60%)] underline ml-auto">
-                                Ver
-                              </a>
+              {/* Pages index */}
+              <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs font-medium text-white/50 uppercase tracking-wider">
+                    Páginas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-2">
+                  <ScrollArea className="h-[calc(100vh-380px)] min-h-[200px]">
+                    <div className="space-y-1 pr-2">
+                      {Array.from({ length: totalPages }).map((_, idx) => {
+                        const status = pageStatuses[idx];
+                        const isCurrent = currentPage === idx;
+                        const isComplete = status && status.answered === status.total && status.missingRequired === 0;
+                        const hasContent = status && status.answered > 0;
+
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => setCurrentPage(idx)}
+                            className={cn(
+                              'w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group',
+                              'flex items-center gap-3',
+                              isCurrent
+                                ? 'bg-[hsl(250,80%,60%)]/15 border border-[hsl(250,80%,60%)]/30'
+                                : 'hover:bg-white/5 border border-transparent'
+                            )}
+                          >
+                            {/* Status icon */}
+                            <div className={cn(
+                              'h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0 transition-colors',
+                              isComplete
+                                ? 'bg-emerald-500/20 text-emerald-400'
+                                : hasContent
+                                  ? 'bg-amber-500/15 text-amber-400'
+                                  : isCurrent
+                                    ? 'bg-[hsl(250,80%,60%)]/30 text-white'
+                                    : 'bg-white/5 text-white/40'
+                            )}>
+                              {isComplete ? <Check className="h-3.5 w-3.5" /> : idx + 1}
                             </div>
+
+                            <div className="min-w-0 flex-1">
+                              <p className={cn(
+                                'text-sm font-medium truncate',
+                                isCurrent ? 'text-white' : 'text-white/70'
+                              )}>
+                                Página {idx + 1}
+                              </p>
+                              <p className="text-[11px] text-white/40">
+                                {status?.answered || 0}/{status?.total || 0} respondidas
+                                {status && status.missingRequired > 0 && (
+                                  <span className="text-amber-400/80"> · {status.missingRequired} obrig.</span>
+                                )}
+                              </p>
+                            </div>
+
+                            {isCurrent && <ChevronRight className="h-4 w-4 text-white/60 shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+          </aside>
+
+          {/* === Main content === */}
+          <main className="min-w-0">
+            {/* Mobile progress (C fallback) */}
+            <Card className="lg:hidden mb-4 bg-white/5 backdrop-blur-sm border-white/10">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-medium text-white/50">
+                    Página {currentPage + 1} de {totalPages}
+                  </span>
+                  <span className="text-xs font-semibold text-white">{Math.round(progress)}%</span>
+                </div>
+                <Progress
+                  value={progress}
+                  className="h-2 bg-white/10 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(250,80%,60%)] [&>div]:to-[hsl(250,80%,50%)]"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Page header */}
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-white/40 font-medium mb-1">
+                  {assessment.template.nome}
+                </p>
+                <h2 className="text-xl sm:text-2xl font-bold text-white">
+                  Página {currentPage + 1}
+                  <span className="text-white/40 font-normal text-base ml-2">de {totalPages}</span>
+                </h2>
+              </div>
+            </div>
+
+            {/* Questions list (D + E) */}
+            <div className="space-y-4">
+              {currentQuestions.map((question, index) => {
+                const answered = isAnswered(question.id);
+                const questionNumber = currentPage * questionsPerPage + index + 1;
+
+                return (
+                  <Card
+                    key={question.id}
+                    className={cn(
+                      'border bg-white/5 backdrop-blur-sm transition-all duration-300 overflow-hidden animate-fade-in',
+                      answered
+                        ? 'border-emerald-500/30 shadow-[0_0_0_1px_hsl(160,84%,39%,0.1),0_8px_24px_-12px_hsl(160,84%,39%,0.2)]'
+                        : 'border-white/10 hover:border-white/20'
+                    )}
+                    style={{ animationDelay: `${index * 60}ms` }}
+                  >
+                    <CardContent className="p-6 sm:p-7 space-y-5">
+                      {/* Question header (D - hierarchy fixed) */}
+                      <div className="flex items-start gap-4">
+                        {/* Number badge */}
+                        <div className={cn(
+                          'h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 transition-colors',
+                          answered
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-white/5 text-white/60 border border-white/10'
+                        )}>
+                          {answered ? <Check className="h-4 w-4" /> : questionNumber}
+                        </div>
+
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <div className="flex items-start gap-2 flex-wrap">
+                            <h3 className="text-base sm:text-lg font-semibold text-white leading-snug">
+                              {question.titulo || question.pergunta}
+                            </h3>
+                            {question.obrigatoria && (
+                              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/20 mt-1">
+                                Obrigatória
+                              </span>
+                            )}
+                          </div>
+                          {question.descricao && (
+                            <p className="text-sm text-white/60 leading-relaxed">
+                              {question.descricao}
+                            </p>
                           )}
                         </div>
                       </div>
-                    )}
 
-                    {question.configuracoes.mostrar_justificativa_quando && 
-                     question.configuracoes.mostrar_justificativa_quando.split(',').includes(responses[question.id]) && (
-                      <div className="mt-4 p-4 bg-amber-500/5 border border-amber-500/20 rounded-lg animate-fade-in">
-                        <Label className="text-sm font-medium text-amber-400 mb-2 block">
-                          {question.configuracoes.label_justificativa || 'Justificativa:'}
-                        </Label>
-                        <Textarea
-                          value={responses[`${question.id}_justificativa`] || ''}
-                          onChange={(e) => handleResponseChange(`${question.id}_justificativa`, e.target.value)}
-                          placeholder="Explique o motivo e planos futuros..."
-                          className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all duration-200"
-                        />
+                      {/* Input controls */}
+                      <div className="pl-0 sm:pl-[52px]">
+                        {question.tipo === 'texto' && (
+                          <Textarea
+                            value={responses[question.id] || ''}
+                            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+                            placeholder="Digite sua resposta..."
+                            className="min-h-[120px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
+                          />
+                        )}
+
+                        {question.tipo === 'radio' && question.opcoes && (
+                          <RadioGroup
+                            value={responses[question.id] || ''}
+                            onValueChange={(value) => handleResponseChange(question.id, value)}
+                            className="space-y-2"
+                          >
+                            {question.opcoes.map((opcao, idx) => {
+                              const selected = responses[question.id] === opcao;
+                              return (
+                                <div
+                                  key={idx}
+                                  className={cn(
+                                    'flex items-center space-x-3 p-3 rounded-lg border transition-all duration-200 cursor-pointer',
+                                    selected
+                                      ? 'bg-[hsl(250,80%,60%)]/10 border-[hsl(250,80%,60%)]/30'
+                                      : 'bg-white/[0.02] border-white/10 hover:bg-white/5 hover:border-white/20'
+                                  )}
+                                  onClick={() => handleResponseChange(question.id, opcao)}
+                                >
+                                  <RadioGroupItem value={opcao} id={`${question.id}-${idx}`} className="border-white/30 text-[hsl(250,80%,60%)]" />
+                                  <Label htmlFor={`${question.id}-${idx}`} className="text-sm font-medium cursor-pointer flex-1 text-white/85">{opcao}</Label>
+                                </div>
+                              );
+                            })}
+                          </RadioGroup>
+                        )}
+
+                        {question.tipo === 'numerico' && (
+                          <Input
+                            type="number"
+                            value={responses[question.id] || ''}
+                            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+                            placeholder="Digite um número..."
+                            className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200"
+                          />
+                        )}
+
+                        {question.tipo === 'booleano' && (
+                          <RadioGroup
+                            value={responses[question.id] || ''}
+                            onValueChange={(value) => handleResponseChange(question.id, value)}
+                            className="grid grid-cols-2 gap-3"
+                          >
+                            {[
+                              { value: 'sim', label: 'Sim' },
+                              { value: 'nao', label: 'Não' },
+                            ].map((opt) => {
+                              const selected = responses[question.id] === opt.value;
+                              return (
+                                <div
+                                  key={opt.value}
+                                  className={cn(
+                                    'flex items-center justify-center space-x-3 p-4 rounded-lg border transition-all duration-200 cursor-pointer',
+                                    selected
+                                      ? 'bg-[hsl(250,80%,60%)]/10 border-[hsl(250,80%,60%)]/30'
+                                      : 'bg-white/[0.02] border-white/10 hover:bg-white/5 hover:border-white/20'
+                                  )}
+                                  onClick={() => handleResponseChange(question.id, opt.value)}
+                                >
+                                  <RadioGroupItem value={opt.value} id={`${question.id}-${opt.value}`} className="border-white/30 text-[hsl(250,80%,60%)]" />
+                                  <Label htmlFor={`${question.id}-${opt.value}`} className="text-sm font-semibold cursor-pointer text-white/85">{opt.label}</Label>
+                                </div>
+                              );
+                            })}
+                          </RadioGroup>
+                        )}
+
+                        {question.tipo === 'select' && question.opcoes && (
+                          <Select
+                            value={responses[question.id] || ''}
+                            onValueChange={(value) => handleResponseChange(question.id, value)}
+                          >
+                            <SelectTrigger className="bg-white/5 border-white/10 text-white focus:border-[hsl(250,80%,60%)]/50 focus:ring-2 focus:ring-[hsl(250,80%,60%)]/20 transition-all duration-200">
+                              <SelectValue placeholder="Selecione uma opção..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {question.opcoes.map((opcao, idx) => (
+                                <SelectItem key={idx} value={opcao}>
+                                  {opcao}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+
+                        {question.tipo === 'arquivo' && (
+                          <div className="space-y-3">
+                            <div className="border-2 border-dashed border-white/10 hover:border-[hsl(250,80%,60%)]/30 rounded-xl p-6 text-center transition-colors duration-200 bg-white/[0.02]">
+                              <Upload className="h-8 w-8 text-white/30 mx-auto mb-2" />
+                              <p className="text-sm text-white/40 mb-3">
+                                Arraste um arquivo ou clique para selecionar
+                              </p>
+                              <Input
+                                type="file"
+                                className="bg-white/5 border-white/10 text-white/70"
+                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  if (file.size > 10 * 1024 * 1024) {
+                                    toast.error('Arquivo deve ter no máximo 10MB.');
+                                    return;
+                                  }
+                                  try {
+                                    toast.info('Enviando arquivo...');
+                                    const fileName = `${Date.now()}-${file.name}`;
+                                    const filePath = `${assessment?.id || 'temp'}/${question.id}/${fileName}`;
+                                    const { error: uploadError } = await supabase.storage
+                                      .from('due-diligence-evidencias')
+                                      .upload(filePath, file);
+                                    if (uploadError) throw uploadError;
+                                    const { data: { publicUrl } } = supabase.storage
+                                      .from('due-diligence-evidencias')
+                                      .getPublicUrl(filePath);
+                                    handleResponseChange(question.id, file.name);
+                                    handleResponseChange(`${question.id}_arquivo`, publicUrl);
+                                    toast.success('Arquivo enviado com sucesso!');
+                                  } catch (err: any) {
+                                    assessmentLogger.error('Erro no upload:', err);
+                                    toast.error('Erro ao enviar arquivo. Tente novamente.');
+                                  }
+                                }}
+                              />
+                            </div>
+                            {responses[question.id] && (
+                              <div className="flex items-center space-x-3 text-sm text-white/60 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                                <FileText className="h-4 w-4 text-emerald-400" />
+                                <span className="font-medium">{responses[question.id]}</span>
+                                {responses[`${question.id}_arquivo`] && (
+                                  <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,60%)] underline text-xs ml-auto">
+                                    Ver arquivo
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Conditional evidence and justification fields */}
+                        {question.configuracoes && responses[question.id] && (
+                          <>
+                            {question.configuracoes.mostrar_evidencia_quando &&
+                             question.configuracoes.mostrar_evidencia_quando.split(',').includes(responses[question.id]) && (
+                              <div className="mt-4 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-lg animate-fade-in">
+                                <Label className="text-sm font-medium text-emerald-400 mb-3 block">
+                                  {question.configuracoes.label_evidencia || 'Evidência:'}
+                                </Label>
+                                <Textarea
+                                  value={responses[`${question.id}_evidencia`] || ''}
+                                  onChange={(e) => handleResponseChange(`${question.id}_evidencia`, e.target.value)}
+                                  placeholder="Descreva as evidências que comprovam sua resposta..."
+                                  className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200 mb-4"
+                                />
+                                <div className="space-y-3">
+                                  <Label className="text-sm font-medium text-emerald-400 block">
+                                    Anexar documento (opcional):
+                                  </Label>
+                                  <div className="border-2 border-dashed border-emerald-500/20 hover:border-emerald-500/40 rounded-lg p-4 text-center transition-colors duration-200 bg-white/[0.02]">
+                                    <Upload className="h-6 w-6 text-emerald-400/40 mx-auto mb-2" />
+                                    <p className="text-xs text-emerald-400/40 mb-2">
+                                      Clique para selecionar um arquivo
+                                    </p>
+                                    <Input
+                                      type="file"
+                                      className="text-xs bg-white/5 border-white/10 text-white/70 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-emerald-500/10 file:text-emerald-400"
+                                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        if (file.size > 10 * 1024 * 1024) {
+                                          toast.error('Arquivo deve ter no máximo 10MB.');
+                                          return;
+                                        }
+                                        try {
+                                          toast.info('Enviando evidência...');
+                                          const fileName = `${Date.now()}-${file.name}`;
+                                          const filePath = `${assessment?.id || 'temp'}/evidencias/${question.id}/${fileName}`;
+                                          const { error: uploadError } = await supabase.storage
+                                            .from('due-diligence-evidencias')
+                                            .upload(filePath, file);
+                                          if (uploadError) throw uploadError;
+                                          const { data: { publicUrl } } = supabase.storage
+                                            .from('due-diligence-evidencias')
+                                            .getPublicUrl(filePath);
+                                          handleResponseChange(`${question.id}_arquivo`, publicUrl);
+                                          toast.success('Evidência anexada com sucesso!');
+                                        } catch (err: any) {
+                                          assessmentLogger.error('Erro no upload de evidência:', err);
+                                          toast.error('Erro ao enviar arquivo. Tente novamente.');
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                  {responses[`${question.id}_arquivo`] && (
+                                    <div className="flex items-center space-x-2 text-xs text-emerald-400 bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                                      <FileText className="h-3 w-3" />
+                                      <span>Evidência anexada</span>
+                                      <a href={responses[`${question.id}_arquivo`]} target="_blank" rel="noopener noreferrer" className="text-[hsl(250,80%,60%)] underline ml-auto">
+                                        Ver
+                                      </a>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {question.configuracoes.mostrar_justificativa_quando &&
+                             question.configuracoes.mostrar_justificativa_quando.split(',').includes(responses[question.id]) && (
+                              <div className="mt-4 p-4 bg-amber-500/5 border border-amber-500/20 rounded-lg animate-fade-in">
+                                <Label className="text-sm font-medium text-amber-400 mb-2 block">
+                                  {question.configuracoes.label_justificativa || 'Justificativa:'}
+                                </Label>
+                                <Textarea
+                                  value={responses[`${question.id}_justificativa`] || ''}
+                                  onChange={(e) => handleResponseChange(`${question.id}_justificativa`, e.target.value)}
+                                  placeholder="Explique o motivo e planos futuros..."
+                                  className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all duration-200"
+                                />
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
-                    )}
-                  </>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Navigation */}
+            <div className="flex justify-between items-center mt-8 gap-3 animate-fade-in">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                disabled={currentPage === 0}
+                size="lg"
+                className="shadow-sm border-white/10 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 hover:text-white"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Anterior
+              </Button>
+
+              {currentPage === totalPages - 1 ? (
+                <Button
+                  onClick={() => setShowConfirmDialog(true)}
+                  disabled={submitting}
+                  size="lg"
+                  className="shadow-lg shadow-[hsl(250,80%,60%)]/20 bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] hover:from-[hsl(250,80%,55%)] hover:to-[hsl(250,80%,45%)] text-white px-6 sm:px-8"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Finalizar Questionário
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                  size="lg"
+                  className="shadow-md shadow-[hsl(250,80%,60%)]/20 bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] hover:from-[hsl(250,80%,55%)] hover:to-[hsl(250,80%,45%)] text-white"
+                >
+                  Próxima página
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              )}
+            </div>
+          </main>
+        </div>
+      </div>
+
+      {/* === Confirmation dialog (G - enriched) === */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent className="bg-[hsl(230,25%,12%)] backdrop-blur-sm border-white/10 shadow-2xl max-w-lg">
+          <AlertDialogHeader className="space-y-3">
+            <div className={cn(
+              'flex items-center justify-center w-12 h-12 rounded-full mx-auto',
+              missingRequiredList.length > 0
+                ? 'bg-amber-500/15'
+                : 'bg-[hsl(250,80%,60%)]/15'
+            )}>
+              {missingRequiredList.length > 0 ? (
+                <AlertTriangle className="w-6 h-6 text-amber-400" />
+              ) : (
+                <CheckCircle className="w-6 h-6 text-[hsl(250,80%,60%)]" />
+              )}
+            </div>
+            <AlertDialogTitle className="text-center text-xl text-white">
+              {missingRequiredList.length > 0
+                ? 'Existem perguntas obrigatórias pendentes'
+                : 'Finalizar Questionário'}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="text-center text-white/60 leading-relaxed space-y-4">
+                {/* Summary */}
+                <div className="grid grid-cols-3 gap-2 pt-2">
+                  <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                    <p className="text-2xl font-bold text-white">{questions.length}</p>
+                    <p className="text-[11px] text-white/50 uppercase tracking-wider mt-0.5">Total</p>
+                  </div>
+                  <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                    <p className="text-2xl font-bold text-emerald-400">{answeredCount}</p>
+                    <p className="text-[11px] text-emerald-400/70 uppercase tracking-wider mt-0.5">Respondidas</p>
+                  </div>
+                  <div className={cn(
+                    'p-3 border rounded-lg',
+                    missingRequiredList.length > 0
+                      ? 'bg-amber-500/5 border-amber-500/20'
+                      : 'bg-white/5 border-white/10'
+                  )}>
+                    <p className={cn(
+                      'text-2xl font-bold',
+                      missingRequiredList.length > 0 ? 'text-amber-400' : 'text-white/60'
+                    )}>
+                      {missingRequiredList.length}
+                    </p>
+                    <p className={cn(
+                      'text-[11px] uppercase tracking-wider mt-0.5',
+                      missingRequiredList.length > 0 ? 'text-amber-400/70' : 'text-white/50'
+                    )}>
+                      Pendentes
+                    </p>
+                  </div>
+                </div>
+
+                {/* Missing list */}
+                {missingRequiredList.length > 0 ? (
+                  <div className="text-left space-y-2 mt-2">
+                    <p className="text-sm text-amber-400 font-medium flex items-center gap-2">
+                      <FileQuestion className="h-4 w-4" />
+                      Perguntas obrigatórias sem resposta:
+                    </p>
+                    <ScrollArea className="max-h-[180px]">
+                      <ul className="space-y-1.5 pr-2">
+                        {missingRequiredList.slice(0, 10).map((q) => {
+                          const qIdx = questions.findIndex(x => x.id === q.id);
+                          const pageOfQ = Math.floor(qIdx / questionsPerPage);
+                          return (
+                            <li key={q.id}>
+                              <button
+                                onClick={() => {
+                                  setShowConfirmDialog(false);
+                                  setCurrentPage(pageOfQ);
+                                }}
+                                className="w-full text-left flex items-center gap-2 text-sm text-white/70 hover:text-white p-2 rounded hover:bg-white/5 transition-colors"
+                              >
+                                <ChevronRight className="h-3 w-3 text-amber-400 shrink-0" />
+                                <span className="flex-1 truncate">{q.titulo || q.pergunta}</span>
+                                <span className="text-[10px] text-white/40 shrink-0">Pág. {pageOfQ + 1}</span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                        {missingRequiredList.length > 10 && (
+                          <li className="text-xs text-white/40 px-2">
+                            ...e mais {missingRequiredList.length - 10} pergunta(s)
+                          </li>
+                        )}
+                      </ul>
+                    </ScrollArea>
+                  </div>
+                ) : (
+                  <p className="text-sm leading-relaxed">
+                    Tem certeza que deseja finalizar e enviar o questionário?
+                    <br />
+                    <span className="text-white/40 text-xs">Após o envio, não será possível fazer alterações.</span>
+                  </p>
                 )}
               </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Navigation */}
-        <div className="flex justify-between items-center animate-fade-in">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-            disabled={currentPage === 0}
-            size="lg"
-            className="shadow-sm border-white/10 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Anterior
-          </Button>
-
-          {currentPage === totalPages - 1 ? (
-            <Button
-              onClick={() => setShowConfirmDialog(true)}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row gap-3 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowConfirmDialog(false)}
               disabled={submitting}
-              size="lg"
-              className="shadow-lg shadow-[hsl(250,80%,60%)]/20 bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] hover:from-[hsl(250,80%,55%)] hover:to-[hsl(250,80%,45%)] text-white px-8"
+              className="flex-1 bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white"
             >
-              {submitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Finalizar Questionário
-                </>
-              )}
+              {missingRequiredList.length > 0 ? 'Voltar e responder' : 'Cancelar'}
             </Button>
-          ) : (
-            <Button
-              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
-              disabled={currentPage === totalPages - 1}
-              size="lg"
-              className="shadow-md shadow-[hsl(250,80%,60%)]/20 bg-gradient-to-r from-[hsl(250,80%,60%)] to-[hsl(250,80%,50%)] hover:from-[hsl(250,80%,55%)] hover:to-[hsl(250,80%,45%)] text-white"
-            >
-              Próxima
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          )}
-        </div>
-
-        {/* Confirmation dialog */}
-        <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-          <AlertDialogContent className="bg-[hsl(230,25%,12%)] backdrop-blur-sm border-white/10 shadow-2xl">
-            <AlertDialogHeader className="space-y-4">
-              <div className="flex items-center justify-center w-12 h-12 bg-[hsl(250,80%,60%)]/10 rounded-full mx-auto">
-                <CheckCircle className="w-6 h-6 text-[hsl(250,80%,60%)]" />
-              </div>
-              <AlertDialogTitle className="text-center text-xl text-white">Finalizar Questionário</AlertDialogTitle>
-              <AlertDialogDescription className="text-center text-white/50 leading-relaxed">
-                Tem certeza que deseja finalizar e enviar o questionário? 
-                Após o envio, não será possível fazer alterações.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="flex space-x-4 pt-6">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowConfirmDialog(false)}
-                disabled={submitting}
-                className="flex-1 bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white"
-              >
-                Cancelar
-              </Button>
+            {missingRequiredList.length === 0 && (
               <AlertDialogAction 
                 onClick={submitAssessment} 
                 disabled={submitting}
@@ -1045,14 +1401,14 @@ export default function Assessment() {
                 ) : (
                   <>
                     <Check className="w-4 h-4 mr-2" />
-                    Confirmar
+                    Confirmar envio
                   </>
                 )}
               </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AssessmentShell>
   );
 }
