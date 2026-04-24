@@ -292,7 +292,7 @@ const WelcomeScreen = ({
                     "text-[11px]",
                     overdue ? "text-[hsl(250,80%,45%)] font-medium" : "text-slate-500"
                   )}>
-                    {overdue ? 'Em atraso' : daysLeft === 0 ? 'Vence hoje' : `Faltam ${daysLeft} dias`}
+                    {!deadline ? 'Sem prazo definido' : overdue ? 'Em atraso' : daysLeft === 0 ? 'Vence hoje' : `Faltam ${daysLeft} dias`}
                   </p>
                 </div>
               </div>
