@@ -227,14 +227,6 @@ export const pt = {
     upgrade: 'Fazer upgrade',
     manageSubscription: 'Gerenciar assinatura',
   },
-  changelog: {
-    title: 'Novidades',
-    whatsNew: 'O que há de novo',
-    viewAll: 'Ver todas',
-    new: 'Novo',
-    improved: 'Melhorado',
-    fixed: 'Corrigido',
-  },
   passwordChange: {
     title: 'Alteração de Senha Obrigatória',
     description: 'Por segurança, você deve alterar sua senha temporária antes de continuar.',
