@@ -25,6 +25,9 @@ const FRAMEWORK_AUDIENCES: Record<string, string> = {
   'ISO 27701': 'Para empresas que precisam de gestão de privacidade integrada à ISO 27001',
   'PCI DSS': 'Para empresas que processam dados de cartões de pagamento',
   'SOC 2': 'Para empresas de tecnologia que precisam demonstrar controles de segurança',
+  'NIST SP 800-82': 'Para indústrias e utilities com sistemas de controle industrial (OT/ICS)',
+  'DORA': 'Para entidades financeiras europeias com requisitos de resiliência operacional digital',
+  'ISO/IEC 62443': 'Para operadores e fornecedores de sistemas de automação industrial (IACS)',
 };
 
 const HOW_IT_WORKS = [

@@ -578,6 +578,84 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
     };
   }
 
+  // NIST SP 800-82 (OT/ICS Security)
+  if (lower.includes('800-82') || lower.includes('800.82') || lower.includes('sp 800')) {
+    return {
+      info: {
+        icon: <Settings className="h-8 w-8 text-primary" />,
+        description: 'O NIST SP 800-82 fornece diretrizes de segurança para Tecnologia Operacional (OT), incluindo Sistemas de Controle Industrial (ICS), SCADA, DCS e PLCs. Foca em proteger ambientes onde disponibilidade e segurança física são críticas.',
+        timeEstimate: '3 a 6 meses para avaliação de ambiente OT',
+        steps: [
+          'Inicie pelo inventário de ativos OT (PLCs, RTUs, HMIs, sensores)',
+          'Avalie a segmentação de rede entre TI e OT (modelo Purdue)',
+          'Implemente controles de acesso físico e remoto seguros',
+          'Estabeleça monitoramento passivo e plano de resposta específico para OT',
+        ],
+        quickTips: [
+          'Janelas de manutenção são restritas — planeje patches com antecedência',
+          'Disponibilidade > Confidencialidade no contexto OT',
+          'Nunca aplique scans intrusivos diretamente em PLCs em produção',
+        ],
+      },
+      benefits: {
+        audience: 'Indústrias, utilities (energia, água), óleo & gás, manufatura, transporte e qualquer organização com ativos de tecnologia operacional.',
+        benefits: ['Proteção de processos industriais críticos', 'Redução de risco de paradas não planejadas', 'Conformidade com requisitos setoriais (NERC CIP, ANEEL)', 'Segurança física e cibernética integradas'],
+      },
+    };
+  }
+
+  // DORA (Digital Operational Resilience Act)
+  if (lower.includes('dora')) {
+    return {
+      info: {
+        icon: <Landmark className="h-8 w-8 text-primary" />,
+        description: 'O DORA (Digital Operational Resilience Act) é o regulamento da União Europeia que estabelece requisitos uniformes de resiliência operacional digital para o setor financeiro, incluindo gestão de risco TIC, testes, incidentes e terceiros.',
+        timeEstimate: '4 a 8 meses para conformidade completa',
+        steps: [
+          'Estabeleça framework de gestão de risco TIC com responsabilidade do board',
+          'Implemente registro de acordos contratuais com terceiros TIC',
+          'Defina processo de classificação e reporte de incidentes maiores',
+          'Estruture programa anual de testes de resiliência operacional digital',
+        ],
+        quickTips: [
+          'Aplica-se a bancos, seguradoras, gestoras, fintechs e provedores TIC críticos',
+          'Reportes de incidentes maiores têm prazos rigorosos (4h iniciais)',
+          'Contratos com terceiros TIC precisam de cláusulas mínimas obrigatórias',
+        ],
+      },
+      benefits: {
+        audience: 'Entidades financeiras europeias e seus prestadores de serviços TIC: bancos, seguradoras, fintechs, gestoras de ativos e provedores cloud críticos.',
+        benefits: ['Conformidade regulatória obrigatória na UE', 'Resiliência operacional comprovada', 'Gestão estruturada de risco de terceiros', 'Preparação para supervisão regulatória direta'],
+      },
+    };
+  }
+
+  // ISO/IEC 62443 (IACS Security)
+  if (lower.includes('62443')) {
+    return {
+      info: {
+        icon: <Layers className="h-8 w-8 text-primary" />,
+        description: 'A ISO/IEC 62443 é a série de padrões internacionais para cibersegurança em Sistemas de Automação e Controle Industrial (IACS). Define níveis de segurança (SL 1-4), zonas, condutos e 7 requisitos fundamentais (FR).',
+        timeEstimate: '4 a 8 meses para implementação por zona',
+        steps: [
+          'Estabeleça o Cybersecurity Management System (CSMS) — parte 2-1',
+          'Identifique zonas e condutos conforme parte 3-2',
+          'Defina o Security Level Target (SL-T) para cada zona',
+          'Implemente os 7 Requisitos Fundamentais (FR1 a FR7)',
+        ],
+        quickTips: [
+          'SL 1 = proteção contra erros casuais; SL 4 = proteção contra Estados-nação',
+          'A norma se aplica a operadores (asset owners), integradores e fornecedores',
+          'Zonas e condutos são a base da arquitetura — invista tempo nesta etapa',
+        ],
+      },
+      benefits: {
+        audience: 'Operadores industriais, integradores de sistemas e fornecedores de produtos para automação industrial em qualquer setor (energia, petroquímico, farmacêutico, alimentício).',
+        benefits: ['Padrão internacional reconhecido para segurança IACS', 'Estrutura clara por níveis de maturidade (SL)', 'Aplicável a todo o ciclo de vida do produto/sistema', 'Aderência a regulações setoriais e best practices globais'],
+      },
+    };
+  }
+
   // Generic fallback
   return {
     info: {
