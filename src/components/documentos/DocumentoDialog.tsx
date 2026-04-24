@@ -64,6 +64,8 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [arquivoModo, setArquivoModo] = useState<'upload' | 'url'>('upload');
+  const [arquivoUrlExterna, setArquivoUrlExterna] = useState('');
   const [formData, setFormData] = useState({
     nome: '',
     descricao: '',
