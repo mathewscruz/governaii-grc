@@ -19,6 +19,7 @@ import { ModuleLoadingSkeleton } from '@/components/ui/module-loading-skeleton';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
+import { prefetchAllRoutes } from '@/lib/route-prefetch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { differenceInDays, parseISO } from 'date-fns';
 import { AlertTriangle, Lock, ArrowLeft } from 'lucide-react';
