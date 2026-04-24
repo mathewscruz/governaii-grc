@@ -15,8 +15,8 @@ const handler = async (req: Request): Promise<Response> => {
     const { assessment_id, days_before_expiration = 3 } = await req.json();
 
     // Buscar assessments que expiram em X dias e ainda não estão concluídos
-    const { data: supabaseClient } = await import("https://esm.sh/@supabase/supabase-js@2.39.3");
-    const supabase = supabaseClient(
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.39.3");
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
