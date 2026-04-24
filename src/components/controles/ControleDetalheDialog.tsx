@@ -435,31 +435,34 @@ export function ControleDetalheDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader className="flex-shrink-0">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="outline" className="gap-1">
-                    <Shield className="h-3 w-3" />
-                    {capitalizeText(controle.tipo)}
-                  </Badge>
-                  <Badge className={`${getCriticidadeColor(controle.criticidade)} border whitespace-nowrap`}>
-                    {getCriticidadeLabel(controle.criticidade)}
-                  </Badge>
-                  <Badge className={`${getStatusColor(controle.status)} border whitespace-nowrap`}>
-                    {getStatusLabel(controle.status)}
-                  </Badge>
-                </div>
-                <DialogTitle className="text-xl">{controle.nome}</DialogTitle>
-              </div>
-              <Button variant="outline" size="sm" onClick={onEdit} className="mr-10">
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
-              </Button>
+      <DialogShell
+        open={open}
+        onOpenChange={onOpenChange}
+        title={controle.nome}
+        icon={Shield}
+        size="lg"
+        hideFooter
+        disableShortcuts
+      >
+        <div className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="gap-1">
+                <Shield className="h-3 w-3" />
+                {capitalizeText(controle.tipo)}
+              </Badge>
+              <Badge className={`${getCriticidadeColor(controle.criticidade)} border whitespace-nowrap`}>
+                {getCriticidadeLabel(controle.criticidade)}
+              </Badge>
+              <Badge className={`${getStatusColor(controle.status)} border whitespace-nowrap`}>
+                {getStatusLabel(controle.status)}
+              </Badge>
             </div>
-          </DialogHeader>
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          </div>
 
           {/* Metadados do controle - linha separada */}
           <div className="flex-shrink-0 flex flex-wrap gap-4 items-center text-sm bg-muted/30 rounded-lg p-3">
