@@ -18,6 +18,7 @@ import { useChavesStats } from '@/hooks/useChavesStats';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { formatDateOnly } from '@/lib/date-utils';
 import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/text-utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ChaveCriptografica {
   id: string;

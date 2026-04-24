@@ -28,6 +28,7 @@ import { RenovarDocumentoDialog } from '@/components/documentos/RenovarDocumento
 import { HistoricoVersoesDialog } from '@/components/documentos/HistoricoVersoesDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/components/AuthProvider';
 import { logger } from '@/lib/logger';

@@ -28,6 +28,7 @@ import RelatoriosContratos from '@/components/contratos/RelatoriosContratos';
 import TemplatesContratos from '@/components/contratos/TemplatesContratos';
 import { useContratosStats } from '@/hooks/useContratosStats';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { formatDateOnly } from '@/lib/date-utils';
 import { formatStatus, getContratoStatusColor, getCriticidadeColor } from '@/lib/text-utils';
 

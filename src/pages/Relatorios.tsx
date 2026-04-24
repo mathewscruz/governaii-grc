@@ -22,6 +22,7 @@ import {
   FileBarChart, BarChart3, Shield, AlertTriangle, BookOpen, Clock, Loader2,
   Briefcase, Package, Search, Users, FileCheck, MessageSquare
 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const templateConfigs: Record<string, { nome: string; descricao: string; icon: any; cor: string }> = {
   executivo_trimestral: { nome: 'Resumo Executivo Trimestral', descricao: 'Panorama trimestral de riscos, compliance e incidentes para a diretoria', icon: BarChart3, cor: 'text-primary' },

@@ -8,6 +8,7 @@ import { useDenunciasStats } from '@/hooks/useDenunciasStats';
 import { Shield, AlertTriangle, Clock, CheckCircle, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Denuncia() {
   const [searchParams] = useSearchParams();

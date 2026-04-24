@@ -20,6 +20,7 @@ import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
 import { Plus, ListTodo, Clock, CheckCircle2, AlertTriangle, XCircle, Pencil, Trash2, LayoutGrid, List, Target, ExternalLink, MoreHorizontal, Download } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const statusConfig: Record<string, { label: string; variant: any; icon: any }> = {
   pendente: { label: 'Pendente', variant: 'warning', icon: Clock },

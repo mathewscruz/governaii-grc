@@ -18,6 +18,7 @@ import { useLicencasStats } from '@/hooks/useLicencasStats';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { formatDateOnly } from '@/lib/date-utils';
 import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/text-utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Licenca {
   id: string;
