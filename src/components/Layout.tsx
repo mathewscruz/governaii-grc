@@ -76,28 +76,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(216,60%,8%)] via-[hsl(216,45%,12%)] to-[hsl(216,60%,8%)] p-4">
         <div className="max-w-md w-full text-center space-y-6">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-            <Lock className="h-8 w-8 text-red-600" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+            <Lock className="h-8 w-8 text-destructive" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-white">Acesso Bloqueado</h1>
+            <h1 className="text-2xl font-bold text-white">{t('layout.blockedTitle')}</h1>
             <p className="text-muted-foreground">
-              Sua empresa está temporariamente desativada. Entre em contato com o suporte para mais informações.
+              {t('layout.blockedDesc')}
             </p>
           </div>
           <div className="space-y-3">
-            <a 
-              href="mailto:contato@akuris.com.br" 
+            <a
+              href="mailto:contato@akuris.com.br"
               className="block w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg font-medium transition-colors"
             >
-              Entrar em Contato
+              {t('layout.contactSupport')}
             </a>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full"
               onClick={() => signOut()}
             >
-              Sair
+              {t('layout.signOut')}
             </Button>
           </div>
         </div>
@@ -110,28 +110,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(216,60%,8%)] via-[hsl(216,45%,12%)] to-[hsl(216,60%,8%)] p-4">
         <div className="max-w-md w-full text-center space-y-6">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
-            <AlertTriangle className="h-8 w-8 text-amber-600" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-warning/10">
+            <AlertTriangle className="h-8 w-8 text-warning" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-white">Período de Teste Expirado</h1>
+            <h1 className="text-2xl font-bold text-white">{t('layout.trialExpiredTitle')}</h1>
             <p className="text-muted-foreground">
-              Seu período de teste de 14 dias chegou ao fim. Entre em contato para ativar sua licença e continuar usando o Akuris.
+              {t('layout.trialExpiredDesc')}
             </p>
           </div>
           <div className="space-y-3">
-            <a 
-              href="mailto:comercial@akuris.com.br" 
+            <a
+              href="mailto:comercial@akuris.com.br"
               className="block w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg font-medium transition-colors"
             >
-              Ativar Licença
+              {t('layout.activateLicense')}
             </a>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full"
               onClick={() => signOut()}
             >
-              Sair
+              {t('layout.signOut')}
             </Button>
           </div>
         </div>
@@ -189,7 +189,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                       <ArrowLeft className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Voltar</TooltipContent>
+                  <TooltipContent>{t('layout.backTooltip')}</TooltipContent>
                 </Tooltip>
               )}
               
