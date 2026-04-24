@@ -2,12 +2,13 @@
   "nodeModulesDir": "auto",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "react",
+    "jsxImportSource": "npm:react@18.3.1",
     "lib": ["deno.ns", "dom", "dom.iterable", "esnext"]
   },
   "imports": {
     "resend": "npm:resend@2.0.0",
     "@react-email/components": "npm:@react-email/components@0.0.22",
-    "react": "npm:react@18.3.1"
+    "react": "npm:react@18.3.1",
+    "react/jsx-runtime": "npm:react@18.3.1/jsx-runtime"
   }
 }
