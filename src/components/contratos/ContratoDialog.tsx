@@ -1,44 +1,29 @@
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
-import { Button } from '@/components/ui/button';
+import { useEffect, useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { FileSignature, DollarSign, Calendar, FileText, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { AuthProvider } from '@/components/AuthProvider';
+import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
+import { WizardDialog, WizardTab, WizardTabState } from '@/components/ui/wizard-dialog';
+import { WizardSummaryCard, WizardSummaryRow } from '@/components/ui/wizard-summary-card';
+import { FieldHelpTooltip } from '@/components/ui/field-help-tooltip';
+import { useWizardDraft } from '@/hooks/useWizardDraft';
+import { logger } from '@/lib/logger';
 
 interface Contrato {
   id: string;
-  numero_contrato: string;
-  nome: string;
-  tipo: string;
-  status: string;
-  valor: number;
-  moeda: string;
-  data_inicio: string;
-  data_fim: string;
-  data_assinatura: string;
-  renovacao_automatica: boolean;
-  prazo_renovacao: number;
-  fornecedor_id: string;
-  gestor_contrato: string;
-  area_solicitante: string;
-  objeto: string;
-  observacoes: string;
-  clausulas_especiais: string;
-  penalidades: string;
-  sla_principal: string;
-  confidencial: boolean;
+  numero_contrato: string; nome: string; tipo: string; status: string;
+  valor: number; moeda: string; data_inicio: string; data_fim: string; data_assinatura: string;
+  renovacao_automatica: boolean; prazo_renovacao: number; fornecedor_id: string;
+  gestor_contrato: string; area_solicitante: string; objeto: string; observacoes: string;
+  clausulas_especiais: string; penalidades: string; sla_principal: string; confidencial: boolean;
 }
-
-interface Fornecedor {
-  id: string;
-  nome: string;
-}
+interface Fornecedor { id: string; nome: string; }
 
 interface ContratoDialogProps {
   contrato: Contrato | null;
@@ -48,261 +33,166 @@ interface ContratoDialogProps {
   fornecedores: Fornecedor[];
 }
 
+const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  ativo: 'default', rascunho: 'outline', encerrado: 'secondary', cancelado: 'destructive',
+};
+
+const BLANK = {
+  numero_contrato: '', nome: '', tipo: 'servicos', status: 'rascunho', valor: '', moeda: 'BRL',
+  data_inicio: '', data_fim: '', data_assinatura: '', renovacao_automatica: false, prazo_renovacao: '30',
+  fornecedor_id: '', gestor_contrato: '', area_solicitante: '', objeto: '', observacoes: '',
+  clausulas_especiais: '', penalidades: '', sla_principal: '', confidencial: false,
+};
+
 export function ContratoDialog({ contrato, open, onOpenChange, onSuccess, fornecedores }: ContratoDialogProps) {
-  const [formData, setFormData] = useState({
-    numero_contrato: '',
-    nome: '',
-    tipo: 'servicos',
-    status: 'rascunho',
-    valor: '',
-    moeda: 'BRL',
-    data_inicio: '',
-    data_fim: '',
-    data_assinatura: '',
-    renovacao_automatica: false,
-    prazo_renovacao: '30',
-    fornecedor_id: '',
-    gestor_contrato: '',
-    area_solicitante: '',
-    objeto: '',
-    observacoes: '',
-    clausulas_especiais: '',
-    penalidades: '',
-    sla_principal: '',
-    confidencial: false
-  });
+  const [formData, setFormData] = useState(BLANK);
   const [loading, setLoading] = useState(false);
   const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('identificacao');
+  const [initialSnapshot, setInitialSnapshot] = useState('');
   const { toast } = useToast();
   const { notify } = useIntegrationNotify();
 
   useEffect(() => {
     if (open) {
       fetchUsuarios();
-      if (contrato) {
-        setFormData({
-          numero_contrato: contrato.numero_contrato || '',
-          nome: contrato.nome || '',
-          tipo: contrato.tipo || 'servicos',
-          status: contrato.status || 'rascunho',
-          valor: contrato.valor?.toString() || '',
-          moeda: contrato.moeda || 'BRL',
-          data_inicio: contrato.data_inicio || '',
-          data_fim: contrato.data_fim || '',
-          data_assinatura: contrato.data_assinatura || '',
-          renovacao_automatica: contrato.renovacao_automatica || false,
-          prazo_renovacao: contrato.prazo_renovacao?.toString() || '30',
-          fornecedor_id: contrato.fornecedor_id || '',
-          gestor_contrato: contrato.gestor_contrato || '',
-          area_solicitante: contrato.area_solicitante || '',
-          objeto: contrato.objeto || '',
-          observacoes: contrato.observacoes || '',
-          clausulas_especiais: contrato.clausulas_especiais || '',
-          penalidades: contrato.penalidades || '',
-          sla_principal: contrato.sla_principal || '',
-          confidencial: contrato.confidencial || false
-        });
-      } else {
-        setFormData({
-          numero_contrato: '',
-          nome: '',
-          tipo: 'servicos',
-          status: 'rascunho',
-          valor: '',
-          moeda: 'BRL',
-          data_inicio: '',
-          data_fim: '',
-          data_assinatura: '',
-          renovacao_automatica: false,
-          prazo_renovacao: '30',
-          fornecedor_id: '',
-          gestor_contrato: '',
-          area_solicitante: '',
-          objeto: '',
-          observacoes: '',
-          clausulas_especiais: '',
-          penalidades: '',
-          sla_principal: '',
-          confidencial: false
-        });
-      }
+      const next = contrato
+        ? {
+            numero_contrato: contrato.numero_contrato || '', nome: contrato.nome || '',
+            tipo: contrato.tipo || 'servicos', status: contrato.status || 'rascunho',
+            valor: contrato.valor?.toString() || '', moeda: contrato.moeda || 'BRL',
+            data_inicio: contrato.data_inicio || '', data_fim: contrato.data_fim || '',
+            data_assinatura: contrato.data_assinatura || '',
+            renovacao_automatica: contrato.renovacao_automatica || false,
+            prazo_renovacao: contrato.prazo_renovacao?.toString() || '30',
+            fornecedor_id: contrato.fornecedor_id || '', gestor_contrato: contrato.gestor_contrato || '',
+            area_solicitante: contrato.area_solicitante || '', objeto: contrato.objeto || '',
+            observacoes: contrato.observacoes || '', clausulas_especiais: contrato.clausulas_especiais || '',
+            penalidades: contrato.penalidades || '', sla_principal: contrato.sla_principal || '',
+            confidencial: contrato.confidencial || false,
+          }
+        : BLANK;
+      setFormData(next);
+      setInitialSnapshot(JSON.stringify(next));
+      setActiveTab('identificacao');
     }
   }, [contrato, open]);
 
+  const isDirty = JSON.stringify(formData) !== initialSnapshot;
+  const update = (patch: Partial<typeof BLANK>) => setFormData((p) => ({ ...p, ...patch }));
+
+  const { hasDraft, savedAt, loadDraft, clearDraft } = useWizardDraft({
+    storageKey: 'contrato', recordId: contrato?.id, values: formData, enabled: open,
+  });
+
+  useEffect(() => {
+    if (open && !contrato && hasDraft) {
+      const d = loadDraft();
+      if (d) setFormData(d as typeof BLANK);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const fetchUsuarios = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, nome')
-        .eq('ativo', true)
-        .order('nome');
-
+      const { data, error } = await supabase.from('profiles').select('user_id, nome').eq('ativo', true).order('nome');
       if (error) throw error;
       setUsuarios(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
-    }
+    } catch (error) { logger.error('Erro ao carregar usuários:', error); }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async () => {
     if (!formData.nome || !formData.numero_contrato || !formData.fornecedor_id) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos obrigatórios",
-        variant: "destructive",
-      });
+      setActiveTab('identificacao');
+      toast({ title: "Erro", description: "Preencha número, nome e fornecedor.", variant: "destructive" });
+      return;
+    }
+    if (formData.data_inicio && formData.data_fim && new Date(formData.data_inicio) > new Date(formData.data_fim)) {
+      setActiveTab('financeiro');
+      toast({ title: "Erro", description: "Data início deve ser anterior à data fim.", variant: "destructive" });
       return;
     }
 
-    // Validação de datas
-    if (formData.data_inicio && formData.data_fim) {
-      if (new Date(formData.data_inicio) > new Date(formData.data_fim)) {
-        toast({
-          title: "Erro",
-          description: "A data de início não pode ser posterior à data de fim",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
     setLoading(true);
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('empresa_id')
-        .eq('user_id', user?.id)
-        .single();
+      const { data: profile } = await supabase.from('profiles').select('empresa_id').eq('user_id', user?.id).single();
 
       const contratoData = {
-        numero_contrato: formData.numero_contrato,
-        nome: formData.nome,
-        tipo: formData.tipo,
-        status: formData.status,
-        valor: formData.valor ? parseFloat(formData.valor) : null,
-        moeda: formData.moeda,
-        data_inicio: formData.data_inicio || null,
-        data_fim: formData.data_fim || null,
-        data_assinatura: formData.data_assinatura || null,
+        numero_contrato: formData.numero_contrato, nome: formData.nome, tipo: formData.tipo,
+        status: formData.status, valor: formData.valor ? parseFloat(formData.valor) : null,
+        moeda: formData.moeda, data_inicio: formData.data_inicio || null,
+        data_fim: formData.data_fim || null, data_assinatura: formData.data_assinatura || null,
         renovacao_automatica: formData.renovacao_automatica,
         prazo_renovacao: formData.prazo_renovacao ? parseInt(formData.prazo_renovacao) : null,
-        fornecedor_id: formData.fornecedor_id,
-        gestor_contrato: formData.gestor_contrato || null,
-        area_solicitante: formData.area_solicitante,
-        objeto: formData.objeto,
-        observacoes: formData.observacoes,
-        clausulas_especiais: formData.clausulas_especiais,
-        penalidades: formData.penalidades,
-        sla_principal: formData.sla_principal,
-        confidencial: formData.confidencial,
-        empresa_id: profile?.empresa_id,
-        created_by: user?.id
+        fornecedor_id: formData.fornecedor_id, gestor_contrato: formData.gestor_contrato || null,
+        area_solicitante: formData.area_solicitante, objeto: formData.objeto,
+        observacoes: formData.observacoes, clausulas_especiais: formData.clausulas_especiais,
+        penalidades: formData.penalidades, sla_principal: formData.sla_principal,
+        confidencial: formData.confidencial, empresa_id: profile?.empresa_id, created_by: user?.id,
       };
 
-      let error;
-      
-      if (contrato) {
-        const { error: updateError } = await supabase
-          .from('contratos')
-          .update(contratoData)
-          .eq('id', contrato.id);
-        error = updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from('contratos')
-          .insert([contratoData]);
-        error = insertError;
-      }
-
+      const { error } = contrato
+        ? await supabase.from('contratos').update(contratoData).eq('id', contrato.id)
+        : await supabase.from('contratos').insert([contratoData]);
       if (error) throw error;
 
       if (!contrato) {
         notify('contrato_criado', {
-          titulo: `Novo contrato: ${formData.nome}`,
-          descricao: formData.objeto,
+          titulo: `Novo contrato: ${formData.nome}`, descricao: formData.objeto,
           link: `${window.location.origin}/contratos`,
           dados: { tipo: formData.tipo, numero: formData.numero_contrato },
         });
       }
 
-      toast({
-        title: "Sucesso",
-        description: `Contrato ${contrato ? 'atualizado' : 'criado'} com sucesso`,
-      });
-
+      toast({ title: "Sucesso", description: `Contrato ${contrato ? 'atualizado' : 'criado'} com sucesso` });
+      clearDraft();
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error('Erro ao salvar contrato:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao salvar contrato",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+      logger.error('Erro ao salvar contrato:', error);
+      toast({ title: "Erro", description: "Erro ao salvar contrato", variant: "destructive" });
+    } finally { setLoading(false); }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {contrato ? 'Editar Contrato' : 'Novo Contrato'}
-          </DialogTitle>
-        </DialogHeader>
+  const identState: WizardTabState =
+    formData.numero_contrato && formData.nome && formData.fornecedor_id ? 'complete' : 'pending';
+  const finanState: WizardTabState = formData.valor || formData.data_inicio ? 'complete' : 'pending';
+  const condState: WizardTabState = formData.objeto || formData.sla_principal ? 'complete' : 'pending';
+  const govState: WizardTabState = formData.gestor_contrato || formData.area_solicitante ? 'complete' : 'pending';
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+  const fornecedorNome = fornecedores.find((f) => f.id === formData.fornecedor_id)?.nome;
+
+  const tabs: WizardTab[] = useMemo(() => [
+    {
+      id: 'identificacao', label: 'Identificação', icon: FileSignature, state: identState, hint: 'Número, fornecedor, tipo',
+      content: (
+        <div className="space-y-5 max-w-3xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="numero_contrato">Número do Contrato *</Label>
-              <Input
-                id="numero_contrato"
-                value={formData.numero_contrato}
-                onChange={(e) => setFormData({ ...formData, numero_contrato: e.target.value })}
-                placeholder="Ex: CT-2024-001"
-                required
-              />
+              <Label className="flex items-center gap-1">
+                Número do Contrato <span className="text-destructive">*</span>
+                <FieldHelpTooltip content="Identificador único, ex: CT-2024-001" />
+              </Label>
+              <Input value={formData.numero_contrato} onChange={(e) => update({ numero_contrato: e.target.value })} placeholder="Ex: CT-2024-001" />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="nome">Nome do Contrato *</Label>
-              <Input
-                id="nome"
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                placeholder="Ex: Contrato de Licenciamento de Software"
-                required
-              />
+              <Label>Nome do Contrato <span className="text-destructive">*</span></Label>
+              <Input value={formData.nome} onChange={(e) => update({ nome: e.target.value })} placeholder="Nome descritivo" />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="fornecedor_id">Fornecedor *</Label>
-              <Select value={formData.fornecedor_id} onValueChange={(value) => setFormData({ ...formData, fornecedor_id: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o fornecedor" />
-                </SelectTrigger>
+              <Label>Fornecedor <span className="text-destructive">*</span></Label>
+              <Select value={formData.fornecedor_id} onValueChange={(v) => update({ fornecedor_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {fornecedores.map((fornecedor) => (
-                    <SelectItem key={fornecedor.id} value={fornecedor.id}>
-                      {fornecedor.nome}
-                    </SelectItem>
-                  ))}
+                  {fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="tipo">Tipo</Label>
-              <Select value={formData.tipo} onValueChange={(value) => setFormData({ ...formData, tipo: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Label>Tipo</Label>
+              <Select value={formData.tipo} onValueChange={(v) => update({ tipo: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="servicos">Serviços</SelectItem>
                   <SelectItem value="licenciamento">Licenciamento</SelectItem>
@@ -312,13 +202,10 @@ export function ContratoDialog({ contrato, open, onOpenChange, onSuccess, fornec
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Label>Status</Label>
+              <Select value={formData.status} onValueChange={(v) => update({ status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="rascunho">Rascunho</SelectItem>
                   <SelectItem value="negociacao">Negociação</SelectItem>
@@ -330,174 +217,157 @@ export function ContratoDialog({ contrato, open, onOpenChange, onSuccess, fornec
                 </SelectContent>
               </Select>
             </div>
-
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'financeiro', label: 'Financeiro & Prazos', icon: DollarSign, state: finanState, hint: 'Valor e datas',
+      content: (
+        <div className="space-y-5 max-w-3xl">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="valor">Valor</Label>
-              <Input
-                id="valor"
-                type="number"
-                step="0.01"
-                value={formData.valor}
-                onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                placeholder="0.00"
-              />
+              <Label className="flex items-center gap-1">
+                Valor
+                <FieldHelpTooltip content="Valor total do contrato. Use ponto para decimais." />
+              </Label>
+              <Input type="number" step="0.01" value={formData.valor} onChange={(e) => update({ valor: e.target.value })} placeholder="0.00" />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="data_inicio">Data de Início</Label>
-              <Input
-                id="data_inicio"
-                type="date"
-                value={formData.data_inicio}
-                onChange={(e) => setFormData({ ...formData, data_inicio: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="data_fim">Data de Fim</Label>
-              <Input
-                id="data_fim"
-                type="date"
-                value={formData.data_fim}
-                onChange={(e) => setFormData({ ...formData, data_fim: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="data_assinatura">Data de Assinatura</Label>
-              <Input
-                id="data_assinatura"
-                type="date"
-                value={formData.data_assinatura}
-                onChange={(e) => setFormData({ ...formData, data_assinatura: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="gestor_contrato">Gestor do Contrato</Label>
-              <Select value={formData.gestor_contrato} onValueChange={(value) => setFormData({ ...formData, gestor_contrato: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o gestor" />
-                </SelectTrigger>
+              <Label>Moeda</Label>
+              <Select value={formData.moeda} onValueChange={(v) => update({ moeda: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {usuarios.map((usuario) => (
-                    <SelectItem key={usuario.user_id} value={usuario.user_id}>
-                      {usuario.nome}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="BRL">BRL</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="area_solicitante">Área Solicitante</Label>
-              <Input
-                id="area_solicitante"
-                value={formData.area_solicitante}
-                onChange={(e) => setFormData({ ...formData, area_solicitante: e.target.value })}
-                placeholder="Ex: TI, Financeiro, RH"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="prazo_renovacao">Prazo Renovação (dias)</Label>
-              <Input
-                id="prazo_renovacao"
-                type="number"
-                value={formData.prazo_renovacao}
-                onChange={(e) => setFormData({ ...formData, prazo_renovacao: e.target.value })}
-                placeholder="30"
-              />
+              <Label>Prazo Renovação (dias)</Label>
+              <Input type="number" value={formData.prazo_renovacao} onChange={(e) => update({ prazo_renovacao: e.target.value })} />
             </div>
           </div>
-
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="objeto">Objeto do Contrato</Label>
-              <Textarea
-                id="objeto"
-                value={formData.objeto}
-                onChange={(e) => setFormData({ ...formData, objeto: e.target.value })}
-                placeholder="Descrição detalhada do objeto do contrato..."
-                rows={3}
-              />
+              <Label className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Início</Label>
+              <Input type="date" value={formData.data_inicio} onChange={(e) => update({ data_inicio: e.target.value })} />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="sla_principal">SLA Principal</Label>
-              <Textarea
-                id="sla_principal"
-                value={formData.sla_principal}
-                onChange={(e) => setFormData({ ...formData, sla_principal: e.target.value })}
-                placeholder="Descrição dos principais SLAs e indicadores..."
-                rows={2}
-              />
+              <Label className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Fim</Label>
+              <Input type="date" value={formData.data_fim} onChange={(e) => update({ data_fim: e.target.value })} />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="clausulas_especiais">Cláusulas Especiais</Label>
-              <Textarea
-                id="clausulas_especiais"
-                value={formData.clausulas_especiais}
-                onChange={(e) => setFormData({ ...formData, clausulas_especiais: e.target.value })}
-                placeholder="Cláusulas especiais e observações importantes..."
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="penalidades">Penalidades</Label>
-              <Textarea
-                id="penalidades"
-                value={formData.penalidades}
-                onChange={(e) => setFormData({ ...formData, penalidades: e.target.value })}
-                placeholder="Descrição das penalidades e multas aplicáveis..."
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="observacoes">Observações</Label>
-              <Textarea
-                id="observacoes"
-                value={formData.observacoes}
-                onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                placeholder="Observações adicionais..."
-                rows={2}
-              />
+              <Label className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Assinatura</Label>
+              <Input type="date" value={formData.data_assinatura} onChange={(e) => update({ data_assinatura: e.target.value })} />
             </div>
           </div>
-
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="renovacao_automatica"
-                checked={formData.renovacao_automatica}
-                onCheckedChange={(checked) => setFormData({ ...formData, renovacao_automatica: checked })}
-              />
-              <Label htmlFor="renovacao_automatica">Renovação Automática</Label>
+          <div className="flex items-center gap-2 rounded-lg border p-3">
+            <Switch checked={formData.renovacao_automatica} onCheckedChange={(c) => update({ renovacao_automatica: c })} id="ren-auto" />
+            <Label htmlFor="ren-auto" className="cursor-pointer">Renovação Automática</Label>
+            <FieldHelpTooltip content="Se ativado, o contrato se renova automaticamente ao vencer." />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'condicoes', label: 'Condições', icon: FileText, state: condState, hint: 'Objeto, SLA, cláusulas',
+      content: (
+        <div className="space-y-5 max-w-3xl">
+          <div className="space-y-2">
+            <Label>Objeto do Contrato</Label>
+            <Textarea value={formData.objeto} onChange={(e) => update({ objeto: e.target.value })} rows={4} placeholder="Descrição detalhada do objeto..." />
+          </div>
+          <div className="space-y-2">
+            <Label>SLA Principal</Label>
+            <Textarea value={formData.sla_principal} onChange={(e) => update({ sla_principal: e.target.value })} rows={3} placeholder="Principais SLAs e indicadores..." />
+          </div>
+          <div className="space-y-2">
+            <Label>Cláusulas Especiais</Label>
+            <Textarea value={formData.clausulas_especiais} onChange={(e) => update({ clausulas_especiais: e.target.value })} rows={3} />
+          </div>
+          <div className="space-y-2">
+            <Label>Penalidades</Label>
+            <Textarea value={formData.penalidades} onChange={(e) => update({ penalidades: e.target.value })} rows={3} />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'governanca', label: 'Governança', icon: Shield, state: govState, hint: 'Gestor, área, observações',
+      content: (
+        <div className="space-y-5 max-w-3xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                Gestor do Contrato
+                <FieldHelpTooltip content="Pessoa responsável por acompanhar a execução do contrato." />
+              </Label>
+              <Select value={formData.gestor_contrato} onValueChange={(v) => update({ gestor_contrato: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione o gestor" /></SelectTrigger>
+                <SelectContent>
+                  {usuarios.map((u) => <SelectItem key={u.user_id} value={u.user_id}>{u.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="confidencial"
-                checked={formData.confidencial}
-                onCheckedChange={(checked) => setFormData({ ...formData, confidencial: checked })}
-              />
-              <Label htmlFor="confidencial">Confidencial</Label>
+            <div className="space-y-2">
+              <Label>Área Solicitante</Label>
+              <Input value={formData.area_solicitante} onChange={(e) => update({ area_solicitante: e.target.value })} placeholder="Ex: TI, Financeiro" />
             </div>
           </div>
-
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Salvando...' : (contrato ? 'Atualizar' : 'Criar')}
-            </Button>
+          <div className="flex items-center gap-2 rounded-lg border p-3">
+            <Switch checked={formData.confidencial} onCheckedChange={(c) => update({ confidencial: c })} id="conf" />
+            <Label htmlFor="conf" className="cursor-pointer">Confidencial</Label>
+            <FieldHelpTooltip content="Restringe acesso a usuários autorizados." />
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+          <div className="space-y-2">
+            <Label>Observações</Label>
+            <Textarea value={formData.observacoes} onChange={(e) => update({ observacoes: e.target.value })} rows={3} />
+          </div>
+        </div>
+      ),
+    },
+  ], [formData, fornecedores, usuarios, identState, finanState, condState, govState]);
+
+  const summary = (
+    <WizardSummaryCard title="Resumo do Contrato">
+      <WizardSummaryRow label="Nome" value={formData.nome || <span className="text-muted-foreground italic">Sem nome</span>} highlight />
+      <WizardSummaryRow label="Nº" value={formData.numero_contrato || '—'} />
+      <WizardSummaryRow label="Fornecedor" value={fornecedorNome || <span className="text-muted-foreground italic">—</span>} />
+      <WizardSummaryRow
+        label="Status"
+        value={<Badge variant={STATUS_VARIANT[formData.status] || 'outline'} className="text-[10px] capitalize">{formData.status.replace('_', ' ')}</Badge>}
+      />
+      <WizardSummaryRow
+        label="Valor"
+        value={formData.valor ? `${formData.moeda} ${parseFloat(formData.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : <span className="text-muted-foreground italic">—</span>}
+      />
+    </WizardSummaryCard>
+  );
+
+  const draftLabel = !contrato && hasDraft && savedAt
+    ? `Rascunho às ${new Date(savedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+    : undefined;
+
+  return (
+    <WizardDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={contrato ? 'Editar Contrato' : 'Novo Contrato'}
+      description="Identifique o contrato, defina valores, prazos e governança."
+      icon={FileSignature}
+      tabs={tabs}
+      summary={summary}
+      activeTab={activeTab}
+      onActiveTabChange={setActiveTab}
+      onSubmit={handleSubmit}
+      submitLabel={contrato ? 'Atualizar' : 'Criar'}
+      isSubmitting={loading}
+      submitDisabled={loading}
+      isDirty={isDirty}
+      draftLabel={draftLabel}
+      size="xl"
+    />
   );
 }
