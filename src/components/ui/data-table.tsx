@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { Search, Filter, Download, RefreshCw, ChevronDown, ChevronUp } from "lucide-react"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 export interface Column<T> {
   key: keyof T | string
@@ -60,7 +61,7 @@ export function DataTable<T extends Record<string, any>>({
   columns,
   loading = false,
   searchable = true,
-  searchPlaceholder = "Buscar...",
+  searchPlaceholder,
   searchValue = "",
   onSearchChange,
   filters = [],
@@ -75,6 +76,8 @@ export function DataTable<T extends Record<string, any>>({
   pageSize: initialPageSize = 10,
   pageSizeOptions = [10, 20, 50, 100]
 }: DataTableProps<T>) {
+  const { t } = useLanguage()
+  const _searchPlaceholder = searchPlaceholder ?? t('common.searchPlaceholder')
   const [showFilters, setShowFilters] = React.useState(false)
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(initialPageSize)
@@ -152,7 +155,7 @@ export function DataTable<T extends Record<string, any>>({
             <div className="relative flex-1 sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder={searchPlaceholder}
+                placeholder={_searchPlaceholder}
                 value={searchValue}
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 className="pl-10"
@@ -172,7 +175,7 @@ export function DataTable<T extends Record<string, any>>({
                     className="relative"
                   >
                     <Filter className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Filtros</span>
+                    <span className="hidden sm:inline">{t('common.filters')}</span>
                     {activeFiltersCount > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
                         {activeFiltersCount}
@@ -185,13 +188,13 @@ export function DataTable<T extends Record<string, any>>({
             {onRefresh && (
               <Button variant="outline" size="sm" onClick={onRefresh}>
                 <RefreshCw className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Atualizar</span>
+                <span className="hidden sm:inline">{t('common.refresh')}</span>
               </Button>
             )}
             {onExport && (
               <Button variant="outline" size="sm" onClick={onExport}>
                 <Download className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Exportar</span>
+                <span className="hidden sm:inline">{t('common.export')}</span>
               </Button>
             )}
           </div>
@@ -280,7 +283,7 @@ export function DataTable<T extends Record<string, any>>({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-t">
           <div className="flex items-center gap-3">
             <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-              {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, data.length)} de {data.length}
+              {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, data.length)} {t('common.of')} {data.length}
             </span>
             <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
               <SelectTrigger className="w-[70px] h-8">

@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { pt } from '@/i18n/pt';
 import { en } from '@/i18n/en';
+import { supabase } from '@/integrations/supabase/client';
 
-type Locale = 'pt' | 'en';
+export type Locale = 'pt' | 'en';
 type Dictionary = Record<string, any>;
 
 const dictionaries: Record<Locale, Dictionary> = { pt, en };
@@ -10,25 +11,84 @@ const dictionaries: Record<Locale, Dictionary> = { pt, en };
 interface LanguageContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(() => {
-    const saved = localStorage.getItem('governaii-locale');
+const STORAGE_KEY = 'governaii-locale';
+
+function detectInitialLocale(): Locale {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === 'en' || saved === 'pt') return saved;
     const browserLang = navigator.language || '';
     return browserLang.startsWith('pt') ? 'pt' : 'en';
-  });
+  } catch {
+    return 'pt';
+  }
+}
+
+function interpolate(str: string, params?: Record<string, string | number>): string {
+  if (!params) return str;
+  return str.replace(/\{(\w+)\}/g, (_, k) => (params[k] !== undefined ? String(params[k]) : `{${k}}`));
+}
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [locale, setLocaleState] = useState<Locale>(detectInitialLocale);
+
+  // Sync with profile.preferred_locale on auth changes
+  useEffect(() => {
+    let mounted = true;
+
+    const syncFromProfile = async (userId: string) => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('preferred_locale')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (!mounted) return;
+        const pref = (data as any)?.preferred_locale;
+        if (pref === 'pt' || pref === 'en') {
+          setLocaleState(pref);
+          try { localStorage.setItem(STORAGE_KEY, pref); } catch {}
+        }
+      } catch {
+        // silent: keep local locale
+      }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) syncFromProfile(session.user.id);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) syncFromProfile(session.user.id);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
-    localStorage.setItem('governaii-locale', newLocale);
+    try { localStorage.setItem(STORAGE_KEY, newLocale); } catch {}
+
+    // Persist to profile if logged in
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase
+        .from('profiles')
+        .update({ preferred_locale: newLocale } as any)
+        .eq('user_id', user.id)
+        .then(() => {});
+    });
   }, []);
 
-  const t = useCallback((key: string): string => {
+  const t = useCallback((key: string, params?: Record<string, string | number>): string => {
     const dict = dictionaries[locale];
     const keys = key.split('.');
     let result: any = dict;
@@ -36,7 +96,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       result = result?.[k];
       if (result === undefined) return key;
     }
-    return typeof result === 'string' ? result : key;
+    if (typeof result !== 'string') return key;
+    return interpolate(result, params);
   }, [locale]);
 
   return (

@@ -276,6 +276,91 @@ const STATUS_LABELS: Record<string, string> = {
   'violacao_normas': 'Violação de Normas',
 };
 
+// English translations for STATUS_LABELS keys
+const STATUS_LABELS_EN: Record<string, string> = {
+  aplicacao: 'Application', banco_dados: 'Database', sistema_operacional: 'Operating System',
+  hardware: 'Hardware', software: 'Software', rede: 'Network', nuvem: 'Cloud',
+  servidor: 'Server', dispositivo: 'Device', seguranca: 'Security', comunicacao: 'Communication',
+  politica: 'Policy', procedimento: 'Procedure', instrucao: 'Instruction', formulario: 'Form',
+  relatorio: 'Report', certificado: 'Certificate', contrato: 'Contract', documento: 'Document',
+  manual: 'Manual', norma: 'Standard', registro: 'Record',
+  publica: 'Public', interna: 'Internal', restrita: 'Restricted', confidencial: 'Confidential',
+  critico: 'Critical', critica: 'Critical', alto: 'High', alta: 'High',
+  medio: 'Medium', media: 'Medium', baixo: 'Low', baixa: 'Low',
+  muito_alto: 'Very High', muito_baixo: 'Very Low',
+  pendente: 'Pending', pendente_aprovacao: 'Pending Approval', em_andamento: 'In Progress',
+  em_analise: 'Under Review', em_revisao: 'Under Revision', em_investigacao: 'Under Investigation',
+  concluido: 'Completed', concluida: 'Completed', cancelado: 'Cancelled', cancelada: 'Cancelled',
+  aprovado: 'Approved', aprovada: 'Approved', rejeitado: 'Rejected', rejeitada: 'Rejected',
+  nao_aplicavel: 'Not Applicable', arquivado: 'Archived', arquivada: 'Archived',
+  rascunho: 'Draft', planejamento: 'Planning', contido: 'Contained',
+  resolvido: 'Resolved', resolvida: 'Resolved', atendida: 'Fulfilled',
+  fechado: 'Closed', aberto: 'Open', nova: 'New', novo: 'New',
+  ti: 'IT', compliance: 'Compliance', operacional: 'Operational', externa: 'External', financeira: 'Financial',
+  preventivo: 'Preventive', detectivo: 'Detective', corretivo: 'Corrective', compensatorio: 'Compensatory',
+  erp: 'ERP', crm: 'CRM', bi: 'BI', siem: 'SIEM', iam: 'IAM', vpn: 'VPN', api: 'API',
+  saas: 'SaaS', paas: 'PaaS', iaas: 'IaaS',
+  ativo: 'Active', ativa: 'Active', inativo: 'Inactive', inativa: 'Inactive',
+  vencido: 'Expired', vencida: 'Expired', expirado: 'Expired', expirada: 'Expired',
+  revogado: 'Revoked', revogada: 'Revoked', suspenso: 'Suspended', suspensa: 'Suspended',
+  a_vencer: 'Due Soon', em_renovacao: 'Renewing', em_rotacao: 'Rotating', descontinuado: 'Discontinued',
+  identificado: 'Identified', analisado: 'Analyzed', tratado: 'Treated', monitorado: 'Monitored',
+  aceito: 'Accepted', mitigado: 'Mitigated',
+  mitigar: 'Mitigate', transferir: 'Transfer', aceitar: 'Accept', evitar: 'Avoid',
+  diaria: 'Daily', diario: 'Daily', semanal: 'Weekly', quinzenal: 'Biweekly',
+  mensal: 'Monthly', bimestral: 'Bimonthly', trimestral: 'Quarterly',
+  semestral: 'Semiannual', anual: 'Annual', sob_demanda: 'On Demand',
+  administrativo: 'Administrative', leitura: 'Read', escrita: 'Write', total: 'Total',
+  elevado: 'Elevated', padrao: 'Standard',
+  sensivel: 'Sensitive', muito_sensivel: 'Highly Sensitive', comum: 'Common', moderado: 'Moderate',
+  negociacao: 'Negotiation', aprovacao: 'Approval', encerrado: 'Ended', renovacao: 'Renewal',
+  aguardando_inicio: 'Awaiting Start', aguardando: 'Awaiting',
+  iniciada: 'Started', iniciado: 'Started', finalizada: 'Finalized', finalizado: 'Finalized',
+  enviado: 'Sent', respondido: 'Answered', avaliado: 'Evaluated',
+  conforme: 'Compliant', nao_conforme: 'Non-Compliant',
+  parcial: 'Partial', parcialmente_conforme: 'Partially Compliant',
+  investigacao: 'Investigation', contencao: 'Containment',
+  erradicacao: 'Eradication', recuperacao: 'Recovery', licoes_aprendidas: 'Lessons Learned',
+  api_key: 'API Key', certificado_ssl: 'SSL Certificate', ssh_key: 'SSH Key',
+  token_acesso: 'Access Token', secret_key: 'Secret Key', certificado_digital: 'Digital Certificate',
+  chave_simetrica: 'Symmetric Key', chave_assimetrica: 'Asymmetric Key',
+  legitimo_interesse: 'Legitimate Interest', execucao_contrato: 'Contract Execution',
+  cumprimento_obrigacao: 'Legal Obligation', protecao_vida: 'Life Protection',
+  exercicio_direitos: 'Exercise of Rights', politicas_publicas: 'Public Policies',
+  consentimento: 'Consent', tutela_saude: 'Health Care', protecao_credito: 'Credit Protection',
+  estudo_pesquisa: 'Study and Research',
+  diretamente_titular: 'Directly from Subject', nao_compartilha: 'Not Shared',
+  autorizacao_anpd: 'ANPD Authorization', revogacao_consentimento: 'Consent Revocation',
+  formulario_web: 'Web Form',
+  servidor_local: 'Local Server', cloud_publica: 'Public Cloud',
+  cloud_privada: 'Private Cloud', cloud_hibrida: 'Hybrid Cloud', data_center: 'Data Center',
+  muito_grande: 'Very Large', tempo_real: 'Real Time',
+  pessoa_juridica: 'Legal Entity', pessoa_fisica: 'Individual',
+  contrato_principal: 'Main Contract', aditivo_contrato: 'Contract Addendum', termo_aditivo: 'Addendum',
+  seguranca_informacao: 'Information Security', gestao_riscos: 'Risk Management',
+  gestao_incidentes: 'Incident Management', gestao_mudancas: 'Change Management',
+  gestao_vulnerabilidades: 'Vulnerability Management', controle_acesso: 'Access Control',
+  backup_restauracao: 'Backup and Restore',
+  disponibilidade: 'Availability', privacidade: 'Privacy', integridade: 'Integrity',
+  confidencialidade: 'Confidentiality', conformidade: 'Compliance', governanca: 'Governance',
+  vazamento_dados: 'Data Leak', acesso_nao_autorizado: 'Unauthorized Access',
+  indisponibilidade: 'Unavailability', violacao_politica: 'Policy Violation',
+  phishing: 'Phishing', malware: 'Malware', ransomware: 'Ransomware',
+  assedio_moral: 'Workplace Harassment', assedio_sexual: 'Sexual Harassment',
+  discriminacao: 'Discrimination', fraude: 'Fraud', corrupcao: 'Corruption',
+  conflito_interesses: 'Conflict of Interest', desvio_conduta: 'Misconduct',
+  violacao_normas: 'Standards Violation',
+};
+
+// Locale-aware status label getter (use this in new code)
+export const getStatusLabel = (status: string, locale: 'pt' | 'en' = 'pt'): string => {
+  if (!status) return '';
+  const lower = status.toLowerCase();
+  const map = locale === 'en' ? STATUS_LABELS_EN : STATUS_LABELS;
+  if (map[lower]) return map[lower];
+  return formatStatus(status);
+};
+
 // Palavras que devem permanecer em maiúsculas
 const UPPERCASE_WORDS = new Set(['ti', 'erp', 'crm', 'bi', 'siem', 'iam', 'vpn', 'api', 'saas', 'paas', 'iaas', 'rls', 'jwt', 'sql', 'css', 'html', 'url', 'uri', 'xml', 'json', 'http', 'https', 'ftp', 'ssh', 'ssl', 'tls', 'dns', 'ip', 'tcp', 'udp', 'smtp', 'imap', 'pop', 'ldap', 'oauth', 'sso', 'mfa', 'otp', 'pdf', 'csv', 'xlsx', 'docx', 'pptx', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'mp3', 'mp4', 'avi', 'mov', 'iso', 'nist', 'lgpd', 'gdpr', 'ccpa', 'hipaa', 'sox', 'soc', 'pci', 'dss', 'cobit', 'coso', 'itil', 'cis']);
 

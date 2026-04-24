@@ -25,6 +25,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useWizardShortcuts } from '@/hooks/useWizardShortcuts';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export type WizardTabState = 'pending' | 'partial' | 'complete' | 'error';
 
@@ -99,8 +100,8 @@ export function WizardDialog({
   tabs,
   summary,
   onSubmit,
-  submitLabel = 'Salvar',
-  cancelLabel = 'Cancelar',
+  submitLabel,
+  cancelLabel,
   isSubmitting = false,
   submitDisabled = false,
   isDirty = false,
@@ -110,6 +111,9 @@ export function WizardDialog({
   size = 'xl',
   footerExtra,
 }: WizardDialogProps) {
+  const { t } = useLanguage();
+  const _submitLabel = submitLabel ?? t('common.save');
+  const _cancelLabel = cancelLabel ?? t('common.cancel');
   const [internalTab, setInternalTab] = useState<string>(tabs[0]?.id ?? '');
   const activeTab = controlledTab ?? internalTab;
   const setActiveTab = (id: string) => {
@@ -267,7 +271,7 @@ export function WizardDialog({
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span className="font-medium">
-                  Etapa {currentIndex + 1} de {tabs.length}
+                  {t('wizard.stepOf', { current: currentIndex + 1, total: tabs.length })}
                 </span>
                 {draftLabel && (
                   <>
@@ -284,7 +288,7 @@ export function WizardDialog({
                   size="sm"
                   onClick={() => handleOpenChange(false)}
                 >
-                  {cancelLabel}
+                  {_cancelLabel}
                 </Button>
                 <Button
                   type="button"
@@ -295,11 +299,11 @@ export function WizardDialog({
                   className="gap-1"
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Anterior
+                  {t('common.previous')}
                 </Button>
                 {!isLast ? (
                   <Button type="button" size="sm" onClick={goNext} className="gap-1">
-                    Próxima
+                    {t('common.next')}
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 ) : null}
@@ -312,7 +316,7 @@ export function WizardDialog({
                     className="gap-1"
                   >
                     <Save className="h-4 w-4" />
-                    {isSubmitting ? 'Salvando...' : submitLabel}
+                    {isSubmitting ? t('common.saving') : _submitLabel}
                   </Button>
                 )}
               </div>
@@ -324,18 +328,18 @@ export function WizardDialog({
       <AlertDialog open={showConfirm} onOpenChange={(o) => !o && cancelDiscard()}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
+            <AlertDialogTitle>{t('dialogs.unsavedChanges')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Você tem alterações não salvas. Se sair agora, elas serão perdidas.
+              {t('dialogs.unsavedChangesDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelDiscard}>Continuar editando</AlertDialogCancel>
+            <AlertDialogCancel onClick={cancelDiscard}>{t('dialogs.keepEditing')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDiscard}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Descartar
+              {t('dialogs.discard')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

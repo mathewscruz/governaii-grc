@@ -5813,6 +5813,7 @@ export type Database = {
           id: string
           nome: string
           permission_profile_id: string | null
+          preferred_locale: string
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           user_id: string
@@ -5826,6 +5827,7 @@ export type Database = {
           id?: string
           nome: string
           permission_profile_id?: string | null
+          preferred_locale?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id: string
@@ -5839,6 +5841,7 @@ export type Database = {
           id?: string
           nome?: string
           permission_profile_id?: string | null
+          preferred_locale?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id?: string

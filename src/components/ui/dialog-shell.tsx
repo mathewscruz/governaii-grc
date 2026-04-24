@@ -22,6 +22,7 @@ import { Save, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWizardShortcuts } from '@/hooks/useWizardShortcuts';
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export type DialogShellSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
@@ -81,8 +82,8 @@ export function DialogShell({
   children,
   footer,
   onSubmit,
-  submitLabel = 'Salvar',
-  cancelLabel = 'Cancelar',
+  submitLabel,
+  cancelLabel,
   isSubmitting = false,
   submitDisabled = false,
   isDirty = false,
@@ -92,6 +93,9 @@ export function DialogShell({
   noScroll = false,
   hideFooter = false,
 }: DialogShellProps) {
+  const { t } = useLanguage();
+  const _submitLabel = submitLabel ?? t('common.save');
+  const _cancelLabel = cancelLabel ?? t('common.cancel');
   const { showConfirm, confirmCloseIfDirty, confirmDiscard, cancelDiscard } =
     useUnsavedChangesGuard({ isDirty });
 
@@ -151,7 +155,7 @@ export function DialogShell({
                     size="sm"
                     onClick={() => handleOpenChange(false)}
                   >
-                    {cancelLabel}
+                    {_cancelLabel}
                   </Button>
                   {onSubmit && (
                     <Button
@@ -162,7 +166,7 @@ export function DialogShell({
                       className="gap-1"
                     >
                       <Save className="h-4 w-4" />
-                      {isSubmitting ? 'Salvando...' : submitLabel}
+                      {isSubmitting ? t('common.saving') : _submitLabel}
                     </Button>
                   )}
                 </div>
@@ -175,18 +179,18 @@ export function DialogShell({
       <AlertDialog open={showConfirm} onOpenChange={(o) => !o && cancelDiscard()}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
+            <AlertDialogTitle>{t('dialogs.unsavedChanges')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Você tem alterações não salvas. Se sair agora, elas serão perdidas.
+              {t('dialogs.unsavedChangesDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelDiscard}>Continuar editando</AlertDialogCancel>
+            <AlertDialogCancel onClick={cancelDiscard}>{t('dialogs.keepEditing')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDiscard}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Descartar
+              {t('dialogs.discard')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
