@@ -215,7 +215,9 @@ export function ItemAuditoriaFormDialog({
         title={`${item?.id ? "Editar" : "Novo"} Item de Auditoria`}
         icon={ListChecks}
         size="lg"
-        onSubmit={handleSubmit}
+        onSubmit={form.handleSubmit(onSubmit)}
+        isSubmitting={isSubmitting}
+        submitLabel={item ? "Salvar Alterações" : "Adicionar Item"}
       >
 <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
