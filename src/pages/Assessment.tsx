@@ -834,8 +834,8 @@ export default function Assessment() {
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>{answeredCount} de {questions.length}</span>
                     {missingRequiredList.length > 0 && (
-                      <span className="flex items-center gap-1 text-amber-600 font-medium">
-                        <AlertTriangle className="h-3 w-3" />
+                      <span className="flex items-center gap-1 text-slate-700 font-medium">
+                        <AlertTriangle className="h-3 w-3 text-[hsl(250,80%,55%)]" />
                         {missingRequiredList.length} obrig.
                       </span>
                     )}
