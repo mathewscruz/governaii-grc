@@ -218,9 +218,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           <main className="flex-1 p-4 md:p-6 overflow-auto overflow-x-hidden w-full max-w-full pb-20 md:pb-6">
             <ErrorBoundary>
-              <PageTransition routeKey={location.pathname}>
-                {children}
-              </PageTransition>
+              <React.Suspense fallback={<div className="min-h-[200px] bg-background animate-page-enter" />}>
+                <PageTransition routeKey={location.pathname}>
+                  {children}
+                </PageTransition>
+              </React.Suspense>
             </ErrorBoundary>
           </main>
         </div>
