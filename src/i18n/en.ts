@@ -626,13 +626,6 @@ export const en = {
     newAudit: 'New audit started',
     newComplaint: 'New complaint received',
   },
-  commandPalette: {
-    placeholder: 'Search commands, modules, actions...',
-    noResults: 'No results found',
-    navigation: 'Navigation',
-    actions: 'Actions',
-    recent: 'Recent',
-  },
   statusLabels: {
     aplicacao: 'Application',
     banco_dados: 'Database',
