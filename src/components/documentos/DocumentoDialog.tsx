@@ -460,51 +460,65 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
           </div>
 
           <div className="space-y-2">
-            <Label>Arquivo</Label>
-            {documento?.arquivo_nome && !selectedFile && (
-              <div className="flex items-center gap-2 p-2 border rounded">
-                <File className="h-4 w-4" />
-                <span className="text-sm">{documento.arquivo_nome}</span>
-                <span className="text-xs text-muted-foreground">
-                  (v{documento.versao} - {formatFileSize(documento.arquivo_tamanho || 0)})
-                </span>
-              </div>
-            )}
-            <div className="flex gap-2">
-              <Input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleFileSelect}
-                className="hidden"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-1"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {selectedFile ? 'Trocar Arquivo' : documento ? 'Atualizar Arquivo' : 'Selecionar Arquivo'}
-              </Button>
-            </div>
-            {selectedFile && (
-              <div className="flex items-center gap-2 p-2 border rounded bg-muted">
-                <File className="h-4 w-4" />
-                <span className="text-sm">{selectedFile.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({formatFileSize(selectedFile.size)})
-                </span>
+            <Label>Anexo do Documento</Label>
+            <Tabs value={arquivoModo} onValueChange={(v) => setArquivoModo(v as 'upload' | 'url')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="upload"><Upload className="h-4 w-4 mr-2" />Upload de Arquivo</TabsTrigger>
+                <TabsTrigger value="url"><Link2 className="h-4 w-4 mr-2" />URL Externa</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="upload" className="space-y-2 mt-3">
+                {documento?.arquivo_nome && !selectedFile && (
+                  <div className="flex items-center gap-2 p-2 border rounded">
+                    <File className="h-4 w-4" />
+                    <span className="text-sm">{documento.arquivo_nome}</span>
+                    <span className="text-xs text-muted-foreground">
+                      (v{documento.versao} - {formatFileSize(documento.arquivo_tamanho || 0)})
+                    </span>
+                  </div>
+                )}
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png"
+                />
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedFile(null)}
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full"
                 >
-                  <X className="h-3 w-3" />
+                  <Upload className="h-4 w-4 mr-2" />
+                  {selectedFile ? 'Trocar Arquivo' : documento ? 'Atualizar Arquivo' : 'Selecionar Arquivo'}
                 </Button>
-              </div>
-            )}
+                {selectedFile && (
+                  <div className="flex items-center gap-2 p-2 border rounded bg-muted">
+                    <File className="h-4 w-4" />
+                    <span className="text-sm">{selectedFile.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({formatFileSize(selectedFile.size)})
+                    </span>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedFile(null)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="url" className="space-y-2 mt-3">
+                <Input
+                  type="url"
+                  value={arquivoUrlExterna}
+                  onChange={(e) => setArquivoUrlExterna(e.target.value)}
+                  placeholder="https://drive.google.com/... ou https://sharepoint.com/..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Cole o link público ou compartilhado do documento (Google Drive, SharePoint, OneDrive, Dropbox, etc.)
+                </p>
+              </TabsContent>
+            </Tabs>
           </div>
 
           <DialogFooter>
