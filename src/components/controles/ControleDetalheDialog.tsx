@@ -734,8 +734,8 @@ export function ControleDetalheDialog({
               </ScrollArea>
             </TabsContent>
           </Tabs>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </DialogShell>
 
       <ConfirmDialog
         open={!!deleteTarget}
