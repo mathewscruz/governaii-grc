@@ -185,8 +185,9 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
     return `${Math.round(bytes / Math.pow(1024, i) * 100) / 100} ${sizes[i]}`;
   };
 
-  const identState: WizardTabState = formData.nome && formData.tipo ? 'complete' : 'pending';
-  const classifState: WizardTabState = formData.classificacao ? 'complete' : 'pending';
+  // 'complete' só com dados preenchidos pelo usuário (tipo/classificacao/status têm defaults).
+  const identState: WizardTabState = formData.nome.trim() && formData.descricao.trim() ? 'complete' : (formData.nome.trim() ? 'partial' : 'pending');
+  const classifState: WizardTabState = formData.data_vencimento ? 'complete' : 'pending';
   const tagsState: WizardTabState = formData.tags.length > 0 ? 'complete' : 'pending';
   const anexoState: WizardTabState =
     selectedFile || arquivoUrlExterna || documento?.arquivo_nome ? 'complete' : 'pending';
