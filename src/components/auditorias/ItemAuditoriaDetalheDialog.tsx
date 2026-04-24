@@ -603,8 +603,8 @@ export function ItemAuditoriaDetalheDialog({
               </ScrollArea>
             </TabsContent>
           </Tabs>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </DialogShell>
 
       <ConfirmDialog
         open={!!deleteTarget}
