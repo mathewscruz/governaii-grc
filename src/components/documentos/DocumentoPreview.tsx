@@ -163,17 +163,9 @@ export function DocumentoPreview({ open, onOpenChange, documento }: DocumentoPre
             ) : canPreview && previewUrl ? (
               <div className="h-96 overflow-auto">
                 {isImage ? (
-                  <img 
-                    src={previewUrl} 
-                    alt={documento.nome}
-                    className="w-full h-auto"
-                  />
-                ) : isPdf ? (
-                  <iframe
-                    src={previewUrl}
-                    className="w-full h-full border-0"
-                    title={documento.nome}
-                  />
+                  <img src={previewUrl} alt={documento.nome} className="w-full h-auto" />
+                ) : (isPdf || isExternal) ? (
+                  <iframe src={previewUrl} className="w-full h-full border-0" title={documento.nome} />
                 ) : null}
               </div>
             ) : (
