@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,10 +12,11 @@ import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
-import { Upload, User, Eye, EyeOff, Bell } from 'lucide-react';
+import { Upload, Eye, EyeOff, Bell } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-const perfilSchema = z.object({
-  nome: z.string().min(1, 'Nome é obrigatório'),
+const buildPerfilSchema = (t: (k: string) => string) => z.object({
+  nome: z.string().min(1, t('userProfilePopover.nameRequired')),
   senha_atual: z.string().optional(),
   nova_senha: z.string().optional(),
   confirmar_senha: z.string().optional(),
@@ -25,7 +26,7 @@ const perfilSchema = z.object({
   }
   return true;
 }, {
-  message: "As senhas não coincidem ou senha atual não foi informada",
+  message: t('userProfilePopover.passwordsAndCurrent'),
   path: ["confirmar_senha"],
 }).refine((data) => {
   if (data.nova_senha && data.nova_senha.length > 0 && data.nova_senha.length < 6) {
@@ -33,7 +34,7 @@ const perfilSchema = z.object({
   }
   return true;
 }, {
-  message: "A nova senha deve ter pelo menos 6 caracteres",
+  message: t('userProfilePopover.newPasswordMin'),
   path: ["nova_senha"],
 });
 
