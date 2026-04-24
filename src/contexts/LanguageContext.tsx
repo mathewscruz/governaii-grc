@@ -134,8 +134,25 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Fallback seguro caso o contexto não esteja disponível (ex.: durante HMR ou
+// remontagem após hot reload). Evita tela branca e mantém a aplicação funcional.
+const fallbackContext: LanguageContextType = {
+  locale: (typeof window !== 'undefined' && (localStorage.getItem(STORAGE_KEY) as Locale)) || 'pt',
+  setLocale: () => {},
+  t: (key: string, params?: Record<string, string | number>) => {
+    const dict = dictionaries[(typeof window !== 'undefined' && (localStorage.getItem(STORAGE_KEY) as Locale)) || 'pt'];
+    const keys = key.split('.');
+    let result: any = dict;
+    for (const k of keys) {
+      result = result?.[k];
+      if (result === undefined) return key;
+    }
+    if (typeof result !== 'string') return key;
+    return interpolate(result, params);
+  },
+};
+
 export function useLanguage() {
   const context = useContext(LanguageContext);
-  if (!context) throw new Error('useLanguage must be used within LanguageProvider');
-  return context;
+  return context ?? fallbackContext;
 }
