@@ -93,7 +93,7 @@ serve(async (req) => {
           user_id: userProfile.user_id,
           email: userProfile.email,
           success: false,
-          error: (error instanceof Error ? error.message : String(error))
+          error: 'Erro ao aplicar permissões para este usuário'
         })
       }
     }
