@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { DialogShell } from "@/components/ui/dialog-shell";
+import { Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
