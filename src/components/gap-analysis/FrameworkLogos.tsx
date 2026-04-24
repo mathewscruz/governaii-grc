@@ -1,7 +1,8 @@
 import { 
   Shield, Lock, LockKeyhole, Leaf, AlertTriangle, Scale, Award, 
   Server, Flag, CreditCard, ShieldCheck, Building, Network, 
-  Settings, Target, Crosshair, Layers, Heart, FileCheck, Globe
+  Settings, Target, Crosshair, Layers, Heart, FileCheck, Globe,
+  Factory, Landmark, Cog
 } from "lucide-react";
 
 interface FrameworkLogoProps {
