@@ -3429,6 +3429,7 @@ export type Database = {
           arquivo_tamanho: number | null
           arquivo_tipo: string | null
           arquivo_url: string | null
+          arquivo_url_externa: string | null
           classificacao: string | null
           created_at: string
           created_by: string | null
@@ -3452,6 +3453,7 @@ export type Database = {
           arquivo_tamanho?: number | null
           arquivo_tipo?: string | null
           arquivo_url?: string | null
+          arquivo_url_externa?: string | null
           classificacao?: string | null
           created_at?: string
           created_by?: string | null
@@ -3475,6 +3477,7 @@ export type Database = {
           arquivo_tamanho?: number | null
           arquivo_tipo?: string | null
           arquivo_url?: string | null
+          arquivo_url_externa?: string | null
           classificacao?: string | null
           created_at?: string
           created_by?: string | null
