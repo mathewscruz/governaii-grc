@@ -1061,7 +1061,7 @@ export default function Assessment() {
                     className={cn(
                       'border bg-white transition-all duration-300 overflow-hidden animate-fade-in shadow-sm',
                       answered
-                        ? 'border-emerald-300 shadow-[0_0_0_1px_hsl(160,84%,39%,0.1),0_8px_24px_-12px_hsl(160,84%,39%,0.25)]'
+                        ? 'border-slate-300 shadow-[0_0_0_1px_hsl(250,80%,60%,0.08),0_8px_24px_-12px_hsl(250,80%,60%,0.18)]'
                         : 'border-slate-200 hover:border-slate-300'
                     )}
                     style={{ animationDelay: `${index * 60}ms` }}
@@ -1073,7 +1073,7 @@ export default function Assessment() {
                         <div className={cn(
                           'h-9 w-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 transition-colors',
                           answered
-                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                            ? 'bg-slate-900 text-white border border-slate-900'
                             : 'bg-slate-100 text-slate-600 border border-slate-200'
                         )}>
                           {answered ? <Check className="h-4 w-4" /> : questionNumber}
@@ -1085,7 +1085,7 @@ export default function Assessment() {
                               {question.titulo || question.pergunta}
                             </h3>
                             {question.obrigatoria && (
-                              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-200 mt-1">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 mt-1">
                                 Obrigatória
                               </span>
                             )}
