@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Shield, FileCheck, Clock, TestTube, ListTodo, Edit, Trash2, Eye, MoreHorizontal, Download } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Shield, FileCheck, Clock, TestTube, ListTodo, Edit, Trash2, Eye, MoreHorizontal, Download, AlertTriangle, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/ui/page-header';
@@ -7,6 +7,7 @@ import { StatCard } from '@/components/ui/stat-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
@@ -61,6 +62,19 @@ export default function Continuidade() {
     queryClient.invalidateQueries({ queryKey: ['continuidade-planos'] });
     queryClient.invalidateQueries({ queryKey: ['continuidade-stats'] });
   };
+
+  // Insights executivos
+  const insights = useMemo(() => {
+    const hoje = new Date();
+    const em30dias = new Date(hoje.getTime() + 30 * 86400000);
+    const proximasRevisoes = planos
+      .filter((p: any) => p.proxima_revisao && new Date(p.proxima_revisao) <= em30dias)
+      .sort((a: any, b: any) => new Date(a.proxima_revisao).getTime() - new Date(b.proxima_revisao).getTime())
+      .slice(0, 5);
+    const semResponsavel = planos.filter((p: any) => !p.responsavel_id).length;
+    const semRTO = planos.filter((p: any) => p.rto_horas == null).length;
+    return { proximasRevisoes, semResponsavel, semRTO };
+  }, [planos]);
 
   const handleDelete = async () => {
     try {
@@ -149,11 +163,14 @@ export default function Continuidade() {
             <Button variant="outline" size="sm" onClick={() => {
               if (planos.length === 0) return;
               exportCSV(
-                ['Nome', 'Tipo', 'Status', 'RTO', 'RPO', 'Criado em'],
+                ['Nome', 'Tipo', 'Status', 'RTO (h)', 'RPO (h)', 'Próx. Revisão', 'Versão', 'Criado em'],
                 planos.map((p: any) => [
                   p.nome || '', tipoMap[p.tipo] || p.tipo || '',
                   statusMap[p.status]?.label || p.status || '',
-                  p.rto || '', p.rpo || '',
+                  p.rto_horas != null ? String(p.rto_horas) : '',
+                  p.rpo_horas != null ? String(p.rpo_horas) : '',
+                  p.proxima_revisao ? new Date(p.proxima_revisao).toLocaleDateString('pt-BR') : '',
+                  p.versao || '',
                   p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : ''
                 ]),
                 'continuidade_planos'
@@ -176,6 +193,61 @@ export default function Continuidade() {
         <StatCard title="Testes Realizados" value={stats?.testesRealizados ?? 0} icon={<TestTube className="h-5 w-5" />} variant="info" loading={statsLoading} />
         <StatCard title="Tarefas Pendentes" value={stats?.tarefasPendentes ?? 0} icon={<ListTodo className="h-5 w-5" />} variant="destructive" loading={statsLoading} />
       </div>
+
+      {/* Insights Executivos */}
+      {planos.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <CalendarClock className="h-4 w-4 text-warning" />
+                Próximas Revisões (30 dias)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {insights.proximasRevisoes.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma revisão agendada nos próximos 30 dias.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {insights.proximasRevisoes.map((p: any) => (
+                    <li key={p.id} className="flex items-center justify-between text-sm">
+                      <button onClick={() => setDetalheDialog({ open: true, plano: p })} className="text-left hover:text-primary truncate flex-1">
+                        {p.nome}
+                      </button>
+                      <Badge variant="outline" className="ml-2">{formatDateOnly(p.proxima_revisao)}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                Itens de Atenção
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Planos sem responsável atribuído</span>
+                <Badge variant={insights.semResponsavel > 0 ? 'destructive' : 'success'}>{insights.semResponsavel}</Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Planos sem RTO definido</span>
+                <Badge variant={insights.semRTO > 0 ? 'warning' : 'success'}>{insights.semRTO}</Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Cobertura de testes</span>
+                <Badge variant="outline">
+                  {stats?.testesRealizados ?? 0} testes / {planos.length} planos
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Tabela */}
       {isLoading ? (

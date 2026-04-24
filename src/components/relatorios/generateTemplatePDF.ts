@@ -83,6 +83,13 @@ export async function fetchTemplateData(templateBase: string, empresaId: string)
     case 'iso27001_auditoria': return fetchISO27001Data(empresaId);
     case 'executivo_trimestral': return fetchExecutivoData(empresaId);
     case 'compliance_geral': return fetchComplianceData(empresaId);
+    case 'continuidade_bcp': return fetchContinuidadeData(empresaId);
+    case 'contratos_geral': return fetchContratosData(empresaId);
+    case 'ativos_inventario': return fetchAtivosData(empresaId);
+    case 'auditoria_interna': return fetchAuditoriaInternaData(empresaId);
+    case 'due_diligence_fornecedores': return fetchDueDiligenceData(empresaId);
+    case 'documentos_governanca': return fetchDocumentosData(empresaId);
+    case 'denuncias_canal_etica': return fetchDenunciasData(empresaId);
     default: return { sections: [] as Section[] };
   }
 }
@@ -243,6 +250,208 @@ async function fetchComplianceData(empresaId: string) {
       { title: 'Auditorias', tableHeaders: ['Nome', 'Tipo', 'Status'],
         tableRows: a.map((x: any) => [x.nome || x.titulo || '-', x.tipo || '-', x.status || '-']),
         colWidths: [80, 40, 50] },
+    ] as Section[]
+  };
+}
+
+async function fetchContinuidadeData(empresaId: string) {
+  const [{ data: planos }, { data: tarefas }, { data: testes }] = await Promise.all([
+    supabase.from('continuidade_planos').select('*').eq('empresa_id', empresaId),
+    supabase.from('continuidade_tarefas').select('*').eq('empresa_id', empresaId),
+    supabase.from('continuidade_testes').select('*').eq('empresa_id', empresaId),
+  ]);
+  const p = planos || []; const t = tarefas || []; const te = testes || [];
+  const hoje = new Date();
+  const planosVencendo = p.filter((x: any) => x.proxima_revisao && new Date(x.proxima_revisao) < new Date(hoje.getTime() + 30 * 86400000)).length;
+  const tarefasPendentes = t.filter((x: any) => x.status !== 'concluida').length;
+  const testesSucesso = te.filter((x: any) => x.resultado === 'sucesso').length;
+  return {
+    sections: [
+      { title: 'Resumo de Continuidade de Negocios', metrics: [
+        { label: 'Total de Planos', value: p.length },
+        { label: 'Planos Ativos', value: p.filter((x: any) => x.status === 'ativo').length },
+        { label: 'Em Revisao', value: p.filter((x: any) => x.status === 'em_revisao').length },
+        { label: 'Revisao Vencendo (30d)', value: planosVencendo },
+        { label: 'Total de Tarefas', value: t.length },
+        { label: 'Tarefas Pendentes', value: tarefasPendentes },
+        { label: 'Testes Realizados', value: te.length },
+        { label: 'Testes com Sucesso', value: testesSucesso },
+      ]},
+      { title: 'Planos de Continuidade', tableHeaders: ['Nome', 'Tipo', 'Status', 'RTO/RPO'],
+        tableRows: p.map((x: any) => [x.nome, x.tipo || '-', x.status || '-', `${x.rto_horas || '-'}h / ${x.rpo_horas || '-'}h`]),
+        colWidths: [70, 30, 35, 35] },
+      ...(te.length > 0 ? [{ title: 'Historico de Testes', tableHeaders: ['Tipo', 'Data', 'Resultado'],
+        tableRows: te.map((x: any) => [x.tipo_teste || '-', x.data_teste ? new Date(x.data_teste).toLocaleDateString('pt-BR') : '-', x.resultado || '-']),
+        colWidths: [60, 50, 60] }] : []),
+    ] as Section[]
+  };
+}
+
+async function fetchContratosData(empresaId: string) {
+  const { data: contratos } = await supabase.from('contratos').select('*').eq('empresa_id', empresaId);
+  const c = contratos || [];
+  const hoje = new Date();
+  const ativos = c.filter((x: any) => x.status === 'ativo').length;
+  const vencendo = c.filter((x: any) => x.data_fim && new Date(x.data_fim) > hoje && new Date(x.data_fim) < new Date(hoje.getTime() + 90 * 86400000)).length;
+  const vencidos = c.filter((x: any) => x.data_fim && new Date(x.data_fim) < hoje).length;
+  const valorTotal = c.reduce((sum: number, x: any) => sum + (Number(x.valor) || 0), 0);
+  return {
+    sections: [
+      { title: 'Resumo de Contratos', metrics: [
+        { label: 'Total de Contratos', value: c.length },
+        { label: 'Contratos Ativos', value: ativos },
+        { label: 'Vencendo (90 dias)', value: vencendo },
+        { label: 'Vencidos', value: vencidos },
+        { label: 'Valor Total (BRL)', value: valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) },
+      ]},
+      { title: 'Lista de Contratos', tableHeaders: ['Nome', 'Tipo', 'Status', 'Vencimento'],
+        tableRows: c.map((x: any) => [x.nome || x.numero_contrato || '-', x.tipo || '-', x.status || '-', x.data_fim ? new Date(x.data_fim).toLocaleDateString('pt-BR') : '-']),
+        colWidths: [70, 30, 35, 35] },
+    ] as Section[]
+  };
+}
+
+async function fetchAtivosData(empresaId: string) {
+  const [{ data: ativos }, { data: licencas }, { data: chaves }] = await Promise.all([
+    supabase.from('ativos').select('*').eq('empresa_id', empresaId),
+    supabase.from('ativos_licencas').select('*').eq('empresa_id', empresaId),
+    supabase.from('ativos_chaves_criptograficas').select('*').eq('empresa_id', empresaId),
+  ]);
+  const a = ativos || []; const l = licencas || []; const k = chaves || [];
+  const tipos: Record<string, number> = {};
+  a.forEach((x: any) => { tipos[x.tipo] = (tipos[x.tipo] || 0) + 1; });
+  const criticos = a.filter((x: any) => x.criticidade === 'critica' || x.criticidade === 'alta').length;
+  const hoje = new Date();
+  const licencasVencendo = l.filter((x: any) => x.data_vencimento && new Date(x.data_vencimento) > hoje && new Date(x.data_vencimento) < new Date(hoje.getTime() + 90 * 86400000)).length;
+  return {
+    sections: [
+      { title: 'Inventario de Ativos', metrics: [
+        { label: 'Total de Ativos', value: a.length },
+        { label: 'Ativos Criticos', value: criticos },
+        { label: 'Licencas Cadastradas', value: l.length },
+        { label: 'Licencas Vencendo (90d)', value: licencasVencendo },
+        { label: 'Chaves Criptograficas', value: k.length },
+      ]},
+      { title: 'Distribuicao por Tipo', tableHeaders: ['Tipo', 'Quantidade'],
+        tableRows: Object.entries(tipos).map(([t, q]) => [t, String(q)]),
+        colWidths: [120, 50] },
+      { title: 'Lista de Ativos', tableHeaders: ['Nome', 'Tipo', 'Criticidade', 'Status'],
+        tableRows: a.map((x: any) => [x.nome, x.tipo || '-', x.criticidade || '-', x.status || '-']),
+        colWidths: [60, 35, 35, 40] },
+    ] as Section[]
+  };
+}
+
+async function fetchAuditoriaInternaData(empresaId: string) {
+  const { data: auditorias } = await supabase.from('auditorias').select('*').eq('empresa_id', empresaId);
+  const a = auditorias || [];
+  const auditoriaIds = a.map((x: any) => x.id);
+  const { data: itens } = auditoriaIds.length > 0
+    ? await supabase.from('auditoria_itens').select('*').in('auditoria_id', auditoriaIds)
+    : { data: [] };
+  const i = itens || [];
+  const concluidas = a.filter((x: any) => x.status === 'concluida').length;
+  const emAndamento = a.filter((x: any) => x.status === 'em_andamento').length;
+  const itensAbertos = i.filter((x: any) => x.status !== 'concluido').length;
+  return {
+    sections: [
+      { title: 'Resumo de Auditorias', metrics: [
+        { label: 'Total de Auditorias', value: a.length },
+        { label: 'Em Andamento', value: emAndamento },
+        { label: 'Concluidas', value: concluidas },
+        { label: 'Itens Identificados', value: i.length },
+        { label: 'Itens em Aberto', value: itensAbertos },
+      ]},
+      { title: 'Auditorias', tableHeaders: ['Nome', 'Tipo', 'Status', 'Inicio'],
+        tableRows: a.map((x: any) => [x.nome, x.tipo || '-', x.status || '-', x.data_inicio ? new Date(x.data_inicio).toLocaleDateString('pt-BR') : '-']),
+        colWidths: [70, 30, 35, 35] },
+      ...(i.length > 0 ? [{ title: 'Itens de Auditoria', tableHeaders: ['Codigo', 'Titulo', 'Prioridade', 'Status'],
+        tableRows: i.slice(0, 30).map((x: any) => [x.codigo || '-', (x.titulo || '').substring(0, 40), x.prioridade || '-', x.status || '-']),
+        colWidths: [25, 80, 30, 35] }] : []),
+    ] as Section[]
+  };
+}
+
+async function fetchDueDiligenceData(empresaId: string) {
+  const { data: assessments } = await supabase.from('due_diligence_assessments').select('*').eq('empresa_id', empresaId);
+  const dd = assessments || [];
+  const concluidos = dd.filter((x: any) => x.status === 'concluido');
+  const pendentes = dd.filter((x: any) => x.status !== 'concluido' && x.status !== 'cancelado').length;
+  const scores = concluidos.map((x: any) => Number(x.score_final) || 0);
+  const scoreMedio = scores.length > 0 ? (scores.reduce((a: number, b: number) => a + b, 0) / scores.length).toFixed(1) : '0';
+  const aprovados = concluidos.filter((x: any) => (Number(x.score_final) || 0) >= 7).length;
+  return {
+    sections: [
+      { title: 'Due Diligence de Fornecedores', metrics: [
+        { label: 'Total de Assessments', value: dd.length },
+        { label: 'Concluidos', value: concluidos.length },
+        { label: 'Pendentes', value: pendentes },
+        { label: 'Score Medio (0-10)', value: scoreMedio },
+        { label: 'Fornecedores Aprovados', value: aprovados },
+      ]},
+      { title: 'Assessments', tableHeaders: ['Fornecedor', 'Status', 'Score', 'Conclusao'],
+        tableRows: dd.map((x: any) => [
+          x.fornecedor_nome || '-',
+          x.status || '-',
+          x.score_final != null ? String(x.score_final) : '-',
+          x.data_conclusao ? new Date(x.data_conclusao).toLocaleDateString('pt-BR') : '-'
+        ]),
+        colWidths: [70, 35, 25, 40] },
+    ] as Section[]
+  };
+}
+
+async function fetchDocumentosData(empresaId: string) {
+  const { data: docs } = await supabase.from('documentos').select('*').eq('empresa_id', empresaId);
+  const d = docs || [];
+  const hoje = new Date();
+  const ativos = d.filter((x: any) => x.status === 'ativo').length;
+  const aprovados = d.filter((x: any) => x.status === 'aprovado').length;
+  const vencidos = d.filter((x: any) => x.data_vencimento && new Date(x.data_vencimento) < hoje).length;
+  const vencendo = d.filter((x: any) => x.data_vencimento && new Date(x.data_vencimento) >= hoje && new Date(x.data_vencimento) < new Date(hoje.getTime() + 30 * 86400000)).length;
+  const tipos: Record<string, number> = {};
+  d.forEach((x: any) => { tipos[x.tipo] = (tipos[x.tipo] || 0) + 1; });
+  return {
+    sections: [
+      { title: 'Governanca Documental', metrics: [
+        { label: 'Total de Documentos', value: d.length },
+        { label: 'Ativos', value: ativos },
+        { label: 'Aprovados', value: aprovados },
+        { label: 'Vencidos', value: vencidos },
+        { label: 'Vencendo (30d)', value: vencendo },
+      ]},
+      { title: 'Distribuicao por Tipo', tableHeaders: ['Tipo', 'Quantidade'],
+        tableRows: Object.entries(tipos).map(([t, q]) => [t, String(q)]),
+        colWidths: [120, 50] },
+      { title: 'Documentos', tableHeaders: ['Nome', 'Tipo', 'Status', 'Vencimento'],
+        tableRows: d.slice(0, 50).map((x: any) => [(x.nome || '').substring(0, 40), x.tipo || '-', x.status || '-', x.data_vencimento ? new Date(x.data_vencimento).toLocaleDateString('pt-BR') : '-']),
+        colWidths: [70, 30, 35, 35] },
+    ] as Section[]
+  };
+}
+
+async function fetchDenunciasData(empresaId: string) {
+  const { data: denuncias } = await supabase.from('denuncias').select('*').eq('empresa_id', empresaId);
+  const d = denuncias || [];
+  const abertas = d.filter((x: any) => x.status === 'aberta' || x.status === 'em_investigacao').length;
+  const concluidas = d.filter((x: any) => x.status === 'concluida').length;
+  const anonimas = d.filter((x: any) => x.anonima === true).length;
+  const grav: Record<string, number> = {};
+  d.forEach((x: any) => { grav[x.gravidade || 'sem_gravidade'] = (grav[x.gravidade || 'sem_gravidade'] || 0) + 1; });
+  return {
+    sections: [
+      { title: 'Canal de Etica', metrics: [
+        { label: 'Total de Denuncias', value: d.length },
+        { label: 'Em Aberto/Investigacao', value: abertas },
+        { label: 'Concluidas', value: concluidas },
+        { label: 'Anonimas', value: anonimas },
+      ]},
+      { title: 'Distribuicao por Gravidade', tableHeaders: ['Gravidade', 'Quantidade'],
+        tableRows: Object.entries(grav).map(([g, q]) => [g, String(q)]),
+        colWidths: [120, 50] },
+      { title: 'Denuncias', tableHeaders: ['Protocolo', 'Titulo', 'Gravidade', 'Status'],
+        tableRows: d.map((x: any) => [x.protocolo || '-', (x.titulo || '').substring(0, 40), x.gravidade || '-', x.status || '-']),
+        colWidths: [40, 70, 30, 35] },
     ] as Section[]
   };
 }

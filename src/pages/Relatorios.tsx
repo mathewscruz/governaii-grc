@@ -19,16 +19,24 @@ import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
 import { 
   Plus, FileText, Download, Pencil, Trash2, Eye, MoreHorizontal,
-  FileBarChart, BarChart3, Shield, AlertTriangle, BookOpen, Clock, Loader2
+  FileBarChart, BarChart3, Shield, AlertTriangle, BookOpen, Clock, Loader2,
+  Briefcase, Package, Search, Users, FileCheck, MessageSquare
 } from 'lucide-react';
 
 const templateConfigs: Record<string, { nome: string; descricao: string; icon: any; cor: string }> = {
-  lgpd_anpd: { nome: 'Relatório LGPD para ANPD', descricao: 'Relatório completo de conformidade com a LGPD para apresentação à ANPD', icon: Shield, cor: 'text-emerald-600' },
-  iso27001_auditoria: { nome: 'Status ISO 27001 para Auditoria', descricao: 'Status de implementação dos controles ISO 27001 para auditoria externa', icon: FileBarChart, cor: 'text-blue-600' },
-  executivo_trimestral: { nome: 'Resumo Executivo Trimestral', descricao: 'Panorama trimestral de riscos, compliance e incidentes para diretoria', icon: BarChart3, cor: 'text-primary' },
-  riscos_geral: { nome: 'Panorama de Riscos', descricao: 'Visão consolidada de todos os riscos, tratamentos e matriz de calor', icon: AlertTriangle, cor: 'text-amber-600' },
-  incidentes_periodo: { nome: 'Incidentes por Período', descricao: 'Análise de incidentes de segurança com timeline e métricas', icon: AlertTriangle, cor: 'text-destructive' },
-  compliance_geral: { nome: 'Status Geral de Compliance', descricao: 'Aderência a frameworks, controles e políticas ativas', icon: BookOpen, cor: 'text-violet-600' },
+  executivo_trimestral: { nome: 'Resumo Executivo Trimestral', descricao: 'Panorama trimestral de riscos, compliance e incidentes para a diretoria', icon: BarChart3, cor: 'text-primary' },
+  compliance_geral: { nome: 'Status Geral de Compliance', descricao: 'Aderência a frameworks, controles, políticas e auditorias ativas', icon: BookOpen, cor: 'text-violet-600' },
+  riscos_geral: { nome: 'Panorama de Riscos', descricao: 'Visão consolidada de riscos, tratamentos e níveis de criticidade', icon: AlertTriangle, cor: 'text-amber-600' },
+  incidentes_periodo: { nome: 'Incidentes por Período', descricao: 'Análise de incidentes de segurança com métricas e severidade', icon: AlertTriangle, cor: 'text-destructive' },
+  lgpd_anpd: { nome: 'Relatório LGPD para ANPD', descricao: 'Conformidade LGPD: dados pessoais mapeados, solicitações e políticas', icon: Shield, cor: 'text-emerald-600' },
+  iso27001_auditoria: { nome: 'Status ISO 27001', descricao: 'Status de conformidade e controles ISO 27001 para auditoria externa', icon: FileBarChart, cor: 'text-blue-600' },
+  continuidade_bcp: { nome: 'Continuidade de Negócios (BCP/DRP)', descricao: 'Planos de continuidade, RTO/RPO, tarefas e testes realizados', icon: Shield, cor: 'text-cyan-600' },
+  contratos_geral: { nome: 'Gestão de Contratos', descricao: 'Status de contratos, vencimentos próximos e valor consolidado', icon: Briefcase, cor: 'text-indigo-600' },
+  ativos_inventario: { nome: 'Inventário de Ativos', descricao: 'Ativos, licenças e chaves criptográficas com criticidade', icon: Package, cor: 'text-orange-600' },
+  auditoria_interna: { nome: 'Auditoria Interna', descricao: 'Auditorias realizadas, itens identificados e status de tratamento', icon: Search, cor: 'text-rose-600' },
+  due_diligence_fornecedores: { nome: 'Due Diligence de Fornecedores', descricao: 'Assessments de fornecedores com scores e nível de aprovação', icon: Users, cor: 'text-teal-600' },
+  documentos_governanca: { nome: 'Governança Documental', descricao: 'Documentos por status, vencimento e tipo de classificação', icon: FileCheck, cor: 'text-sky-600' },
+  denuncias_canal_etica: { nome: 'Canal de Ética', descricao: 'Denúncias recebidas, gravidade e status de investigação', icon: MessageSquare, cor: 'text-fuchsia-600' },
 };
 
 export default function Relatorios() {
