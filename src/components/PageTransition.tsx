@@ -5,12 +5,9 @@ interface PageTransitionProps {
   routeKey: string;
 }
 
-const PageTransition: React.FC<PageTransitionProps> = ({ children, routeKey }) => {
+const PageTransition: React.FC<PageTransitionProps> = ({ children }) => {
   return (
-    <div 
-      key={routeKey}
-      className="animate-page-enter will-change-[opacity]"
-    >
+    <div className="animate-page-enter">
       {children}
     </div>
   );
