@@ -38,13 +38,20 @@ const buildPerfilSchema = (t: (k: string) => string) => z.object({
   path: ["nova_senha"],
 });
 
-type PerfilForm = z.infer<typeof perfilSchema>;
+type PerfilForm = {
+  nome: string;
+  senha_atual?: string;
+  nova_senha?: string;
+  confirmar_senha?: string;
+};
 
 interface UserProfilePopoverProps {
   onClose?: () => void;
 }
 
 export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
+  const { t } = useLanguage();
+  const perfilSchema = useMemo(() => buildPerfilSchema(t), [t]);
   const { user, profile, refetchProfile } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [fotoUrl, setFotoUrl] = useState((profile as any)?.foto_url);
