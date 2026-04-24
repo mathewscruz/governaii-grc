@@ -17,6 +17,9 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'governaii-locale';
+const MANUAL_KEY = 'governaii-locale-manual-ts';
+// Janela em que a escolha manual do usuário tem prioridade sobre o profile (10 min)
+const MANUAL_PRIORITY_MS = 10 * 60 * 1000;
 
 function detectInitialLocale(): Locale {
   try {
@@ -26,6 +29,15 @@ function detectInitialLocale(): Locale {
     return browserLang.startsWith('pt') ? 'pt' : 'en';
   } catch {
     return 'pt';
+  }
+}
+
+function hasRecentManualChoice(): boolean {
+  try {
+    const ts = Number(localStorage.getItem(MANUAL_KEY) || '0');
+    return ts > 0 && Date.now() - ts < MANUAL_PRIORITY_MS;
+  } catch {
+    return false;
   }
 }
 
@@ -50,10 +62,22 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
         if (!mounted) return;
         const pref = (data as any)?.preferred_locale;
-        if (pref === 'pt' || pref === 'en') {
-          setLocaleState(pref);
-          try { localStorage.setItem(STORAGE_KEY, pref); } catch {}
+        if (pref !== 'pt' && pref !== 'en') return;
+
+        // Se o usuário escolheu o idioma manualmente há pouco tempo (ex: na tela de login),
+        // respeitamos essa escolha e atualizamos o profile para refletir a preferência.
+        const currentLocal = (localStorage.getItem(STORAGE_KEY) as Locale | null);
+        if (hasRecentManualChoice() && currentLocal && currentLocal !== pref) {
+          supabase
+            .from('profiles')
+            .update({ preferred_locale: currentLocal } as any)
+            .eq('user_id', userId)
+            .then(() => {});
+          return;
         }
+
+        setLocaleState(pref);
+        try { localStorage.setItem(STORAGE_KEY, pref); } catch {}
       } catch {
         // silent: keep local locale
       }
@@ -75,7 +99,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
-    try { localStorage.setItem(STORAGE_KEY, newLocale); } catch {}
+    try {
+      localStorage.setItem(STORAGE_KEY, newLocale);
+      localStorage.setItem(MANUAL_KEY, String(Date.now()));
+    } catch {}
 
     // Persist to profile if logged in
     supabase.auth.getUser().then(({ data: { user } }) => {
