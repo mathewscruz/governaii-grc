@@ -103,7 +103,7 @@ export function DadosPessoaisDialog({ isOpen, onClose, onSave, dados }: DadosPes
     <DialogShell
         open={isOpen}
         onOpenChange={onClose}
-        title={`${dadosPessoais?.id ? "Editar" : "Novo"} Registro de Dados Pessoais`}
+        title={`${dados?.id ? "Editar" : "Novo"} Registro de Dados Pessoais`}
         icon={Database}
         size="lg"
         onSubmit={handleSave}

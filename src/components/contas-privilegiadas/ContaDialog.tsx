@@ -142,7 +142,7 @@ export default function ContaDialog({ open, onClose, conta, sistemas }: ContaDia
         title={`${conta?.id ? "Editar" : "Nova"} Conta Privilegiada`}
         icon={KeyRound}
         size="lg"
-        onSubmit={handleSave}
+        onSubmit={form.handleSubmit(onSubmit)}
       >
 <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

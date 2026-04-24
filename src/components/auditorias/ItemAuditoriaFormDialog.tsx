@@ -3,13 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { DialogShell } from "@/components/ui/dialog-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -221,7 +215,9 @@ export function ItemAuditoriaFormDialog({
         title={`${item?.id ? "Editar" : "Novo"} Item de Auditoria`}
         icon={ListChecks}
         size="lg"
-        onSubmit={handleSubmit}
+        onSubmit={form.handleSubmit(onSubmit)}
+        isSubmitting={isSubmitting}
+        submitLabel={item ? "Salvar Alterações" : "Adicionar Item"}
       >
 <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -417,15 +413,6 @@ export function ItemAuditoriaFormDialog({
               )}
             />
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {item ? "Salvar Alterações" : "Adicionar Item"}
-              </Button>
-            </DialogFooter>
           </form>
         </Form>
       </DialogShell>

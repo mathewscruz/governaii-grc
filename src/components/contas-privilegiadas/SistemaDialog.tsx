@@ -234,7 +234,7 @@ export default function SistemaDialog({ open, onClose, sistema }: SistemaDialogP
         title={`${sistema?.id ? "Editar" : "Novo"} Sistema Privilegiado`}
         icon={Server}
         size="lg"
-        onSubmit={handleSave}
+        onSubmit={form.handleSubmit(onSubmit)}
       >
 <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

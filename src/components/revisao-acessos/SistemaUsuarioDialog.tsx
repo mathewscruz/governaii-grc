@@ -3,13 +3,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { DialogShell } from "@/components/ui/dialog-shell";
 import {
   Form,
   FormControl,
@@ -204,7 +198,7 @@ export function SistemaUsuarioDialog({
         title={`${usuario?.id ? "Editar" : "Novo"} Usuário do Sistema`}
         icon={UserCog}
         size="lg"
-        onSubmit={handleSave}
+        onSubmit={form.handleSubmit(onSubmit)}
       >
 <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -420,14 +414,6 @@ export function SistemaUsuarioDialog({
               )}
             />
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Salvando..." : usuario ? "Atualizar" : "Cadastrar"}
-              </Button>
-            </DialogFooter>
           </form>
         </Form>
       </DialogShell>

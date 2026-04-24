@@ -170,7 +170,7 @@ const AuditoriaDialog = ({ open, onOpenChange, auditoria, onSuccess }: Auditoria
         title={`${auditoria?.id ? "Editar" : "Nova"} Auditoria`}
         icon={ClipboardCheck}
         size="lg"
-        onSubmit={handleSubmit}
+        onSubmit={() => handleSubmit({ preventDefault: () => {} } as React.FormEvent)}
       >
 <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

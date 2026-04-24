@@ -3,12 +3,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { DialogShell } from "@/components/ui/dialog-shell";
 import {
   Form,
   FormControl,
@@ -167,7 +162,7 @@ export function ReviewDialog({ open, onClose, review, onSuccess }: ReviewDialogP
         title={`${review?.id ? "Editar" : "Nova"} Revisão de Acessos`}
         icon={Eye}
         size="lg"
-        onSubmit={handleSave}
+        onSubmit={form.handleSubmit(onSubmit)}
       >
 <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
