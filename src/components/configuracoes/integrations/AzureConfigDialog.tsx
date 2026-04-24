@@ -372,7 +372,7 @@ export function AzureConfigDialog({
             </a>
           </TabsContent>
 
-          <TabsContent value="sync" className="space-y-6 py-4">
+          <TabsContent value="sync" className="space-y-6 px-6 py-4 mt-0">
             {/* Opções de sincronização */}
             <div className="space-y-3">
               <Label>O que sincronizar</Label>
@@ -471,28 +471,8 @@ export function AzureConfigDialog({
               </div>
             </div>
           </TabsContent>
-        </Tabs>
-
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          {existingConfig && (
-            <Button
-              variant="destructive"
-              onClick={handleDisconnect}
-              disabled={saving}
-              className="sm:mr-auto"
-            >
-              Desconectar
-            </Button>
-          )}
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={saving || !tenantId || !clientId}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Salvar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ScrollArea>
+      </Tabs>
+    </DialogShell>
   );
 }
