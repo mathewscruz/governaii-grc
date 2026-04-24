@@ -98,11 +98,11 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
 
   const validateImageFile = (file: File): string | null => {
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      return 'Formato de arquivo não suportado. Use: JPG, PNG, GIF, SVG ou WebP';
+      return t('userProfilePopover.invalidImageFormat');
     }
     
     if (file.size > MAX_FILE_SIZE) {
-      return 'Arquivo muito grande. Tamanho máximo: 5MB';
+      return t('userProfilePopover.fileTooLarge');
     }
     
     return null;
@@ -142,10 +142,10 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
 
       setFotoUrl(urlData.publicUrl);
       await refetchProfile();
-      toast.success('Foto atualizada com sucesso');
+      toast.success(t('userProfilePopover.photoUpdated'));
     } catch (error) {
       console.error('Erro ao fazer upload da foto:', error);
-      toast.error('Erro ao fazer upload da foto');
+      toast.error(t('userProfilePopover.photoError'));
     } finally {
       setUploading(false);
     }
@@ -174,7 +174,7 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
         });
 
         if (reAuthError) {
-          toast.error('Senha atual incorreta. Verifique e tente novamente.');
+          toast.error(t('userProfilePopover.incorrectCurrentPassword'));
           return;
         }
 
@@ -186,7 +186,7 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
       }
 
       await refetchProfile();
-      toast.success('Perfil atualizado com sucesso');
+      toast.success(t('userProfilePopover.profileUpdated'));
       
       // Limpar campos de senha
       form.reset({
@@ -202,7 +202,7 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
       }
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
-      toast.error('Erro ao atualizar perfil');
+      toast.error(t('userProfilePopover.profileError'));
     }
   };
 
