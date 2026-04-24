@@ -85,6 +85,7 @@ function getRouteForModule(modulo: string): string {
 }
 
 export default function PlanosAcao() {
+  const { t } = useLanguage();
   const { user, profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
@@ -443,8 +444,8 @@ export default function PlanosAcao() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Planos de Ação"
-        description="Visão consolidada de todas as suas pendências e ações"
+        title={t('modules.planosAcao.title')}
+        description={t('modules.planosAcao.description')}
         breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Planos de Ação' }]}
         actions={
           <div className="flex gap-2">

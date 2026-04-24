@@ -34,6 +34,7 @@ const tipoMap: Record<string, string> = {
 };
 
 export default function Continuidade() {
+  const { t } = useLanguage();
   const { profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const { toast } = useToast();

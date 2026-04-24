@@ -78,6 +78,7 @@ interface Fornecedor {
 }
 
 export default function Contratos() {
+  const { t } = useLanguage();
   const { empresaId } = useEmpresaId();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -330,8 +331,8 @@ export default function Contratos() {
     <TooltipProvider>
       <div className="space-y-6">
         <PageHeader
-          title="Contratos"
-          description="Gerencie contratos, fornecedores e acompanhe vencimentos de forma centralizada"
+          title={t('modules.contratos.title')}
+          description={t('modules.contratos.description')}
         />
 
         {/* Cards de KPI */}

@@ -27,6 +27,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Privacidade() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { empresaId } = useEmpresaId();
   const queryClient = useQueryClient();
@@ -511,8 +512,8 @@ export default function Privacidade() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Privacidade"
-        description="Proteção de dados pessoais, mapeamento e ROPA (LGPD)"
+        title={t('modules.privacidade.title')}
+        description={t('modules.privacidade.description')}
       />
 
       {/* KPI Cards */}

@@ -42,6 +42,7 @@ interface ContaPrivilegiada {
 }
 
 export default function ContasPrivilegiadas() {
+  const { t } = useLanguage();
   const [showContaDialog, setShowContaDialog] = useState(false);
   const [selectedConta, setSelectedConta] = useState<ContaPrivilegiada | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -359,8 +360,8 @@ export default function ContasPrivilegiadas() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Contas Privilegiadas"
-        description="Gerencie contas com acessos privilegiados aos sistemas"
+        title={t('modules.contasPrivilegiadas.title')}
+        description={t('modules.contasPrivilegiadas.description')}
         actions={
           <Button variant="outline" size="sm" onClick={() => {
             if (contas.length === 0) return;

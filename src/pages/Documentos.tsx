@@ -70,6 +70,7 @@ interface Categoria {
 }
 
 export default function Documentos() {
+  const { t } = useLanguage();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useAuth();
@@ -410,8 +411,8 @@ export default function Documentos() {
     return (
       <div className="space-y-6">
         <PageHeader
-          title="Documentos"
-          description="Gerencie documentos, políticas e procedimentos da empresa de forma centralizada"
+          title={t('modules.documentos.title')}
+          description={t('modules.documentos.description')}
         />
         <PageSkeleton />
       </div>
@@ -422,8 +423,8 @@ export default function Documentos() {
     <TooltipProvider>
       <div className="space-y-6">
           <PageHeader
-          title="Documentos"
-          description="Gerencie documentos, políticas e procedimentos da empresa de forma centralizada"
+          title={t('modules.documentos.title')}
+          description={t('modules.documentos.description')}
         />
 
         {/* KPI Cards */}

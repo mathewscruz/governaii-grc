@@ -41,6 +41,7 @@ const templateConfigs: Record<string, { nome: string; descricao: string; icon: a
 };
 
 export default function Relatorios() {
+  const { t } = useLanguage();
   const { user, profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
@@ -189,8 +190,8 @@ export default function Relatorios() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Relatórios"
-        description="Crie e gerencie relatórios customizáveis para auditorias, diretoria e órgãos reguladores"
+        title={t('modules.relatorios.title')}
+        description={t('modules.relatorios.description')}
         breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Relatórios' }]}
         actions={
           <Button onClick={() => setDialogOpen(true)}>

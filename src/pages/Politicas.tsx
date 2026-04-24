@@ -34,6 +34,7 @@ const statusConfig: Record<string, { label: string; variant: any }> = {
 };
 
 export default function Politicas() {
+  const { t } = useLanguage();
   const { user, profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
@@ -269,8 +270,8 @@ export default function Politicas() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Políticas e Treinamentos"
-        description="Gerencie políticas corporativas, aceites e questionários de validação"
+        title={t('modules.politicas.title')}
+        description={t('modules.politicas.description')}
         breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Políticas e Treinamentos' }]}
         actions={
           <div className="flex gap-2">
