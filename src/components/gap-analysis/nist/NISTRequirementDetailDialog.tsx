@@ -527,17 +527,25 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl max-h-[90vh] p-0 gap-0">
-          {/* Header */}
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <DialogTitle className="flex items-center gap-2 flex-wrap">
-              <span className="font-mono text-sm text-muted-foreground">{requirement.codigo}</span>
-              <span className="text-base font-medium">{requirement.titulo}</span>
+      <DialogShell
+        open={open}
+        onOpenChange={onOpenChange}
+        title={`${requirement.codigo} — ${requirement.titulo}`}
+        icon={Shield}
+        size="xl"
+        noScroll
+        onSubmit={handleSave}
+        submitLabel={saving ? 'Salvando...' : 'Salvar Detalhes'}
+        isSubmitting={saving}
+        submitDisabled={loading}
+      >
+        <div className="flex flex-col h-full">
+          {(requirement.obrigatorio || (requirement.peso || 0) >= 3) && (
+            <div className="px-6 py-2 border-b flex items-center gap-2 flex-wrap">
               {requirement.obrigatorio && <Badge variant="destructive" className="text-xs">Obrigatório</Badge>}
               {(requirement.peso || 0) >= 3 && <Badge variant="outline" className="text-xs">Peso {requirement.peso}</Badge>}
-            </DialogTitle>
-          </DialogHeader>
+            </div>
+          )}
 
           {loading ? (
             <div className="flex items-center justify-center py-16">
