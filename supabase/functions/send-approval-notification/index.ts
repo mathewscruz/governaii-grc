@@ -35,13 +35,13 @@ const handler = async (req: Request): Promise<Response> => {
     const authClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
       global: { headers: { Authorization: authHeader } }
     });
-    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) {
+    const { data: userData, error: claimsError } = await authClient.auth.getUser(token);
+    if (claimsError || !userData?.user?.id) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
-    const callerId = claimsData.claims.sub as string;
+    const callerId = userData.user.id as string;
 
     const { documento_id, aprovador_id, solicitante_id }: NotificationRequest = await req.json();
 

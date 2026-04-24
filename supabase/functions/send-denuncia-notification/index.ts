@@ -28,12 +28,12 @@ const handler = async (req: Request): Promise<Response> => {
     const token = authHeader.replace('Bearer ', '');
     const isServiceCall = token === serviceKey;
     if (!isServiceCall) {
-      const authClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') ?? '', { global: { headers: { Authorization: authHeader } } });
-      const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-      if (claimsError || !claimsData?.claims?.sub) {
+      const authClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
+      const { data: userData, error: claimsError } = await authClient.auth.getUser(token);
+      if (claimsError || !userData?.user?.id) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
       }
-      const callerId = claimsData.claims.sub as string;
+      const callerId = userData.user.id as string;
       const { data: callerProfile } = await supabaseClient.from('profiles').select('empresa_id').eq('user_id', callerId).single();
       const body = await req.clone().json();
       if (!callerProfile?.empresa_id || callerProfile.empresa_id !== body.empresa_id) {
