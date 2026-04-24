@@ -17,6 +17,9 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'governaii-locale';
+const MANUAL_KEY = 'governaii-locale-manual-ts';
+// Janela em que a escolha manual do usuário tem prioridade sobre o profile (10 min)
+const MANUAL_PRIORITY_MS = 10 * 60 * 1000;
 
 function detectInitialLocale(): Locale {
   try {
@@ -26,6 +29,15 @@ function detectInitialLocale(): Locale {
     return browserLang.startsWith('pt') ? 'pt' : 'en';
   } catch {
     return 'pt';
+  }
+}
+
+function hasRecentManualChoice(): boolean {
+  try {
+    const ts = Number(localStorage.getItem(MANUAL_KEY) || '0');
+    return ts > 0 && Date.now() - ts < MANUAL_PRIORITY_MS;
+  } catch {
+    return false;
   }
 }
 
