@@ -511,327 +511,328 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
     }
   };
 
+  // Status visual da aba (preenchido / com erro)
+  const watchNome = form.watch('nome');
+  const watchMatriz = form.watch('matriz_id');
+  const watchStatus = form.watch('status');
+  const errors = form.formState.errors;
+
+  const tabState = (key: TabKey): 'completed' | 'error' | 'pending' => {
+    if (key === 'identificacao') {
+      if (errors.nome || errors.matriz_id) return 'error';
+      return watchNome && watchMatriz ? 'completed' : 'pending';
+    }
+    if (key === 'avaliacao') {
+      if (errors.probabilidade_inicial || errors.impacto_inicial) return 'error';
+      return watchProbabilidade && watchImpacto ? 'completed' : 'pending';
+    }
+    if (key === 'detalhes') {
+      return watchStatus ? 'completed' : 'pending';
+    }
+    if (key === 'residual') {
+      return watchProbabilidadeResidual && watchImpactoResidual ? 'completed' : 'pending';
+    }
+    if (key === 'aceite') {
+      return watchAceito ? 'completed' : 'pending';
+    }
+    return 'pending';
+  };
+
+  const nivelCorClass = (nivel: string) => {
+    const n = nivel?.toLowerCase() || '';
+    if (n.includes('crít') || n.includes('crit')) return 'bg-destructive text-destructive-foreground border-destructive';
+    if (n.includes('alto')) return 'bg-orange-500 text-white border-orange-500';
+    if (n.includes('médio') || n.includes('medio')) return 'bg-yellow-500 text-white border-yellow-500';
+    if (n.includes('baixo')) return 'bg-emerald-500 text-white border-emerald-500';
+    return 'bg-muted text-foreground border-border';
+  };
+
+  const tabsMeta: Array<{ key: TabKey; label: string; icon: any; description: string }> = [
+    { key: 'identificacao', label: 'Identificação', icon: FileText, description: 'Nome, categoria e matriz' },
+    { key: 'avaliacao', label: 'Avaliação Inicial', icon: Gauge, description: 'Probabilidade × Impacto' },
+    { key: 'detalhes', label: 'Detalhes', icon: Settings2, description: 'Status, controles, ativos' },
+    { key: 'residual', label: 'Residual', icon: Link2, description: 'Após mitigação' },
+    { key: 'aceite', label: 'Aceite', icon: ShieldCheck, description: 'Aprovação formal' },
+  ];
+
+  const TabIndicator = ({ state }: { state: 'completed' | 'error' | 'pending' }) => {
+    if (state === 'completed') return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
+    if (state === 'error') return <AlertTriangle className="h-4 w-4 text-destructive" />;
+    return <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />;
+  };
+
+  const currentIdx = TABS.indexOf(activeTab);
+  const isLastTab = currentIdx === TABS.length - 1;
+  const isFirstTab = currentIdx === 0;
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {/* Informações Básicas */}
-        <Collapsible open={openSections.basico} onOpenChange={() => toggleSection('basico')}>
-          <Card>
-            <CollapsibleTrigger className="w-full">
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <CardTitle className="flex items-center gap-2">
-                      <AlertCircle className="h-5 w-5" />
-                      Informações Básicas *
-                    </CardTitle>
-                    <CardDescription>
-                      Identificação e categoria do risco
-                    </CardDescription>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabKey)} className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+          {/* Sidebar — Navegação + Resumo Vivo (desktop) */}
+          <aside className="hidden lg:flex flex-col w-72 border-r bg-muted/30 flex-shrink-0">
+            <div className="p-4 border-b">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Etapas</h3>
+              <TabsList className="flex flex-col h-auto w-full bg-transparent border-0 gap-1 p-0">
+                {tabsMeta.map((t) => {
+                  const state = tabState(t.key);
+                  return (
+                    <TabsTrigger
+                      key={t.key}
+                      value={t.key}
+                      className={cn(
+                        "w-full justify-start px-3 py-2.5 h-auto rounded-md border border-transparent",
+                        "data-[state=active]:bg-background data-[state=active]:border-border data-[state=active]:shadow-sm",
+                        "data-[state=active]:after:hidden hover:bg-background/60"
+                      )}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <t.icon className="h-4 w-4 flex-shrink-0" />
+                        <div className="flex-1 text-left min-w-0">
+                          <div className="text-sm font-medium truncate">{t.label}</div>
+                          <div className="text-xs text-muted-foreground truncate">{t.description}</div>
+                        </div>
+                        <TabIndicator state={state} />
+                      </div>
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+            </div>
+
+            {/* Resumo Vivo */}
+            <div className="p-4 space-y-3 overflow-y-auto flex-1">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Resumo</h3>
+              <Card className="bg-background">
+                <CardContent className="p-3 space-y-3 text-sm">
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-0.5">Nome</div>
+                    <div className="font-medium truncate" title={watchNome}>
+                      {watchNome || <span className="text-muted-foreground italic">Não informado</span>}
+                    </div>
                   </div>
-                  <ChevronDown className={cn(
-                    "h-5 w-5 transition-transform",
-                    openSections.basico && "rotate-180"
-                  )} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4 pt-4">
-                <FormField
-                  control={form.control}
-                  name="nome"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Risco *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Falha de backup de dados" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="categoria_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Categoria</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma categoria" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {categorias.map((categoria) => (
-                              <SelectItem key={categoria.id} value={categoria.id}>
-                                <div className="flex items-center gap-2">
-                                  {categoria.cor && (
-                                    <div 
-                                      className="w-3 h-3 rounded-full" 
-                                      style={{ backgroundColor: categoria.cor }}
-                                    />
-                                  )}
-                                  {categoria.nome}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
+                  <Separator />
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Nível Inicial</div>
+                    {nivelInicialCalculado ? (
+                      <Badge className={cn("border", nivelCorClass(nivelInicialCalculado))}>
+                        {nivelInicialCalculado}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">P × I não definido</span>
                     )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="responsavel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Responsável</FormLabel>
-                        <FormControl>
-                          <UserSelect
-                            value={field.value || ''}
-                            onValueChange={field.onChange}
-                            placeholder="Selecione um responsável"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Nível Residual</div>
+                    {nivelResidualCalculado ? (
+                      <Badge className={cn("border", nivelCorClass(nivelResidualCalculado))}>
+                        {nivelResidualCalculado}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">Não avaliado</span>
                     )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="descricao"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Descreva o risco detalhadamente..." 
-                          className="min-h-[100px]"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                  </div>
+                  <Separator />
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Status</div>
+                    <Badge variant="outline" className="capitalize">{watchStatus || '—'}</Badge>
+                  </div>
+                  {risco?.status_aceite && (
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Aceite</div>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "capitalize",
+                          risco.status_aceite === 'pendente' && "border-yellow-500 text-yellow-700 dark:text-yellow-400",
+                          risco.status_aceite === 'aprovado' && "border-emerald-500 text-emerald-700 dark:text-emerald-400",
+                          risco.status_aceite === 'rejeitado' && "border-destructive text-destructive"
+                        )}
+                      >
+                        {risco.status_aceite}
+                      </Badge>
+                    </div>
                   )}
-                />
+                </CardContent>
+              </Card>
+            </div>
+          </aside>
 
+          {/* Tabs horizontais — apenas mobile/tablet */}
+          <div className="lg:hidden border-b bg-muted/30 px-4 py-2 overflow-x-auto flex-shrink-0">
+            <TabsList className="bg-transparent border-0 h-auto p-0 w-max">
+              {tabsMeta.map((t) => {
+                const state = tabState(t.key);
+                return (
+                  <TabsTrigger
+                    key={t.key}
+                    value={t.key}
+                    className="px-3 py-1.5 data-[state=active]:after:hidden data-[state=active]:bg-background data-[state=active]:border data-[state=active]:border-border rounded-md"
+                  >
+                    <span className="flex items-center gap-2">
+                      <t.icon className="h-4 w-4" />
+                      <span className="text-sm">{t.label}</span>
+                      <TabIndicator state={state} />
+                    </span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </div>
+
+          {/* Conteúdo principal */}
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 min-h-0">
+            {/* IDENTIFICAÇÃO */}
+            <TabsContent value="identificacao" className="mt-0 space-y-4 max-w-3xl mx-auto">
+              <div>
+                <h2 className="text-lg font-semibold flex items-center gap-2"><FileText className="h-5 w-5" /> Identificação do Risco</h2>
+                <p className="text-sm text-muted-foreground">Defina o nome, categoria, responsável e a matriz de avaliação.</p>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="nome"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Risco *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Falha de backup de dados" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="matriz_id"
+                  name="categoria_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Matriz de Risco *</FormLabel>
+                      <FormLabel>Categoria</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione a matriz" />
+                            <SelectValue placeholder="Selecione uma categoria" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {matrizes.map((matriz) => (
-                            <SelectItem key={matriz.id} value={matriz.id}>
-                              {matriz.nome}
+                          {categorias.map((categoria) => (
+                            <SelectItem key={categoria.id} value={categoria.id}>
+                              <div className="flex items-center gap-2">
+                                {categoria.cor && (
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: categoria.cor }}
+                                  />
+                                )}
+                                {categoria.nome}
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormDescription>
-                        A matriz define como o risco será avaliado
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
 
-        {/* Avaliação Inicial do Risco */}
-        <Collapsible open={openSections.avaliacao} onOpenChange={() => toggleSection('avaliacao')}>
-          <Card>
-            <CollapsibleTrigger className="w-full">
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <CardTitle>Avaliação Inicial do Risco *</CardTitle>
-                    <CardDescription>
-                      Probabilidade e impacto sem controles
-                    </CardDescription>
-                  </div>
-                  <ChevronDown className={cn(
-                    "h-5 w-5 transition-transform",
-                    openSections.avaliacao && "rotate-180"
-                  )} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="probabilidade_inicial"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Probabilidade *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {(selectedMatriz?.configuracao as any)?.escala_probabilidade?.length > 0 
-                              ? ((selectedMatriz?.configuracao as any)?.escala_probabilidade || []).map((item: any) => (
-                                  <SelectItem key={item.valor} value={item.valor.toString()}>
-                                    {item.valor} - {item.descricao}
-                                  </SelectItem>
-                                ))
-                              : [1, 2, 3, 4, 5].map((value) => (
-                                  <SelectItem key={value} value={value.toString()}>
-                                    {value}
-                                  </SelectItem>
-                                ))
-                            }
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="impacto_inicial"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Impacto *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {(selectedMatriz?.configuracao as any)?.escala_impacto?.length > 0 
-                              ? ((selectedMatriz?.configuracao as any)?.escala_impacto || []).map((item: any) => (
-                                  <SelectItem key={item.valor} value={item.valor.toString()}>
-                                    {item.valor} - {item.descricao}
-                                  </SelectItem>
-                                ))
-                              : [1, 2, 3, 4, 5].map((value) => (
-                                  <SelectItem key={value} value={value.toString()}>
-                                    {value}
-                                  </SelectItem>
-                                ))
-                            }
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {nivelInicialCalculado && (
-                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-                    <span className="text-sm font-medium">Nível de Risco Calculado:</span>
-                    <Badge variant="outline" className="text-base">
-                      {nivelInicialCalculado}
-                    </Badge>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="causas"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Causas</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="O que pode causar este risco?" 
-                            className="min-h-[80px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="consequencias"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Consequências</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Quais os impactos se ocorrer?" 
-                            className="min-h-[80px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Detalhes Adicionais */}
-        <Collapsible open={openSections.detalhes} onOpenChange={() => toggleSection('detalhes')}>
-          <Card>
-            <CollapsibleTrigger className="w-full">
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <CardTitle>Detalhes Adicionais</CardTitle>
-                    <CardDescription>
-                      Status, controles e ativos vinculados
-                    </CardDescription>
-                  </div>
-                  <ChevronDown className={cn(
-                    "h-5 w-5 transition-transform",
-                    openSections.detalhes && "rotate-180"
-                  )} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4 pt-4">
                 <FormField
                   control={form.control}
-                  name="status"
+                  name="responsavel"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status *</FormLabel>
+                      <FormLabel>Responsável</FormLabel>
+                      <FormControl>
+                        <UserSelect
+                          value={field.value || ''}
+                          onValueChange={field.onChange}
+                          placeholder="Selecione um responsável"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="descricao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Descreva o risco detalhadamente..."
+                        className="min-h-[100px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="matriz_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Matriz de Risco *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a matriz" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {matrizes.map((matriz) => (
+                          <SelectItem key={matriz.id} value={matriz.id}>
+                            {matriz.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>A matriz define como o risco será avaliado</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </TabsContent>
+
+            {/* AVALIAÇÃO INICIAL */}
+            <TabsContent value="avaliacao" className="mt-0 space-y-4 max-w-3xl mx-auto">
+              <div>
+                <h2 className="text-lg font-semibold flex items-center gap-2"><Gauge className="h-5 w-5" /> Avaliação Inicial</h2>
+                <p className="text-sm text-muted-foreground">Probabilidade × Impacto sem considerar controles.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="probabilidade_inicial"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Probabilidade *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione o status" />
+                            <SelectValue placeholder="Selecione" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="identificado">Identificado</SelectItem>
-                          <SelectItem value="analisado">Analisado</SelectItem>
-                          <SelectItem value="tratado">Tratado</SelectItem>
-                          <SelectItem value="monitorado">Monitorado</SelectItem>
-                          <SelectItem value="aceito">Aceito</SelectItem>
+                          {(selectedMatriz?.configuracao as any)?.escala_probabilidade?.length > 0
+                            ? ((selectedMatriz?.configuracao as any)?.escala_probabilidade || []).map((item: any) => (
+                                <SelectItem key={item.valor} value={item.valor.toString()}>
+                                  {item.valor} - {item.descricao}
+                                </SelectItem>
+                              ))
+                            : [1, 2, 3, 4, 5].map((value) => (
+                                <SelectItem key={value} value={value.toString()}>
+                                  {value}
+                                </SelectItem>
+                              ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -841,319 +842,401 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
 
                 <FormField
                   control={form.control}
-                  name="data_proxima_revisao"
+                  name="impacto_inicial"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Data Próxima Revisão</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Agende quando este risco deve ser reavaliado
-                      </FormDescription>
+                      <FormLabel>Impacto *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(selectedMatriz?.configuracao as any)?.escala_impacto?.length > 0
+                            ? ((selectedMatriz?.configuracao as any)?.escala_impacto || []).map((item: any) => (
+                                <SelectItem key={item.valor} value={item.valor.toString()}>
+                                  {item.valor} - {item.descricao}
+                                </SelectItem>
+                              ))
+                            : [1, 2, 3, 4, 5].map((value) => (
+                                <SelectItem key={value} value={value.toString()}>
+                                  {value}
+                                </SelectItem>
+                              ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              </div>
 
-                <FormField
-                  control={form.control}
-                  name="controles_existentes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Controles Existentes</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Descreva os controles já implementados..." 
-                          className="min-h-[80px]"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="space-y-2">
-                  <FormLabel>Ativos Vinculados</FormLabel>
-                  <FormField
-                    control={form.control}
-                    name="ativos_vinculados"
-                    render={({ field }) => (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-lg p-4">
-                        {ativos.length === 0 ? (
-                          <p className="text-sm text-muted-foreground col-span-2">Nenhum ativo cadastrado</p>
-                        ) : (
-                          ativos.map((ativo) => (
-                            <div key={ativo.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={ativo.id}
-                                checked={field.value.includes(ativo.id)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    field.onChange([...field.value, ativo.id]);
-                                  } else {
-                                    field.onChange(field.value.filter(id => id !== ativo.id));
-                                  }
-                                }}
-                              />
-                              <label
-                                htmlFor={ativo.id}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                              >
-                                {ativo.nome}
-                              </label>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Avaliação Residual */}
-        <Collapsible open={openSections.residual} onOpenChange={() => toggleSection('residual')}>
-          <Card>
-            <CollapsibleTrigger className="w-full">
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <CardTitle>Avaliação Residual (Opcional)</CardTitle>
-                    <CardDescription>
-                      Risco após implementação de controles
-                    </CardDescription>
-                  </div>
-                  <ChevronDown className={cn(
-                    "h-5 w-5 transition-transform",
-                    openSections.residual && "rotate-180"
-                  )} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="probabilidade_residual"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Probabilidade Residual</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {(selectedMatriz?.configuracao as any)?.escala_probabilidade?.length > 0 
-                              ? ((selectedMatriz?.configuracao as any)?.escala_probabilidade || []).map((item: any) => (
-                                  <SelectItem key={item.valor} value={item.valor.toString()}>
-                                    {item.valor} - {item.descricao}
-                                  </SelectItem>
-                                ))
-                              : [1, 2, 3, 4, 5].map((value) => (
-                                  <SelectItem key={value} value={value.toString()}>
-                                    {value}
-                                  </SelectItem>
-                                ))
-                            }
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="impacto_residual"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Impacto Residual</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {(selectedMatriz?.configuracao as any)?.escala_impacto?.length > 0 
-                              ? ((selectedMatriz?.configuracao as any)?.escala_impacto || []).map((item: any) => (
-                                  <SelectItem key={item.valor} value={item.valor.toString()}>
-                                    {item.valor} - {item.descricao}
-                                  </SelectItem>
-                                ))
-                              : [1, 2, 3, 4, 5].map((value) => (
-                                  <SelectItem key={value} value={value.toString()}>
-                                    {value}
-                                  </SelectItem>
-                                ))
-                            }
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {nivelResidualCalculado && (
-                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-                    <span className="text-sm font-medium">Nível Residual Calculado:</span>
-                    <Badge variant="outline" className="text-base">
-                      {nivelResidualCalculado}
+              {nivelInicialCalculado && (
+                <Card className={cn("border-2", nivelCorClass(nivelInicialCalculado).split(' ').filter(c => c.startsWith('border-')).join(' '))}>
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">Nível de Risco Calculado</div>
+                      <div className="text-2xl font-bold mt-1">{nivelInicialCalculado}</div>
+                    </div>
+                    <Badge className={cn("text-base px-3 py-1.5 border", nivelCorClass(nivelInicialCalculado))}>
+                      P{watchProbabilidade} × I{watchImpacto}
                     </Badge>
-                  </div>
-                )}
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
+                  </CardContent>
+                </Card>
+              )}
 
-        {/* Aceite do Risco */}
-        <Collapsible open={openSections.aceite} onOpenChange={() => toggleSection('aceite')}>
-          <Card>
-            <CollapsibleTrigger className="w-full">
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <CardTitle>Aceite do Risco (Opcional)</CardTitle>
-                    <CardDescription>
-                      Solicite aprovação formal para aceitar este risco
-                    </CardDescription>
-                  </div>
-                  <ChevronDown className={cn(
-                    "h-5 w-5 transition-transform",
-                    openSections.aceite && "rotate-180"
-                  )} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4 pt-4">
-                {/* Mostrar status atual se já em fluxo */}
-                {risco?.status_aceite && (
-                  <div className={cn(
-                    "p-3 rounded-lg text-sm flex items-center gap-2",
-                    risco.status_aceite === 'pendente' && "bg-yellow-50 text-yellow-800 border border-yellow-200",
-                    risco.status_aceite === 'aprovado' && "bg-green-50 text-green-800 border border-green-200",
-                    risco.status_aceite === 'rejeitado' && "bg-red-50 text-red-800 border border-red-200"
-                  )}>
-                    {risco.status_aceite === 'pendente' && '⏳ Aceite pendente de aprovação'}
-                    {risco.status_aceite === 'aprovado' && '✅ Aceite aprovado'}
-                    {risco.status_aceite === 'rejeitado' && '❌ Aceite rejeitado — você pode reenviar'}
-                  </div>
-                )}
-
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="aceito"
+                  name="causas"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormItem>
+                      <FormLabel>Causas</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={risco?.status_aceite === 'pendente' || risco?.status_aceite === 'aprovado'}
-                        />
+                        <Textarea placeholder="O que pode causar este risco?" className="min-h-[80px]" {...field} />
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Solicitar aceite formal deste risco</FormLabel>
-                        <FormDescription>
-                          Ao marcar, será necessário indicar um aprovador e aguardar a aprovação
-                        </FormDescription>
-                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {watchAceito && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="aprovador_aceite"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Aprovador do Aceite *</FormLabel>
-                          <FormControl>
-                            <UserSelect
-                              value={field.value || ''}
-                              onValueChange={field.onChange}
-                              placeholder="Selecione quem aprovará o aceite"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Esta pessoa receberá uma notificação e e-mail para aprovar ou rejeitar
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <FormField
+                  control={form.control}
+                  name="consequencias"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Consequências</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Quais os impactos se ocorrer?" className="min-h-[80px]" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </TabsContent>
 
-                    <FormField
-                      control={form.control}
-                      name="justificativa_aceite"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Justificativa do Aceite *</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Justifique a decisão de aceitar o risco..." 
-                              className="min-h-[80px]"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+            {/* DETALHES */}
+            <TabsContent value="detalhes" className="mt-0 space-y-4 max-w-3xl mx-auto">
+              <div>
+                <h2 className="text-lg font-semibold flex items-center gap-2"><Settings2 className="h-5 w-5" /> Detalhes Adicionais</h2>
+                <p className="text-sm text-muted-foreground">Status, controles existentes e ativos vinculados.</p>
+              </div>
 
-                    <FormField
-                      control={form.control}
-                      name="data_proxima_revisao"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Data Próxima Revisão *</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Data obrigatória para reavaliar o aceite do risco
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {risco?.id && (
-                      <div className="space-y-2">
-                        <FormLabel>Anexos de Aceite</FormLabel>
-                        <RiscoAnexosUpload
-                          riscoId={risco.id}
-                          anexos={anexosAceite}
-                          onAnexosChange={setAnexosAceite}
-                          tipoAnexo="aceite"
-                        />
-                      </div>
-                    )}
-                  </>
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="identificado">Identificado</SelectItem>
+                        <SelectItem value="analisado">Analisado</SelectItem>
+                        <SelectItem value="tratado">Tratado</SelectItem>
+                        <SelectItem value="monitorado">Monitorado</SelectItem>
+                        <SelectItem value="aceito">Aceito</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
+              />
 
-        {/* Botão Salvar */}
-        <div className="flex justify-end pt-6 mt-2 border-t">
-          <Button type="submit" disabled={loading} size="lg">
-            {loading ? 'Salvando...' : risco ? 'Atualizar Risco' : 'Salvar Risco'}
-            <Save className="ml-2 h-4 w-4" />
+              <FormField
+                control={form.control}
+                name="data_proxima_revisao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data Próxima Revisão</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormDescription>Agende quando este risco deve ser reavaliado</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="controles_existentes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Controles Existentes</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Descreva os controles já implementados..." className="min-h-[80px]" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-2">
+                <FormLabel>Ativos Vinculados</FormLabel>
+                <FormField
+                  control={form.control}
+                  name="ativos_vinculados"
+                  render={({ field }) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-lg p-4">
+                      {ativos.length === 0 ? (
+                        <p className="text-sm text-muted-foreground col-span-2">Nenhum ativo cadastrado</p>
+                      ) : (
+                        ativos.map((ativo) => (
+                          <div key={ativo.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={ativo.id}
+                              checked={field.value.includes(ativo.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  field.onChange([...field.value, ativo.id]);
+                                } else {
+                                  field.onChange(field.value.filter((id) => id !== ativo.id));
+                                }
+                              }}
+                            />
+                            <label htmlFor={ativo.id} className="text-sm font-medium leading-none cursor-pointer">
+                              {ativo.nome}
+                            </label>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                />
+              </div>
+            </TabsContent>
+
+            {/* RESIDUAL */}
+            <TabsContent value="residual" className="mt-0 space-y-4 max-w-3xl mx-auto">
+              <div>
+                <h2 className="text-lg font-semibold flex items-center gap-2"><Link2 className="h-5 w-5" /> Avaliação Residual</h2>
+                <p className="text-sm text-muted-foreground">Reavalie o risco após implementação de controles. Esta etapa é opcional.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="probabilidade_residual"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Probabilidade Residual</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(selectedMatriz?.configuracao as any)?.escala_probabilidade?.length > 0
+                            ? ((selectedMatriz?.configuracao as any)?.escala_probabilidade || []).map((item: any) => (
+                                <SelectItem key={item.valor} value={item.valor.toString()}>
+                                  {item.valor} - {item.descricao}
+                                </SelectItem>
+                              ))
+                            : [1, 2, 3, 4, 5].map((value) => (
+                                <SelectItem key={value} value={value.toString()}>
+                                  {value}
+                                </SelectItem>
+                              ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="impacto_residual"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Impacto Residual</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(selectedMatriz?.configuracao as any)?.escala_impacto?.length > 0
+                            ? ((selectedMatriz?.configuracao as any)?.escala_impacto || []).map((item: any) => (
+                                <SelectItem key={item.valor} value={item.valor.toString()}>
+                                  {item.valor} - {item.descricao}
+                                </SelectItem>
+                              ))
+                            : [1, 2, 3, 4, 5].map((value) => (
+                                <SelectItem key={value} value={value.toString()}>
+                                  {value}
+                                </SelectItem>
+                              ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {nivelResidualCalculado && (
+                <Card className={cn("border-2", nivelCorClass(nivelResidualCalculado).split(' ').filter(c => c.startsWith('border-')).join(' '))}>
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">Nível Residual Calculado</div>
+                      <div className="text-2xl font-bold mt-1">{nivelResidualCalculado}</div>
+                    </div>
+                    <Badge className={cn("text-base px-3 py-1.5 border", nivelCorClass(nivelResidualCalculado))}>
+                      P{watchProbabilidadeResidual} × I{watchImpactoResidual}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            {/* ACEITE */}
+            <TabsContent value="aceite" className="mt-0 space-y-4 max-w-3xl mx-auto">
+              <div>
+                <h2 className="text-lg font-semibold flex items-center gap-2"><ShieldCheck className="h-5 w-5" /> Aceite do Risco</h2>
+                <p className="text-sm text-muted-foreground">Solicite aprovação formal para aceitar este risco. Esta etapa é opcional.</p>
+              </div>
+
+              {risco?.status_aceite && (
+                <div className={cn(
+                  "p-3 rounded-lg text-sm flex items-center gap-2 border",
+                  risco.status_aceite === 'pendente' && "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
+                  risco.status_aceite === 'aprovado' && "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+                  risco.status_aceite === 'rejeitado' && "bg-destructive/10 text-destructive border-destructive/30"
+                )}>
+                  {risco.status_aceite === 'pendente' && '⏳ Aceite pendente de aprovação'}
+                  {risco.status_aceite === 'aprovado' && '✅ Aceite aprovado'}
+                  {risco.status_aceite === 'rejeitado' && '❌ Aceite rejeitado — você pode reenviar'}
+                </div>
+              )}
+
+              <FormField
+                control={form.control}
+                name="aceito"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-lg bg-muted/30">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={risco?.status_aceite === 'pendente' || risco?.status_aceite === 'aprovado'}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Solicitar aceite formal deste risco</FormLabel>
+                      <FormDescription>
+                        Ao marcar, será necessário indicar um aprovador e aguardar a aprovação
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {watchAceito && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="aprovador_aceite"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Aprovador do Aceite *</FormLabel>
+                        <FormControl>
+                          <UserSelect
+                            value={field.value || ''}
+                            onValueChange={field.onChange}
+                            placeholder="Selecione quem aprovará o aceite"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Esta pessoa receberá uma notificação e e-mail para aprovar ou rejeitar
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="justificativa_aceite"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Justificativa do Aceite *</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Justifique a decisão de aceitar o risco..." className="min-h-[80px]" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="data_proxima_revisao"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data Próxima Revisão *</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormDescription>Data obrigatória para reavaliar o aceite do risco</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {risco?.id && (
+                    <div className="space-y-2">
+                      <FormLabel>Anexos de Aceite</FormLabel>
+                      <RiscoAnexosUpload
+                        riscoId={risco.id}
+                        anexos={anexosAceite}
+                        onAnexosChange={setAnexosAceite}
+                        tipoAnexo="aceite"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </TabsContent>
+          </div>
+        </Tabs>
+
+        {/* Footer sticky */}
+        <div className="flex-shrink-0 border-t bg-background px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => goToTab('prev')}
+            disabled={isFirstTab}
+            size="sm"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
           </Button>
+
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground">
+            Etapa <span className="font-semibold text-foreground">{currentIdx + 1}</span> de {TABS.length}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {!isLastTab && (
+              <Button type="button" variant="outline" onClick={() => goToTab('next')} size="sm">
+                Próxima <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            )}
+            <Button type="submit" disabled={loading} size="sm">
+              <Save className="h-4 w-4 mr-1.5" />
+              {loading ? 'Salvando...' : risco ? 'Atualizar' : 'Salvar'}
+            </Button>
+          </div>
         </div>
       </form>
     </Form>
