@@ -172,6 +172,10 @@ export default {
 					'0%': { transform: 'rotate(0deg)' },
 					'15%': { transform: 'rotate(1080deg)' },
 					'100%': { transform: 'rotate(1080deg)' }
+				},
+				'page-enter': {
+					'0%': { opacity: '0.6' },
+					'100%': { opacity: '1' }
 				}
 			},
 			animation: {
@@ -183,7 +187,8 @@ export default {
 				'hover-lift': 'hover-lift 0.2s ease-out',
 				'shimmer': 'shimmer 2s infinite linear',
 				'pulse-subtle': 'pulse-subtle 3s infinite ease-in-out',
-				'spin-burst': 'spin-burst 5s ease-in-out infinite'
+				'spin-burst': 'spin-burst 5s ease-in-out infinite',
+				'page-enter': 'page-enter 0.18s ease-out'
 			},
 			spacing: {
 				'xs': 'var(--spacing-xs)',
