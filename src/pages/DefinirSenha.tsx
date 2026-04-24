@@ -23,6 +23,8 @@ const buildPasswordSchema = (t: (k: string) => string) => z.object({
 });
 
 const DefinirSenha = () => {
+  const { t } = useLanguage();
+  const passwordSchema = useMemo(() => buildPasswordSchema(t), [t]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [password, setPassword] = useState('');
