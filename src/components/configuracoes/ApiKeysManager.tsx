@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { DialogShell } from '@/components/ui/dialog-shell';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
@@ -278,55 +278,54 @@ curl -X POST -H "X-API-Key: gai_sua_chave_aqui" \\
       )}
 
       {/* Create Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Nova API Key</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Nome</Label>
-              <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Integração SIEM" />
-            </div>
-            <div>
-              <Label>Rate Limit (req/min)</Label>
-              <Select value={rateLimit} onValueChange={setRateLimit}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10/min</SelectItem>
-                  <SelectItem value="30">30/min</SelectItem>
-                  <SelectItem value="60">60/min</SelectItem>
-                  <SelectItem value="120">120/min</SelectItem>
-                  <SelectItem value="300">300/min</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Permissões</Label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {PERMISSOES_DISPONIVEIS.map(p => (
-                  <label key={p.value} className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded border hover:bg-muted/50">
-                    <input
-                      type="checkbox"
-                      checked={permissoes.includes(p.value)}
-                      onChange={() => togglePermissao(p.value)}
-                      className="rounded"
-                    />
-                    {p.label}
-                  </label>
-                ))}
-              </div>
+      <DialogShell
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        title="Nova API Key"
+        icon={Key}
+        size="md"
+        onSubmit={handleCreate}
+        submitLabel="Gerar API Key"
+        submitDisabled={!nome.trim() || saving}
+        isSubmitting={saving}
+        isDirty={!!nome || permissoes.length > 0}
+      >
+        <div className="space-y-4">
+          <div>
+            <Label>Nome</Label>
+            <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Integração SIEM" />
+          </div>
+          <div>
+            <Label>Rate Limit (req/min)</Label>
+            <Select value={rateLimit} onValueChange={setRateLimit}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10/min</SelectItem>
+                <SelectItem value="30">30/min</SelectItem>
+                <SelectItem value="60">60/min</SelectItem>
+                <SelectItem value="120">120/min</SelectItem>
+                <SelectItem value="300">300/min</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Permissões</Label>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {PERMISSOES_DISPONIVEIS.map(p => (
+                <label key={p.value} className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded border hover:bg-muted/50">
+                  <input
+                    type="checkbox"
+                    checked={permissoes.includes(p.value)}
+                    onChange={() => togglePermissao(p.value)}
+                    className="rounded"
+                  />
+                  {p.label}
+                </label>
+              ))}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreate} disabled={!nome.trim() || saving}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Gerar API Key
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </DialogShell>
 
       <ConfirmDialog
         open={!!deleteConfirm}
