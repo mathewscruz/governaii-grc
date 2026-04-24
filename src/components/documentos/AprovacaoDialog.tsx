@@ -374,27 +374,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
     closeActionModal();
   };
 
-  // ============ Early return: requer aprovação desabilitado ============
-  if (!(documento as any).requer_aprovacao) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Sistema de Aprovação Desabilitado</DialogTitle>
-            <DialogDescription>
-              Este documento não requer aprovação. Para habilitar o sistema de aprovação, edite o documento e marque a opção "Requer
-              Aprovação".
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => onOpenChange(false)}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  // ============ Master-detail items ============
+  // ============ Master-detail items (deve ficar antes de qualquer early return) ============
   const items: (MasterDetailItem & { raw: Aprovacao })[] = useMemo(
     () =>
       aprovacoes.map((a) => {
@@ -414,6 +394,26 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
       }),
     [aprovacoes]
   );
+
+  // ============ Early return: requer aprovação desabilitado ============
+  if (!(documento as any).requer_aprovacao) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sistema de Aprovação Desabilitado</DialogTitle>
+            <DialogDescription>
+              Este documento não requer aprovação. Para habilitar o sistema de aprovação, edite o documento e marque a opção "Requer
+              Aprovação".
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => onOpenChange(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const statusGeral =
     aprovacoes.length > 0
