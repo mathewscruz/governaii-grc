@@ -5,6 +5,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { toast } from 'sonner';
 import { Loader2, Mail, RefreshCw, ShieldCheck } from 'lucide-react';
 import logoImage from '@/assets/akuris-logo.png';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface MFAVerificationProps {
   userId: string;
