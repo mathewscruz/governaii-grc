@@ -40,6 +40,9 @@ import {
 } from '@/components/icons';
 import logoMini from '@/assets/akuris-logo.png';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
+import { supabase } from '@/integrations/supabase/client';
 
 import {
   Sidebar,
