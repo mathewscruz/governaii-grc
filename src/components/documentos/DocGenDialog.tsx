@@ -1014,6 +1014,27 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           }}
         />
       </div>
+
+      <AlertDialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Descartar documento gerado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem um documento gerado que não foi salvo no sistema nem exportado.
+              Se fechar agora, ele será perdido.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDiscardAndClose}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DialogShell>
   );
 };
