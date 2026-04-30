@@ -108,6 +108,22 @@ const Configuracoes = () => {
           </TabsContent>
         )}
 
+        {isSuperAdmin && (
+          <TabsContent value="planos">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Gerenciamento de Planos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <GerenciamentoPlanos />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
         <TabsContent value="usuarios">
           <UsersAccessTab 
             userRole={userRole} 
