@@ -46,6 +46,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -60,97 +61,94 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { prefetchRoute } from '@/lib/route-prefetch';
 
-const getMenuItems = (t: (key: string) => string) => [
-  {
-    title: t('sidebar.dashboard'),
-    url: '/dashboard',
-    icon: LayoutDashboard,
-    moduleName: 'dashboard',
-  },
-  {
-    title: t('sidebar.actionPlans'),
-    url: '/planos-acao',
-    icon: ListTodo,
-    moduleName: 'planos-acao',
-  },
-  {
-    title: t('sidebar.assetManagement'),
-    icon: AtivosIcon,
-    subItems: [
-      { title: t('sidebar.assets'), url: '/ativos', icon: AtivosIcon, moduleName: 'ativos' },
-      { title: t('sidebar.licenses'), url: '/ativos/licencas', icon: FileKey, moduleName: 'ativos' },
-      { title: t('sidebar.keys'), url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
-    ],
-  },
-  {
-    title: t('sidebar.riskManagement'),
-    icon: RiscosIcon,
-    subItems: [
-      { title: t('sidebar.risks'), url: '/riscos', icon: RiscosIcon, moduleName: 'riscos' },
-      { title: t('sidebar.riskAcceptance'), url: '/riscos/aceite', icon: CheckSquare, moduleName: 'riscos' },
-    ],
-  },
-  {
-    title: t('sidebar.gapAnalysis'),
-    url: '/gap-analysis/frameworks',
-    icon: GapAnalysisIcon,
-    moduleName: 'gap-analysis',
-  },
-  {
-    title: t('sidebar.governance'),
-    icon: FileCheck,
-    subItems: [
-      { title: t('sidebar.internalControls'), url: '/governanca', icon: ControlesIcon, moduleName: 'controles' },
-      { title: t('sidebar.systems'), url: '/sistemas', icon: Server, moduleName: 'controles' },
-    ],
-  },
-  {
-    title: t('sidebar.contracts'),
-    url: '/contratos',
-    icon: Handshake,
-    moduleName: 'contratos',
-  },
-  {
-    title: t('sidebar.documents'),
-    url: '/documentos',
-    icon: DocumentosIcon,
-    moduleName: 'documentos',
-  },
-  {
-    title: t('sidebar.security'),
-    icon: Lock,
-    subItems: [
-      { title: t('sidebar.privilegedAccounts'), url: '/contas-privilegiadas', icon: Users, moduleName: 'contas-privilegiadas' },
-      { title: t('sidebar.accessReview'), url: '/revisao-acessos', icon: CheckSquare, moduleName: 'contas-privilegiadas' },
-      { title: t('sidebar.incidents'), url: '/incidentes', icon: IncidentesIcon, moduleName: 'incidentes' },
-    ],
-  },
-  {
-    title: t('sidebar.privacy'),
-    url: '/privacidade',
-    icon: Shield,
-    moduleName: 'dados',
-  },
-  {
-    title: t('sidebar.compliance'),
-    icon: CheckSquare,
-    subItems: [
-      { title: t('sidebar.dueDiligence'), url: '/due-diligence', icon: DueDiligenceIcon, moduleName: 'due-diligence' },
-      { title: t('sidebar.whistleblowing'), url: '/denuncia', icon: DenunciasIcon, moduleName: 'denuncia' },
+type MenuItem = {
+  title: string;
+  url?: string;
+  icon: any;
+  moduleName?: string;
+  subItems?: { title: string; url: string; icon: any; moduleName?: string }[];
+};
 
+type MenuSection = {
+  id: string;
+  label: string;
+  items: MenuItem[];
+};
+
+const getMenuSections = (t: (key: string) => string): MenuSection[] => [
+  {
+    id: 'operation',
+    label: t('sidebar.sectionOperation'),
+    items: [
+      { title: t('sidebar.dashboard'), url: '/dashboard', icon: LayoutDashboard, moduleName: 'dashboard' },
+      { title: t('sidebar.actionPlans'), url: '/planos-acao', icon: ListTodo, moduleName: 'planos-acao' },
     ],
   },
   {
-    title: t('sidebar.businessContinuity'),
-    url: '/continuidade',
-    icon: ShieldAlert,
-    moduleName: 'continuidade',
+    id: 'grc-core',
+    label: t('sidebar.sectionGrcCore'),
+    items: [
+      {
+        title: t('sidebar.riskManagement'),
+        icon: RiscosIcon,
+        subItems: [
+          { title: t('sidebar.risks'), url: '/riscos', icon: RiscosIcon, moduleName: 'riscos' },
+          { title: t('sidebar.riskAcceptance'), url: '/riscos/aceite', icon: CheckSquare, moduleName: 'riscos' },
+        ],
+      },
+      {
+        title: t('sidebar.governance'),
+        icon: FileCheck,
+        subItems: [
+          { title: t('sidebar.internalControls'), url: '/governanca', icon: ControlesIcon, moduleName: 'controles' },
+          { title: t('sidebar.systems'), url: '/sistemas', icon: Server, moduleName: 'controles' },
+        ],
+      },
+      { title: t('sidebar.gapAnalysis'), url: '/gap-analysis/frameworks', icon: GapAnalysisIcon, moduleName: 'gap-analysis' },
+      {
+        title: t('sidebar.assetManagement'),
+        icon: AtivosIcon,
+        subItems: [
+          { title: t('sidebar.assets'), url: '/ativos', icon: AtivosIcon, moduleName: 'ativos' },
+          { title: t('sidebar.licenses'), url: '/ativos/licencas', icon: FileKey, moduleName: 'ativos' },
+          { title: t('sidebar.keys'), url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
+        ],
+      },
+    ],
   },
   {
-    title: t('sidebar.reports'),
-    url: '/relatorios',
-    icon: FileBarChart,
-    moduleName: 'relatorios',
+    id: 'compliance',
+    label: t('sidebar.sectionCompliance'),
+    items: [
+      { title: t('sidebar.contracts'), url: '/contratos', icon: Handshake, moduleName: 'contratos' },
+      { title: t('sidebar.documents'), url: '/documentos', icon: DocumentosIcon, moduleName: 'documentos' },
+      { title: t('sidebar.privacy'), url: '/privacidade', icon: Shield, moduleName: 'dados' },
+      {
+        title: t('sidebar.security'),
+        icon: Lock,
+        subItems: [
+          { title: t('sidebar.privilegedAccounts'), url: '/contas-privilegiadas', icon: Users, moduleName: 'contas-privilegiadas' },
+          { title: t('sidebar.accessReview'), url: '/revisao-acessos', icon: CheckSquare, moduleName: 'contas-privilegiadas' },
+          { title: t('sidebar.incidents'), url: '/incidentes', icon: IncidentesIcon, moduleName: 'incidentes' },
+        ],
+      },
+      {
+        title: t('sidebar.compliance'),
+        icon: CheckSquare,
+        subItems: [
+          { title: t('sidebar.dueDiligence'), url: '/due-diligence', icon: DueDiligenceIcon, moduleName: 'due-diligence' },
+          { title: t('sidebar.whistleblowing'), url: '/denuncia', icon: DenunciasIcon, moduleName: 'denuncia' },
+        ],
+      },
+      { title: t('sidebar.businessContinuity'), url: '/continuidade', icon: ShieldAlert, moduleName: 'continuidade' },
+    ],
+  },
+  {
+    id: 'insights',
+    label: t('sidebar.sectionInsights'),
+    items: [
+      { title: t('sidebar.reports'), url: '/relatorios', icon: FileBarChart, moduleName: 'relatorios' },
+    ],
   },
 ];
 
@@ -161,13 +159,16 @@ export function AppSidebar() {
   const { t } = useLanguage();
   const location = useLocation();
   const currentPath = location.pathname;
-  const menuItems = getMenuItems(t);
-  
+  const menuSections = getMenuSections(t);
+
+  // All items flat (used for active-group lookup)
+  const allItems = menuSections.flatMap((s) => s.items);
+
   // Function to get which group contains the active route
   const getActiveGroup = () => {
-    for (const item of menuItems) {
+    for (const item of allItems) {
       if (item.subItems) {
-        const hasActiveSubItem = item.subItems.some(subItem => currentPath === subItem.url);
+        const hasActiveSubItem = item.subItems.some((subItem) => currentPath === subItem.url);
         if (hasActiveSubItem) {
           return item.title;
         }
@@ -179,7 +180,7 @@ export function AppSidebar() {
   // Start with groups that contain active routes open
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  
+
   const isCollapsed = state === 'collapsed';
 
   // Open group automatically when it contains the active route
@@ -191,29 +192,30 @@ export function AppSidebar() {
   }, [currentPath]);
 
   const toggleGroup = (groupTitle: string) => {
-    setOpenGroups(prev => {
+    setOpenGroups((prev) => {
       if (prev.includes(groupTitle)) {
-        return prev.filter(title => title !== groupTitle);
+        return prev.filter((title) => title !== groupTitle);
       }
       return [groupTitle];
     });
   };
 
   const isActive = (path: string) => currentPath === path;
-  
+
   const hasActiveSubItem = (subItems: any[]) => {
-    return subItems.some(subItem => currentPath === subItem.url);
+    return subItems.some((subItem) => currentPath === subItem.url);
   };
 
   // Função para fechar grupos ao navegar para item sem submenu
   const handleNavClick = () => {
     setOpenGroups([]);
   };
-  
+
+  // Active state em pílula (estilo Linear/Notion)
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive 
-      ? 'bg-primary/15 text-primary border-l-4 border-primary font-semibold shadow-sm' 
-      : 'hover:bg-sidebar-accent/50 text-sidebar-foreground';
+    isActive
+      ? 'bg-primary text-primary-foreground font-semibold rounded-md shadow-sm'
+      : 'hover:bg-sidebar-accent/60 text-sidebar-foreground rounded-md';
 
   const handleSignOut = () => {
     setShowLogoutConfirm(true);
@@ -230,7 +232,6 @@ export function AppSidebar() {
   // Determina qual logo usar com cache busting melhorado
   const getLogoSrc = () => {
     if (company?.logo_url) {
-      // Se o logo já tem timestamp, usar como está; senão, adicionar timestamp
       const hasTimestamp = company.logo_url.includes('?t=');
       return hasTimestamp ? company.logo_url : `${company.logo_url}?t=${Date.now()}`;
     }
@@ -238,34 +239,36 @@ export function AppSidebar() {
   };
 
   const getLogoAlt = () => {
-    return company?.nome || "Akuris";
+    return company?.nome || 'Akuris';
   };
 
   // Função para verificar se um item tem acesso
   const hasAccess = (item: any) => {
-    if (!item.moduleName) return true; // Se não tem moduleName, mostra por padrão
+    if (!item.moduleName) return true;
     return canAccess(item.moduleName);
   };
 
-  // Filtrar itens do menu baseado nas permissões
-  const getVisibleMenuItems = () => {
-    return menuItems.filter(item => {
-      if (item.subItems) {
-        // Para grupos, mostrar se pelo menos um subitem tem acesso
-        const visibleSubItems = item.subItems.filter(hasAccess);
-        return visibleSubItems.length > 0;
-      }
-      return hasAccess(item);
-    }).map(item => {
-      if (item.subItems) {
-        // Filtrar subitems por permissão
-        return {
-          ...item,
-          subItems: item.subItems.filter(hasAccess)
-        };
-      }
-      return item;
-    });
+  // Filtrar seções/itens do menu baseado nas permissões
+  const getVisibleSections = () => {
+    return menuSections
+      .map((section) => ({
+        ...section,
+        items: section.items
+          .filter((item) => {
+            if (item.subItems) {
+              const visibleSubItems = item.subItems.filter(hasAccess);
+              return visibleSubItems.length > 0;
+            }
+            return hasAccess(item);
+          })
+          .map((item) => {
+            if (item.subItems) {
+              return { ...item, subItems: item.subItems.filter(hasAccess) };
+            }
+            return item;
+          }),
+      }))
+      .filter((section) => section.items.length > 0);
   };
 
   return (
@@ -291,108 +294,134 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="py-2 transition-all duration-300 ease-out">
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-2">
-              {getVisibleMenuItems().map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.subItems ? (
-                    <Collapsible
-                      open={openGroups.includes(item.title)}
-                      onOpenChange={() => toggleGroup(item.title)}
-                    >
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton 
-                        className={`w-full justify-between transition-colors duration-200 h-9 px-3 group ${
-                            hasActiveSubItem(item.subItems) 
-                              ? 'bg-primary/10 border-l-2 border-primary' 
-                              : 'hover:bg-sidebar-accent/50'
-                          }`}
+        {getVisibleSections().map((section) => (
+          <SidebarGroup key={section.id}>
+            {!isCollapsed && (
+              <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/40 px-3 mb-1">
+                {section.label}
+              </SidebarGroupLabel>
+            )}
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-1">
+                {section.items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    {item.subItems ? (
+                      <Collapsible
+                        open={openGroups.includes(item.title)}
+                        onOpenChange={() => toggleGroup(item.title)}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton
+                            className={`w-full justify-between transition-colors duration-200 h-9 px-3 rounded-md group ${
+                              hasActiveSubItem(item.subItems)
+                                ? 'bg-primary/10 text-primary'
+                                : 'hover:bg-sidebar-accent/60'
+                            }`}
+                          >
+                            <div className="flex items-center min-w-0">
+                              <span className="relative flex-shrink-0 mr-3">
+                                <item.icon
+                                  className={`h-4 w-4 transition-colors duration-200 ${
+                                    hasActiveSubItem(item.subItems) || openGroups.includes(item.title)
+                                      ? 'text-primary'
+                                      : ''
+                                  }`}
+                                />
+                                {/* Dot indicator: filho ativo enquanto grupo está fechado */}
+                                {hasActiveSubItem(item.subItems) && !openGroups.includes(item.title) && (
+                                  <span className="absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                                )}
+                              </span>
+                              {!isCollapsed && (
+                                <span
+                                  className={`text-sm font-medium transition-colors duration-200 truncate ${
+                                    hasActiveSubItem(item.subItems)
+                                      ? 'text-primary font-semibold'
+                                      : openGroups.includes(item.title)
+                                      ? 'text-primary'
+                                      : ''
+                                  }`}
+                                >
+                                  {item.title}
+                                </span>
+                              )}
+                            </div>
+                            {!isCollapsed && (
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform duration-200 flex-shrink-0 ${
+                                  openGroups.includes(item.title) ? 'rotate-180 text-primary' : ''
+                                }`}
+                              />
+                            )}
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        {!isCollapsed && (
+                          <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                            <div className="space-y-1 mt-1 ml-6 pl-2 border-l-2 border-sidebar-border/30">
+                              {item.subItems.map((subItem) => (
+                                <SidebarMenuButton
+                                  key={subItem.title}
+                                  asChild
+                                  className="transition-colors duration-200 h-9"
+                                >
+                                  <NavLink
+                                    to={subItem.url}
+                                    onMouseEnter={() => prefetchRoute(subItem.url)}
+                                    className={({ isActive }) =>
+                                      `flex items-center w-full min-w-0 px-3 ${getNavCls({ isActive })}`
+                                    }
+                                  >
+                                    <subItem.icon
+                                      className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
+                                        isActive(subItem.url) ? 'text-primary-foreground' : ''
+                                      }`}
+                                    />
+                                    <span className="text-sm truncate">{subItem.title}</span>
+                                  </NavLink>
+                                </SidebarMenuButton>
+                              ))}
+                            </div>
+                          </CollapsibleContent>
+                        )}
+                      </Collapsible>
+                    ) : (
+                      <SidebarMenuButton
+                        asChild
+                        className="transition-colors duration-200 h-9 min-w-0 px-3"
+                      >
+                        <NavLink
+                          to={item.url!}
+                          onClick={handleNavClick}
+                          onMouseEnter={() => prefetchRoute(item.url!)}
+                          className={({ isActive }) =>
+                            `flex items-center w-full min-w-0 px-3 ${getNavCls({ isActive })}`
+                          }
                         >
                           <div className="flex items-center min-w-0">
-                            <item.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
-                              hasActiveSubItem(item.subItems) || openGroups.includes(item.title) 
-                                ? 'text-primary' 
-                                : ''
-                            }`} />
+                            <item.icon
+                              className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
+                                isActive(item.url!) ? 'text-primary-foreground' : ''
+                              }`}
+                            />
                             {!isCollapsed && (
-                              <span className={`text-sm font-medium transition-colors duration-200 truncate ${
-                                hasActiveSubItem(item.subItems) 
-                                  ? 'text-primary font-semibold' 
-                                  : openGroups.includes(item.title) ? 'text-primary' : ''
-                              }`}>
+                              <span
+                                className={`text-sm font-medium transition-colors duration-200 truncate ${
+                                  isActive(item.url!) ? 'text-primary-foreground font-semibold' : ''
+                                }`}
+                              >
                                 {item.title}
                               </span>
                             )}
                           </div>
-                          {!isCollapsed && (
-                             <ChevronDown 
-                               className={`h-4 w-4 transition-transform duration-200 flex-shrink-0 ${
-                                 openGroups.includes(item.title) 
-                                   ? 'rotate-180 text-primary' 
-                                   : ''
-                               }`} 
-                             />
-                          )}
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      {!isCollapsed && (
-                         <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                          <div className="space-y-1 mt-2 ml-6 pl-2 border-l-2 border-sidebar-border/30">
-                            {item.subItems.map((subItem) => (
-                              <SidebarMenuButton 
-                                key={subItem.title} 
-                                asChild
-                                className="transition-colors duration-200 h-9"
-                              >
-                                 <NavLink 
-                                   to={subItem.url} 
-                                   onMouseEnter={() => prefetchRoute(subItem.url)}
-                                   className={({ isActive }) => getNavCls({ isActive })}
-                                 >
-                                   <subItem.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
-                                     isActive(subItem.url) ? 'text-primary' : ''
-                                   }`} />
-                                   <span className={`text-sm transition-colors duration-200 truncate ${
-                                     isActive(subItem.url) ? 'text-primary font-semibold' : ''
-                                   }`}>
-                                     {subItem.title}
-                                   </span>
-                                 </NavLink>
-                              </SidebarMenuButton>
-                            ))}
-                          </div>
-                        </CollapsibleContent>
-                      )}
-                    </Collapsible>
-                  ) : (
-                    <SidebarMenuButton asChild className="transition-colors duration-200 h-9 min-w-0 px-3">
-                      <NavLink 
-                        to={item.url} 
-                        onClick={handleNavClick}
-                        onMouseEnter={() => prefetchRoute(item.url)}
-                        className={({ isActive }) => `flex items-center w-full min-w-0 ${getNavCls({ isActive })}`}
-                      >
-                        <div className="flex items-center min-w-0">
-                          <item.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
-                            isActive(item.url) ? 'text-primary' : ''
-                          }`} />
-                          {!isCollapsed && (
-                            <span className={`text-sm font-medium transition-colors duration-200 truncate ${
-                              isActive(item.url) ? 'text-primary font-semibold' : ''
-                            }`}>
-                              {item.title}
-                            </span>
-                          )}
-                        </div>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  )}
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    )}
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
 
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
@@ -400,19 +429,23 @@ export function AppSidebar() {
               {canAccess('configuracoes') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild className="transition-colors duration-200 h-9">
-                    <NavLink 
-                      to="/configuracoes" 
+                    <NavLink
+                      to="/configuracoes"
                       onClick={handleNavClick}
-                      className={({ isActive }) => getNavCls({ isActive })}
+                      className={({ isActive }) => `flex items-center w-full px-3 ${getNavCls({ isActive })}`}
                     >
-                      <Settings className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
-                        isActive('/configuracoes') ? 'text-primary' : ''
-                      }`} />
+                      <Settings
+                        className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
+                          isActive('/configuracoes') ? 'text-primary-foreground' : ''
+                        }`}
+                      />
                       {!isCollapsed && (
-                         <span className={`text-sm font-medium transition-colors duration-200 truncate ${
-                           isActive('/configuracoes') ? 'text-primary font-semibold' : ''
-                         }`}>
-                           {t('sidebar.settings')}
+                        <span
+                          className={`text-sm font-medium transition-colors duration-200 truncate ${
+                            isActive('/configuracoes') ? 'text-primary-foreground font-semibold' : ''
+                          }`}
+                        >
+                          {t('sidebar.settings')}
                         </span>
                       )}
                     </NavLink>

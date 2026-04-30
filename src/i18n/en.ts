@@ -187,6 +187,10 @@ export const en = {
     logout: 'Logout',
     confirmLogout: 'Confirm logout',
     confirmLogoutDesc: 'Are you sure you want to logout?',
+    sectionOperation: 'Operation',
+    sectionGrcCore: 'GRC Core',
+    sectionCompliance: 'Compliance & Governance',
+    sectionInsights: 'Insights',
   },
   userProfile: {
     myProfile: 'My profile',
