@@ -7,6 +7,8 @@ import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/components/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { RouteFallback } from '@/components/ui/route-fallback';
 
 
 // Lazy-loaded pages
