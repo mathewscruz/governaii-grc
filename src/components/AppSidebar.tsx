@@ -28,6 +28,16 @@ import {
   GraduationCap,
   ShieldAlert
 } from 'lucide-react';
+import {
+  RiscosIcon,
+  ControlesIcon,
+  AtivosIcon,
+  IncidentesIcon,
+  GapAnalysisIcon,
+  DueDiligenceIcon,
+  DocumentosIcon,
+  DenunciasIcon,
+} from '@/components/icons';
 import logoMini from '@/assets/akuris-logo.png';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
@@ -65,32 +75,32 @@ const getMenuItems = (t: (key: string) => string) => [
   },
   {
     title: t('sidebar.assetManagement'),
-    icon: Database,
+    icon: AtivosIcon,
     subItems: [
-      { title: t('sidebar.assets'), url: '/ativos', icon: Server, moduleName: 'ativos' },
+      { title: t('sidebar.assets'), url: '/ativos', icon: AtivosIcon, moduleName: 'ativos' },
       { title: t('sidebar.licenses'), url: '/ativos/licencas', icon: FileKey, moduleName: 'ativos' },
       { title: t('sidebar.keys'), url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
     ],
   },
   {
     title: t('sidebar.riskManagement'),
-    icon: AlertTriangle,
+    icon: RiscosIcon,
     subItems: [
-      { title: t('sidebar.risks'), url: '/riscos', icon: AlertTriangle, moduleName: 'riscos' },
+      { title: t('sidebar.risks'), url: '/riscos', icon: RiscosIcon, moduleName: 'riscos' },
       { title: t('sidebar.riskAcceptance'), url: '/riscos/aceite', icon: CheckSquare, moduleName: 'riscos' },
     ],
   },
   {
     title: t('sidebar.gapAnalysis'),
     url: '/gap-analysis/frameworks',
-    icon: BarChart3,
+    icon: GapAnalysisIcon,
     moduleName: 'gap-analysis',
   },
   {
     title: t('sidebar.governance'),
     icon: FileCheck,
     subItems: [
-      { title: t('sidebar.internalControls'), url: '/governanca', icon: Shield, moduleName: 'controles' },
+      { title: t('sidebar.internalControls'), url: '/governanca', icon: ControlesIcon, moduleName: 'controles' },
       { title: t('sidebar.systems'), url: '/sistemas', icon: Server, moduleName: 'controles' },
     ],
   },
@@ -103,7 +113,7 @@ const getMenuItems = (t: (key: string) => string) => [
   {
     title: t('sidebar.documents'),
     url: '/documentos',
-    icon: FileText,
+    icon: DocumentosIcon,
     moduleName: 'documentos',
   },
   {
@@ -112,7 +122,7 @@ const getMenuItems = (t: (key: string) => string) => [
     subItems: [
       { title: t('sidebar.privilegedAccounts'), url: '/contas-privilegiadas', icon: Users, moduleName: 'contas-privilegiadas' },
       { title: t('sidebar.accessReview'), url: '/revisao-acessos', icon: CheckSquare, moduleName: 'contas-privilegiadas' },
-      { title: t('sidebar.incidents'), url: '/incidentes', icon: AlertCircle, moduleName: 'incidentes' },
+      { title: t('sidebar.incidents'), url: '/incidentes', icon: IncidentesIcon, moduleName: 'incidentes' },
     ],
   },
   {
@@ -125,9 +135,9 @@ const getMenuItems = (t: (key: string) => string) => [
     title: t('sidebar.compliance'),
     icon: CheckSquare,
     subItems: [
-      { title: t('sidebar.dueDiligence'), url: '/due-diligence', icon: BookOpen, moduleName: 'due-diligence' },
-      { title: t('sidebar.whistleblowing'), url: '/denuncia', icon: MessageSquare, moduleName: 'denuncia' },
-      
+      { title: t('sidebar.dueDiligence'), url: '/due-diligence', icon: DueDiligenceIcon, moduleName: 'due-diligence' },
+      { title: t('sidebar.whistleblowing'), url: '/denuncia', icon: DenunciasIcon, moduleName: 'denuncia' },
+
     ],
   },
   {

@@ -5,16 +5,30 @@ import { useRadarChartData, RadarDataPoint } from "@/hooks/useRadarChartData";
 import { useGrcMaturityScore } from "@/hooks/useGrcMaturityScore";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { 
-  CheckCircle2, AlertCircle, XCircle, AlertTriangle, Shield, 
-  Monitor, Zap, Target, ClipboardCheck, FileText, MessageSquareWarning,
-  ChevronRight, Minus
-} from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { CheckCircle2, AlertCircle, XCircle, FileText, ChevronRight, Minus } from 'lucide-react';
+import {
+  RiscosIcon,
+  ControlesIcon,
+  AtivosIcon,
+  IncidentesIcon,
+  GapAnalysisIcon,
+  DueDiligenceIcon,
+  DocumentosIcon,
+  DenunciasIcon,
+} from '@/components/icons';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
+// Mapeia as chaves do useRadarChartData para os ícones proprietários Akuris.
 const iconMap: Record<string, React.ComponentType<any>> = {
-  AlertTriangle, Shield, Monitor, Zap, Target, ClipboardCheck, FileText, MessageSquareWarning,
+  AlertTriangle: RiscosIcon,
+  Shield: ControlesIcon,
+  Monitor: AtivosIcon,
+  Zap: IncidentesIcon,
+  Target: GapAnalysisIcon,
+  ClipboardCheck: DueDiligenceIcon,
+  FileText: DocumentosIcon,
+  MessageSquareWarning: DenunciasIcon,
 };
 
 // Paleta sóbria padronizada — variações do primary + destructive atenuado para crítico.
