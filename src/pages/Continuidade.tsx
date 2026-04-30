@@ -251,19 +251,24 @@ export default function Continuidade() {
         </div>
       )}
 
-      {/* Tabela */}
-      <DataTable
-        data={planos}
-        columns={columns}
-        searchable
-        loading={isLoading}
-        emptyState={{
-          icon: <Shield className="h-10 w-10" />,
-          title: 'Nenhum plano cadastrado',
-          description: 'Crie seu primeiro plano de continuidade de negócios ou recuperação de desastres.',
-          action: { label: 'Criar Plano', onClick: () => setPlanoDialog({ open: true }) },
-        }}
-      />
+      {/* Lista de Planos com DataTable */}
+      <Card className="rounded-lg border overflow-hidden">
+        <CardContent className="p-0">
+          <DataTable
+            data={planos}
+            columns={columns}
+            searchable
+            searchPlaceholder="Buscar planos..."
+            loading={isLoading}
+            emptyState={{
+              icon: <Shield className="h-8 w-8" />,
+              title: 'Nenhum plano cadastrado',
+              description: 'Crie seu primeiro plano de continuidade de negócios ou recuperação de desastres.',
+              action: { label: 'Criar Plano', onClick: () => setPlanoDialog({ open: true }) },
+            }}
+          />
+        </CardContent>
+      </Card>
 
       {/* Dialogs */}
       <PlanoDialog
