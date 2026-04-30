@@ -89,6 +89,14 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   // Buscar informações do usuário
   const [userInfo, setUserInfo] = useState<{ user_id: string; empresa_id: string; nome: string } | null>(null);
 
+  // Histórico de conversas
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyItems, setHistoryItems] = useState<Array<{ id: string; titulo: string; tipo_documento_identificado: string | null; updated_at: string }>>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  // AlertDialog de descarte
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+
   useEffect(() => {
     const fetchUserInfo = async () => {
       const { data: { user } } = await supabase.auth.getUser();
