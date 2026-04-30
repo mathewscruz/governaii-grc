@@ -404,16 +404,23 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     try {
       setActionLoading(prev => ({ ...prev, [`resend-${usuario.id}`]: true }));
       
-      const { error } = await supabase.functions.invoke('resend-welcome-email', {
+      const { data, error } = await supabase.functions.invoke('resend-welcome-email', {
         body: { userId: usuario.user_id }
       });
 
       if (error) throw error;
 
-      toast.success(`Convite reenviado para ${usuario.nome}`);
-      
+      const link = (data as any)?.setupPasswordUrl;
+      if (link) {
+        try { await navigator.clipboard.writeText(link); } catch {}
+        toast.success(`Convite reenviado para ${usuario.nome}. Link copiado para área de transferência.`);
+      } else {
+        toast.success(`Convite reenviado para ${usuario.nome}`);
+      }
+
       const userIds = usuarios.map(u => u.user_id);
       await fetchUsersAccessInfo(userIds);
+      await fetchUsuarios();
     } catch (error: any) {
       console.error('Erro ao reenviar convite:', error);
       toast.error(error.message || 'Erro ao reenviar convite');
