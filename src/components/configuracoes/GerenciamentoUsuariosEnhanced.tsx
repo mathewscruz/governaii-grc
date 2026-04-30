@@ -658,6 +658,21 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                 Reenviar Convite
               </DropdownMenuItem>
             )}
+            {usuario.invitation_link && shouldShowResendButton(usuario) && (
+              <DropdownMenuItem
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(usuario.invitation_link!);
+                    toast.success('Link de convite copiado');
+                  } catch {
+                    toast.error('Não foi possível copiar o link');
+                  }
+                }}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copiar Link de Convite
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               className="text-destructive"
