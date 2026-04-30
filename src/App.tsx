@@ -7,6 +7,8 @@ import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/components/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { RouteFallback } from '@/components/ui/route-fallback';
 
 
 // Lazy-loaded pages
@@ -75,22 +77,23 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
+          <ErrorBoundary>
           <Routes>
             {/* Rotas públicas com Suspense individual (não tem sidebar para preservar) */}
-            <Route path="/auth" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><Auth /></Suspense>} />
-            <Route path="/definir-senha" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DefinirSenha /></Suspense>} />
-            <Route path="/assessment/:token" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><Assessment /></Suspense>} />
-            <Route path="/denuncia/externa/:token" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DenunciaExternaRedirect /></Suspense>} />
-            <Route path="/:empresa/denuncia" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DenunciaMenu /></Suspense>} />
-            <Route path="/:empresa/denuncia/registrar" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DenunciaFormulario /></Suspense>} />
-            <Route path="/:empresa/denuncia/consulta" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DenunciaConsulta /></Suspense>} />
-            <Route path="/404" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><NotFound /></Suspense>} />
-            <Route path="/" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><LandingPage /></Suspense>} />
-            <Route path="/politica-privacidade" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><PoliticaPrivacidade /></Suspense>} />
-            <Route path="/registro" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><Registro /></Suspense>} />
-            <Route path="/planos" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><Planos /></Suspense>} />
+            <Route path="/auth" element={<Suspense fallback={<RouteFallback />}><Auth /></Suspense>} />
+            <Route path="/definir-senha" element={<Suspense fallback={<RouteFallback />}><DefinirSenha /></Suspense>} />
+            <Route path="/assessment/:token" element={<Suspense fallback={<RouteFallback />}><Assessment /></Suspense>} />
+            <Route path="/denuncia/externa/:token" element={<Suspense fallback={<RouteFallback />}><DenunciaExternaRedirect /></Suspense>} />
+            <Route path="/:empresa/denuncia" element={<Suspense fallback={<RouteFallback />}><DenunciaMenu /></Suspense>} />
+            <Route path="/:empresa/denuncia/registrar" element={<Suspense fallback={<RouteFallback />}><DenunciaFormulario /></Suspense>} />
+            <Route path="/:empresa/denuncia/consulta" element={<Suspense fallback={<RouteFallback />}><DenunciaConsulta /></Suspense>} />
+            <Route path="/404" element={<Suspense fallback={<RouteFallback />}><NotFound /></Suspense>} />
+            <Route path="/" element={<Suspense fallback={<RouteFallback />}><LandingPage /></Suspense>} />
+            <Route path="/politica-privacidade" element={<Suspense fallback={<RouteFallback />}><PoliticaPrivacidade /></Suspense>} />
+            <Route path="/registro" element={<Suspense fallback={<RouteFallback />}><Registro /></Suspense>} />
+            <Route path="/planos" element={<Suspense fallback={<RouteFallback />}><Planos /></Suspense>} />
             <Route path="/checkout-success" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/review/:token" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><ReviewExterna /></Suspense>} />
+            <Route path="/review/:token" element={<Suspense fallback={<RouteFallback />}><ReviewExterna /></Suspense>} />
 
             {/* Rotas autenticadas - Layout traz seu próprio Suspense interno para preservar sidebar/header */}
             <Route path="/dashboard" element={
@@ -254,8 +257,9 @@ function App() {
                 </ProtectedRoute>
               </Layout>
             } />
-            <Route path="*" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><NotFound /></Suspense>} />
+            <Route path="*" element={<Suspense fallback={<RouteFallback />}><NotFound /></Suspense>} />
           </Routes>
+          </ErrorBoundary>
         </Router>
         
         <SonnerToaster />
