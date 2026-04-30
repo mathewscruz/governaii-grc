@@ -47,7 +47,7 @@ interface DrillItem {
   title: string;
   subtitle?: string;
   status?: string;
-  variant?: 'destructive' | 'warning' | 'success' | 'info' | 'default';
+  tone?: 'destructive' | 'warning' | 'success' | 'info' | 'neutral' | 'primary';
   date?: string;
 }
 
