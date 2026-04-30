@@ -14,6 +14,7 @@ import { UsersAccessTab } from '@/components/configuracoes/UsersAccessTab';
 import { OrganizacaoTab } from '@/components/configuracoes/OrganizacaoTab';
 import { FinanceiroIATab } from '@/components/configuracoes/FinanceiroIATab';
 import { GerenciamentoPlanos } from '@/components/configuracoes/GerenciamentoPlanos';
+import GerenciamentoChangelog from '@/components/configuracoes/GerenciamentoChangelog';
 
 const Configuracoes = () => {
   const { profile, loading } = useAuth();
@@ -88,6 +89,12 @@ const Configuracoes = () => {
             <TabsTrigger value="financeiro-ia" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
               <span className="hidden sm:inline">Financeiro IA</span>
+            </TabsTrigger>
+          )}
+          {isSuperAdmin && (
+            <TabsTrigger value="novidades" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">Novidades</span>
             </TabsTrigger>
           )}
         </TabsList>
@@ -184,6 +191,21 @@ const Configuracoes = () => {
         {isSuperAdmin && (
           <TabsContent value="financeiro-ia">
             <FinanceiroIATab />
+          </TabsContent>
+        )}
+        {isSuperAdmin && (
+          <TabsContent value="novidades">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  Novidades
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <GerenciamentoChangelog />
+              </CardContent>
+            </Card>
           </TabsContent>
         )}
       </Tabs>
