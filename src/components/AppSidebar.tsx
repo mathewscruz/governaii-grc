@@ -40,6 +40,9 @@ import {
 } from '@/components/icons';
 import logoMini from '@/assets/akuris-logo.png';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
+import { supabase } from '@/integrations/supabase/client';
 
 import {
   Sidebar,
@@ -180,6 +183,7 @@ export function AppSidebar() {
   // Start with groups that contain active routes open
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const isCollapsed = state === 'collapsed';
 
@@ -222,10 +226,33 @@ export function AppSidebar() {
   };
 
   const confirmSignOut = async () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
     try {
-      await signOut();
+      // Limpa preferências locais não-críticas
+      try {
+        window.localStorage.removeItem('akuris.focusMode');
+      } catch {
+        /* ignore */
+      }
+
+      try {
+        await signOut();
+      } catch (err) {
+        // Fallback: encerra apenas a sessão local se o servidor recusar (token expirado, etc.)
+        logger.warn('signOut global falhou, tentando local', err);
+        await supabase.auth.signOut({ scope: 'local' });
+      }
+
+      setShowLogoutConfirm(false);
+      // Reset completo do estado da app: React Query, contextos, etc.
+      window.location.replace('/auth');
     } catch (error) {
-      console.error('Error signing out:', error);
+      logger.error('Erro ao encerrar sessão', error);
+      toast.error(t('sidebar.signOutFailed') || 'Não foi possível encerrar a sessão. Tente novamente.');
+      setShowLogoutConfirm(false);
+    } finally {
+      setIsSigningOut(false);
     }
   };
 
@@ -358,11 +385,12 @@ export function AppSidebar() {
                         {!isCollapsed && (
                           <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                             <div className="space-y-1 mt-1 ml-6 pl-2 border-l-2 border-sidebar-border/30">
-                              {item.subItems.map((subItem) => (
+                              {item.subItems.map((subItem, idx) => (
                                 <SidebarMenuButton
                                   key={subItem.title}
                                   asChild
-                                  className="transition-colors duration-200 h-9"
+                                  className="transition-colors duration-200 h-9 animate-fade-in opacity-0 [animation-fill-mode:forwards]"
+                                  style={{ animationDelay: `${idx * 30}ms`, animationDuration: '220ms' }}
                                 >
                                   <NavLink
                                     to={subItem.url}
@@ -479,13 +507,14 @@ export function AppSidebar() {
 
       <ConfirmDialog
         open={showLogoutConfirm}
-        onOpenChange={setShowLogoutConfirm}
+        onOpenChange={(o) => !isSigningOut && setShowLogoutConfirm(o)}
         title={t('sidebar.confirmLogout')}
         description={t('sidebar.confirmLogoutDesc')}
         confirmText={t('sidebar.logout')}
         cancelText={t('common.cancel')}
         variant="destructive"
         onConfirm={confirmSignOut}
+        loading={isSigningOut}
       />
     </Sidebar>
   );

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Clock, RefreshCw, Focus, Eye, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Clock, RefreshCw, Focus, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Icon } from '@/components/icons/Icon';
@@ -8,8 +8,10 @@ import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 
 interface DashboardHeaderProps {
-  userName: string;
-  criticalCount: number;
+  /** Mantido por compatibilidade — não é mais exibido. */
+  userName?: string;
+  /** Mantido por compatibilidade — não é mais exibido (info já no Hero). */
+  criticalCount?: number;
   dataUpdatedAt?: number;
   isFocusMode: boolean;
   onToggleFocus: () => void;
@@ -17,12 +19,11 @@ interface DashboardHeaderProps {
 }
 
 /**
- * DashboardHeader contextual: saudação por hora do dia + sumário crítico,
- * timestamp de atualização, botão de Modo Foco e refresh.
+ * Header do Dashboard: título "Dashboard" + ações (refresh, modo foco, timestamp).
+ * Sumário contextual foi removido — informação crítica já é exposta pelo
+ * Hero Score Banner e KPI Pills logo abaixo.
  */
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-  userName,
-  criticalCount,
   dataUpdatedAt,
   isFocusMode,
   onToggleFocus,
@@ -31,32 +32,13 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const { t, locale } = useLanguage();
   const dateLocale = locale === 'pt' ? ptBR : enUS;
 
-  const summary = React.useMemo(() => {
-    if (criticalCount === 0) return t('dashboard_v3.allClear');
-    const tpl =
-      criticalCount === 1
-        ? t('dashboard_v3.criticalSummary')
-        : t('dashboard_v3.criticalSummaryPlural');
-    return tpl.replace('{{count}}', String(criticalCount));
-  }, [criticalCount, t]);
-
   const timeStr = dataUpdatedAt ? format(new Date(dataUpdatedAt), 'HH:mm', { locale: dateLocale }) : '--:--';
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-      <div className="min-w-0">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate">
-          Dashboard
-        </h1>
-        <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-          {criticalCount > 0 ? (
-            <Icon as={AlertCircle} size="sm" className="text-destructive flex-shrink-0" />
-          ) : (
-            <Icon as={CheckCircle2} size="sm" className="text-success flex-shrink-0" />
-          )}
-          <span className="truncate">{summary}</span>
-        </p>
-      </div>
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate">
+        Dashboard
+      </h1>
 
       <div className="flex items-center gap-1.5 flex-shrink-0">
         <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground mr-1">
@@ -98,3 +80,4 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 };
 
 export default DashboardHeader;
+
