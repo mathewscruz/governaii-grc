@@ -90,7 +90,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
             title: r.titulo,
             subtitle: r.status,
             status: r.severidade,
-            variant: r.severidade === 'critico' ? 'destructive' : r.severidade === 'alto' ? 'warning' : 'neutral',
+            tone: r.severidade === 'critico' ? 'destructive' : r.severidade === 'alto' ? 'warning' : 'neutral',
             date: fmtDate(r.updated_at),
           }));
         },
@@ -115,7 +115,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
             title: i.titulo,
             subtitle: i.status,
             status: i.severidade,
-            variant: i.severidade === 'critico' ? 'destructive' : 'warning',
+            tone: i.severidade === 'critico' ? 'destructive' : 'warning',
             date: fmtDate(i.created_at),
           }));
         },
@@ -143,7 +143,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
               title: p.titulo,
               subtitle: p.status,
               status: overdue ? 'atrasado' : p.status,
-              tone: (overdue ? 'destructive' : 'info') as DrillItem['variant'],
+              tone: (overdue ? 'destructive' : 'info') as DrillItem['tone'],
               date: fmtDate(p.prazo),
             };
           });
@@ -168,7 +168,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
             title: a.nome,
             subtitle: a.tipo,
             status: a.criticidade,
-            variant: a.criticidade === 'alta' ? 'warning' : 'default',
+            tone: a.criticidade === 'alta' ? 'warning' : 'neutral',
             date: fmtDate(a.updated_at),
           }));
         },
@@ -195,7 +195,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
               title: c.titulo,
               subtitle: c.status,
               status: expired ? 'vencido' : c.status,
-              tone: (expired ? 'destructive' : 'info') as DrillItem['variant'],
+              tone: (expired ? 'destructive' : 'info') as DrillItem['tone'],
               date: fmtDate(c.data_fim),
             };
           });
@@ -220,7 +220,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
             title: d.titulo,
             subtitle: d.status,
             status: d.status,
-            tone: (d.status === 'pendente_aprovacao' ? 'warning' : 'info') as DrillItem['variant'],
+            tone: (d.status === 'pendente_aprovacao' ? 'warning' : 'info') as DrillItem['tone'],
             date: fmtDate(d.data_revisao),
           }));
         },
@@ -244,7 +244,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
             title: d.terceiro_nome,
             subtitle: d.status,
             status: typeof d.score === 'number' ? `Score ${d.score}` : undefined,
-            tone: (d.score < 50 ? 'destructive' : d.score < 70 ? 'warning' : 'success') as DrillItem['variant'],
+            tone: (d.score < 50 ? 'destructive' : d.score < 70 ? 'warning' : 'success') as DrillItem['tone'],
             date: fmtDate(d.updated_at),
           }));
         },
@@ -269,7 +269,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
             title: d.protocolo || d.categoria || 'Denúncia',
             subtitle: d.categoria,
             status: d.status,
-            variant: 'warning' as DrillItem['variant'],
+            tone: 'warning' as DrillItem['tone'],
             date: fmtDate(d.created_at),
           }));
         },
