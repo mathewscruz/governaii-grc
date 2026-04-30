@@ -90,7 +90,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
             title: r.titulo,
             subtitle: r.status,
             status: r.severidade,
-            variant: r.severidade === 'critico' ? 'destructive' : r.severidade === 'alto' ? 'warning' : 'default',
+            variant: r.severidade === 'critico' ? 'destructive' : r.severidade === 'alto' ? 'warning' : 'neutral',
             date: fmtDate(r.updated_at),
           }));
         },
@@ -143,7 +143,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
               title: p.titulo,
               subtitle: p.status,
               status: overdue ? 'atrasado' : p.status,
-              variant: (overdue ? 'destructive' : 'info') as DrillItem['variant'],
+              tone: (overdue ? 'destructive' : 'info') as DrillItem['variant'],
               date: fmtDate(p.prazo),
             };
           });
@@ -195,7 +195,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
               title: c.titulo,
               subtitle: c.status,
               status: expired ? 'vencido' : c.status,
-              variant: (expired ? 'destructive' : 'info') as DrillItem['variant'],
+              tone: (expired ? 'destructive' : 'info') as DrillItem['variant'],
               date: fmtDate(c.data_fim),
             };
           });
@@ -220,7 +220,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
             title: d.titulo,
             subtitle: d.status,
             status: d.status,
-            variant: (d.status === 'pendente_aprovacao' ? 'warning' : 'info') as DrillItem['variant'],
+            tone: (d.status === 'pendente_aprovacao' ? 'warning' : 'info') as DrillItem['variant'],
             date: fmtDate(d.data_revisao),
           }));
         },
@@ -244,7 +244,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
             title: d.terceiro_nome,
             subtitle: d.status,
             status: typeof d.score === 'number' ? `Score ${d.score}` : undefined,
-            variant: (d.score < 50 ? 'destructive' : d.score < 70 ? 'warning' : 'success') as DrillItem['variant'],
+            tone: (d.score < 50 ? 'destructive' : d.score < 70 ? 'warning' : 'success') as DrillItem['variant'],
             date: fmtDate(d.updated_at),
           }));
         },
