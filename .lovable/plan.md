@@ -1,62 +1,71 @@
 ## Objetivo
 
-Eliminar a contradição entre o gauge **"Saúde Organizacional" (40)** e a lista **"Maturidade GRC" (64%)** unificando o cálculo. Substituir o gauge gigante por um bloco mais funcional dentro do Hero Banner.
+1. **Voltar o visual do gauge meia-lua** no Hero Banner, mantendo o cálculo correto da Maturidade GRC e o bloco de informações (status, X/8 módulos, tendência).
+2. **Remover o `%` redundante** do card "Maturidade GRC" no radar lateral.
+3. **Substituir os 3 KPI Pills redundantes** com o Hero Banner por indicadores mais relevantes.
 
-## Diagnóstico (recap)
+## 1. Voltar o gauge (visual antigo, dado novo)
 
-- Ambos consomem `useRadarChartData` (mesmos 8 módulos).
-- **Gauge** divide por 8 (inclui módulos "Sem dados" como 0). → 40
-- **Lista** divide só pelos módulos com dados. → 64% (correto, alinhado a `mem://logic/sistema-scoring-base-zero-v2`).
-- Mostrar dois números diferentes para o mesmo conceito é o problema central.
+**Recriar** `src/components/dashboard/HealthScoreGauge.tsx` no mesmo estilo da imagem original (arco semicircular preenchido, número grande no centro, label de status embaixo). Diferenças vs. versão antiga:
+- Recebe o `GrcMaturity` completo (não um número solto), garantindo que mostre **exatamente o mesmo score do card lateral** (no exemplo: 64 / Bom).
+- Cor do arco varia por nível: verde (≥80) / roxo (≥60) / amarelo (≥40) / vermelho (<40) / cinza (sem dados).
+- Quando `status === 'no_data'` exibe `—` em vez de `0`.
 
-## Implementação
+**Editar** `HeroScoreBanner.tsx`:
+- Substituir o "bloco compacto" atual pelo novo gauge à esquerda.
+- À direita do gauge, manter (em coluna compacta) o que o usuário pediu para preservar:
+  - Badge `Bom` + chip `5/8 módulos`
+  - Linha de tendência `+18 pts vs. 30d` (quando houver)
+- Resultado visual: gauge grande à esquerda, mini-bloco de contexto logo abaixo/ao lado, e o "Olá, Nome" + métricas continuam à direita como antes.
 
-### 1. Criar fonte única de verdade
+## 2. Remover `%` duplicado do card "Maturidade GRC"
 
-**Novo hook**: `src/hooks/useGrcMaturityScore.ts`
-- Reusa `useRadarChartData`.
-- Retorna `{ score, status, label, modulesWithData, totalModules, isLoading }`.
-- Usa a fórmula correta (média só dos módulos com `hasData`).
-- Limiares: ≥80 Excelente / ≥60 Bom / ≥40 Atenção / <40 Crítico.
+**Editar** `MultiDimensionalRadar.tsx` (cabeçalho do card):
+- Manter apenas o badge `Bom` + ícone de status (sem o número grande `64%`), já que o número agora está no gauge do Hero.
+- Subtítulo: `5 de 8 módulos com dados` para manter contexto sem repetir o score.
+- A lista de módulos individuais (Riscos 100%, Ativos 80% etc.) continua igual — esses % são por módulo, não duplicam o consolidado.
 
-### 2. Refatorar `MultiDimensionalRadar`
-Substituir o cálculo inline pelo hook acima — apenas consumir.
+## 3. KPI Pills — remover redundâncias e adicionar indicadores relevantes
 
-### 3. Substituir o gauge no Hero Banner
+### Remover (já aparecem no Hero Banner)
+- ❌ **Alertas (OK)** — já exibido como "Alertas Críticos" no Hero
+- ❌ **Controles** — já exibido como "Controles Ativos" no Hero
+- ❌ **Conformidade 49%** — já exibido como "Conformidade 49%" no Hero
 
-**Editar** `src/components/dashboard/HeroScoreBanner.tsx`:
-- Remover `<HealthScoreGauge>` (gauge meia-lua de 40).
-- Inserir bloco compacto à esquerda do banner (mesma área do gauge atual):
-  - **Linha 1**: rótulo `Maturidade GRC` (text-xs muted).
-  - **Linha 2**: número grande `64%` + ícone de status (✓ / ⚠ / ✕) na cor do nível.
-  - **Linha 3**: badge `Bom` + chip "X de 8 módulos com dados".
-  - **Linha 4 (rodapé)**: chip de tendência — comparar score atual com o último snapshot disponível em `gap_analysis_score_history` agregado da empresa (delta percentual com seta ↑/↓ verde/vermelho). Se ainda não houver histórico, ocultar a linha (sem placeholder).
+### Manter
+- ✅ Ativos · Incidentes · Contratos · Documentos (não estão no Hero)
 
-**Editar** `src/pages/Dashboard.tsx`:
-- Trocar `healthScore` (média errada) pelo retorno de `useGrcMaturityScore`.
-- Passar `score`, `status`, `modulesWithData`, `totalModules` para o `HeroScoreBanner`.
+### Adicionar (4 novos pills relevantes e acionáveis)
 
-### 4. Limpeza
-- `HealthScoreGauge.tsx`: deletar (deixa de ser usado).
-- `prop healthScore` no banner: renomear para `maturityScore` para refletir a verdade.
+| Pill | Valor | Badge contextual | Rota |
+|---|---|---|---|
+| **Riscos** | total de riscos cadastrados | `X críticos` (destructive) ou `X altos` (warning) | `/riscos` |
+| **Planos de Ação** | pendentes em aberto | `X atrasados` (destructive) | `/planos-acao` |
+| **Due Diligence** | assessments ativos | `X expirados` (destructive) ou `X em progresso` (info) | `/due-diligence` |
+| **Denúncias** | abertas + em andamento | `X novas` (warning) | `/denuncia` |
 
-### 5. Memória
-Atualizar `mem://logic/sistema-scoring-base-zero-v2` adicionando: "Maturidade GRC do dashboard usa `useGrcMaturityScore` — única fonte; nunca recalcular ad-hoc".
+Esses 4 são **acionáveis** (mostram trabalho a fazer) e não duplicam o Hero. Cobrem os módulos de GRC core que hoje não têm pill.
 
-## Tendência: como funciona
+**Editar** `KPIPills.tsx` e `Dashboard.tsx`:
+- Remover os 3 pills redundantes da prop e do array.
+- Adicionar as novas props (`totalRiscos`, `riscosCriticos`, `planosPendentes`, `planosAtrasados`, `ddAtivos`, `ddExpirados`, `denunciasAbertas`, `denunciasNovas`).
+- `Dashboard.tsx` já usa `useRiscosStats`, `useDueDiligenceStats`, `useDenunciasStats` (via `useRadarChartData`). Para Planos de Ação, vou reusar o hook existente (`usePlanosAcaoStats` se houver) ou contar via Supabase com o filtro `empresa_id` e status pendente.
 
-- O `gap_analysis_score_history` armazena scores **por framework**. Para o Hero, vou pegar a média ponderada do score por empresa de **30 dias atrás vs. hoje** (proxy razoável, sem precisar criar tabela nova).
-- Se quiser uma tendência mais precisa do score GRC consolidado no futuro, podemos criar uma tabela `grc_score_snapshots` rodando via cron — fica como evolução opcional, fora do escopo agora.
+## Verificações
+
+- Reusar o **hook unificado `useGrcMaturityScore`** — não recriar média.
+- Manter a regra zero-base (módulos sem dados não puxam o score pra baixo).
+- Manter `.eq('empresa_id', empresaId)` em qualquer query nova.
+- i18n: adicionar chaves PT/EN dos novos pills.
 
 ## Arquivos afetados
 
-- **Novo**: `src/hooks/useGrcMaturityScore.ts`
-- **Editado**: `src/components/dashboard/HeroScoreBanner.tsx`, `src/components/dashboard/MultiDimensionalRadar.tsx`, `src/pages/Dashboard.tsx`
-- **Deletado**: `src/components/dashboard/HealthScoreGauge.tsx`
-- **Memória**: atualização de `sistema-scoring-base-zero-v2`
+- **Recriado**: `src/components/dashboard/HealthScoreGauge.tsx`
+- **Editado**: `src/components/dashboard/HeroScoreBanner.tsx`, `src/components/dashboard/MultiDimensionalRadar.tsx`, `src/components/dashboard/KPIPills.tsx`, `src/pages/Dashboard.tsx`, `src/i18n/pt.ts`, `src/i18n/en.ts`
+- **Talvez novo**: `src/hooks/usePlanosAcaoStats.ts` (se ainda não existir)
 
 ## Fora de escopo
-- Não cria tabela nova de snapshots GRC consolidados.
-- Não mexe nos demais KPIPills nem no Radar (só no card de Maturidade que já consome o mesmo hook).
+- Não criar tabela nova de snapshots GRC.
+- Não mexer na lista de módulos do card de Maturidade (continua mostrando os 8).
 
-Aprova que eu implemento?
+Aprova?

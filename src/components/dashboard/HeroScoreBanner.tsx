@@ -1,8 +1,7 @@
-import { Shield, AlertTriangle, Target, CheckCircle2, AlertCircle, XCircle, Minus, TrendingUp, TrendingDown } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Shield, AlertTriangle, Target } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { GrcMaturity } from '@/hooks/useGrcMaturityScore';
-import { useMaturityTrend } from '@/hooks/useMaturityTrend';
+import { HealthScoreGauge } from './HealthScoreGauge';
 
 interface HeroScoreBannerProps {
   maturity: GrcMaturity;
@@ -12,22 +11,6 @@ interface HeroScoreBannerProps {
   userName: string;
 }
 
-const STATUS_ICON = {
-  excellent: CheckCircle2,
-  good: CheckCircle2,
-  warning: AlertCircle,
-  critical: XCircle,
-  no_data: Minus,
-} as const;
-
-const STATUS_BG = {
-  excellent: 'bg-green-500/10 border-green-500/20',
-  good: 'bg-primary/10 border-primary/20',
-  warning: 'bg-yellow-500/10 border-yellow-500/20',
-  critical: 'bg-destructive/10 border-destructive/20',
-  no_data: 'bg-muted/30 border-border',
-} as const;
-
 export function HeroScoreBanner({
   maturity,
   criticalAlerts,
@@ -36,8 +19,6 @@ export function HeroScoreBanner({
   userName,
 }: HeroScoreBannerProps) {
   const { t } = useLanguage();
-  const StatusIcon = STATUS_ICON[maturity.status];
-  const { data: trend } = useMaturityTrend(maturity.score);
 
   const metrics = [
     {
@@ -70,54 +51,9 @@ export function HeroScoreBanner({
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
 
       <div className="relative flex flex-col lg:flex-row items-center gap-4 lg:gap-8">
-        {/* Maturity score block (replaces gauge) */}
-        <div
-          className={`shrink-0 w-full lg:w-56 rounded-xl border ${STATUS_BG[maturity.status]} p-4 backdrop-blur-sm`}
-        >
-          <p className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-            {t('dashboard.maturity')}
-          </p>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className={`text-4xl font-bold ${maturity.colorClass}`}>
-              {maturity.status === 'no_data' ? '—' : `${maturity.score}%`}
-            </span>
-            <StatusIcon className={`h-5 w-5 ${maturity.colorClass}`} />
-          </div>
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <Badge
-              variant={
-                maturity.status === 'excellent' || maturity.status === 'good'
-                  ? 'default'
-                  : maturity.status === 'warning'
-                    ? 'warning'
-                    : maturity.status === 'critical'
-                      ? 'destructive'
-                      : 'outline'
-              }
-              className="text-[10px]"
-            >
-              {maturity.label}
-            </Badge>
-            {maturity.totalModules > 0 && (
-              <span className="text-[10px] text-muted-foreground">
-                {maturity.modulesWithData}/{maturity.totalModules} módulos
-              </span>
-            )}
-          </div>
-          {trend?.delta !== null && trend?.delta !== undefined && trend.delta !== 0 && (
-            <div className="mt-2 flex items-center gap-1 text-[11px] font-medium">
-              {trend.delta > 0 ? (
-                <TrendingUp className="h-3 w-3 text-success" />
-              ) : (
-                <TrendingDown className="h-3 w-3 text-destructive" />
-              )}
-              <span className={trend.delta > 0 ? 'text-success' : 'text-destructive'}>
-                {trend.delta > 0 ? '+' : ''}
-                {trend.delta} pts
-              </span>
-              <span className="text-muted-foreground">vs. 30d</span>
-            </div>
-          )}
+        {/* Maturity gauge (semicircular, classic look) */}
+        <div className="shrink-0 w-full lg:w-56 flex items-center justify-center">
+          <HealthScoreGauge maturity={maturity} />
         </div>
 
         {/* Content */}

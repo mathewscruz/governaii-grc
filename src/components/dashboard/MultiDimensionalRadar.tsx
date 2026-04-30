@@ -116,11 +116,15 @@ export const MultiDimensionalRadar = () => {
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-semibold">{t('dashboard.maturity')}</CardTitle>
         <div className="flex items-center gap-2 mt-2">
-          <span className={`text-2xl font-bold ${statusConfig.color}`}>{maturity.score}%</span>
           <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
           <Badge variant={statusConfig.variant} className="text-[10px]">
             {statusConfig.label}
           </Badge>
+          {maturity.totalModules > 0 && (
+            <span className="text-[11px] text-muted-foreground">
+              {maturity.modulesWithData} de {maturity.totalModules} módulos com dados
+            </span>
+          )}
         </div>
       </CardHeader>
       <CardContent className="flex-1 pt-0 pb-3">
