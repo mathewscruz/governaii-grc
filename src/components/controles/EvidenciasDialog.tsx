@@ -191,7 +191,7 @@ export function EvidenciasDialog({ open, onOpenChange, controleId, controleNome 
         </DialogHeader>
 
         <Tabs defaultValue="evidencias">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList>
             <TabsTrigger value="evidencias">Evidências</TabsTrigger>
             <TabsTrigger value="upload">Adicionar Evidência</TabsTrigger>
           </TabsList>

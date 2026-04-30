@@ -212,7 +212,7 @@ const TrilhaAuditoriaAtivos: React.FC<TrilhaAuditoriaProps> = ({ ativoId, open, 
                     {(log.old_values || log.new_values) && (
                       <CardContent>
                         <Tabs defaultValue="resumo" className="w-full">
-                          <TabsList className="grid w-full grid-cols-3">
+                          <TabsList>
                             <TabsTrigger value="resumo">Resumo</TabsTrigger>
                             {log.old_values && <TabsTrigger value="anterior">Valores Anteriores</TabsTrigger>}
                             {log.new_values && <TabsTrigger value="novos">Novos Valores</TabsTrigger>}

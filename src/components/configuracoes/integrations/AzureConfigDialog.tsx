@@ -259,7 +259,7 @@ export function AzureConfigDialog({
       isDirty={!!(tenantId || clientId || clientSecret)}
     >
       <Tabs defaultValue="config" className="w-full h-full flex flex-col">
-        <TabsList className="grid w-full grid-cols-2 flex-shrink-0 mx-6 mt-4" style={{ width: 'calc(100% - 3rem)' }}>
+        <TabsList className="mx-6 mt-4 flex-shrink-0" style={{ width: 'calc(100% - 3rem)' }}>
           <TabsTrigger value="config">Configuração</TabsTrigger>
           <TabsTrigger value="sync">Sincronização</TabsTrigger>
         </TabsList>

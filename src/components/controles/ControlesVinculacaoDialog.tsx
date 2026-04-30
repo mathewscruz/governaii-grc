@@ -273,7 +273,7 @@ export default function ControlesVinculacaoDialog({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList>
             <TabsTrigger value="riscos" className="flex items-center gap-2">
               <Shield className="w-4 h-4" />
               Riscos ({vinculacoesRiscos.length})

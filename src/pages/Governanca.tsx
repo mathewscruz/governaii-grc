@@ -65,7 +65,7 @@ export default function Governanca() {
       />
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="max-w-md">
           <TabsTrigger value="controles" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             {t('modules.governanca.controls')}
