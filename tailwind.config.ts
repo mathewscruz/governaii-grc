@@ -180,12 +180,12 @@ export default {
 					'100%': { transform: 'rotate(1080deg)' }
 				},
 				'page-enter': {
-					'0%': { opacity: '0.85' },
-					'100%': { opacity: '1' }
+					'0%': { opacity: '0', transform: 'translateY(6px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
 				}
 			},
 			animation: {
-				'accordion-down': 'accordion-down 0.2s ease-out',
+				'accordion-down': 'accordion-down 0.25s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.45s cubic-bezier(0.4, 0, 0.2, 1)',
 				'fade-out': 'fade-out 0.3s ease-out',
@@ -194,7 +194,7 @@ export default {
 				'shimmer': 'shimmer 2s infinite linear',
 				'pulse-subtle': 'pulse-subtle 3s infinite ease-in-out',
 				'spin-burst': 'spin-burst 5s ease-in-out infinite',
-				'page-enter': 'page-enter 0.12s ease-out'
+				'page-enter': 'page-enter 0.22s cubic-bezier(0.22, 1, 0.36, 1)'
 			},
 			spacing: {
 				'xs': 'var(--spacing-xs)',
