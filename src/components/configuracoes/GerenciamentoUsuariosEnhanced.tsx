@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, UserCheck, User, Clock, MoreHorizontal, Shield, Mail, Users, ShieldCheck, Key } from 'lucide-react';
+import { Plus, Edit, Trash2, UserCheck, User, Clock, MoreHorizontal, Shield, Mail, Users, ShieldCheck, Key, Copy } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -47,6 +47,8 @@ interface Usuario {
   foto_url?: string;
   created_at: string;
   permission_profile_id?: string;
+  invitation_sent_at?: string | null;
+  invitation_link?: string | null;
   empresas?: {
     nome: string;
   };
@@ -149,6 +151,8 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         foto_url: usuario.foto_url,
         created_at: usuario.created_at,
         permission_profile_id: usuario.permission_profile_id,
+        invitation_sent_at: usuario.invitation_sent_at ?? null,
+        invitation_link: usuario.invitation_link ?? null,
         empresas: usuario.empresas,
         permission_profiles: usuario.permission_profiles,
       }));
@@ -402,16 +406,23 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     try {
       setActionLoading(prev => ({ ...prev, [`resend-${usuario.id}`]: true }));
       
-      const { error } = await supabase.functions.invoke('resend-welcome-email', {
+      const { data, error } = await supabase.functions.invoke('resend-welcome-email', {
         body: { userId: usuario.user_id }
       });
 
       if (error) throw error;
 
-      toast.success(`Convite reenviado para ${usuario.nome}`);
-      
+      const link = (data as any)?.setupPasswordUrl;
+      if (link) {
+        try { await navigator.clipboard.writeText(link); } catch {}
+        toast.success(`Convite reenviado para ${usuario.nome}. Link copiado para área de transferência.`);
+      } else {
+        toast.success(`Convite reenviado para ${usuario.nome}`);
+      }
+
       const userIds = usuarios.map(u => u.user_id);
       await fetchUsersAccessInfo(userIds);
+      await fetchUsuarios();
     } catch (error: any) {
       console.error('Erro ao reenviar convite:', error);
       toast.error(error.message || 'Erro ao reenviar convite');
@@ -645,6 +656,21 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                   <Mail className="h-4 w-4 mr-2" />
                 )}
                 Reenviar Convite
+              </DropdownMenuItem>
+            )}
+            {usuario.invitation_link && shouldShowResendButton(usuario) && (
+              <DropdownMenuItem
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(usuario.invitation_link!);
+                    toast.success('Link de convite copiado');
+                  } catch {
+                    toast.error('Não foi possível copiar o link');
+                  }
+                }}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copiar Link de Convite
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />

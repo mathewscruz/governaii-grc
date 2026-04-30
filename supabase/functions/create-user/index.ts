@@ -326,6 +326,19 @@ Deno.serve(async (req) => {
       console.error('Exceção ao enviar e-mail:', emailError)
     }
 
+    // Persistir metadata do convite (link manual + data de envio)
+    try {
+      await supabaseAdmin
+        .from('profiles')
+        .update({
+          invitation_sent_at: new Date().toISOString(),
+          invitation_link: setupPasswordUrl,
+        })
+        .eq('user_id', authData.user.id)
+    } catch (e) {
+      console.error('Falha ao gravar metadata do convite:', e)
+    }
+
     return new Response(JSON.stringify({ 
       success: true, 
       user: {
@@ -334,7 +347,8 @@ Deno.serve(async (req) => {
         nome: nome
       },
       emailSent,
-      message: emailSent ? 'Usuário criado com sucesso! E-mail com link para definir senha enviado.' : 'Usuário criado com sucesso! Falha no envio do e-mail.'
+      setupPasswordUrl,
+      message: emailSent ? 'Usuário criado com sucesso! E-mail com link para definir senha enviado.' : 'Usuário criado com sucesso! Falha no envio do e-mail — copie o link manual.'
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
