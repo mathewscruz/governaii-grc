@@ -43,7 +43,7 @@ const PlanosAcao = React.lazy(() => import('@/pages/PlanosAcao'));
 const Relatorios = React.lazy(() => import('@/pages/Relatorios'));
 const Politicas = React.lazy(() => import('@/pages/Politicas'));
 const Registro = React.lazy(() => import('@/pages/Registro'));
-const CheckoutSuccess = React.lazy(() => import('@/pages/CheckoutSuccess'));
+const Planos = React.lazy(() => import('@/pages/Planos'));
 const DefinirSenha = React.lazy(() => import('@/pages/DefinirSenha'));
 
 const isNetworkError = (error: unknown): boolean => {
@@ -86,7 +86,8 @@ function App() {
             <Route path="/" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><LandingPage /></Suspense>} />
             <Route path="/politica-privacidade" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><PoliticaPrivacidade /></Suspense>} />
             <Route path="/registro" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><Registro /></Suspense>} />
-            <Route path="/checkout-success" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><CheckoutSuccess /></Suspense>} />
+            <Route path="/planos" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><Planos /></Suspense>} />
+            <Route path="/checkout-success" element={<Navigate to="/dashboard" replace />} />
             <Route path="/review/:token" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><ReviewExterna /></Suspense>} />
 
             {/* Rotas autenticadas - Layout traz seu próprio Suspense interno para preservar sidebar/header */}

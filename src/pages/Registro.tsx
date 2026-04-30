@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Loader2, ArrowLeft, Building2, Mail, Lock, User, CheckCircle2, XCircle } from 'lucide-react';
 import logoImage from '@/assets/akuris-logo.png';
-import { STRIPE_PLANS, type PlanKey } from '@/lib/stripe-plans';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { z } from 'zod';
@@ -24,13 +23,8 @@ const formatCNPJ = (value: string) => {
 };
 
 const Registro = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const planoParam = (searchParams.get('plano') || 'free') as PlanKey;
-  const billingParam = searchParams.get('billing') || 'monthly';
-  const selectedPlan = STRIPE_PLANS[planoParam] || STRIPE_PLANS.free;
-  const isFree = planoParam === 'free';
 
   const [form, setForm] = useState({ nome: '', email: '', senha: '', confirmarSenha: '', empresa: '', cnpj: '' });
   const [termos, setTermos] = useState(false);
@@ -109,22 +103,15 @@ const Registro = () => {
           senha: form.senha,
           empresa_nome: form.empresa,
           cnpj: cnpjDigits,
-          plano_codigo: planoParam,
-          billing: billingParam,
         },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      if (data?.checkout_url) {
-        await supabase.auth.signInWithPassword({ email: form.email, password: form.senha });
-        window.location.href = data.checkout_url;
-      } else {
-        toast.success(t('register.accountCreated'));
-        await supabase.auth.signInWithPassword({ email: form.email, password: form.senha });
-        navigate('/dashboard');
-      }
+      toast.success(t('register.accountCreated'));
+      await supabase.auth.signInWithPassword({ email: form.email, password: form.senha });
+      navigate('/dashboard');
     } catch (error: any) {
       const msg = error?.message || t('register.errorGeneric');
       if (msg.includes('already registered') || msg.includes('already been registered')) {
@@ -142,7 +129,6 @@ const Registro = () => {
       <div className="landing-grid-bg absolute inset-0 opacity-30" />
       <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-primary/10 rounded-full blur-[100px]" />
 
-      {/* Language selector */}
       <div className="absolute top-4 right-4 z-20">
         <LanguageSelector variant="dark" />
       </div>
@@ -152,7 +138,7 @@ const Registro = () => {
           <img src={logoImage} alt="Akuris" className="h-14 mx-auto object-contain mb-4" />
           <h1 className="text-2xl font-bold text-white">{t('register.createAccount')}</h1>
           <p className="text-white/50 text-sm mt-1">
-            {t('register.selectedPlan')}: <span className="text-primary font-medium">{selectedPlan.name}</span>
+            14 dias de teste grátis · sem cartão de crédito
           </p>
         </div>
 
@@ -278,7 +264,7 @@ const Registro = () => {
             </div>
 
             <Button type="submit" variant="gradient" className="w-full h-11 font-semibold text-sm mt-2" disabled={isLoading}>
-              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('register.creatingAccount')}</> : isFree ? t('register.createFreeAccount') : t('register.createAndSubscribe')}
+              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('register.creatingAccount')}</> : t('register.createFreeAccount')}
             </Button>
           </form>
         </div>

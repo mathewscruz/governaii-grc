@@ -11,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { DollarSign, TrendingUp, TrendingDown, BarChart3, Sparkles, Building2, AlertTriangle, Loader2, Cpu } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { STRIPE_PLANS } from '@/lib/stripe-plans';
 
 // --- Constants: AI models, pricing, and function mapping ---
 
@@ -76,13 +75,6 @@ interface ModelStats {
   totalCostBRL: number;
 }
 
-const PLAN_PRICES: Record<string, number> = {
-  'Free': 0,
-  'Starter': STRIPE_PLANS.starter.monthly_price,
-  'Professional': STRIPE_PLANS.professional.monthly_price,
-  'Enterprise': STRIPE_PLANS.enterprise.monthly_price,
-};
-
 export function FinanceiroIATab() {
   const [empresas, setEmpresas] = useState<EmpresaFinanceiro[]>([]);
   const [modelStats, setModelStats] = useState<ModelStats[]>([]);
@@ -92,6 +84,7 @@ export function FinanceiroIATab() {
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [avgCostPerReq, setAvgCostPerReq] = useState(0);
+  const [planPrices, setPlanPrices] = useState<Record<string, number>>({});
 
   useEffect(() => {
     fetchData();
@@ -102,9 +95,16 @@ export function FinanceiroIATab() {
     try {
       const { data: empresasData, error: empErr } = await supabase
         .from('empresas')
-        .select(`id, nome, creditos_consumidos, plano:planos(nome, creditos_franquia)`)
+        .select(`id, nome, creditos_consumidos, plano:planos(nome, creditos_franquia, preco_mensal)`)
         .order('nome');
       if (empErr) throw empErr;
+
+      // Build plan prices dynamically from DB
+      const pricesMap: Record<string, number> = { 'Free': 0 };
+      (empresasData || []).forEach((e: any) => {
+        if (e.plano?.nome) pricesMap[e.plano.nome] = Number(e.plano.preco_mensal) || 0;
+      });
+      setPlanPrices(pricesMap);
 
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
