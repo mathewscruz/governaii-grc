@@ -51,54 +51,9 @@ export function HeroScoreBanner({
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
 
       <div className="relative flex flex-col lg:flex-row items-center gap-4 lg:gap-8">
-        {/* Maturity score block (replaces gauge) */}
-        <div
-          className={`shrink-0 w-full lg:w-56 rounded-xl border ${STATUS_BG[maturity.status]} p-4 backdrop-blur-sm`}
-        >
-          <p className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-            {t('dashboard.maturity')}
-          </p>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className={`text-4xl font-bold ${maturity.colorClass}`}>
-              {maturity.status === 'no_data' ? '—' : `${maturity.score}%`}
-            </span>
-            <StatusIcon className={`h-5 w-5 ${maturity.colorClass}`} />
-          </div>
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <Badge
-              variant={
-                maturity.status === 'excellent' || maturity.status === 'good'
-                  ? 'default'
-                  : maturity.status === 'warning'
-                    ? 'warning'
-                    : maturity.status === 'critical'
-                      ? 'destructive'
-                      : 'outline'
-              }
-              className="text-[10px]"
-            >
-              {maturity.label}
-            </Badge>
-            {maturity.totalModules > 0 && (
-              <span className="text-[10px] text-muted-foreground">
-                {maturity.modulesWithData}/{maturity.totalModules} módulos
-              </span>
-            )}
-          </div>
-          {trend?.delta !== null && trend?.delta !== undefined && trend.delta !== 0 && (
-            <div className="mt-2 flex items-center gap-1 text-[11px] font-medium">
-              {trend.delta > 0 ? (
-                <TrendingUp className="h-3 w-3 text-success" />
-              ) : (
-                <TrendingDown className="h-3 w-3 text-destructive" />
-              )}
-              <span className={trend.delta > 0 ? 'text-success' : 'text-destructive'}>
-                {trend.delta > 0 ? '+' : ''}
-                {trend.delta} pts
-              </span>
-              <span className="text-muted-foreground">vs. 30d</span>
-            </div>
-          )}
+        {/* Maturity gauge (semicircular, classic look) */}
+        <div className="shrink-0 w-full lg:w-56 flex items-center justify-center">
+          <HealthScoreGauge maturity={maturity} />
         </div>
 
         {/* Content */}
