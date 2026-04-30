@@ -7,9 +7,20 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, Send, FileText, Download, Save, Loader2 } from 'lucide-react';
+import { Brain, Send, FileText, Download, Save, Loader2, Plus, History } from 'lucide-react';
 import DocLayoutBuilder from './DocLayoutBuilder';
 import { DocumentoDialog } from '@/components/documentos/DocumentoDialog';
 import jsPDF from 'jspdf';
@@ -77,6 +88,14 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
 
   // Buscar informações do usuário
   const [userInfo, setUserInfo] = useState<{ user_id: string; empresa_id: string; nome: string } | null>(null);
+
+  // Histórico de conversas
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyItems, setHistoryItems] = useState<Array<{ id: string; titulo: string; tipo_documento_identificado: string | null; updated_at: string }>>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  // AlertDialog de descarte
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -611,20 +630,93 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   // Verificar mudanças antes de fechar
   const handleDialogClose = (newOpen: boolean) => {
     if (!newOpen && hasUnsavedChanges && !isDocumentSaved && !isDocumentExported) {
-      toast({
-        title: "Atenção!",
-        description: "Você possui mudanças não salvas. O documento será perdido se não for salvo no sistema ou exportado.",
-        variant: "destructive",
-        duration: 5000,
-      });
-      
-      // Ainda permite fechar, mas avisa o usuário
-      setTimeout(() => {
-        onOpenChange(newOpen);
-      }, 2000);
+      setDiscardDialogOpen(true);
       return;
     }
     onOpenChange(newOpen);
+  };
+
+  const confirmDiscardAndClose = () => {
+    setDiscardDialogOpen(false);
+    setHasUnsavedChanges(false);
+    onOpenChange(false);
+  };
+
+  const startNewConversation = () => {
+    setMessages([]);
+    setConversationId(null);
+    setGeneratedDocument(null);
+    setDocumentReady(false);
+    setCurrentDocType(null);
+    setCurrentDocName(null);
+    setHasUnsavedChanges(false);
+    setIsDocumentSaved(false);
+    setIsDocumentExported(false);
+    setIsEditingLayout(false);
+    const greeting = frameworkName
+      ? `Olá! Sou o DocGen, seu assistente inteligente para criação de documentos.\n\nVejo que você está trabalhando com o framework **${frameworkName}**. Posso ajudá-lo a gerar políticas, procedimentos ou normas alinhados a esse framework.\n\nQue tipo de documento você gostaria de criar?`
+      : 'Olá! Sou o DocGen, seu assistente inteligente para criação de documentos. Pode me contar que tipo de documento você gostaria de criar?';
+    setMessages([{ role: 'assistant', content: greeting, timestamp: new Date() }]);
+    setTimeout(() => inputRef.current?.focus(), 100);
+  };
+
+  const loadHistory = async () => {
+    if (!userInfo) return;
+    setHistoryLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('docgen_conversations')
+        .select('id, titulo, tipo_documento_identificado, updated_at')
+        .eq('empresa_id', userInfo.empresa_id)
+        .eq('user_id', userInfo.user_id)
+        .order('updated_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      setHistoryItems(data || []);
+    } catch (e) {
+      console.error('Erro ao carregar histórico:', e);
+      toast({ title: 'Erro', description: 'Não foi possível carregar o histórico.', variant: 'destructive' });
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const loadConversation = async (conversationIdToLoad: string) => {
+    if (!userInfo) return;
+    try {
+      const { data, error } = await supabase
+        .from('docgen_conversations')
+        .select('*')
+        .eq('id', conversationIdToLoad)
+        .eq('empresa_id', userInfo.empresa_id)
+        .eq('user_id', userInfo.user_id)
+        .single();
+      if (error) throw error;
+      if (!data) return;
+
+      const restoredMessages: ChatMessage[] = ((data.mensagens as any[]) || []).map((m: any) => ({
+        role: m.role,
+        content: m.content,
+        timestamp: new Date(),
+      }));
+      setMessages(restoredMessages.length > 0 ? restoredMessages : [{
+        role: 'assistant',
+        content: 'Conversa restaurada. Como posso continuar te ajudando?',
+        timestamp: new Date(),
+      }]);
+      setConversationId(data.id);
+      setCurrentDocType(data.tipo_documento_identificado || null);
+      setCurrentDocName((data.contexto as any)?.documento_nome_identificado || null);
+      setGeneratedDocument(null);
+      setDocumentReady(false);
+      setHasUnsavedChanges(false);
+      setHistoryOpen(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
+      toast({ title: 'Conversa restaurada', description: data.titulo });
+    } catch (e) {
+      console.error('Erro ao restaurar conversa:', e);
+      toast({ title: 'Erro', description: 'Não foi possível restaurar a conversa.', variant: 'destructive' });
+    }
   };
 
   // Adicionar o logo da empresa automaticamente ao gerar documento
@@ -652,6 +744,71 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
       disableShortcuts
     >
       <div className="flex flex-col h-full p-6 gap-4 min-h-0 overflow-hidden">
+        {/* Toolbar de ações da conversa */}
+        <div className="flex items-center justify-between gap-2 border-b pb-2">
+          <div className="text-xs text-muted-foreground">
+            {currentDocName ? <span><strong className="text-foreground">{currentDocName}</strong> · </span> : null}
+            {messages.length} mensagem{messages.length === 1 ? '' : 's'} nesta conversa
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1"
+              onClick={startNewConversation}
+              disabled={isLoading || isGeneratingDoc}
+            >
+              <Plus className="h-4 w-4" />
+              Nova conversa
+            </Button>
+            <Popover
+              open={historyOpen}
+              onOpenChange={(o) => {
+                setHistoryOpen(o);
+                if (o) loadHistory();
+              }}
+            >
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1" disabled={isLoading || isGeneratingDoc}>
+                  <History className="h-4 w-4" />
+                  Histórico
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 p-0">
+                <div className="p-3 border-b">
+                  <h4 className="text-sm font-semibold">Conversas anteriores</h4>
+                  <p className="text-xs text-muted-foreground">Suas últimas 20 conversas no DocGen.</p>
+                </div>
+                <div className="max-h-72 overflow-y-auto">
+                  {historyLoading && (
+                    <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
+                    </div>
+                  )}
+                  {!historyLoading && historyItems.length === 0 && (
+                    <div className="p-4 text-sm text-muted-foreground">Nenhuma conversa anterior.</div>
+                  )}
+                  {!historyLoading && historyItems.map((it) => (
+                    <button
+                      key={it.id}
+                      onClick={() => loadConversation(it.id)}
+                      className="w-full text-left p-3 hover:bg-accent border-b last:border-b-0 transition-colors"
+                    >
+                      <div className="text-sm font-medium truncate">{it.titulo || 'Conversa sem título'}</div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
+                        {it.tipo_documento_identificado && (
+                          <Badge variant="secondary" className="text-[10px] py-0 h-4">{it.tipo_documento_identificado}</Badge>
+                        )}
+                        <span>{new Date(it.updated_at).toLocaleString()}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
         <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
           {/* Chat Area */}
           <div className="flex-1 flex flex-col min-h-0 min-w-0">
@@ -745,11 +902,16 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
             )}
           </div>
 
-          {/* Document Preview */}
-          {generatedDocument && (
+          {/* Document Preview / Skeleton durante geração */}
+          {(generatedDocument || isGeneratingDoc) && (
             <div className="w-full lg:w-1/2 lg:border-l lg:pl-4 border-t pt-4 lg:border-t-0 lg:pt-0 flex flex-col min-h-0 overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                <h3 className="font-semibold">{isEditingLayout ? 'Editor de Layout' : 'Preview do Documento'}</h3>
+                <h3 className="font-semibold">
+                  {!generatedDocument && isGeneratingDoc
+                    ? 'Gerando documento…'
+                    : isEditingLayout ? 'Editor de Layout' : 'Preview do Documento'}
+                </h3>
+                {generatedDocument && (
                   <div className="flex flex-wrap gap-2">
                     <Button onClick={() => setIsEditingLayout(!isEditingLayout)} size="sm" variant="outline" className="gap-1">
                       {isEditingLayout ? 'Concluir Layout' : 'Editar Layout'}
@@ -771,9 +933,31 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
+                )}
               </div>
 
-              {isEditingLayout ? (
+              {!generatedDocument && isGeneratingDoc ? (
+                <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                    <Brain className="h-4 w-4 animate-pulse text-primary" />
+                    <span>Compondo seu documento. Isso pode levar até 40 segundos…</span>
+                  </div>
+                  <div className="space-y-5 animate-pulse">
+                    <div>
+                      <div className="h-6 w-2/3 bg-muted rounded mb-2" />
+                      <div className="h-3 w-1/3 bg-muted rounded" />
+                    </div>
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div key={i} className="space-y-2">
+                        <div className="h-4 w-1/2 bg-muted rounded" />
+                        <div className="h-3 w-full bg-muted rounded" />
+                        <div className="h-3 w-11/12 bg-muted rounded" />
+                        <div className="h-3 w-10/12 bg-muted rounded" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : isEditingLayout ? (
                 <div className="flex-1 min-h-0 overflow-y-auto">
                   <DocLayoutBuilder value={generatedDocument} onChange={setGeneratedDocument} />
                 </div>
@@ -830,6 +1014,27 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           }}
         />
       </div>
+
+      <AlertDialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Descartar documento gerado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem um documento gerado que não foi salvo no sistema nem exportado.
+              Se fechar agora, ele será perdido.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDiscardAndClose}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DialogShell>
   );
 };

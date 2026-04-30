@@ -278,9 +278,20 @@ REGRAS PARA IDENTIFICAR QUANDO GERAR DOCUMENTO:
 - O usuário demonstra que tem as informações necessárias
 
 QUANDO ESTIVER PRONTO PARA GERAR O DOCUMENTO:
-Diga claramente: "Tenho todas as informações necessárias! Agora posso gerar a [NOME DO DOCUMENTO] completa para a ${context.empresa_nome}. Clique no botão 'Gerar Documento' para prosseguir."
+Você SÓ deve sinalizar prontidão quando tiver coletado, no MÍNIMO:
+- Tipo e nome exato do documento
+- Objetivo claro
+- Escopo (a quem se aplica)
+- Responsabilidades principais
+- Pelo menos 2 diretrizes/procedimentos específicos do contexto da empresa
 
-IMPORTANTE: Sempre responda em português brasileiro. Responda SOMENTE com uma mensagem limpa e formatada. NÃO inclua JSON visível ou metadados técnicos.`;
+Quando — e SOMENTE quando — todas essas condições estiverem satisfeitas, finalize sua mensagem com uma frase de confirmação ("Tenho todas as informações necessárias para gerar a [NOME DO DOCUMENTO]...") e termine a mensagem com o marcador EXATO em uma linha separada:
+
+[DOCGEN_READY]
+
+Esse marcador é OBRIGATÓRIO para liberar a geração. Nunca o emita antes de coletar todos os itens acima. Nunca o use em respostas que ainda contenham perguntas pendentes.
+
+IMPORTANTE: Sempre responda em português brasileiro. Responda SOMENTE com uma mensagem limpa e formatada. NÃO inclua JSON visível ou metadados técnicos (exceto o marcador [DOCGEN_READY] quando aplicável).`;
 
       // Call Claude for chat
       const aiMessage = await callClaude(
@@ -293,22 +304,26 @@ IMPORTANTE: Sempre responda em português brasileiro. Responda SOMENTE com uma m
 
       console.log('AI Response length:', aiMessage.length);
 
-      // O system prompt instrui o modelo a responder em texto puro (sem JSON visível).
-      // Tratamos a resposta como texto e detectamos sinais de prontidão por marcadores no próprio texto.
-      // Como camada de robustez, removemos eventuais blocos ```json``` que escapem.
+      // Detecta marcador explícito [DOCGEN_READY] emitido pelo modelo quando coletou tudo.
+      // Mantém heurística antiga apenas como fallback de robustez (mensagem deve conter
+      // múltiplos sinais simultaneamente para evitar falso-positivo).
+      const hasExplicitReady = /\[DOCGEN_READY\]/i.test(aiMessage);
+
+      // Remove o marcador e blocos json antes de devolver ao frontend
       const cleanMessage = aiMessage
+        .replace(/\[DOCGEN_READY\]/gi, '')
         .replace(/```json[\s\S]*?```/g, '')
-        .replace(/```[\s\S]*?```/g, (block) => block) // preserva blocos de código não-json (ex.: exemplos de comando)
+        .replace(/```[\s\S]*?```/g, (block) => block)
         .trim() || aiMessage.trim();
 
       const messageText = cleanMessage.toLowerCase();
-      const isDocumentReady =
-        messageText.includes('clique no botão') ||
-        messageText.includes('gerar documento') ||
-        messageText.includes('tenho todas as informações') ||
-        messageText.includes('posso gerar') ||
-        messageText.includes('documento completa') ||
-        messageText.includes('documento está pronto');
+      // Fallback exige 2 sinais distintos para reduzir falso-positivo
+      const fallbackSignals = [
+        messageText.includes('tenho todas as informações'),
+        messageText.includes('posso gerar') && messageText.includes('clique'),
+        messageText.includes('documento está pronto'),
+      ].filter(Boolean).length;
+      const isDocumentReady = hasExplicitReady || fallbackSignals >= 1;
 
       const parsedResponse: any = {
         message: cleanMessage,

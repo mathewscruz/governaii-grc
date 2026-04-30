@@ -1,75 +1,71 @@
-## Diagnóstico do DocGen
+## Plano de melhorias do DocGen
 
-Auditei o componente (`src/components/documentos/DocGenDialog.tsx`, 817 linhas) e a edge function (`supabase/functions/docgen-chat/index.ts`, 585 linhas). O fluxo macro está bom — chat → identificação do tipo de doc → "Gerar Documento" → preview → exportar/salvar — mas encontrei **bugs reais**, sendo o do scroll o mais crítico, além de problemas de UX e de robustez.
+Quatro frentes, todas no escopo do módulo Documentos/DocGen — sem mexer em outros módulos.
 
-> Não consegui reproduzir visualmente porque o preview está deslogado, mas a causa do scroll é estrutural no DOM e está clara no código.
+### 1. Fix do gatilho "Gerar Documento" + feedback visual
 
----
+**Problema atual**: o backend marca `documento_pronto=true` se a resposta da IA contém qualquer trecho como "gerar documento", "posso gerar", etc. Isso dispara falso-positivo cedo demais. E quando o usuário clica em Gerar, o painel direito fica vazio por 20–40s sem feedback.
 
-## Bugs encontrados
+**Mudanças**:
+- `supabase/functions/docgen-chat/index.ts`:
+  - Trocar a heurística por um marcador explícito: instruir o modelo a emitir literalmente `[DOCGEN_READY]` ao final da mensagem **somente** quando tiver coletado objetivo, escopo, responsabilidades e procedimentos básicos.
+  - Detectar `[DOCGEN_READY]` na resposta, setar `documento_pronto=true` e remover o marcador antes de devolver ao frontend.
+  - Manter fallback (heurística antiga) atrás de uma flag para não regredir conversas em andamento.
+- `src/components/documentos/DocGenDialog.tsx`:
+  - Renderizar um **skeleton de documento** no painel direito enquanto `isGeneratingDoc=true` (header + 4-5 blocos de seções com `animate-pulse`).
+  - Texto "Gerando documento… isso pode levar até 40 segundos" com ícone Brain animado.
+  - Garantir que o painel direito passe a aparecer já no início da geração (não só após `generatedDocument` ficar populado).
 
-### 1. Scroll do chat não funciona (o que o usuário reclamou) — **crítico**
-No `DialogShell` o `noScroll` envolve os filhos em `<div className="h-full">` (linha 140 de `dialog-shell.tsx`). Mas o filho direto que o `DocGenDialog` passa é:
+### 2. Botão "Nova conversa" + histórico
 
-```
-<div className="flex flex-col h-full p-6 gap-4 min-h-0">
-```
+**Mudanças no `DocGenDialog.tsx`**:
+- Header do dialog ganha dois botões discretos:
+  - **Nova conversa** (ícone `Plus`): limpa `messages`, `conversationId`, `generatedDocument`, `documentReady` e dispara saudação de novo.
+  - **Histórico** (ícone `History`): abre um Popover/Sheet listando conversas anteriores do usuário (`docgen_conversations` filtrado por `user_id` + `empresa_id`, ordem desc, últimos 20). Cada item mostra título, data e tipo. Clicar carrega `messages` e `contexto` daquela conversa.
+- Não cria tabelas novas — `docgen_conversations` já tem tudo (mensagens em jsonb, tipo_documento_identificado, updated_at).
 
-Esse `h-full` **não recebe altura** do pai (`<div className="h-full">` do shell) porque o pai dele (`<div className="flex-1 min-h-0 overflow-hidden">`) é flex, mas o intermediário não. Resultado: a `ScrollArea` do chat (linha 644) calcula altura colapsada em 0 / `min-h-[300px]`, e quando as mensagens crescem o `ScrollArea` **não scrolla** — a página inteira do dialog é que tenta crescer e bate no `max-h-[92vh]`, escondendo as mensagens antigas atrás do header sem barra de scroll funcional.
+### 3. Novos templates de sistema
 
-**Correção**: trocar o wrapper `noScroll` do `DialogShell` para `<div className="h-full flex flex-col">`, ou (mais cirúrgico) no `DocGenDialog` substituir o root por `<div className="flex flex-col flex-1 h-full p-6 gap-4 min-h-0 overflow-hidden">`. Vou fazer pelo lado do `DocGenDialog` para não impactar outros consumidores do `DialogShell`.
+**Hoje só existem 2** (PSI e POP). Adicionar via migration:
+- Política de Senhas
+- Política de Mesa Limpa e Tela Limpa
+- Política de LGPD/Privacidade
+- Política de Backup
+- Plano de Continuidade de Negócios
+- Análise de Impacto no Negócio (BIA)
+- Código de Ética e Conduta
+- Política de Controle de Acesso
 
-### 2. Auto-scroll para a última mensagem usa `scrollIntoView` dentro do Radix `ScrollArea` — **não funciona**
-Linha 132: `messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })`. O Radix `ScrollArea` tem um `Viewport` interno; `scrollIntoView` no filho rola o **document**, não o viewport. Por isso novas mensagens podem sumir embaixo mesmo quando o scroll do item 1 estiver consertado.
+Cada um com `estrutura` jsonb contendo seções padrão do mercado (Objetivo, Escopo, Definições, Diretrizes, Responsabilidades, Penalidades, Revisão, Aprovação). `is_system=true`, `empresa_id` = UUID zero (padrão atual).
 
-**Correção**: pegar o viewport via `[data-radix-scroll-area-viewport]` e setar `viewport.scrollTop = viewport.scrollHeight`, ou trocar a `ScrollArea` por um `<div className="flex-1 min-h-0 overflow-y-auto">` simples (mais leve, e é o padrão dos chats do app — usado no `akuria-chat`).
+### 4. AlertDialog de descarte
 
-### 3. Saudação inicial é regenerada toda vez que o dialog é reaberto
-O `useEffect` da linha 81 tem dependência `[open]`. Quando `open` vira `true`, **sempre** sobrescreve `messages` com a saudação, descartando a conversa em andamento (`conversationId` continua, mas o histórico visível é apagado).
-
-**Correção**: só setar a saudação se `messages.length === 0`.
-
-### 4. `Enter` envia mensagem mesmo durante composição IME
-Linha 590 usa `onKeyPress` (deprecated) e não checa `isComposing`. Em teclados que usam dead keys / acentos compostos, isso pode disparar envio prematuro. Trocar para `onKeyDown` + `e.nativeEvent.isComposing`.
-
-### 5. Risco de XSS no tooltip
-Linha 544: o `definition` é injetado como atributo `title` via string concatenada, sem escape. Hoje os valores vêm de constantes hardcoded (`TOOLTIPS`), mas se um dia vierem da API, aspas/`<` quebram o markup. Mesmo o `DOMPurify` no `dangerouslySetInnerHTML` permite `title`. Vou escapar.
-
-### 6. UX: nenhum aviso quando a IA termina de pensar
-Quando a resposta chega, o card "DocGen está pensando..." some sem feedback sonoro/visual além disso. OK por ora — não vou mexer, mas registro.
-
-### 7. UX: campo de input não recebe foco automático ao abrir
-Pequeno polimento: focar a `Textarea` quando `open` vira `true` e quando a IA termina de responder.
-
-### 8. UX: layout do preview ocupa metade da tela mesmo em telas estreitas (`w-1/2` fixo, linha 732)
-Em viewport < 1024px o chat fica espremido. Trocar para `lg:w-1/2 w-full` e empilhar (`flex-col lg:flex-row`).
-
-### 9. Edge function: parser de JSON é frágil
-O `parsedResponse` (linhas 297–353) tenta extrair JSON da resposta de chat, mas o prompt pede texto puro ("NÃO inclua JSON visível"). O try/catch sempre cai no `catch`, e o regex de limpeza pode comer parte do conteúdo se o usuário pedir um exemplo de JSON. Vou simplificar: tratar a resposta como texto puro, e detectar `documento_pronto` apenas pelos marcadores em `messageText.toLowerCase()` (que já é feito nas linhas 357–362).
-
-### 10. Edge function: falta `verify_jwt = true` (segurança)
-Pela memória do projeto (Vulnerability Baseline), edge functions devem ter `verify_jwt=true`. Vou checar `supabase/config.toml` e ajustar se estiver desabilitado.
+**Substituir** o atual toast destrutivo + `setTimeout(2s)` no `handleDialogClose`:
+- Quando o usuário tenta fechar com `hasUnsavedChanges=true`, abrir um `AlertDialog` (shadcn) com:
+  - Título: "Descartar documento gerado?"
+  - Descrição: "Você tem um documento gerado que não foi salvo no sistema nem exportado. Se fechar agora, ele será perdido."
+  - Ações: **Continuar editando** (cancela fechamento) | **Descartar** (fecha de fato).
+- Remove o setTimeout — comportamento fica previsível.
 
 ---
 
-## O que NÃO vou mexer
+### Detalhes técnicos
 
-- Lógica de geração de documento, parser do JSON do documento final, exportação PDF/DOCX, salvar no sistema, integração com framework_context/gaps — está funcionando e fora do escopo da reclamação.
-- `DocLayoutBuilder` e `DocumentoDialog` (não são parte da queixa).
-- Visual geral do dialog (cards, cores) — segue o design system.
+- **Edge Function**: redeployar `docgen-chat` após edit. Manter a chamada Claude (Sonnet 4) e o `consume_ai_credit` intactos.
+- **DB**: 1 migration apenas com `INSERT INTO docgen_templates` para os 8 templates novos (idempotente via `ON CONFLICT (nome, tipo_documento) DO NOTHING` — vou checar se há unique constraint; se não houver, criar uma).
+- **Identidade visual**: tudo segue DM Sans, primary purple, padrões Sonner para toasts e shadcn AlertDialog.
+- **Multi-tenant**: histórico carrega só conversas do `user_id` + `empresa_id` atuais. Templates novos são globais (`is_system=true`), não vazam dados.
+- **Sem impacto em outros módulos**: mudanças isoladas em `DocGenDialog.tsx` + `docgen-chat/index.ts` + 1 migration.
 
----
+### Arquivos afetados
+- `src/components/documentos/DocGenDialog.tsx` (edit)
+- `supabase/functions/docgen-chat/index.ts` (edit)
+- `supabase/migrations/<nova>.sql` (create — só INSERT de templates + possível unique constraint)
 
-## Arquivos a alterar
-
-1. `src/components/documentos/DocGenDialog.tsx` — fixes 1, 2, 3, 4, 5, 7, 8 (pequenas mudanças cirúrgicas no JSX e em 3 useEffects).
-2. `supabase/functions/docgen-chat/index.ts` — fix 9 (simplificar parser).
-3. `supabase/config.toml` — fix 10 (somente se `verify_jwt = false` para `docgen-chat`; verifico antes).
-
-Sem migrations de banco. Sem novas dependências.
-
-## Validação após implementar
-
-Vou pedir para você logar no preview e abrir o DocGen para eu testar o scroll com 10+ mensagens, confirmar que a saudação não some ao reabrir, e validar a responsividade do split chat/preview.
-
-Posso prosseguir?
+### Validação após implementar
+1. Abrir DocGen, conversar até receber `[DOCGEN_READY]` — botão "Gerar Documento" só deve aparecer aí.
+2. Clicar Gerar — skeleton aparece no painel direito imediatamente.
+3. Clicar "Nova conversa" — limpa tudo.
+4. Abrir "Histórico" — lista conversas anteriores; clicar restaura.
+5. Pedir "Política de Senhas" — backend deve casar com o template novo, não cair no fallback PSI.
+6. Tentar fechar com documento gerado não salvo — AlertDialog aparece.
