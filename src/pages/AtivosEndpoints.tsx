@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -76,7 +77,7 @@ const AtivosEndpoints: React.FC = () => {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      return data as { payload: any; coletado_em: string } | null;
     },
   });
 
@@ -148,33 +149,33 @@ const AtivosEndpoints: React.FC = () => {
 
   const columns: Column<EndpointAgent>[] = [
     {
-      key: 'hostname', header: 'Hostname',
-      render: (a) => (
+      key: 'hostname', label: 'Hostname',
+      render: (_v, a) => (
         <div className="flex items-center gap-2">
           <MonitorSmartphone className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{a.hostname}</span>
         </div>
       ),
     },
-    { key: 'so', header: 'SO', render: (a) => `${a.so ?? '—'} ${a.so_versao ?? ''}` },
+    { key: 'so', label: 'SO', render: (_v, a) => `${a.so ?? '—'} ${a.so_versao ?? ''}` },
     {
-      key: 'status', header: 'Status',
-      render: (a) => {
+      key: 'status', label: 'Status',
+      render: (_v, a) => {
         if (a.revogado) return <Badge variant="destructive">Revogado</Badge>;
         if (a.status === 'online') return <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30"><Wifi className="h-3 w-3 mr-1" />Online</Badge>;
         return <Badge variant="secondary"><WifiOff className="h-3 w-3 mr-1" />Offline</Badge>;
       },
     },
     {
-      key: 'ultimo_checkin', header: 'Último check-in',
-      render: (a) => a.ultimo_checkin
+      key: 'ultimo_checkin', label: 'Último check-in',
+      render: (_v, a) => a.ultimo_checkin
         ? formatDistanceToNow(new Date(a.ultimo_checkin), { addSuffix: true, locale: ptBR })
         : '—',
     },
     {
-      key: 'postura', header: 'Postura',
-      render: (a) => {
-        const p = a.postura_resumo || {};
+      key: 'postura', label: 'Postura',
+      render: (_v, a) => {
+        const p = (a.postura_resumo || {}) as Record<string, any>;
         const items = [
           { label: 'BL', ok: p.bitlocker },
           { label: 'AV', ok: p.antivirus },
@@ -194,8 +195,8 @@ const AtivosEndpoints: React.FC = () => {
       },
     },
     {
-      key: 'actions', header: '',
-      render: (a) => (
+      key: 'actions', label: '',
+      render: (_v, a) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm"><MoreHorizontal className="h-4 w-4" /></Button>
@@ -230,13 +231,22 @@ const AtivosEndpoints: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Total" value={stats.total} icon={MonitorSmartphone} />
-        <StatCard title="Online" value={stats.online} icon={Wifi} />
-        <StatCard title="Offline" value={stats.offline} icon={WifiOff} />
-        <StatCard title="Postura crítica" value={stats.critica} icon={ShieldAlert} />
+        <StatCard title="Total" value={stats.total} icon={<MonitorSmartphone className="h-5 w-5" />} />
+        <StatCard title="Online" value={stats.online} icon={<Wifi className="h-5 w-5" />} />
+        <StatCard title="Offline" value={stats.offline} icon={<WifiOff className="h-5 w-5" />} />
+        <StatCard title="Postura crítica" value={stats.critica} icon={<ShieldAlert className="h-5 w-5" />} />
       </div>
 
-      <DataTable columns={columns} data={agents} loading={isLoading} emptyMessage="Nenhum endpoint cadastrado. Gere um token e instale o agente em uma máquina para começar." />
+      <DataTable
+        columns={columns}
+        data={agents}
+        loading={isLoading}
+        emptyState={{
+          icon: <MonitorSmartphone className="h-10 w-10" />,
+          title: 'Nenhum endpoint cadastrado',
+          description: 'Gere um token e instale o agente em uma máquina para começar.',
+        }}
+      />
 
       {/* Generate token dialog */}
       <Dialog open={tokenDialogOpen} onOpenChange={(o) => !o && closeTokenDialog()}>
@@ -326,38 +336,43 @@ const AtivosEndpoints: React.FC = () => {
                 <TabsTrigger value="security">Segurança</TabsTrigger>
                 <TabsTrigger value="network">Rede</TabsTrigger>
               </TabsList>
-              <ScrollArea className="h-[60vh] mt-4">
-                <TabsContent value="hardware" className="space-y-2 text-sm">
-                  {lastSnapshot?.payload?.hardware ? (
-                    <pre className="text-xs bg-muted/30 p-3 rounded">{JSON.stringify(lastSnapshot.payload.hardware, null, 2)}</pre>
-                  ) : <p className="text-muted-foreground">Sem dados.</p>}
-                </TabsContent>
-                <TabsContent value="software" className="text-sm">
-                  {lastSnapshot?.payload?.software?.length ? (
-                    <ul className="space-y-1">
-                      {lastSnapshot.payload.software.map((s: any, i: number) => (
-                        <li key={i} className="flex justify-between border-b border-border/40 py-1">
-                          <span>{s.name}</span>
-                          <span className="text-muted-foreground text-xs">{s.version ?? ''}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : <p className="text-muted-foreground">Sem dados.</p>}
-                </TabsContent>
-                <TabsContent value="security">
-                  <pre className="text-xs bg-muted/30 p-3 rounded">{JSON.stringify(lastSnapshot?.payload?.security ?? {}, null, 2)}</pre>
-                </TabsContent>
-                <TabsContent value="network">
-                  <pre className="text-xs bg-muted/30 p-3 rounded">
-                    {JSON.stringify({
-                      ip_publico: detailAgent.ip_publico,
-                      mac: lastSnapshot?.payload?.mac_addresses,
-                      ips: lastSnapshot?.payload?.ip_addresses,
-                      ports: lastSnapshot?.payload?.open_ports,
-                    }, null, 2)}
-                  </pre>
-                </TabsContent>
-              </ScrollArea>
+              {(() => {
+                const p = (lastSnapshot?.payload ?? {}) as Record<string, any>;
+                return (
+                  <ScrollArea className="h-[60vh] mt-4">
+                    <TabsContent value="hardware" className="space-y-2 text-sm">
+                      {p.hardware ? (
+                        <pre className="text-xs bg-muted/30 p-3 rounded">{JSON.stringify(p.hardware, null, 2)}</pre>
+                      ) : <p className="text-muted-foreground">Sem dados.</p>}
+                    </TabsContent>
+                    <TabsContent value="software" className="text-sm">
+                      {Array.isArray(p.software) && p.software.length ? (
+                        <ul className="space-y-1">
+                          {p.software.map((s: any, i: number) => (
+                            <li key={i} className="flex justify-between border-b border-border/40 py-1">
+                              <span>{s.name}</span>
+                              <span className="text-muted-foreground text-xs">{s.version ?? ''}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : <p className="text-muted-foreground">Sem dados.</p>}
+                    </TabsContent>
+                    <TabsContent value="security">
+                      <pre className="text-xs bg-muted/30 p-3 rounded">{JSON.stringify(p.security ?? {}, null, 2)}</pre>
+                    </TabsContent>
+                    <TabsContent value="network">
+                      <pre className="text-xs bg-muted/30 p-3 rounded">
+                        {JSON.stringify({
+                          ip_publico: detailAgent.ip_publico,
+                          mac: p.mac_addresses,
+                          ips: p.ip_addresses,
+                          ports: p.open_ports,
+                        }, null, 2)}
+                      </pre>
+                    </TabsContent>
+                  </ScrollArea>
+                );
+              })()}
             </Tabs>
           )}
         </DialogContent>
