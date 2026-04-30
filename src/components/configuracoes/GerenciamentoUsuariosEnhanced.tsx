@@ -553,12 +553,12 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
         );
       },
     },
-    {
+    ...(isSuperAdmin ? [{
       key: 'empresa',
       label: 'Empresa',
       sortable: false,
       render: (_, usuario) => usuario.empresas?.nome || '-',
-    },
+    } as Column<Usuario>] : []),
     {
       key: 'ativo',
       label: 'Status',
