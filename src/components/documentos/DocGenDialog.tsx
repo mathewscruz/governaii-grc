@@ -145,11 +145,18 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     }
   }, [open, frameworkName]);
 
-  // Auto scroll para última mensagem (rola o container do chat, não a página)
+  // Auto scroll para última mensagem (rola só o container do chat).
+  // Só rola automaticamente se o usuário já estava perto do fim — assim
+  // não interrompe a leitura de mensagens antigas.
   useEffect(() => {
     const el = messagesScrollRef.current;
-    if (el) {
-      el.scrollTop = el.scrollHeight;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const nearBottom = distanceFromBottom < 120;
+    if (nearBottom) {
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+      });
     }
   }, [messages, isLoading]);
 
@@ -742,8 +749,9 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
       noScroll
       hideFooter
       disableShortcuts
+      className="h-[100dvh] sm:h-[92vh]"
     >
-      <div className="flex flex-col h-full p-6 gap-4 min-h-0 overflow-hidden">
+      <div className="flex flex-col h-full p-4 sm:p-6 gap-4 min-h-0 overflow-hidden">
         {/* Toolbar de ações da conversa */}
         <div className="flex items-center justify-between gap-2 border-b pb-2">
           <div className="text-xs text-muted-foreground">
@@ -814,7 +822,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           <div className="flex-1 flex flex-col min-h-0 min-w-0">
             <div
               ref={messagesScrollRef}
-              className="flex-1 min-h-0 overflow-y-auto pr-2 -mr-2"
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-3 -mr-2"
+              style={{ scrollbarGutter: 'stable' }}
             >
               <div className="space-y-4 p-1">
                 {messages.map((message, index) => (
