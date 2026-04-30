@@ -148,18 +148,16 @@ async function fetchIncidentesData(empresaId: string) {
 }
 
 async function fetchLGPDData(empresaId: string) {
-  const [{ data: dados }, { data: sol }, { data: pol }] = await Promise.all([
+  const [{ data: dados }, { data: sol }] = await Promise.all([
     supabase.from('dados_pessoais').select('*').eq('empresa_id', empresaId),
     supabase.from('dados_solicitacoes_titular').select('*').eq('empresa_id', empresaId),
-    supabase.from('politicas').select('*').eq('empresa_id', empresaId),
   ]);
-  const d = dados || []; const s = sol || []; const p = pol || [];
+  const d = dados || []; const s = sol || [];
   return {
     sections: [
       { title: 'Panorama LGPD', metrics: [
         { label: 'Dados Pessoais Mapeados', value: d.length },
         { label: 'Solicitacoes de Titulares', value: s.length },
-        { label: 'Politicas Ativas', value: p.filter(x => x.status === 'ativa').length },
       ]},
       { title: 'Dados Pessoais Mapeados', tableHeaders: ['Nome', 'Categoria', 'Base Legal', 'Sensibilidade'],
         tableRows: d.map(x => [x.nome, x.categoria_dados || '-', x.base_legal || '-', x.sensibilidade || '-']),
