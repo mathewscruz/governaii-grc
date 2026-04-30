@@ -14,6 +14,11 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
 
+const stripTestePrefix = (value: unknown) =>
+  String(value ?? "")
+    .replace(/\[\s*teste\s*\]\s*/gi, "")
+    .trim();
+
 async function checkSuperAdmin(token: string) {
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
   const { data: { user } } = await supabase.auth.getUser(token);
@@ -104,9 +109,8 @@ serve(async (req) => {
       }).eq("id", campanha_id);
     }
 
-    // Renderizar HTML uma vez — remover qualquer prefixo [TESTE] / [Teste] / [teste] do assunto
-    const stripTestePrefix = (s: string) => (s ?? "").replace(/^\s*\[\s*teste\s*\]\s*/i, "").trim();
-    const subjectFinal = stripTestePrefix(campanha.assunto || "");
+    // Renderizar HTML uma vez — remover definitivamente qualquer [TESTE] / [Teste] / [teste] do assunto
+    const subjectFinal = stripTestePrefix(campanha.assunto || "") || "Comunicado Akuris";
     const html = await renderAsync(
       React.createElement(BaseEmailTemplate, {
         previewText: subjectFinal,
@@ -126,6 +130,9 @@ serve(async (req) => {
           to: [email],
           subject: subjectFinal,
           html,
+          ...(isTest
+            ? { headers: { "X-Entity-Ref-ID": `${campanha_id}-${Date.now()}-${crypto.randomUUID()}` } }
+            : {}),
         });
         if (error) {
           failed++;
