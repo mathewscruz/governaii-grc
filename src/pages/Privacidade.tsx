@@ -561,7 +561,7 @@ export default function Privacidade() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList>
           <TabsTrigger value="catalogo">Catálogo & Mapeamento</TabsTrigger>
           <TabsTrigger value="ropa">ROPA</TabsTrigger>
           <TabsTrigger value="solicitacoes">Solicitações</TabsTrigger>

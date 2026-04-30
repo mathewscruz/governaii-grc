@@ -269,7 +269,7 @@ export function DenunciaDialog({
       disableShortcuts
     >
         <Tabs defaultValue="detalhes" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList>
             <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
             <TabsTrigger value="tratamento">Tratamento</TabsTrigger>
             <TabsTrigger value="anexos">Anexos</TabsTrigger>

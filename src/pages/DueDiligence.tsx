@@ -52,7 +52,7 @@ export default function DueDiligence() {
       <DueDiligenceDashboard />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList>
           <TabsTrigger value="fornecedores">{t('modules.dueDiligence.suppliers')}</TabsTrigger>
           <TabsTrigger value="assessments">{t('modules.dueDiligence.newAssessment')}</TabsTrigger>
           <TabsTrigger value="templates">{t('modules.dueDiligence.templates')}</TabsTrigger>
