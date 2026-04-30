@@ -630,20 +630,93 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   // Verificar mudanças antes de fechar
   const handleDialogClose = (newOpen: boolean) => {
     if (!newOpen && hasUnsavedChanges && !isDocumentSaved && !isDocumentExported) {
-      toast({
-        title: "Atenção!",
-        description: "Você possui mudanças não salvas. O documento será perdido se não for salvo no sistema ou exportado.",
-        variant: "destructive",
-        duration: 5000,
-      });
-      
-      // Ainda permite fechar, mas avisa o usuário
-      setTimeout(() => {
-        onOpenChange(newOpen);
-      }, 2000);
+      setDiscardDialogOpen(true);
       return;
     }
     onOpenChange(newOpen);
+  };
+
+  const confirmDiscardAndClose = () => {
+    setDiscardDialogOpen(false);
+    setHasUnsavedChanges(false);
+    onOpenChange(false);
+  };
+
+  const startNewConversation = () => {
+    setMessages([]);
+    setConversationId(null);
+    setGeneratedDocument(null);
+    setDocumentReady(false);
+    setCurrentDocType(null);
+    setCurrentDocName(null);
+    setHasUnsavedChanges(false);
+    setIsDocumentSaved(false);
+    setIsDocumentExported(false);
+    setIsEditingLayout(false);
+    const greeting = frameworkName
+      ? `Olá! Sou o DocGen, seu assistente inteligente para criação de documentos.\n\nVejo que você está trabalhando com o framework **${frameworkName}**. Posso ajudá-lo a gerar políticas, procedimentos ou normas alinhados a esse framework.\n\nQue tipo de documento você gostaria de criar?`
+      : 'Olá! Sou o DocGen, seu assistente inteligente para criação de documentos. Pode me contar que tipo de documento você gostaria de criar?';
+    setMessages([{ role: 'assistant', content: greeting, timestamp: new Date() }]);
+    setTimeout(() => inputRef.current?.focus(), 100);
+  };
+
+  const loadHistory = async () => {
+    if (!userInfo) return;
+    setHistoryLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('docgen_conversations')
+        .select('id, titulo, tipo_documento_identificado, updated_at')
+        .eq('empresa_id', userInfo.empresa_id)
+        .eq('user_id', userInfo.user_id)
+        .order('updated_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      setHistoryItems(data || []);
+    } catch (e) {
+      console.error('Erro ao carregar histórico:', e);
+      toast({ title: 'Erro', description: 'Não foi possível carregar o histórico.', variant: 'destructive' });
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const loadConversation = async (conversationIdToLoad: string) => {
+    if (!userInfo) return;
+    try {
+      const { data, error } = await supabase
+        .from('docgen_conversations')
+        .select('*')
+        .eq('id', conversationIdToLoad)
+        .eq('empresa_id', userInfo.empresa_id)
+        .eq('user_id', userInfo.user_id)
+        .single();
+      if (error) throw error;
+      if (!data) return;
+
+      const restoredMessages: ChatMessage[] = ((data.mensagens as any[]) || []).map((m: any) => ({
+        role: m.role,
+        content: m.content,
+        timestamp: new Date(),
+      }));
+      setMessages(restoredMessages.length > 0 ? restoredMessages : [{
+        role: 'assistant',
+        content: 'Conversa restaurada. Como posso continuar te ajudando?',
+        timestamp: new Date(),
+      }]);
+      setConversationId(data.id);
+      setCurrentDocType(data.tipo_documento_identificado || null);
+      setCurrentDocName((data.contexto as any)?.documento_nome_identificado || null);
+      setGeneratedDocument(null);
+      setDocumentReady(false);
+      setHasUnsavedChanges(false);
+      setHistoryOpen(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
+      toast({ title: 'Conversa restaurada', description: data.titulo });
+    } catch (e) {
+      console.error('Erro ao restaurar conversa:', e);
+      toast({ title: 'Erro', description: 'Não foi possível restaurar a conversa.', variant: 'destructive' });
+    }
   };
 
   // Adicionar o logo da empresa automaticamente ao gerar documento
