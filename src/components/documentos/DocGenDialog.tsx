@@ -902,8 +902,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
             )}
           </div>
 
-          {/* Document Preview */}
-          {generatedDocument && (
+          {/* Document Preview / Skeleton durante geração */}
+          {(generatedDocument || isGeneratingDoc) && (
             <div className="w-full lg:w-1/2 lg:border-l lg:pl-4 border-t pt-4 lg:border-t-0 lg:pt-0 flex flex-col min-h-0 overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <h3 className="font-semibold">{isEditingLayout ? 'Editor de Layout' : 'Preview do Documento'}</h3>
