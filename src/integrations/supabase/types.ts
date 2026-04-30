@@ -4062,6 +4062,8 @@ export type Database = {
           created_at: string
           creditos_consumidos: number | null
           data_alvo_certificacao: string | null
+          data_fim_assinatura: string | null
+          data_inicio_assinatura: string | null
           data_inicio_ciclo: string | null
           data_inicio_trial: string | null
           id: string
@@ -4082,6 +4084,8 @@ export type Database = {
           created_at?: string
           creditos_consumidos?: number | null
           data_alvo_certificacao?: string | null
+          data_fim_assinatura?: string | null
+          data_inicio_assinatura?: string | null
           data_inicio_ciclo?: string | null
           data_inicio_trial?: string | null
           id?: string
@@ -4102,6 +4106,8 @@ export type Database = {
           created_at?: string
           creditos_consumidos?: number | null
           data_alvo_certificacao?: string | null
+          data_fim_assinatura?: string | null
+          data_inicio_assinatura?: string | null
           data_inicio_ciclo?: string | null
           data_inicio_trial?: string | null
           id?: string
@@ -5469,7 +5475,16 @@ export type Database = {
           descricao: string | null
           icone: string | null
           id: string
+          is_destaque: boolean
+          limite_usuarios: number | null
+          modulos_habilitados: Json
+          moeda: string
           nome: string
+          ordem: number
+          preco_anual: number
+          preco_mensal: number
+          recursos_destacados: Json
+          updated_at: string
         }
         Insert: {
           ativo?: boolean | null
@@ -5480,7 +5495,16 @@ export type Database = {
           descricao?: string | null
           icone?: string | null
           id?: string
+          is_destaque?: boolean
+          limite_usuarios?: number | null
+          modulos_habilitados?: Json
+          moeda?: string
           nome: string
+          ordem?: number
+          preco_anual?: number
+          preco_mensal?: number
+          recursos_destacados?: Json
+          updated_at?: string
         }
         Update: {
           ativo?: boolean | null
@@ -5491,7 +5515,16 @@ export type Database = {
           descricao?: string | null
           icone?: string | null
           id?: string
+          is_destaque?: boolean
+          limite_usuarios?: number | null
+          modulos_habilitados?: Json
+          moeda?: string
           nome?: string
+          ordem?: number
+          preco_anual?: number
+          preco_mensal?: number
+          recursos_destacados?: Json
+          updated_at?: string
         }
         Relationships: []
       }
@@ -7033,6 +7066,7 @@ export type Database = {
         Args: { assessment_link_token: string }
         Returns: boolean
       }
+      check_company_user_limit: { Args: { _empresa_id: string }; Returns: Json }
       check_trial_expiration: { Args: never; Returns: undefined }
       cleanup_expired_mfa_codes: { Args: never; Returns: undefined }
       consume_ai_credit: {

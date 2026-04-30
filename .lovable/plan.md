@@ -1,74 +1,139 @@
-Validação completa do fluxo de onboarding da Akuris — encontrei 7 problemas, alguns críticos. Antes de você liberar pro cliente, precisa que eu corrija. Resumo do que está e do que não está funcionando:
+## Plano revisado — sem Stripe, com gestão própria de planos
 
-## Status atual
+Você confirmou que não usa mais Stripe. Vou (1) **remover toda a integração Stripe** e (2) **transformar o módulo "Planos" em uma área de gestão própria** onde você (super-admin) cria planos, define preços, limites e módulos liberados, e atribui às empresas manualmente.
 
-| Etapa | Status | Observação |
-|---|---|---|
-| Registro público (`/registro`) | Parcialmente funciona | Cria usuário, empresa e profile, mas falha silenciosa nas permissões |
-| Criação de usuário interno (admin convida outros) | Funciona, com bugs | Permissões via `apply_default_permissions_for_user` ok; via perfil customizado quebra |
-| E-mail de boas-vindas com link "definir senha" | Funciona quando chamado | Resend configurado, template ok |
-| Atribuição de perfis (RBAC) | Quebrado em parte | `user_roles` (tabela exigida pelo padrão de segurança) NÃO é populada em novos usuários |
-| Licenças / Trial 14 dias | Não expira sozinho | `check-trial-expiration` existe mas não tem cron agendado |
-| Stripe checkout (planos pagos) | Funciona | UUIDs dos planos batem com o banco |
+---
 
-## Problemas encontrados
+## Parte 1 — Remoção do Stripe
 
-### 1. CRÍTICO — `provision-new-account` insere em tabela inexistente
-A Edge Function tenta inserir permissões em `public.user_permissions`, mas a tabela correta no projeto é `user_module_permissions`. O bloco está dentro de um try/catch que engole o erro, então o registro segue, mas o usuário fica com **zero permissões de módulo**. Já há evidência: `mathews@estoca.com.br` foi criado pelo registro e tem 0 permissões, enquanto usuários criados via convite (admin) têm 15.
+### Arquivos a deletar
+- `supabase/functions/create-checkout/` (Edge Function)
+- `supabase/functions/customer-portal/` (Edge Function)
+- `supabase/functions/check-subscription/` (Edge Function)
+- `src/lib/stripe-plans.ts` (mapeamento hardcoded)
+- `src/pages/CheckoutSuccess.tsx` (página de retorno do Stripe)
 
-Correção: trocar a inserção manual por uma chamada ao RPC `apply_default_permissions_for_user(user_id_param)`, que já existe e cobre todos os módulos ativos com base na role.
+### Arquivos a editar (remover referências)
+- `src/pages/Registro.tsx` — remover `plano_codigo` que ia para Stripe; trial Free vira único caminho público (ou desabilita auto-registro pago).
+- `src/pages/Planos.tsx` — vira página de catálogo apenas (sem botão "Assinar"), ou redireciona para "Fale conosco".
+- `src/components/configuracoes/AssinaturaTab.tsx` — remover `check-subscription` e `customer-portal`; mostrar plano atual da empresa direto da tabela `empresas` + `planos`.
+- `src/components/configuracoes/FinanceiroIATab.tsx` — remover dependências do Stripe (manter custo de IA por modelo, que é cálculo interno).
+- `supabase/functions/provision-new-account/index.ts` — remover Stripe SDK e `priceId`; criar empresa em `trial` com plano definido pelo super-admin.
+- `src/pages/LandingPage.tsx` — remover CTAs de "Assinar agora" se houver, manter "Fale conosco".
 
-### 2. CRÍTICO — `create-user` chama RPC com nomes de parâmetros errados
-A função chama `supabase.rpc('apply_permission_profile', { profile_id, target_user_id })`, mas a assinatura real é `(_user_id uuid, _profile_id uuid)`. Quando o admin escolhe um perfil de permissão personalizado, **a aplicação falha silenciosamente** e o usuário fica sem permissões customizadas.
+### Variáveis a remover
+- Secret `STRIPE_SECRET_KEY` (vou avisar para você remover manualmente nas configurações).
+- Tipos de Stripe em arquivos compartilhados.
 
-Correção: passar `{ _user_id: authData.user.id, _profile_id: permission_profile_id }`.
+---
 
-### 3. CRÍTICO — `user_roles` não é populada no onboarding
-A regra de segurança do projeto diz que roles vão em `public.user_roles` (não em `profiles.role`). Tanto `provision-new-account` quanto `create-user` só gravam em `profiles.role`. Se algum dia uma policy passar a usar `has_role()` em vez de `is_admin()`, **todos os usuários novos perdem acesso**. Hoje já está inconsistente: 11 registros em `user_roles` para 19 perfis.
+## Parte 2 — Gestão própria de planos
 
-Correção: nas duas funções, após criar o profile, inserir também em `user_roles` (`super_admin` para o admin@governaii, `admin` para o dono da empresa criada via registro, role passada para usuários convidados).
+### Migração de banco — enriquecer tabela `planos`
+Adicionar colunas:
+- `preco_mensal` numeric (default 0)
+- `preco_anual` numeric (default 0)
+- `moeda` text default `'BRL'`
+- `limite_usuarios` integer (null = ilimitado)
+- `limite_creditos_ia` integer (renomear de `creditos_franquia` ou manter como alias)
+- `modulos_habilitados` jsonb default `'[]'` (array de chaves de módulos: `riscos`, `controles`, `documentos`, `gap_analysis`, `due_diligence`, etc.)
+- `recursos_destacados` jsonb default `'[]'` (lista de bullets para exibição)
+- `is_destaque` boolean default false (marca o "popular")
+- `ordem` integer default 0 (ordenação na exibição)
 
-### 4. ALTO — Trial de 14 dias não expira automaticamente
-A função `check_trial_expiration()` no banco e a Edge Function `check-trial-expiration` existem, mas **não há cron agendado** (`cron.job` está vazio). Empresas em trial ficam ativas indefinidamente.
+Backfill: popular os 3 planos atuais (`compliance_start`, `grc_manager`, `governaii_enterprise`) com valores razoáveis baseados no que existia em `stripe-plans.ts` (R$ 99 / R$ 249 / R$ 499) e módulos habilitados conforme tier.
 
-Correção: criar um `cron.job` chamando `check_trial_expiration()` diariamente (ex. 03:00 UTC) via migration usando `pg_cron`.
+### Nova tela: "Planos" em Configurações (super-admin only)
+Substituir a aba "Financeiro IA" como uma sub-aba ou adicionar **nova aba "Planos"** com:
+- Lista de planos com cards (nome, preço, créditos, limite usuários, módulos habilitados).
+- Botão **"Novo Plano"** → dialog para criar com todos os campos da migração.
+- Botão **"Editar"** em cada card.
+- Toggle "Ativo" para esconder planos descontinuados sem deletar.
+- Aviso quando tentar desativar um plano com empresas vinculadas.
 
-### 5. MÉDIO — `provision-new-account` lista módulos que não existem
-A Edge Function lista `relatorios` e `politicas`, mas eles não estão em `system_modules`. Inofensivo hoje (a tabela errada engole tudo), mas vai virar bug depois da correção do item 1.
+### Atribuição de plano à empresa
+- Em `GerenciamentoEmpresas` → dialog de empresa → select de plano (já existe, vai pegar dinamicamente da tabela atualizada).
+- Adicionar campos: `data_inicio_assinatura`, `data_fim_assinatura` (opcional, controle manual).
 
-Correção: ao usar o RPC, ele já consulta `system_modules`, então o problema some.
+### Enforcement dos limites no app
+- `limite_usuarios`: ao criar usuário em `create-user`, verificar se a empresa não estourou. Bloquear com mensagem clara.
+- `limite_creditos_ia`: já existe via `consume_ai_credit` — só vincular ao novo campo.
+- `modulos_habilitados`: criar hook `useModuleAccess(moduleKey)` que checa o plano da empresa e bloqueia acesso a módulos não inclusos (com upsell amigável "Fale com seu admin para upgrade").
 
-### 6. MÉDIO — Sem normalização do CNPJ na criação da empresa
-O frontend envia só dígitos (ok), mas não há check de duplicidade nem de formato. Risco de duas empresas com mesmo CNPJ.
+### Página pública `/planos` (opcional)
+Vira tabela comparativa **read-only** lendo da tabela `planos` com CTA "Fale conosco" → leva para landing/contato. Sem checkout.
 
-Correção: validar duplicidade de CNPJ antes de criar empresa e retornar 409 amigável.
+---
 
-### 7. BAIXO — Slug pode colidir
-Duas empresas com nomes iguais geram o mesmo slug e há risco de violação de unique. Hoje está funcionando porque várias empresas estão com `slug=null`, mas se ativar a unique vai quebrar.
+## Parte 3 — Itens do plano anterior que **mantenho**
 
-Correção: gerar slug com sufixo numérico se já existir.
+Tudo que estava no plano original e não depende de Stripe continua:
 
-## Plano de implementação
+### A. Limpar órfãos
+- `Fast2Mine` recebe plano padrão (vou perguntar qual abaixo).
+- Listar/limpar 2 usuários órfãos no `auth.users` via ferramenta para super-admin.
 
-1. **Migration** com:
-   - Cron job diário para `check_trial_expiration()`.
-   - (Opcional) Garantir unique em `empresas.cnpj` quando não nulo.
+### B. Exclusão segura de empresa
+- Edge function `delete-empresa-safe` com cleanup transacional.
+- Dialog de confirmação mostrando impacto.
 
-2. **Edge Function `provision-new-account`** (registro público):
-   - Trocar inserção em `user_permissions` por `rpc('apply_default_permissions_for_user', { user_id_param })`.
-   - Inserir registro em `user_roles` com role `admin` (dono da empresa).
-   - Validar CNPJ duplicado antes de criar empresa.
-   - Garantir slug único.
-   - Disparar `send-welcome-email` também para o registro público (hoje só envia se for criado por admin) — opcional, confirmo abaixo.
+### C. Convites com observabilidade
+- Coluna "Convite enviado em" + "Expira em".
+- Botão "Copiar link de convite" no menu de cada usuário pendente.
+- Toast diferenciado quando e-mail falha.
 
-3. **Edge Function `create-user`** (convite por admin):
-   - Corrigir parâmetros do RPC `apply_permission_profile` para `_user_id` e `_profile_id`.
-   - Inserir em `user_roles` a role escolhida.
+### D. Card de trial em Assinatura + e-mails de aviso
+- Card no topo com dias restantes, data de expiração, CTA "Fale com seu admin para escolher um plano" (no lugar de "Escolher plano no Stripe").
+- Cron D-3 e D-0 → e-mail aviso.
 
-4. **Validação final** rodando uma criação real de empresa de ponta a ponta com um e-mail de teste e checando: profile, permissões, user_roles, e-mail enviado, link de definir senha funcional, trial com data correta.
+### E. Onboarding em 1 clique
+- Dialog "Nova Empresa" passa a aceitar opcionalmente nome+e-mail do admin inicial e cria os dois em sequência.
 
-## Pergunta antes de implementar
+### F. Coluna "Usuários" em Empresas
+- Contagem clicável que filtra a aba Usuários.
 
-No registro público (`/registro` com plano Free), hoje o usuário se loga **com a senha que ele mesmo definiu** — então não recebe e-mail de boas-vindas com link "definir senha". Faz sentido continuar assim ou você quer que **todo novo cadastro receba também um e-mail de boas-vindas** com link de confirmação/login direto? Posso seguir com qualquer um dos dois — só preciso saber.
+### G. Confirmação para "Restaurar Permissões para Todos"
+- ConfirmDialog antes de aplicar.
 
-Posso seguir com a implementação?
+---
+
+## Itens **removidos** do plano original
+- ~~Unificar códigos Stripe ↔ banco~~ — não faz mais sentido, banco vira fonte única.
+- ~~Atualizar `PlanBadge` para códigos Stripe~~ — `PlanBadge` vai ler `cor_primaria` e `icone` direto da tabela `planos` (já existe).
+
+---
+
+## Detalhes técnicos
+
+**Migrations a criar:**
+1. `enriquecer_tabela_planos.sql` — colunas novas + backfill dos 3 planos existentes.
+2. `backfill_fast2mine.sql` — associa empresa órfã ao plano padrão.
+3. `trial_expiring_reminders.sql` — pg_cron D-3 e D-0.
+
+**Edge Functions a criar:**
+- `delete-empresa-safe`
+- `send-trial-reminder` + template `trial-expiring.tsx`
+
+**Edge Functions a deletar:**
+- `create-checkout`, `customer-portal`, `check-subscription`
+
+**Componentes a criar:**
+- `src/components/configuracoes/GerenciamentoPlanos.tsx` — CRUD visual de planos (super-admin only)
+- `src/components/configuracoes/PlanoFormDialog.tsx`
+- `src/hooks/useModuleAccess.ts` — enforcement de módulos por plano
+
+**Componentes a editar:**
+- `GerenciamentoEmpresas.tsx`, `GerenciamentoUsuariosEnhanced.tsx`, `AssinaturaTab.tsx`, `Configuracoes.tsx` (nova aba), `Registro.tsx`, `LandingPage.tsx`, `Planos.tsx`, `PlanBadge.tsx`, `provision-new-account/index.ts`, `create-user/index.ts`, `FinanceiroIATab.tsx`.
+
+**Componentes a deletar:**
+- `CheckoutSuccess.tsx`, `stripe-plans.ts`.
+
+---
+
+## Perguntas antes de implementar
+
+1. **Para `Fast2Mine` (empresa sem plano)**, qual plano associar? `compliance_start` (o mais básico) ou outro?
+2. **Auto-registro público** (`/registro`) hoje deixa qualquer um criar empresa Free de 14 dias. Quer **manter** esse fluxo (usuário se cadastra sozinho em trial) ou **bloquear** e forçar todo cliente novo a passar por contato comercial + super-admin criar manualmente?
+3. **Enforcement de limites**: começo aplicando "soft" (só avisa o admin no dashboard) ou já bloqueio criação ao atingir limite de usuários/créditos?
+
+Posso seguir com tudo isso?

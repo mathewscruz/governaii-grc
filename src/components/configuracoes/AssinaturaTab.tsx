@@ -1,59 +1,81 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Crown, Shield, Zap, Sparkles, ExternalLink, CreditCard, Calendar, Loader2 } from 'lucide-react';
+import { Crown, Shield, Zap, Sparkles, CreditCard, Calendar, Loader2, Users, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { STRIPE_PLANS, PlanKey, getPlanByProductId } from '@/lib/stripe-plans';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/components/AuthProvider';
+import { differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { formatBRL, type Plano } from '@/lib/planos-utils';
+import { Link } from 'react-router-dom';
 
-const planIcons: Record<PlanKey, React.ElementType> = {
+interface EmpresaInfo {
+  id: string;
+  nome: string;
+  status_licenca: 'trial' | 'em_operacao';
+  data_inicio_trial: string | null;
+  data_fim_assinatura: string | null;
+  creditos_consumidos: number;
+  plano: Plano | null;
+  total_usuarios: number;
+}
+
+const planIcons: Record<string, React.ElementType> = {
   free: Sparkles,
+  compliance_start: Shield,
   starter: Shield,
+  grc_manager: Zap,
   professional: Zap,
+  governaii_enterprise: Crown,
   enterprise: Crown,
 };
 
 export function AssinaturaTab() {
-  const [subscription, setSubscription] = useState<any>(null);
+  const { profile } = useAuth();
+  const empresaId = profile?.empresa_id;
+  const [info, setInfo] = useState<EmpresaInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const checkSubscription = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      if (error) throw error;
-      setSubscription(data);
-    } catch (error) {
-      console.error('Error checking subscription:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    checkSubscription();
-  }, []);
-
-  const handleManageSubscription = async () => {
-    setPortalLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('customer-portal');
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error: any) {
-      console.error('Portal error:', error);
-      toast.error('Erro ao abrir portal de gerenciamento.');
-    } finally {
-      setPortalLoading(false);
+    if (!empresaId) {
+      setLoading(false);
+      return;
     }
-  };
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: empData } = await supabase
+          .from('empresas')
+          .select('id, nome, status_licenca, data_inicio_trial, data_fim_assinatura, creditos_consumidos, plano:planos(*)')
+          .eq('id', empresaId)
+          .maybeSingle();
+
+        const { count: usuariosCount } = await supabase
+          .from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('empresa_id', empresaId);
+
+        if (cancelled) return;
+        if (empData) {
+          setInfo({
+            id: empData.id,
+            nome: empData.nome,
+            status_licenca: (empData.status_licenca || 'em_operacao') as 'trial' | 'em_operacao',
+            data_inicio_trial: empData.data_inicio_trial,
+            data_fim_assinatura: empData.data_fim_assinatura,
+            creditos_consumidos: empData.creditos_consumidos || 0,
+            plano: (empData.plano as any) || null,
+            total_usuarios: usuariosCount || 0,
+          });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [empresaId]);
 
   if (loading) {
     return (
@@ -63,131 +85,174 @@ export function AssinaturaTab() {
     );
   }
 
-  const currentPlanKey = subscription?.product_id 
-    ? getPlanByProductId(subscription.product_id) 
+  if (!info) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-muted-foreground">
+          Não foi possível carregar dados da assinatura.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const Icon = planIcons[info.plano?.codigo || 'free'] || Shield;
+  const trialDiasRestantes = info.data_inicio_trial
+    ? Math.max(0, 14 - differenceInDays(new Date(), new Date(info.data_inicio_trial)))
+    : 0;
+  const trialFim = info.data_inicio_trial
+    ? new Date(new Date(info.data_inicio_trial).getTime() + 14 * 24 * 60 * 60 * 1000)
     : null;
-  const currentPlan = currentPlanKey ? STRIPE_PLANS[currentPlanKey] : null;
-  const CurrentIcon = currentPlanKey ? planIcons[currentPlanKey] : Shield;
+
+  const limiteUsuarios = info.plano?.limite_usuarios ?? null;
+  const limiteCreditos = info.plano?.creditos_franquia ?? 0;
+  const usuariosPercent = limiteUsuarios ? (info.total_usuarios / limiteUsuarios) * 100 : 0;
+  const creditosPercent = limiteCreditos > 0 ? (info.creditos_consumidos / limiteCreditos) * 100 : 0;
 
   return (
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-foreground">Assinatura</h3>
         <p className="text-sm text-muted-foreground">
-          Gerencie seu plano e informações de pagamento.
+          Acompanhe o plano da sua empresa, uso e vigência.
         </p>
       </div>
 
-      {subscription?.subscribed ? (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-lg",
-                  currentPlanKey === 'starter' && "bg-muted",
-                  currentPlanKey === 'professional' && "bg-primary/10",
-                  currentPlanKey === 'enterprise' && "bg-amber-100",
-                )}>
-                  <CurrentIcon className={cn(
-                    "h-5 w-5",
-                    currentPlanKey === 'starter' && "text-muted-foreground",
-                    currentPlanKey === 'professional' && "text-primary",
-                    currentPlanKey === 'enterprise' && "text-amber-600",
-                  )} />
-                </div>
-                <div>
-                  <CardTitle className="text-base">
-                    Plano {currentPlan?.name || 'Ativo'}
-                  </CardTitle>
-                  {subscription.is_trialing && (
-                    <Badge variant="secondary" className="mt-1 bg-blue-100 text-blue-700 border-blue-200">
-                      Período de teste
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <Badge variant="outline" className="border-green-500 text-green-600">
-                Ativo
-              </Badge>
+      {/* Trial banner */}
+      {info.status_licenca === 'trial' && (
+        <Card className="border-amber-500/50 bg-amber-500/5">
+          <CardContent className="py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 shrink-0">
+              <AlertTriangle className="h-5 w-5" />
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {currentPlan && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Valor mensal</p>
-                    <p className="text-sm font-medium">R$ {currentPlan.monthly_price}/mês</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Créditos IA</p>
-                    <p className="text-sm font-medium">{currentPlan.credits}/mês</p>
-                  </div>
-                </div>
-                {subscription.subscription_end && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        {subscription.is_trialing ? 'Trial até' : 'Próxima cobrança'}
-                      </p>
-                      <p className="text-sm font-medium">
-                        {new Date(subscription.is_trialing ? subscription.trial_end : subscription.subscription_end).toLocaleDateString('pt-BR')}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <Separator />
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                variant="outline"
-                onClick={handleManageSubscription}
-                disabled={portalLoading}
-              >
-                {portalLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                )}
-                Gerenciar assinatura
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/planos')}
-              >
-                Ver todos os planos
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="py-8 text-center space-y-4">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-              <CreditCard className="h-7 w-7 text-muted-foreground" />
-            </div>
-            <div className="space-y-2">
-              <h4 className="text-lg font-semibold text-foreground">Nenhum plano ativo</h4>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Escolha um plano para desbloquear todos os recursos do Akuris. 
-                Todos os planos incluem 14 dias de teste grátis.
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">
+                Período de teste — {trialDiasRestantes} {trialDiasRestantes === 1 ? 'dia restante' : 'dias restantes'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {trialFim
+                  ? `Seu trial termina em ${trialFim.toLocaleDateString('pt-BR')}. Fale com o time comercial para escolher um plano.`
+                  : 'Fale com o time comercial para escolher um plano.'}
               </p>
             </div>
-            <Button onClick={() => navigate('/planos')} size="lg">
-              Ver planos disponíveis
+            <Button asChild size="sm">
+              <a href="mailto:contato@akuris.com.br?subject=Assinatura%20do%20plano%20Akuris">
+                Falar com comercial
+              </a>
             </Button>
           </CardContent>
         </Card>
       )}
+
+      {/* Plano atual */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary')}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle className="text-base">
+                  Plano {info.plano?.nome || 'não atribuído'}
+                </CardTitle>
+                {info.plano?.descricao && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{info.plano.descricao}</p>
+                )}
+              </div>
+            </div>
+            <Badge variant="outline" className={info.status_licenca === 'trial' ? 'border-amber-500 text-amber-600' : 'border-primary text-primary'}>
+              {info.status_licenca === 'trial' ? 'Em teste' : 'Em operação'}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {info.plano && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Valor mensal</p>
+                  <p className="text-sm font-medium">{formatBRL(info.plano.preco_mensal)}/mês</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Créditos IA</p>
+                  <p className="text-sm font-medium">
+                    {info.creditos_consumidos} / {limiteCreditos}/mês
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Usuários</p>
+                  <p className="text-sm font-medium">
+                    {info.total_usuarios} / {limiteUsuarios ?? '∞'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {info.plano && (limiteUsuarios || limiteCreditos > 0) && (
+            <div className="space-y-3 pt-2">
+              {limiteUsuarios !== null && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Usuários</span>
+                    <span>{info.total_usuarios}/{limiteUsuarios}</span>
+                  </div>
+                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={cn('h-full transition-all', usuariosPercent >= 90 ? 'bg-destructive' : 'bg-primary')}
+                      style={{ width: `${Math.min(100, usuariosPercent)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              {limiteCreditos > 0 && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Créditos IA do mês</span>
+                    <span>{info.creditos_consumidos}/{limiteCreditos}</span>
+                  </div>
+                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={cn('h-full transition-all', creditosPercent >= 90 ? 'bg-destructive' : 'bg-primary')}
+                      style={{ width: `${Math.min(100, creditosPercent)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {info.data_fim_assinatura && (
+            <>
+              <Separator />
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Vigência até:</span>
+                <span className="font-medium">{new Date(info.data_fim_assinatura).toLocaleDateString('pt-BR')}</span>
+              </div>
+            </>
+          )}
+
+          <Separator />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button asChild>
+              <a href="mailto:contato@akuris.com.br?subject=Mudança%20de%20plano%20Akuris">
+                Solicitar mudança de plano
+              </a>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/planos">Ver todos os planos</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

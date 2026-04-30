@@ -1,26 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
-
-const PLAN_MAP: Record<string, { plano_id: string; stripe_price_monthly: string; stripe_price_annual?: string }> = {
-  starter: {
-    plano_id: "45d5976f-bc3a-4f0d-ad7c-d6e83e07daf2",
-    stripe_price_monthly: "price_1SzeYEHrs8FLfXKfTvHzWVhP",
-  },
-  professional: {
-    plano_id: "01d16b42-28f5-4246-890e-01ac6abc50dd",
-    stripe_price_monthly: "price_1SzeYcHrs8FLfXKfOam3UREW",
-  },
-  enterprise: {
-    plano_id: "8c3b8dd5-fae7-425a-91b8-4917e22fa691",
-    stripe_price_monthly: "price_1SzeYwHrs8FLfXKfeJ9QjnBD",
-  },
+    "authorization, x-client-info, apikey, content-type",
 };
 
 const logStep = (step: string, details?: any) => {
@@ -31,7 +15,7 @@ const logStep = (step: string, details?: any) => {
 // Rate limiting: max 5 requests per IP per 10 minutes
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 5;
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 min
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -45,14 +29,23 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 50);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Rate limiting
-  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
-                    req.headers.get("x-real-ip") || "unknown";
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+                   req.headers.get("x-real-ip") || "unknown";
   if (!checkRateLimit(clientIp)) {
     logStep("Rate limited", { ip: clientIp });
     return new Response(JSON.stringify({ error: "Muitas tentativas. Tente novamente em alguns minutos." }), {
@@ -68,20 +61,30 @@ serve(async (req) => {
   );
 
   try {
-    const { nome, email, senha, empresa_nome, cnpj, plano_codigo, billing } = await req.json();
-    const isFree = plano_codigo === "free";
-    logStep("Request received", { email, empresa_nome, plano_codigo, billing, isFree });
+    const { nome, email, senha, empresa_nome, cnpj } = await req.json();
+    logStep("Request received", { email, empresa_nome });
 
     if (!nome || !email || !senha || !empresa_nome) {
       throw new Error("Campos obrigatórios: nome, email, senha, empresa_nome");
     }
 
-    const planConfig = PLAN_MAP[isFree ? "starter" : plano_codigo] || PLAN_MAP.starter;
-    const priceId = billing === "annual" && planConfig.stripe_price_annual
-      ? planConfig.stripe_price_annual
-      : planConfig.stripe_price_monthly;
+    // Validate CNPJ uniqueness when provided
+    const cnpjClean = cnpj ? String(cnpj).replace(/\D/g, "") : null;
+    if (cnpjClean) {
+      const { data: existing } = await supabaseAdmin
+        .from("empresas")
+        .select("id")
+        .eq("cnpj", cnpjClean)
+        .maybeSingle();
+      if (existing) {
+        return new Response(JSON.stringify({ error: "Já existe uma empresa cadastrada com este CNPJ." }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 409,
+        });
+      }
+    }
 
-    // 1. Create user in Supabase Auth
+    // 1. Create auth user
     logStep("Creating auth user");
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -89,46 +92,34 @@ serve(async (req) => {
       email_confirm: true,
       user_metadata: { nome, empresa_nome },
     });
-
-    if (authError) {
-      logStep("Auth error", { message: authError.message });
-      throw new Error(authError.message);
+    if (authError || !authData.user) {
+      throw new Error(authError?.message || "Erro ao criar usuário");
     }
-
     const userId = authData.user.id;
     logStep("User created", { userId });
 
-    // 2. Validate CNPJ uniqueness (when provided)
-    const cnpjClean = cnpj && String(cnpj).trim() !== "" ? String(cnpj).replace(/\D/g, "") : null;
-    if (cnpjClean) {
-      const { data: existingByCnpj } = await supabaseAdmin
-        .from("empresas")
-        .select("id")
-        .eq("cnpj", cnpjClean)
-        .maybeSingle();
-      if (existingByCnpj) {
-        await supabaseAdmin.auth.admin.deleteUser(userId);
-        throw new Error("Já existe uma empresa cadastrada com este CNPJ.");
-      }
-    }
+    // 2. Resolve default plan (compliance_start) — trials always start on this plan
+    const { data: defaultPlan } = await supabaseAdmin
+      .from("planos")
+      .select("id")
+      .eq("codigo", "compliance_start")
+      .eq("ativo", true)
+      .maybeSingle();
 
-    // 3. Generate slug from empresa_nome (with collision suffix)
-    const baseSlug = empresa_nome
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") || "empresa";
-
+    // 3. Resolve unique slug
+    let baseSlug = slugify(empresa_nome) || `empresa-${userId.slice(0, 8)}`;
     let slug = baseSlug;
     for (let i = 0; i < 5; i++) {
-      const { data: clash } = await supabaseAdmin
-        .from("empresas").select("id").eq("slug", slug).maybeSingle();
-      if (!clash) break;
-      slug = `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const { data: collision } = await supabaseAdmin
+        .from("empresas")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (!collision) break;
+      slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
     }
 
-    // 4. Create empresa
+    // 4. Create empresa in trial mode
     logStep("Creating empresa", { slug });
     const { data: empresa, error: empresaError } = await supabaseAdmin
       .from("empresas")
@@ -136,112 +127,67 @@ serve(async (req) => {
         nome: empresa_nome,
         cnpj: cnpjClean,
         slug,
+        ativo: true,
         status_licenca: "trial",
         data_inicio_trial: new Date().toISOString(),
-        plano_id: planConfig.plano_id,
+        plano_id: defaultPlan?.id || null,
+        contato: email,
       })
-      .select("id")
+      .select()
       .single();
 
     if (empresaError) {
-      logStep("Empresa error", { message: empresaError.message });
-      // Cleanup: delete user
+      logStep("Empresa creation failed", empresaError);
       await supabaseAdmin.auth.admin.deleteUser(userId);
-      throw new Error("Erro ao criar empresa: " + empresaError.message);
+      throw new Error(`Erro ao criar empresa: ${empresaError.message}`);
     }
 
-    logStep("Empresa created", { empresaId: empresa.id });
-
-    // 4. Create profile
+    // 5. Create profile (admin role of own company)
     logStep("Creating profile");
-    const { error: profileError } = await supabaseAdmin.from("profiles").insert({
-      user_id: userId,
-      empresa_id: empresa.id,
-      nome,
-      email,
-      role: "admin",
-      ativo: true,
-    });
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .insert({
+        user_id: userId,
+        nome,
+        email,
+        role: "admin",
+        empresa_id: empresa.id,
+      });
 
     if (profileError) {
-      logStep("Profile error", { message: profileError.message });
+      logStep("Profile creation failed", profileError);
       await supabaseAdmin.from("empresas").delete().eq("id", empresa.id);
       await supabaseAdmin.auth.admin.deleteUser(userId);
-      throw new Error("Erro ao criar perfil: " + profileError.message);
+      throw new Error(`Erro ao criar perfil: ${profileError.message}`);
     }
 
-    logStep("Profile created");
+    // 6. RBAC role
+    await supabaseAdmin.from("user_roles").upsert(
+      { user_id: userId, role: "admin" },
+      { onConflict: "user_id,role" }
+    );
 
-    // 5. Apply default permissions for the new admin
-    logStep("Applying default permissions via RPC");
+    // 7. Default module permissions
     try {
-      const { error: rpcErr } = await supabaseAdmin.rpc(
-        "apply_default_permissions_for_user",
-        { user_id_param: userId }
-      );
-      if (rpcErr) {
-        logStep("Permissions RPC error (non-fatal)", { message: rpcErr.message });
-      } else {
-        logStep("Permissions applied");
-      }
-    } catch (permError) {
-      logStep("Permissions exception (non-fatal)", { message: String(permError) });
-    }
-
-    // 5b. Insert into user_roles (RBAC source of truth)
-    try {
-      const { error: roleErr } = await supabaseAdmin
-        .from("user_roles")
-        .insert({ user_id: userId, role: "admin" });
-      if (roleErr && !String(roleErr.message).includes("duplicate")) {
-        logStep("user_roles insert error (non-fatal)", { message: roleErr.message });
-      } else {
-        logStep("user_roles row created");
-      }
+      await supabaseAdmin.rpc("apply_default_permissions_for_user", { user_id_param: userId });
     } catch (e) {
-      logStep("user_roles exception (non-fatal)", { message: String(e) });
+      logStep("apply_default_permissions_for_user failed (non-fatal)", e);
     }
 
-    // 6. For free plan, skip Stripe checkout entirely
-    if (isFree) {
-      logStep("Free plan - skipping Stripe checkout");
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    logStep("Provisioning complete", { empresaId: empresa.id, userId });
 
-    // 7. Create Stripe Checkout session with trial for paid plans
-    logStep("Creating Stripe checkout");
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      logStep("No Stripe key, skipping checkout");
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-
-    const session = await stripe.checkout.sessions.create({
-      customer_email: email,
-      line_items: [{ price: priceId, quantity: 1 }],
-      mode: "subscription",
-      subscription_data: {
-        trial_period_days: 14,
-      },
-      success_url: `${req.headers.get("origin")}/checkout-success`,
-      cancel_url: `${req.headers.get("origin")}/registro?plano=${plano_codigo}`,
-    });
-
-    logStep("Checkout session created", { sessionId: session.id });
-
-    return new Response(JSON.stringify({ success: true, checkout_url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    const message = error instanceof Error ? (error instanceof Error ? error.message : String(error)) : String(error);
-    logStep("ERROR", { message });
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(
+      JSON.stringify({
+        success: true,
+        empresa_id: empresa.id,
+        user_id: userId,
+        message: "Conta criada com sucesso. Você está em período de teste de 14 dias.",
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+    );
+  } catch (error: any) {
+    logStep("Error", { message: error.message });
+    return new Response(JSON.stringify({ error: error.message || "Erro ao criar conta" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,
     });
