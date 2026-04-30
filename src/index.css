@@ -255,7 +255,7 @@
     
     /* Muted */
     --muted: 216 25% 18%;
-    --muted-foreground: 200 10% 55%;
+    --muted-foreground: 200 12% 65%;
     
     /* Accent */
     --accent: 252 30% 20%;
@@ -357,6 +357,13 @@ input:-webkit-autofill:focus {
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Foco de teclado violeta global — assinatura Akuris */
+  :where(button, a, [role="button"], input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+    border-radius: calc(var(--radius) - 2px);
   }
   
   /* Custom Scrollbar */
