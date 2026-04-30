@@ -48,7 +48,12 @@ export function HeroScoreBanner({
 
   return (
     <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/5 via-card to-accent/5 p-4 md:p-6 lg:p-8">
-      {/* Decorative elements */}
+      {/* Akuris Mark Pattern — assinatura visual */}
+      <AkurisMarkPattern opacity={0.05} />
+      {/* Corner Accent — chevron de marca */}
+      <CornerAccent position="top-left" />
+
+      {/* Decorative glow */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
 
