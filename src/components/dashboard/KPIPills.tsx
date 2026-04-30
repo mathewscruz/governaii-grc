@@ -50,7 +50,7 @@ export function KPIPills(props: KPIPillsProps) {
 
   const pills: KPIPillData[] = [
     {
-      icon: HardDrive,
+      icon: AtivosIcon,
       label: t('kpi.assets'),
       value: props.ativos,
       route: '/ativos',
@@ -58,7 +58,7 @@ export function KPIPills(props: KPIPillsProps) {
       bgColor: 'bg-primary/10',
     },
     {
-      icon: AlertTriangle,
+      icon: RiscosIcon,
       label: t('kpi.risks'),
       value: props.totalRiscos,
       route: '/riscos',
@@ -110,7 +110,7 @@ export function KPIPills(props: KPIPillsProps) {
             : undefined,
     },
     {
-      icon: FileText,
+      icon: DocumentosIcon,
       label: t('kpi.documents'),
       value: props.activeDocs,
       route: '/documentos',
@@ -124,7 +124,7 @@ export function KPIPills(props: KPIPillsProps) {
             : undefined,
     },
     {
-      icon: Search,
+      icon: DueDiligenceIcon,
       label: t('kpi.dueDiligence'),
       value: props.ddAtivos,
       route: '/due-diligence',
@@ -136,7 +136,7 @@ export function KPIPills(props: KPIPillsProps) {
           : undefined,
     },
     {
-      icon: MessageSquareWarning,
+      icon: DenunciasIcon,
       label: t('kpi.reports'),
       value: props.denunciasAbertas,
       route: '/denuncia',
