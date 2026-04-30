@@ -2,7 +2,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
-import { Users, Building2, Plug, MessageSquare, CreditCard, Sparkles, Landmark, DollarSign } from 'lucide-react';
+import { Users, Building2, Plug, MessageSquare, CreditCard, Sparkles, Landmark, DollarSign, Package } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
 import { IntegrationHub } from '@/components/configuracoes/IntegrationHub';
@@ -13,6 +13,7 @@ import { CreditosIAManager } from '@/components/configuracoes/CreditosIAManager'
 import { UsersAccessTab } from '@/components/configuracoes/UsersAccessTab';
 import { OrganizacaoTab } from '@/components/configuracoes/OrganizacaoTab';
 import { FinanceiroIATab } from '@/components/configuracoes/FinanceiroIATab';
+import GerenciamentoPlanos from '@/components/configuracoes/GerenciamentoPlanos';
 
 const Configuracoes = () => {
   const { profile, loading } = useAuth();
