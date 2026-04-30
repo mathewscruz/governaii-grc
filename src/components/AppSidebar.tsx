@@ -385,11 +385,12 @@ export function AppSidebar() {
                         {!isCollapsed && (
                           <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                             <div className="space-y-1 mt-1 ml-6 pl-2 border-l-2 border-sidebar-border/30">
-                              {item.subItems.map((subItem) => (
+                              {item.subItems.map((subItem, idx) => (
                                 <SidebarMenuButton
                                   key={subItem.title}
                                   asChild
-                                  className="transition-colors duration-200 h-9"
+                                  className="transition-colors duration-200 h-9 animate-fade-in opacity-0 [animation-fill-mode:forwards]"
+                                  style={{ animationDelay: `${idx * 30}ms`, animationDuration: '220ms' }}
                                 >
                                   <NavLink
                                     to={subItem.url}
