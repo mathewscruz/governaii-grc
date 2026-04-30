@@ -1,10 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { 
-  HardDrive, Bell, Shield, AlertCircle, 
-  Scale, FileText, Target 
+import {
+  HardDrive,
+  AlertCircle,
+  Scale,
+  FileText,
+  AlertTriangle,
+  ListChecks,
+  Search,
+  MessageSquareWarning,
 } from 'lucide-react';
-import { TrendBadge } from './TrendIndicators';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface KPIPillData {
@@ -20,9 +25,6 @@ interface KPIPillData {
 
 interface KPIPillsProps {
   ativos: number;
-  criticalAlerts: number;
-  activeControls: number;
-  controlsExpiring: number;
   activeIncidents: number;
   incidentsThisMonth: number;
   activeContracts: number;
@@ -31,10 +33,16 @@ interface KPIPillsProps {
   activeDocs: number;
   docsExpiring: number;
   docsPending: number;
-  complianceScore: number;
-  totalFrameworks: number;
-  trends?: { riscosChange: number; incidentesChange: number; controlesChange: number } | null;
-  onAlertsClick: () => void;
+  // Novos pills (acionáveis, não duplicam Hero)
+  totalRiscos: number;
+  riscosCriticos: number;
+  riscosAltos: number;
+  planosPendentes: number;
+  planosAtrasados: number;
+  ddAtivos: number;
+  ddExpirados: number;
+  denunciasAbertas: number;
+  denunciasNovas: number;
 }
 
 export function KPIPills(props: KPIPillsProps) {
@@ -51,27 +59,18 @@ export function KPIPills(props: KPIPillsProps) {
       bgColor: 'bg-primary/10',
     },
     {
-      icon: Bell,
-      label: t('kpi.alerts'),
-      value: props.criticalAlerts,
-      route: '',
-      color: props.criticalAlerts > 0 ? 'text-warning' : 'text-success',
-      bgColor: props.criticalAlerts > 0 ? 'bg-warning/10' : 'bg-success/10',
-      alertBadge: props.criticalAlerts > 0 
-        ? { label: t('common.attention'), variant: 'warning' as const }
-        : { label: t('common.ok'), variant: 'success' as const },
-      onClick: props.onAlertsClick,
-    },
-    {
-      icon: Shield,
-      label: t('kpi.controls'),
-      value: props.activeControls,
-      route: '/governanca?tab=controles',
-      color: 'text-success',
-      bgColor: 'bg-success/10',
-      alertBadge: props.controlsExpiring > 0 
-        ? { label: `${props.controlsExpiring} ${t('kpi.expiring')}`, variant: 'warning' as const }
-        : undefined,
+      icon: AlertTriangle,
+      label: t('kpi.risks'),
+      value: props.totalRiscos,
+      route: '/riscos',
+      color: props.riscosCriticos > 0 ? 'text-destructive' : 'text-primary',
+      bgColor: props.riscosCriticos > 0 ? 'bg-destructive/10' : 'bg-primary/10',
+      alertBadge:
+        props.riscosCriticos > 0
+          ? { label: `${props.riscosCriticos} ${t('kpi.critical')}`, variant: 'destructive' as const }
+          : props.riscosAltos > 0
+            ? { label: `${props.riscosAltos} ${t('kpi.high')}`, variant: 'warning' as const }
+            : undefined,
     },
     {
       icon: AlertCircle,
@@ -80,9 +79,22 @@ export function KPIPills(props: KPIPillsProps) {
       route: '/incidentes',
       color: props.activeIncidents > 0 ? 'text-destructive' : 'text-muted-foreground',
       bgColor: props.activeIncidents > 0 ? 'bg-destructive/10' : 'bg-muted/50',
-      alertBadge: props.incidentsThisMonth > 0 
-        ? { label: `+${props.incidentsThisMonth} ${t('kpi.month')}`, variant: 'info' as const }
-        : undefined,
+      alertBadge:
+        props.incidentsThisMonth > 0
+          ? { label: `+${props.incidentsThisMonth} ${t('kpi.month')}`, variant: 'info' as const }
+          : undefined,
+    },
+    {
+      icon: ListChecks,
+      label: t('kpi.actionPlans'),
+      value: props.planosPendentes,
+      route: '/planos-acao',
+      color: props.planosAtrasados > 0 ? 'text-destructive' : 'text-primary',
+      bgColor: props.planosAtrasados > 0 ? 'bg-destructive/10' : 'bg-primary/10',
+      alertBadge:
+        props.planosAtrasados > 0
+          ? { label: `${props.planosAtrasados} ${t('kpi.overdue')}`, variant: 'destructive' as const }
+          : undefined,
     },
     {
       icon: Scale,
@@ -91,11 +103,12 @@ export function KPIPills(props: KPIPillsProps) {
       route: '/contratos',
       color: 'text-primary',
       bgColor: 'bg-primary/10',
-      alertBadge: props.contractsExpired > 0 
-        ? { label: `${props.contractsExpired} ${t('kpi.expired')}`, variant: 'destructive' as const }
-        : props.contractsExpiring > 0 
-        ? { label: `${props.contractsExpiring} ${t('kpi.expiring')}`, variant: 'warning' as const }
-        : undefined,
+      alertBadge:
+        props.contractsExpired > 0
+          ? { label: `${props.contractsExpired} ${t('kpi.expired')}`, variant: 'destructive' as const }
+          : props.contractsExpiring > 0
+            ? { label: `${props.contractsExpiring} ${t('kpi.expiring')}`, variant: 'warning' as const }
+            : undefined,
     },
     {
       icon: FileText,
@@ -104,20 +117,36 @@ export function KPIPills(props: KPIPillsProps) {
       route: '/documentos',
       color: 'text-primary',
       bgColor: 'bg-primary/10',
-      alertBadge: props.docsExpiring > 0 
-        ? { label: `${props.docsExpiring} ${t('kpi.expiring')}`, variant: 'warning' as const }
-        : props.docsPending > 0
-        ? { label: `${props.docsPending} ${t('kpi.pending')}`, variant: 'info' as const }
-        : undefined,
+      alertBadge:
+        props.docsExpiring > 0
+          ? { label: `${props.docsExpiring} ${t('kpi.expiring')}`, variant: 'warning' as const }
+          : props.docsPending > 0
+            ? { label: `${props.docsPending} ${t('kpi.pending')}`, variant: 'info' as const }
+            : undefined,
     },
     {
-      icon: Target,
-      label: t('kpi.compliance'),
-      value: `${props.complianceScore}%`,
-      route: '/gap-analysis',
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
-      alertBadge: { label: `${props.totalFrameworks} ${t('kpi.frameworks')}`, variant: 'info' as const },
+      icon: Search,
+      label: t('kpi.dueDiligence'),
+      value: props.ddAtivos,
+      route: '/due-diligence',
+      color: props.ddExpirados > 0 ? 'text-destructive' : 'text-primary',
+      bgColor: props.ddExpirados > 0 ? 'bg-destructive/10' : 'bg-primary/10',
+      alertBadge:
+        props.ddExpirados > 0
+          ? { label: `${props.ddExpirados} ${t('kpi.expired')}`, variant: 'destructive' as const }
+          : undefined,
+    },
+    {
+      icon: MessageSquareWarning,
+      label: t('kpi.reports'),
+      value: props.denunciasAbertas,
+      route: '/denuncia',
+      color: props.denunciasNovas > 0 ? 'text-warning' : 'text-primary',
+      bgColor: props.denunciasNovas > 0 ? 'bg-warning/10' : 'bg-primary/10',
+      alertBadge:
+        props.denunciasNovas > 0
+          ? { label: `${props.denunciasNovas} ${t('kpi.new')}`, variant: 'warning' as const }
+          : undefined,
     },
   ];
 
@@ -129,7 +158,7 @@ export function KPIPills(props: KPIPillsProps) {
         {pills.map((pill) => (
           <button
             key={pill.label}
-            onClick={() => pill.onClick ? pill.onClick() : navigate(pill.route)}
+            onClick={() => (pill.onClick ? pill.onClick() : navigate(pill.route))}
             className="group flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover:bg-accent/50 hover:border-primary/30 transition-all duration-200 cursor-pointer flex-shrink-0"
           >
             <div className={`p-1 rounded-md ${pill.bgColor} group-hover:scale-110 transition-transform`}>
