@@ -60,97 +60,94 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { prefetchRoute } from '@/lib/route-prefetch';
 
-const getMenuItems = (t: (key: string) => string) => [
-  {
-    title: t('sidebar.dashboard'),
-    url: '/dashboard',
-    icon: LayoutDashboard,
-    moduleName: 'dashboard',
-  },
-  {
-    title: t('sidebar.actionPlans'),
-    url: '/planos-acao',
-    icon: ListTodo,
-    moduleName: 'planos-acao',
-  },
-  {
-    title: t('sidebar.assetManagement'),
-    icon: AtivosIcon,
-    subItems: [
-      { title: t('sidebar.assets'), url: '/ativos', icon: AtivosIcon, moduleName: 'ativos' },
-      { title: t('sidebar.licenses'), url: '/ativos/licencas', icon: FileKey, moduleName: 'ativos' },
-      { title: t('sidebar.keys'), url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
-    ],
-  },
-  {
-    title: t('sidebar.riskManagement'),
-    icon: RiscosIcon,
-    subItems: [
-      { title: t('sidebar.risks'), url: '/riscos', icon: RiscosIcon, moduleName: 'riscos' },
-      { title: t('sidebar.riskAcceptance'), url: '/riscos/aceite', icon: CheckSquare, moduleName: 'riscos' },
-    ],
-  },
-  {
-    title: t('sidebar.gapAnalysis'),
-    url: '/gap-analysis/frameworks',
-    icon: GapAnalysisIcon,
-    moduleName: 'gap-analysis',
-  },
-  {
-    title: t('sidebar.governance'),
-    icon: FileCheck,
-    subItems: [
-      { title: t('sidebar.internalControls'), url: '/governanca', icon: ControlesIcon, moduleName: 'controles' },
-      { title: t('sidebar.systems'), url: '/sistemas', icon: Server, moduleName: 'controles' },
-    ],
-  },
-  {
-    title: t('sidebar.contracts'),
-    url: '/contratos',
-    icon: Handshake,
-    moduleName: 'contratos',
-  },
-  {
-    title: t('sidebar.documents'),
-    url: '/documentos',
-    icon: DocumentosIcon,
-    moduleName: 'documentos',
-  },
-  {
-    title: t('sidebar.security'),
-    icon: Lock,
-    subItems: [
-      { title: t('sidebar.privilegedAccounts'), url: '/contas-privilegiadas', icon: Users, moduleName: 'contas-privilegiadas' },
-      { title: t('sidebar.accessReview'), url: '/revisao-acessos', icon: CheckSquare, moduleName: 'contas-privilegiadas' },
-      { title: t('sidebar.incidents'), url: '/incidentes', icon: IncidentesIcon, moduleName: 'incidentes' },
-    ],
-  },
-  {
-    title: t('sidebar.privacy'),
-    url: '/privacidade',
-    icon: Shield,
-    moduleName: 'dados',
-  },
-  {
-    title: t('sidebar.compliance'),
-    icon: CheckSquare,
-    subItems: [
-      { title: t('sidebar.dueDiligence'), url: '/due-diligence', icon: DueDiligenceIcon, moduleName: 'due-diligence' },
-      { title: t('sidebar.whistleblowing'), url: '/denuncia', icon: DenunciasIcon, moduleName: 'denuncia' },
+type MenuItem = {
+  title: string;
+  url?: string;
+  icon: any;
+  moduleName?: string;
+  subItems?: { title: string; url: string; icon: any; moduleName?: string }[];
+};
 
+type MenuSection = {
+  id: string;
+  label: string;
+  items: MenuItem[];
+};
+
+const getMenuSections = (t: (key: string) => string): MenuSection[] => [
+  {
+    id: 'operation',
+    label: t('sidebar.sectionOperation'),
+    items: [
+      { title: t('sidebar.dashboard'), url: '/dashboard', icon: LayoutDashboard, moduleName: 'dashboard' },
+      { title: t('sidebar.actionPlans'), url: '/planos-acao', icon: ListTodo, moduleName: 'planos-acao' },
     ],
   },
   {
-    title: t('sidebar.businessContinuity'),
-    url: '/continuidade',
-    icon: ShieldAlert,
-    moduleName: 'continuidade',
+    id: 'grc-core',
+    label: t('sidebar.sectionGrcCore'),
+    items: [
+      {
+        title: t('sidebar.riskManagement'),
+        icon: RiscosIcon,
+        subItems: [
+          { title: t('sidebar.risks'), url: '/riscos', icon: RiscosIcon, moduleName: 'riscos' },
+          { title: t('sidebar.riskAcceptance'), url: '/riscos/aceite', icon: CheckSquare, moduleName: 'riscos' },
+        ],
+      },
+      {
+        title: t('sidebar.governance'),
+        icon: FileCheck,
+        subItems: [
+          { title: t('sidebar.internalControls'), url: '/governanca', icon: ControlesIcon, moduleName: 'controles' },
+          { title: t('sidebar.systems'), url: '/sistemas', icon: Server, moduleName: 'controles' },
+        ],
+      },
+      { title: t('sidebar.gapAnalysis'), url: '/gap-analysis/frameworks', icon: GapAnalysisIcon, moduleName: 'gap-analysis' },
+      {
+        title: t('sidebar.assetManagement'),
+        icon: AtivosIcon,
+        subItems: [
+          { title: t('sidebar.assets'), url: '/ativos', icon: AtivosIcon, moduleName: 'ativos' },
+          { title: t('sidebar.licenses'), url: '/ativos/licencas', icon: FileKey, moduleName: 'ativos' },
+          { title: t('sidebar.keys'), url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
+        ],
+      },
+    ],
   },
   {
-    title: t('sidebar.reports'),
-    url: '/relatorios',
-    icon: FileBarChart,
-    moduleName: 'relatorios',
+    id: 'compliance',
+    label: t('sidebar.sectionCompliance'),
+    items: [
+      { title: t('sidebar.contracts'), url: '/contratos', icon: Handshake, moduleName: 'contratos' },
+      { title: t('sidebar.documents'), url: '/documentos', icon: DocumentosIcon, moduleName: 'documentos' },
+      { title: t('sidebar.privacy'), url: '/privacidade', icon: Shield, moduleName: 'dados' },
+      {
+        title: t('sidebar.security'),
+        icon: Lock,
+        subItems: [
+          { title: t('sidebar.privilegedAccounts'), url: '/contas-privilegiadas', icon: Users, moduleName: 'contas-privilegiadas' },
+          { title: t('sidebar.accessReview'), url: '/revisao-acessos', icon: CheckSquare, moduleName: 'contas-privilegiadas' },
+          { title: t('sidebar.incidents'), url: '/incidentes', icon: IncidentesIcon, moduleName: 'incidentes' },
+        ],
+      },
+      {
+        title: t('sidebar.compliance'),
+        icon: CheckSquare,
+        subItems: [
+          { title: t('sidebar.dueDiligence'), url: '/due-diligence', icon: DueDiligenceIcon, moduleName: 'due-diligence' },
+          { title: t('sidebar.whistleblowing'), url: '/denuncia', icon: DenunciasIcon, moduleName: 'denuncia' },
+        ],
+      },
+      { title: t('sidebar.businessContinuity'), url: '/continuidade', icon: ShieldAlert, moduleName: 'continuidade' },
+    ],
+  },
+  {
+    id: 'insights',
+    label: t('sidebar.sectionInsights'),
+    items: [
+      { title: t('sidebar.reports'), url: '/relatorios', icon: FileBarChart, moduleName: 'relatorios' },
+    ],
   },
 ];
 
