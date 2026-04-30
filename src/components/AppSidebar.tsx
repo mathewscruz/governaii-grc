@@ -429,19 +429,23 @@ export function AppSidebar() {
               {canAccess('configuracoes') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild className="transition-colors duration-200 h-9">
-                    <NavLink 
-                      to="/configuracoes" 
+                    <NavLink
+                      to="/configuracoes"
                       onClick={handleNavClick}
-                      className={({ isActive }) => getNavCls({ isActive })}
+                      className={({ isActive }) => `flex items-center w-full px-3 ${getNavCls({ isActive })}`}
                     >
-                      <Settings className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
-                        isActive('/configuracoes') ? 'text-primary' : ''
-                      }`} />
+                      <Settings
+                        className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
+                          isActive('/configuracoes') ? 'text-primary-foreground' : ''
+                        }`}
+                      />
                       {!isCollapsed && (
-                         <span className={`text-sm font-medium transition-colors duration-200 truncate ${
-                           isActive('/configuracoes') ? 'text-primary font-semibold' : ''
-                         }`}>
-                           {t('sidebar.settings')}
+                        <span
+                          className={`text-sm font-medium transition-colors duration-200 truncate ${
+                            isActive('/configuracoes') ? 'text-primary-foreground font-semibold' : ''
+                          }`}
+                        >
+                          {t('sidebar.settings')}
                         </span>
                       )}
                     </NavLink>
