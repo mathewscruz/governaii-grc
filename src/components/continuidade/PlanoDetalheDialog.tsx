@@ -132,9 +132,9 @@ export function PlanoDetalheDialog({ open, onOpenChange, plano }: PlanoDetalheDi
           {plano.descricao && <p className="text-sm text-muted-foreground mb-4">{plano.descricao}</p>}
 
           <Tabs defaultValue="tarefas">
-            <TabsList className="w-full">
-              <TabsTrigger value="tarefas" className="flex-1">Tarefas ({tarefas.length})</TabsTrigger>
-              <TabsTrigger value="testes" className="flex-1">Testes ({testes.length})</TabsTrigger>
+            <TabsList>
+              <TabsTrigger value="tarefas">Tarefas ({tarefas.length})</TabsTrigger>
+              <TabsTrigger value="testes">Testes ({testes.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="tarefas" className="space-y-3 mt-4">
