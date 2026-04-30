@@ -68,7 +68,7 @@ func main() {
 	cmd := os.Args[1]
 	fs := flag.NewFlagSet(cmd, flag.ExitOnError)
 	token := fs.String("token", "", "enrollment token")
-	server := fs.String("server", "https://lnlkahtugwmkznasapfd.supabase.co", "server base URL")
+	server := fs.String("server", "", "server base URL (required)")
 	_ = fs.Parse(os.Args[2:])
 
 	svcCfg := &service.Config{
@@ -84,8 +84,8 @@ func main() {
 
 	switch cmd {
 	case "install":
-		if *token == "" {
-			log.Fatal("--token is required")
+		if *token == "" || *server == "" {
+			log.Fatal("--token and --server are required")
 		}
 		if err := doEnroll(*server, *token); err != nil {
 			log.Fatalf("enroll failed: %v", err)

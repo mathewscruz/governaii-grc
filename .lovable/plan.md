@@ -1,141 +1,74 @@
+## Causa do 404
 
-# Akuris Endpoint Agent — Inventário Automático de Ativos
+A rota `/ativos/endpoints` está no menu lateral mas **não foi registrada em `src/App.tsx`** — por isso cai no NotFound. A página `src/pages/AtivosEndpoints.tsx` já existe e funciona; só falta plugá-la no router.
 
-Vamos criar um agente leve em **Go** (binário único) instalável como **serviço Windows**, que se registra na empresa via **token de enrollment** e reporta periodicamente um **inventário completo + postura de segurança**. Os dados serão consolidados no módulo de **Ativos** existente, respeitando o isolamento multi-tenant (`empresa_id`).
+## O que vou fazer
 
-## Arquitetura
+### 1. Corrigir o roteamento (resolve o 404)
+- Em `src/App.tsx`: importar `AtivosEndpoints` (lazy) e adicionar a `<Route path="/ativos/endpoints">` dentro do mesmo `<Layout>` + `<ProtectedRoute moduleName="ativos">` usado pelas outras telas de Ativos.
 
-```text
-[Endpoint Windows]                       [Supabase / Akuris]
- akuris-agent.exe  --enroll TOKEN  -->   edge: agent-enroll
-   (gera device_id + agent_token)        (valida token da empresa,
-            |                              cria registro em ativos)
-            v
- Serviço Windows (a cada 60 min)  -->   edge: agent-checkin
-   coleta WMI/PowerShell                (valida agent_token,
-   envia JSON de inventário              upsert em ativos +
-                                         endpoint_inventory_snapshots)
-                                              |
-                                              v
-                                    Página: Ativos > Endpoints
-                                    (lista, detalhe, status online,
-                                     última coleta, postura)
+### 2. Entregar um instalador "1-clique" para Windows
+
+O problema hoje: o usuário precisaria compilar o `agent/` em Go, abrir PowerShell como Admin, digitar comando com `--token`. Vou simplificar tudo:
+
+**a) Compilar o agente (uma única vez, manual, fora do sandbox)**
+
+O sandbox da Lovable não tem toolchain Go nem Windows, então a compilação do `.exe` precisa ser feita por você (ou CI) com `agent\build.ps1`. Vou deixar o `build.ps1` e o `README` do `agent/` revisados para que isso seja literalmente:
+
+```powershell
+cd agent
+.\build.ps1     # gera dist\akuris-agent.exe
 ```
 
-## Mudanças de banco (multi-tenant, RLS)
+**b) Empacotar instalador `.bat` que faz tudo sozinho**
 
-Novas tabelas (todas com `empresa_id` + RLS por `has_empresa_access`):
+Para o usuário final não precisar abrir PowerShell nem digitar nada, vou gerar dinamicamente, no painel, um **arquivo `instalar-akuris.bat`** já com o token embutido. O fluxo do admin vira:
 
-1. `endpoint_enrollment_tokens`
-   - `id`, `empresa_id`, `token_hash` (sha256), `descricao`, `criado_por`, `expira_em`, `max_usos`, `usos`, `revogado`, `created_at`.
-   - Token bruto exibido **uma única vez** ao admin no painel.
+1. Clica em **"Gerar token e baixar instalador"** no painel.
+2. Recebe um `.zip` (ou os 2 arquivos lado a lado) contendo:
+   - `akuris-agent.exe` (binário público no bucket).
+   - `instalar-akuris.bat` (gerado on-the-fly, contém o token e o servidor).
+3. Na máquina-alvo, **clique direito → "Executar como administrador"** no `.bat`. Pronto: ele copia o `.exe` para `C:\Program Files\Akuris\`, roda `install --token ... --server ...`, sobe o serviço Windows e fecha.
 
-2. `endpoint_agents`
-   - `id` (uuid = device_id), `empresa_id`, `ativo_id` (FK para `ativos`), `agent_token_hash`, `hostname`, `so`, `versao_agente`, `ultimo_checkin`, `ip_publico`, `status` (`online`/`offline`/`stale`), `created_at`, `updated_at`.
+O `.bat` será gerado pelo frontend (template string) e baixado via `Blob` — sem nova edge function. Conteúdo:
 
-3. `endpoint_inventory_snapshots`
-   - `id`, `empresa_id`, `agent_id`, `coletado_em`, `payload` (jsonb completo), `hash_payload`. Histórico de coletas (rotação após N dias).
-
-Função RPC `mark_offline_endpoints()` chamada por cron (pg_cron) marca agentes sem check-in há > 2h como `offline`.
-
-## Edge Functions
-
-Todas com `verify_jwt = false` (autenticação custom por token), CORS, validação Zod, rate limit por IP.
-
-- **`agent-enroll`** (POST)
-  - Body: `{ enrollment_token, hostname, os_info, mac_addresses }`.
-  - Valida hash do token, expiração, usos restantes, empresa.
-  - Cria/recupera registro em `ativos` (tipo `tecnologia`, tag `Endpoint:<device_id>`).
-  - Cria `endpoint_agents`, gera `agent_token` (retornado uma vez).
-  - Incrementa `usos`.
-
-- **`agent-checkin`** (POST)
-  - Header: `X-Agent-Token`.
-  - Body: payload completo de inventário (schema validado).
-  - Faz upsert em `ativos` (campos: nome, versao, fornecedor, modelo, status), insere snapshot, atualiza `ultimo_checkin`.
-  - Resposta inclui `next_checkin_seconds` e `config` (intervalo, módulos a coletar).
-
-- **`agent-revoke`** (admin, JWT obrigatório)
-  - Revoga `agent_token` ou `enrollment_token`.
-
-## Frontend (módulo Ativos)
-
-Nova aba **"Endpoints"** dentro de `/ativos`:
-
-- **Tabela de agentes**: hostname, SO, status (badge online/offline), último check-in, postura de segurança (BitLocker, AV, Firewall, patches), botão "Ver detalhes" e "Revogar".
-- **Diálogo "Detalhes do Endpoint"**: tabs Hardware, Software instalado (com busca), Postura de Segurança, Histórico de coletas.
-- **Diálogo "Gerar token de enrollment"**: admin define descrição, validade (7/30/90 dias), max_usos. Mostra token + comando de instalação pronto:
-
-  ```text
-  akuris-agent.exe install --token AKR-xxxxxxxxxxxx --server https://...
-  ```
-
-- **KPIs no header da aba**: total de endpoints, online agora, sem check-in 24h, com postura crítica.
-- Identidade visual padrão (Navy/Purple, DM Sans, StatCards, Sonner toasts, fullscreen mobile).
-- i18n PT/EN.
-
-## Notificações
-
-Centralizadas no sino do header (padrão do projeto) e via `useIntegrationNotify`:
-
-- Novo endpoint enrollado.
-- Endpoint offline há > 24h.
-- Postura crítica detectada (ex.: BitLocker desativado, AV inativo, patches críticos pendentes).
-
-Novos eventos em `src/lib/integration-events.ts`:
-`endpoint_enrollado`, `endpoint_offline`, `endpoint_postura_critica`.
-
-## O Agente (Go)
-
-Repositório novo: pasta `agent/` na raiz do projeto (não compilada pelo Vite). Estrutura:
-
-```text
-agent/
-  cmd/akuris-agent/main.go      # CLI: install / uninstall / enroll / run
-  internal/collector/           # WMI, registry, netstat (gopsutil + go-ole)
-    hardware.go                 # CPU, RAM, disco, modelo, serial
-    os.go                       # versão SO, build, usuário logado
-    software.go                 # programas instalados (Uninstall registry)
-    security.go                 # BitLocker, Defender/AV, Firewall, patches
-    network.go                  # IPs, MACs, portas escutando
-  internal/client/              # HTTP client p/ edge functions
-  internal/service/             # integração com Windows Service (kardianos/service)
-  internal/storage/             # config local em %ProgramData%\Akuris\agent.json
-  build.ps1                     # cross-compile + assinatura + MSI (WiX)
+```bat
+@echo off
+net session >nul 2>&1 || (echo Execute como Administrador & pause & exit /b 1)
+if not exist "C:\Program Files\Akuris" mkdir "C:\Program Files\Akuris"
+copy /Y "%~dp0akuris-agent.exe" "C:\Program Files\Akuris\akuris-agent.exe"
+"C:\Program Files\Akuris\akuris-agent.exe" install ^
+  --token AKE-xxxxxxxxxxxx ^
+  --server https://lnlkahtugwmkznasapfd.supabase.co
+echo Instalacao concluida.
+pause
 ```
 
-Bibliotecas: `github.com/shirou/gopsutil/v3`, `github.com/kardianos/service`, `golang.org/x/sys/windows/registry`.
+**c) Botões na página Endpoints**
 
-Comportamento:
-- Primeiro run: `--enroll TOKEN` → chama `agent-enroll`, salva `device_id` + `agent_token` cifrado com DPAPI em `%ProgramData%\Akuris\`.
-- Roda como serviço `AkurisAgent` (LocalSystem). Loop a cada 60 min (configurável pelo servidor): coleta + POST em `agent-checkin`.
-- Retry exponencial offline; buffer local de até 24 snapshots.
-- Auto-update opcional (fase 2).
+Header já tem **"Baixar agente (.exe)"** apontando para o bucket público. Vou adicionar:
+- Botão **"Baixar instalador (.bat)"** após gerar o token (download direto do `.bat` pronto).
+- Mensagem clara: *"1) Baixe os dois arquivos. 2) Coloque-os na mesma pasta. 3) Clique direito no .bat → Executar como administrador."*
 
-Entregáveis:
-- `akuris-agent.exe` (binário) e `AkurisAgent.msi` (instalador silencioso para GPO/Intune).
-- Documentação em `docs/endpoint-agent.md` (instalação manual, GPO, Intune, desinstalação, troubleshooting).
+**d) Subir o binário no bucket (passo único, manual)**
 
-## Segurança
+Depois que você compilar o `.exe` localmente, subir uma vez em **Supabase → Storage → endpoint-agent-binaries → upload `akuris-agent.exe`**. A partir daí, qualquer admin baixa direto pelo painel.
 
-- Tokens armazenados como **hash SHA-256** no banco (nunca texto puro).
-- `agent_token` cifrado no endpoint via **DPAPI** (escopo machine).
-- RLS estrita: agente só consegue tocar `ativos`/snapshots da própria `empresa_id` (validado no edge antes de qualquer escrita).
-- Rate limit em `agent-enroll` (10/min/IP) e `agent-checkin` (1/min/agent_token).
-- Logs de auditoria em `audit_logs` para enroll, revoke e mudanças de postura.
+### 3. Limpeza
 
-## Escopo desta entrega
+- Remover URL do Supabase hardcoded no Go (`agent/cmd/akuris-agent/main.go`) — manter `--server` obrigatório vindo do `.bat`. Isso evita ter que recompilar se a URL mudar.
 
-Fase 1 (este plano):
-1. Migrações (3 tabelas + RLS + RPC + cron).
-2. 3 edge functions (`agent-enroll`, `agent-checkin`, `agent-revoke`).
-3. UI: aba **Endpoints** em `/ativos` com tabela, detalhe, geração de token e revogação.
-4. Notificações (sino + integrações) para os 3 eventos.
-5. Esqueleto do agente Go em `agent/` com coletores, modo serviço, build script PowerShell e documentação.
+## Limites técnicos honestos
 
-Fase 2 (futura, fora deste plano): assinatura de código do .exe/.msi, auto-update, suporte Linux/macOS, integração com Intune via Graph (já parcialmente existente em `azure-integration`).
+- **Não consigo compilar o `.exe` para você no sandbox da Lovable** (sem Go, sem Windows, sem assinatura de código). A compilação é um passo único do seu lado.
+- **Não consigo empacotar `.zip` automaticamente no clique** sem JSZip — para evitar dependência nova, vou fazer download de 2 arquivos separados (.exe do bucket + .bat gerado). Se preferir um único `.zip`, me avisa e adiciono `jszip` (~40 KB).
+- **Sem assinatura de código (signtool)**, o Windows SmartScreen vai mostrar aviso "Editor desconhecido" na primeira execução. Para remover isso é necessário um certificado EV de code signing (~US$ 200–400/ano) — fica para fase 3.
 
-## Observações
+## Arquivos afetados
 
-- O agente em Go **não** roda no sandbox da Lovable; ele é compilado localmente/CI pelo seu time. Vou deixar `build.ps1` pronto e instruções claras.
-- Se preferir, podemos publicar o binário em um bucket público do Supabase para download direto pelo painel — me avise se quer isso já na fase 1.
+- `src/App.tsx` — adicionar import + rota `/ativos/endpoints`.
+- `src/pages/AtivosEndpoints.tsx` — botão "Baixar instalador (.bat)" e instruções.
+- `agent/cmd/akuris-agent/main.go` — tornar `--server` obrigatório (sem default hardcoded).
+- `agent/README.md` e `docs/endpoint-agent.md` — atualizar com o fluxo do `.bat`.
+
+Posso prosseguir?

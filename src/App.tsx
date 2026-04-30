@@ -14,6 +14,7 @@ const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
 const Ativos = React.lazy(() => import('@/pages/Ativos'));
 const AtivosLicencas = React.lazy(() => import('@/pages/AtivosLicencas'));
 const AtivosChaves = React.lazy(() => import('@/pages/AtivosChaves'));
+const AtivosEndpoints = React.lazy(() => import('@/pages/AtivosEndpoints'));
 const Riscos = React.lazy(() => import('@/pages/Riscos').then(m => ({ default: m.Riscos })));
 const RiscosAceite = React.lazy(() => import('@/pages/RiscosAceite'));
 const Continuidade = React.lazy(() => import('@/pages/Continuidade'));
@@ -136,6 +137,13 @@ function App() {
               <Layout>
                 <ProtectedRoute moduleName="ativos" fallbackToRoleCheck={false}>
                   <AtivosChaves />
+                </ProtectedRoute>
+              </Layout>
+            } />
+            <Route path="/ativos/endpoints" element={
+              <Layout>
+                <ProtectedRoute moduleName="ativos" fallbackToRoleCheck={false}>
+                  <AtivosEndpoints />
                 </ProtectedRoute>
               </Layout>
             } />

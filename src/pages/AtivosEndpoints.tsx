@@ -143,11 +143,58 @@ const AtivosEndpoints: React.FC = () => {
     setTokenForm({ descricao: '', validade_dias: '30', max_usos: '50' });
   };
 
-  const AGENT_DOWNLOAD_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/endpoint-agent-binaries/akuris-agent.exe`;
+  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+  const AGENT_DOWNLOAD_URL = `${SUPABASE_URL}/storage/v1/object/public/endpoint-agent-binaries/akuris-agent.exe`;
 
   const installCommand = generatedToken
-    ? `akuris-agent.exe install --token ${generatedToken} --server ${import.meta.env.VITE_SUPABASE_URL}`
+    ? `akuris-agent.exe install --token ${generatedToken} --server ${SUPABASE_URL}`
     : '';
+
+  const downloadInstallerBat = () => {
+    if (!generatedToken) return;
+    const bat = [
+      '@echo off',
+      'setlocal',
+      'net session >nul 2>&1',
+      'if %errorlevel% NEQ 0 (',
+      '  echo.',
+      '  echo  ERRO: Execute este arquivo como Administrador',
+      '  echo  ^(clique direito no arquivo .bat ^> "Executar como administrador"^)',
+      '  echo.',
+      '  pause',
+      '  exit /b 1',
+      ')',
+      'echo Instalando Akuris Endpoint Agent...',
+      'if not exist "C:\\Program Files\\Akuris" mkdir "C:\\Program Files\\Akuris"',
+      'copy /Y "%~dp0akuris-agent.exe" "C:\\Program Files\\Akuris\\akuris-agent.exe" >nul',
+      'if %errorlevel% NEQ 0 (',
+      '  echo ERRO: nao encontrei akuris-agent.exe na mesma pasta deste instalador.',
+      '  pause',
+      '  exit /b 1',
+      ')',
+      `"C:\\Program Files\\Akuris\\akuris-agent.exe" install --token ${generatedToken} --server ${SUPABASE_URL}`,
+      'if %errorlevel% NEQ 0 (',
+      '  echo ERRO: falha ao registrar o agente. Verifique conexao com a internet.',
+      '  pause',
+      '  exit /b 1',
+      ')',
+      'echo.',
+      'echo Akuris Agent instalado com sucesso. O servico ja esta rodando.',
+      'echo.',
+      'pause',
+      '',
+    ].join('\r\n');
+    const blob = new Blob([bat], { type: 'application/bat' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'instalar-akuris.bat';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Instalador .bat baixado');
+  };
 
   const columns: Column<EndpointAgent>[] = [
     {
@@ -298,36 +345,46 @@ const AtivosEndpoints: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
-                Copie o token agora — ele não será exibido novamente.
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-200">
+                ✓ Token gerado. Baixe os 2 arquivos abaixo, coloque-os na <strong>mesma pasta</strong> da máquina Windows e dê <strong>clique direito → "Executar como administrador"</strong> no <code>.bat</code>.
               </div>
-              <div>
-                <Label>Token</Label>
-                <div className="flex gap-2">
-                  <Input readOnly value={generatedToken} className="font-mono text-xs" />
-                  <Button size="icon" variant="outline" onClick={() => { navigator.clipboard.writeText(generatedToken); toast.success('Token copiado'); }}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div>
-                <Label>Comando de instalação (Windows, executar como Admin)</Label>
-                <div className="flex gap-2">
-                  <Input readOnly value={installCommand} className="font-mono text-xs" />
-                  <Button size="icon" variant="outline" onClick={() => { navigator.clipboard.writeText(installCommand); toast.success('Comando copiado'); }}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
-                Passos: 1) Baixe o instalador. 2) Abra um PowerShell como Administrador. 3) Cole o comando acima.
-              </div>
-              <DialogFooter className="gap-2">
-                <Button variant="outline" asChild>
+
+              <div className="space-y-2">
+                <Button onClick={downloadInstallerBat} className="w-full" size="lg">
+                  <Download className="h-4 w-4 mr-2" /> 1. Baixar instalador (.bat) — com seu token
+                </Button>
+                <Button variant="outline" asChild className="w-full" size="lg">
                   <a href={AGENT_DOWNLOAD_URL} download>
-                    <Download className="h-4 w-4 mr-2" /> Baixar akuris-agent.exe
+                    <Download className="h-4 w-4 mr-2" /> 2. Baixar agente (akuris-agent.exe)
                   </a>
                 </Button>
+              </div>
+
+              <details className="text-xs text-muted-foreground">
+                <summary className="cursor-pointer hover:text-foreground">Instalação manual / linha de comando</summary>
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <Label className="text-xs">Token (não será exibido novamente)</Label>
+                    <div className="flex gap-2">
+                      <Input readOnly value={generatedToken} className="font-mono text-xs" />
+                      <Button size="icon" variant="outline" onClick={() => { navigator.clipboard.writeText(generatedToken); toast.success('Token copiado'); }}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Comando equivalente (PowerShell Admin)</Label>
+                    <div className="flex gap-2">
+                      <Input readOnly value={installCommand} className="font-mono text-xs" />
+                      <Button size="icon" variant="outline" onClick={() => { navigator.clipboard.writeText(installCommand); toast.success('Comando copiado'); }}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </details>
+
+              <DialogFooter>
                 <Button onClick={closeTokenDialog}>Concluído</Button>
               </DialogFooter>
             </div>
