@@ -192,6 +192,25 @@ export const pt = {
     sectionCompliance: 'Compliance & Governança',
     sectionInsights: 'Insights',
   },
+  theme: {
+    toggleLight: 'Modo claro',
+    toggleDark: 'Modo escuro',
+  },
+  table: {
+    densityCompact: 'Compacto',
+    densityComfortable: 'Confortável',
+  },
+  dashboard_v3: {
+    greetingMorning: 'Bom dia',
+    greetingAfternoon: 'Boa tarde',
+    greetingEvening: 'Boa noite',
+    focusOn: 'Modo foco',
+    focusOff: 'Sair do foco',
+    criticalSummary: '{{count}} item crítico exige sua atenção',
+    criticalSummaryPlural: '{{count}} itens críticos exigem sua atenção',
+    allClear: 'Nada crítico no momento',
+    updatedAt: 'Atualizado às {{time}}',
+  },
   userProfile: {
     myProfile: 'Meu perfil',
     editProfile: 'Editar perfil',

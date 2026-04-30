@@ -1,8 +1,7 @@
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { RefreshCw, Clock } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MultiDimensionalRadar } from '@/components/dashboard/MultiDimensionalRadar';
 import { RecentActivities } from '@/components/dashboard/RecentActivities';
 import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
@@ -24,9 +23,7 @@ import { useRiscosStats } from '@/hooks/useRiscosStats';
 import { usePlanosAcaoStats } from '@/hooks/usePlanosAcaoStats';
 import { useDueDiligenceStats } from '@/hooks/useDueDiligenceStats';
 import { useDenunciasStats } from '@/hooks/useDenunciasStats';
-import { format } from 'date-fns';
-import { ptBR, enUS } from 'date-fns/locale';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRadarChartData } from '@/hooks/useRadarChartData';
 import { useGrcMaturityScore } from '@/hooks/useGrcMaturityScore';
@@ -34,8 +31,19 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export default function Dashboard() {
   const { profile } = useAuth();
-  const { t, locale } = useLanguage();
+  useLanguage();
   const [alertsDialogOpen, setAlertsDialogOpen] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('akuris.focusMode') === '1';
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('akuris.focusMode', isFocusMode ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  }, [isFocusMode]);
   const queryClient = useQueryClient();
   
   const ativosStats = useAtivosStats();
@@ -88,19 +96,15 @@ export default function Dashboard() {
   return (
     <TooltipProvider>
       <div className="space-y-5 animate-fade-in w-full max-w-full overflow-x-hidden">
-        {/* Header compacto */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">{t('dashboard.title')}</h1>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" />
-            <span>{dataUpdatedAt ? format(new Date(dataUpdatedAt), "HH:mm", { locale: locale === 'pt' ? ptBR : enUS }) : '--:--'}</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleRefreshAll}>
-              <RefreshCw className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
+        {/* Header contextual com saudação, Modo Foco e timestamp */}
+        <DashboardHeader
+          userName={profile?.nome || 'Usuário'}
+          criticalCount={dashboardData?.criticalAlerts || 0}
+          dataUpdatedAt={dataUpdatedAt}
+          isFocusMode={isFocusMode}
+          onToggleFocus={() => setIsFocusMode((v) => !v)}
+          onRefresh={handleRefreshAll}
+        />
 
         {/* Hero Score Banner */}
         <HeroScoreBanner
@@ -111,27 +115,29 @@ export default function Dashboard() {
           userName={profile?.nome || 'Usuário'}
         />
 
-        {/* KPI Pills */}
-        <KPIPills
-          ativos={ativosStats.data?.total || 0}
-          activeIncidents={activeIncidents}
-          incidentsThisMonth={incidentesStats.data?.mes || 0}
-          activeContracts={contratosStats.data?.ativos || 0}
-          contractsExpiring={contratosStats.data?.vencendo30Dias || 0}
-          contractsExpired={contratosStats.data?.vencidos || 0}
-          activeDocs={documentosStats.data?.ativos || 0}
-          docsExpiring={documentosStats.data?.vencendo30Dias || 0}
-          docsPending={documentosStats.data?.pendentesAprovacao || 0}
-          totalRiscos={riscosStats.data?.total || 0}
-          riscosCriticos={riscosStats.data?.criticos || 0}
-          riscosAltos={riscosStats.data?.altos || 0}
-          planosPendentes={planosStats.data?.pendentes || 0}
-          planosAtrasados={planosStats.data?.atrasados || 0}
-          ddAtivos={ddStats.data?.activeAssessments || 0}
-          ddExpirados={ddStats.data?.expiredAssessments || 0}
-          denunciasAbertas={(denunciasStats.data?.novas || 0) + (denunciasStats.data?.em_andamento || 0)}
-          denunciasNovas={denunciasStats.data?.novas || 0}
-        />
+        {/* KPI Pills — escondidos em Modo Foco */}
+        {!isFocusMode && (
+          <KPIPills
+            ativos={ativosStats.data?.total || 0}
+            activeIncidents={activeIncidents}
+            incidentsThisMonth={incidentesStats.data?.mes || 0}
+            activeContracts={contratosStats.data?.ativos || 0}
+            contractsExpiring={contratosStats.data?.vencendo30Dias || 0}
+            contractsExpired={contratosStats.data?.vencidos || 0}
+            activeDocs={documentosStats.data?.ativos || 0}
+            docsExpiring={documentosStats.data?.vencendo30Dias || 0}
+            docsPending={documentosStats.data?.pendentesAprovacao || 0}
+            totalRiscos={riscosStats.data?.total || 0}
+            riscosCriticos={riscosStats.data?.criticos || 0}
+            riscosAltos={riscosStats.data?.altos || 0}
+            planosPendentes={planosStats.data?.pendentes || 0}
+            planosAtrasados={planosStats.data?.atrasados || 0}
+            ddAtivos={ddStats.data?.activeAssessments || 0}
+            ddExpirados={ddStats.data?.expiredAssessments || 0}
+            denunciasAbertas={(denunciasStats.data?.novas || 0) + (denunciasStats.data?.em_andamento || 0)}
+            denunciasNovas={denunciasStats.data?.novas || 0}
+          />
+        )}
 
 
         {/* Vencimentos + Radar + Timeline */}
