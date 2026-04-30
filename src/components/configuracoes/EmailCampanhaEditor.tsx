@@ -147,7 +147,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
     setSaving(true);
     try {
       const payload = {
-        assunto: assunto.trim(),
+        assunto: assunto.trim().replace(/^\s*\[\s*teste\s*\]\s*/i, '').trim(),
         conteudo_html: conteudoHtml,
         imagem_url: imagemUrl,
         status,
