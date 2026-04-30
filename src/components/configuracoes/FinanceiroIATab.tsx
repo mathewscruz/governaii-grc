@@ -157,7 +157,7 @@ export function FinanceiroIATab() {
       // Empresas
       const mapped: EmpresaFinanceiro[] = (empresasData || []).map((e: any) => {
         const planoNome = e.plano?.nome || 'Free';
-        const receita = PLAN_PRICES[planoNome] || 0;
+        const receita = planPrices[planoNome] || 0;
         const empData = reqCountByEmpresa[e.id] || { total: 0, cost: 0 };
         const custo = empData.cost;
         const margem = receita - custo;
@@ -223,7 +223,7 @@ export function FinanceiroIATab() {
         empresas_deficitarias: empresas.filter(e => e.status === 'deficitario').map(e => ({
           nome: e.nome, plano: e.plano_nome, reqs: e.requisicoes, margem: e.margem
         })),
-        planos: Object.entries(PLAN_PRICES).map(([nome, preco]) => ({ nome, preco })),
+        planos: Object.entries(planPrices).map(([nome, preco]) => ({ nome, preco })),
         empresas_por_plano: Object.entries(
           empresas.reduce((acc, e) => { acc[e.plano_nome] = (acc[e.plano_nome] || 0) + 1; return acc; }, {} as Record<string, number>)
         ).map(([plano, qtd]) => ({ plano, qtd })),
