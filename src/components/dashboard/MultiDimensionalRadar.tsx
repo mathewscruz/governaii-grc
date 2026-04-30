@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRadarChartData, RadarDataPoint } from "@/hooks/useRadarChartData";
+import { useGrcMaturityScore } from "@/hooks/useGrcMaturityScore";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -87,22 +88,17 @@ const MaturityRow = ({ item, navigate, t }: { item: RadarDataPoint; navigate: an
 
 export const MultiDimensionalRadar = () => {
   const { data, isLoading } = useRadarChartData();
+  const maturity = useGrcMaturityScore();
   const navigate = useNavigate();
   const { t } = useLanguage();
 
-  const averageScore = useMemo(() => {
-    if (!data || data.length === 0) return 0;
-    const withData = data.filter(d => d.hasData);
-    if (withData.length === 0) return 0;
-    return Math.round(withData.reduce((sum, d) => sum + d.score, 0) / withData.length);
-  }, [data]);
-
   const statusConfig = useMemo(() => {
-    if (averageScore >= 80) return { label: t('dashboard.excellent'), variant: 'success' as const, icon: CheckCircle2, color: 'text-green-500' };
-    if (averageScore >= 60) return { label: t('dashboard.good'), variant: 'default' as const, icon: CheckCircle2, color: 'text-primary' };
-    if (averageScore >= 40) return { label: t('dashboard.warning'), variant: 'warning' as const, icon: AlertCircle, color: 'text-yellow-500' };
-    return { label: t('dashboard.criticalStatus'), variant: 'destructive' as const, icon: XCircle, color: 'text-destructive' };
-  }, [averageScore, t]);
+    if (maturity.status === 'excellent') return { label: t('dashboard.excellent'), variant: 'success' as const, icon: CheckCircle2, color: maturity.colorClass };
+    if (maturity.status === 'good') return { label: t('dashboard.good'), variant: 'default' as const, icon: CheckCircle2, color: maturity.colorClass };
+    if (maturity.status === 'warning') return { label: t('dashboard.warning'), variant: 'warning' as const, icon: AlertCircle, color: maturity.colorClass };
+    if (maturity.status === 'critical') return { label: t('dashboard.criticalStatus'), variant: 'destructive' as const, icon: XCircle, color: maturity.colorClass };
+    return { label: t('dashboard.noData') || 'Sem dados', variant: 'outline' as const, icon: Minus, color: maturity.colorClass };
+  }, [maturity.status, maturity.colorClass, t]);
 
   if (isLoading) {
     return (
@@ -120,7 +116,7 @@ export const MultiDimensionalRadar = () => {
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-semibold">{t('dashboard.maturity')}</CardTitle>
         <div className="flex items-center gap-2 mt-2">
-          <span className={`text-2xl font-bold ${statusConfig.color}`}>{averageScore}%</span>
+          <span className={`text-2xl font-bold ${statusConfig.color}`}>{maturity.score}%</span>
           <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
           <Badge variant={statusConfig.variant} className="text-[10px]">
             {statusConfig.label}
