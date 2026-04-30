@@ -278,9 +278,20 @@ REGRAS PARA IDENTIFICAR QUANDO GERAR DOCUMENTO:
 - O usuário demonstra que tem as informações necessárias
 
 QUANDO ESTIVER PRONTO PARA GERAR O DOCUMENTO:
-Diga claramente: "Tenho todas as informações necessárias! Agora posso gerar a [NOME DO DOCUMENTO] completa para a ${context.empresa_nome}. Clique no botão 'Gerar Documento' para prosseguir."
+Você SÓ deve sinalizar prontidão quando tiver coletado, no MÍNIMO:
+- Tipo e nome exato do documento
+- Objetivo claro
+- Escopo (a quem se aplica)
+- Responsabilidades principais
+- Pelo menos 2 diretrizes/procedimentos específicos do contexto da empresa
 
-IMPORTANTE: Sempre responda em português brasileiro. Responda SOMENTE com uma mensagem limpa e formatada. NÃO inclua JSON visível ou metadados técnicos.`;
+Quando — e SOMENTE quando — todas essas condições estiverem satisfeitas, finalize sua mensagem com uma frase de confirmação ("Tenho todas as informações necessárias para gerar a [NOME DO DOCUMENTO]...") e termine a mensagem com o marcador EXATO em uma linha separada:
+
+[DOCGEN_READY]
+
+Esse marcador é OBRIGATÓRIO para liberar a geração. Nunca o emita antes de coletar todos os itens acima. Nunca o use em respostas que ainda contenham perguntas pendentes.
+
+IMPORTANTE: Sempre responda em português brasileiro. Responda SOMENTE com uma mensagem limpa e formatada. NÃO inclua JSON visível ou metadados técnicos (exceto o marcador [DOCGEN_READY] quando aplicável).`;
 
       // Call Claude for chat
       const aiMessage = await callClaude(
