@@ -5,76 +5,18 @@ import { cn } from "@/lib/utils"
 
 const Tabs = TabsPrimitive.Root
 
-/**
- * TabsList responsivo:
- * - rolagem horizontal embutida (overflow-x-auto + scrollbar-hide)
- * - borda inferior contínua mesmo com scroll
- * - máscara de fade nas laterais quando há overflow real (data-overflow="left|right|both")
- * - triggers nunca são comprimidos (shrink-0)
- *
- * Aceita as mesmas props da primitiva Radix. Para variantes em grid (ex.: 2 colunas
- * fixas em diálogos), basta passar className com `grid grid-cols-2` — o wrapper
- * preserva o comportamento.
- */
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
 >(({ className, children, ...props }, ref) => {
-  const innerRef = React.useRef<HTMLDivElement | null>(null)
-  const wrapperRef = React.useRef<HTMLDivElement | null>(null)
-
-  // Combina ref externa com a interna
-  const setInnerRef = React.useCallback(
-    (node: HTMLDivElement | null) => {
-      innerRef.current = node
-      if (typeof ref === "function") ref(node)
-      else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node
-    },
-    [ref],
-  )
-
-  React.useEffect(() => {
-    const el = innerRef.current
-    const wrapper = wrapperRef.current
-    if (!el || !wrapper) return
-
-    const update = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = el
-      const hasLeft = scrollLeft > 2
-      const hasRight = scrollLeft + clientWidth < scrollWidth - 2
-      const value = hasLeft && hasRight ? "both" : hasLeft ? "left" : hasRight ? "right" : "none"
-      wrapper.dataset.overflow = value
-    }
-
-    update()
-    const ro = new ResizeObserver(update)
-    ro.observe(el)
-    el.addEventListener("scroll", update, { passive: true })
-    window.addEventListener("resize", update)
-    return () => {
-      ro.disconnect()
-      el.removeEventListener("scroll", update)
-      window.removeEventListener("resize", update)
-    }
-  }, [])
-
   return (
     <div
-      ref={wrapperRef}
-      data-overflow="none"
-      className={cn(
-        "relative w-full border-b border-border",
-        // máscara de fade lateral conforme overflow detectado
-        "data-[overflow=right]:[mask-image:linear-gradient(to_right,black_85%,transparent_100%)]",
-        "data-[overflow=left]:[mask-image:linear-gradient(to_left,black_85%,transparent_100%)]",
-        "data-[overflow=both]:[mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)]",
-      )}
+      className="relative w-full min-w-0 max-w-full border-b border-border"
     >
       <TabsPrimitive.List
-        ref={setInnerRef}
+        ref={ref}
         className={cn(
-          "inline-flex h-auto items-center justify-start w-full text-muted-foreground bg-transparent",
-          "overflow-x-auto scrollbar-hide whitespace-nowrap",
+          "flex h-auto w-full min-w-0 flex-wrap items-center justify-start gap-x-1 gap-y-1 bg-transparent pb-1 text-muted-foreground",
           className,
         )}
         {...props}
