@@ -1,15 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { AlertCircle, Scale, ListChecks } from 'lucide-react';
 import {
-  HardDrive,
-  AlertCircle,
-  Scale,
-  FileText,
-  AlertTriangle,
-  ListChecks,
-  Search,
-  MessageSquareWarning,
-} from 'lucide-react';
+  AtivosIcon,
+  RiscosIcon,
+  IncidentesIcon,
+  DocumentosIcon,
+  DueDiligenceIcon,
+  DenunciasIcon,
+} from '@/components/icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface KPIPillData {
