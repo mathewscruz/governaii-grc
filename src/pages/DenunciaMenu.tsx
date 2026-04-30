@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { getCompanyLogo, AKURIS_DEFAULT_LOGO } from '@/lib/brand-logo';
 
 interface Empresa {
   id: string;
@@ -16,7 +17,7 @@ interface Empresa {
 export default function DenunciaMenu() {
   const { empresa: empresaSlug } = useParams();
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
-  const [logoUrl, setLogoUrl] = useState<string>('');
+  const [logoUrl, setLogoUrl] = useState<string>(AKURIS_DEFAULT_LOGO);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,13 +57,8 @@ export default function DenunciaMenu() {
         logger.debug('Empresa encontrada', { module: 'DenunciaMenu' });
         setEmpresa(empresaData);
 
-        // Usar logo_url da base de dados se disponível
-        if (empresaData.logo_url) {
-          logger.debug('Logotipo encontrado na base de dados', { module: 'DenunciaMenu' });
-          setLogoUrl(empresaData.logo_url);
-        } else {
-          logger.debug('Nenhum logotipo cadastrado para esta empresa', { module: 'DenunciaMenu' });
-        }
+        // Usar logo_url da empresa, com fallback automático para o logo Akuris
+        setLogoUrl(getCompanyLogo(empresaData.logo_url));
       } catch (error) {
         logger.error('Erro geral ao carregar configuração', { module: 'DenunciaMenu', error: String(error) });
       } finally {
@@ -106,16 +102,14 @@ export default function DenunciaMenu() {
         {/* Header com logotipo */}
         <div className="text-center mb-8">
           {/* Logotipo da empresa */}
-          {logoUrl && (
-            <div className="mb-6">
-              <img 
-                src={logoUrl} 
-                alt={`Logo ${empresa.nome}`}
-                className="mx-auto h-20 w-auto object-contain"
-                onError={() => setLogoUrl('')}
-              />
-            </div>
-          )}
+          <div className="mb-6">
+            <img
+              src={logoUrl}
+              alt={`Logo ${empresa.nome}`}
+              className="mx-auto h-20 w-auto object-contain"
+              onError={() => setLogoUrl(AKURIS_DEFAULT_LOGO)}
+            />
+          </div>
           
           <div className="flex items-center justify-center gap-2 mb-4">
             <Shield className="w-6 h-6 text-primary" />

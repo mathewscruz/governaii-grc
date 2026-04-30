@@ -10,6 +10,7 @@ import { Search, Shield, FileText, Clock, CheckCircle, AlertCircle, Eye, ArrowLe
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { getCompanyLogo } from '@/lib/brand-logo';
 
 interface Empresa {
   id: string;
@@ -284,15 +285,13 @@ export default function DenunciaConsulta() {
 
         {/* Header com logotipo */}
         <div className="text-center mb-8">
-          {empresa?.logo_url && (
-            <div className="mb-6">
-              <img 
-                src={empresa.logo_url} 
-                alt={`Logo ${empresa.nome}`}
-                className="mx-auto h-20 w-auto object-contain"
-              />
-            </div>
-          )}
+          <div className="mb-6">
+            <img
+              src={getCompanyLogo(empresa?.logo_url)}
+              alt={`Logo ${empresa?.nome ?? 'Akuris'}`}
+              className="mx-auto h-20 w-auto object-contain"
+            />
+          </div>
           
           <div className="flex items-center justify-center gap-2 mb-4">
             <Shield className="w-6 h-6 text-primary" />
