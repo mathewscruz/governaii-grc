@@ -187,12 +187,6 @@ CONTAS PRIVILEGIADAS (${contas.length} total):
 DADOS PESSOAIS - LGPD (${dados.length} total):
 - ${dados.filter(d => d.sensibilidade === 'critico' || d.sensibilidade === 'sensivel').length} sensíveis/críticos
 - Itens: ${listItems(dados, 'nome')}
-
-POLÍTICAS (${politicas.length} total):
-- ${politicas.filter(p => p.status === 'ativa' || p.status === 'vigente' || p.status === 'ativo').length} vigentes
-- ${politicas.filter(p => p.data_validade && new Date(p.data_validade) < now).length} vencidas
-- Itens: ${listItems(politicas, 'titulo')}
-
 PLANOS DE AÇÃO (${planos.length} total):
 - ${planos.filter(p => ['em_andamento', 'aberto', 'pendente'].includes(p.status || '')).length} em andamento/abertos
 - ${planos.filter(p => p.status === 'concluido').length} concluídos
