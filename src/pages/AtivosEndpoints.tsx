@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, MonitorSmartphone, Wifi, WifiOff, ShieldAlert, KeyRound, MoreHorizontal, Eye, Ban, Copy, ArrowLeft } from 'lucide-react';
+import { Plus, MonitorSmartphone, Wifi, WifiOff, ShieldAlert, KeyRound, MoreHorizontal, Eye, Ban, Copy, ArrowLeft, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -143,8 +143,10 @@ const AtivosEndpoints: React.FC = () => {
     setTokenForm({ descricao: '', validade_dias: '30', max_usos: '50' });
   };
 
+  const AGENT_DOWNLOAD_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/endpoint-agent-binaries/akuris-agent.exe`;
+
   const installCommand = generatedToken
-    ? `akuris-agent.exe install --token ${generatedToken} --server https://lnlkahtugwmkznasapfd.supabase.co`
+    ? `akuris-agent.exe install --token ${generatedToken} --server ${import.meta.env.VITE_SUPABASE_URL}`
     : '';
 
   const columns: Column<EndpointAgent>[] = [
@@ -224,9 +226,16 @@ const AtivosEndpoints: React.FC = () => {
         title="Endpoints"
         description="Inventário automático de computadores via agente Akuris"
         actions={
-          <Button onClick={() => setTokenDialogOpen(true)}>
-            <KeyRound className="h-4 w-4 mr-2" /> Gerar token de instalação
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <a href={AGENT_DOWNLOAD_URL} download>
+                <Download className="h-4 w-4 mr-2" /> Baixar agente (.exe)
+              </a>
+            </Button>
+            <Button onClick={() => setTokenDialogOpen(true)}>
+              <KeyRound className="h-4 w-4 mr-2" /> Gerar token de instalação
+            </Button>
+          </div>
         }
       />
 
@@ -310,7 +319,15 @@ const AtivosEndpoints: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              <DialogFooter>
+              <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+                Passos: 1) Baixe o instalador. 2) Abra um PowerShell como Administrador. 3) Cole o comando acima.
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" asChild>
+                  <a href={AGENT_DOWNLOAD_URL} download>
+                    <Download className="h-4 w-4 mr-2" /> Baixar akuris-agent.exe
+                  </a>
+                </Button>
                 <Button onClick={closeTokenDialog}>Concluído</Button>
               </DialogFooter>
             </div>
