@@ -59,8 +59,10 @@ serve(async (req) => {
     const userId = await checkSuperAdmin(authHeader.replace("Bearer ", ""));
     if (!userId) return new Response(JSON.stringify({ error: "Apenas super admins" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { campanha_id } = await req.json();
+    const { campanha_id, mode } = await req.json();
     if (!campanha_id) return new Response(JSON.stringify({ error: "campanha_id obrigatório" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const isTest = mode === "test";
 
     const { data: campanha, error: campErr } = await supabase
       .from("email_campanhas")
@@ -68,27 +70,39 @@ serve(async (req) => {
       .eq("id", campanha_id)
       .maybeSingle();
     if (campErr || !campanha) throw new Error("Campanha não encontrada");
-    if (campanha.status === "enviando" || campanha.status === "enviado") {
+    if (!isTest && (campanha.status === "enviando" || campanha.status === "enviado")) {
       return new Response(JSON.stringify({ error: "Campanha já enviada ou em envio" }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Buscar destinatários
-    const { data: profiles, error: pErr } = await supabase
-      .from("profiles")
-      .select("email")
-      .eq("ativo", true)
-      .not("email", "is", null);
-    if (pErr) throw pErr;
+    let emails: string[] = [];
 
-    const emails = Array.from(new Set((profiles || []).map((p: any) => String(p.email).toLowerCase()).filter((e) => e.includes("@"))));
+    if (isTest) {
+      // Buscar e-mail do super-admin logado
+      const { data: me } = await supabase.from("profiles").select("email").eq("user_id", userId).maybeSingle();
+      const myEmail = me?.email ? String(me.email).toLowerCase() : null;
+      if (!myEmail || !myEmail.includes("@")) {
+        return new Response(JSON.stringify({ error: "Seu perfil não possui e-mail válido para teste" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      emails = [myEmail];
+    } else {
+      // Buscar destinatários ativos
+      const { data: profiles, error: pErr } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("ativo", true)
+        .not("email", "is", null);
+      if (pErr) throw pErr;
 
-    await supabase.from("email_campanhas").update({
-      status: "enviando",
-      total_destinatarios: emails.length,
-      total_enviados: 0,
-      total_falhados: 0,
-      erro: null,
-    }).eq("id", campanha_id);
+      emails = Array.from(new Set((profiles || []).map((p: any) => String(p.email).toLowerCase()).filter((e) => e.includes("@"))));
+
+      await supabase.from("email_campanhas").update({
+        status: "enviando",
+        total_destinatarios: emails.length,
+        total_enviados: 0,
+        total_falhados: 0,
+        erro: null,
+      }).eq("id", campanha_id);
+    }
 
     // Renderizar HTML uma vez
     const html = await renderAsync(
