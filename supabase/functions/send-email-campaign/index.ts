@@ -105,7 +105,7 @@ serve(async (req) => {
     }
 
     // Renderizar HTML uma vez
-    const subjectFinal = isTest ? `[TESTE] ${campanha.assunto}` : campanha.assunto;
+    const subjectFinal = campanha.assunto;
     const html = await renderAsync(
       React.createElement(BaseEmailTemplate, {
         previewText: subjectFinal,
