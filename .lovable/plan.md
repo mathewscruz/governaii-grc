@@ -1,98 +1,77 @@
-# Aba "Notícias" — campanhas de e-mail com geração por IA
+## Problema
 
-Criar uma nova aba **Notícias** dentro de `Configurações` (visível apenas para super-admin) que permita compor e disparar e-mails informativos/marketing para todos os usuários ativos da plataforma, com auxílio de IA para gerar conteúdo + imagem ilustrativa, sempre embrulhados no header e rodapé padrão Akuris.
+Em telas com largura reduzida (notebooks 13", janelas divididas, tablets), as abas (`TabsList`) extrapolam a área visível e ficam cortadas, sem indicação de que há mais conteúdo à direita. O exemplo do anexo é a página **Configurações**, mas o problema se repete em várias outras páginas e diálogos.
 
-## Diagnóstico do que já existe
+Sintomas observados:
+- Configurações: 9–10 abas em uma linha, cortadas à direita.
+- Privacidade, Relatórios, Contratos, Due Diligence, Controles (vários diálogos): usam `grid grid-cols-N` fixo — em telas estreitas os textos ficam apertados ou estouram.
+- Diálogos (RelatóriosDialog, ControlesVinculacaoDialog, EvidenciasDialog, DenunciaDialog, DocumentoDialog) com 4 colunas fixas em modais — pior em mobile.
 
-- **Resend** já é o provedor (`noreply@akuris.com.br`), `RESEND_API_KEY` já configurada.
-- **Template base** `supabase/functions/_shared/email-templates/BaseEmailTemplate.tsx` já tem header escuro com logo Akuris + footer padrão. Vamos reaproveitar.
-- **Lovable AI Gateway** disponível via `LOVABLE_API_KEY`. Usaremos Gemini 3 Flash para texto e Nano Banana (`gemini-2.5-flash-image`) para imagem ilustrativa.
-- Tabela `profiles` com coluna `email` e `ativo` — fonte da lista de destinatários.
-- Padrão de aba super-admin já existe (Novidades/Changelog) — copiamos a estrutura.
+## Estratégia
 
-## Mudanças
+Resolver na raiz (no componente `TabsList`) + ajustes pontuais nas páginas que usam `grid-cols` rígido.
 
-### 1. Banco — duas tabelas novas
-**Migração:**
-- `email_campanhas`
-  - `id uuid pk`, `created_at`, `updated_at`
-  - `criado_por uuid` (profile)
-  - `assunto text not null`
-  - `conteudo_html text not null` (HTML do bloco principal — sem header/footer)
-  - `imagem_url text` (URL da imagem ilustrativa, opcional)
-  - `status text default 'rascunho'` (rascunho | enviando | enviado | falhou)
-  - `enviado_em timestamptz`, `total_destinatarios int`, `total_enviados int`, `total_falhados int`
-  - `erro text`
-- `email_campanha_logs`
-  - `id uuid pk`, `campanha_id uuid fk`, `email text`, `status text` (sent|failed), `erro text`, `created_at`
+### 1. Evoluir `src/components/ui/tabs.tsx`
 
-RLS: apenas `super_admin` lê/insere/atualiza (via `has_role`). Logs também restritos a super-admin.
+Tornar o `TabsList` responsivo por padrão, sem precisar repetir classes:
 
-### 2. Storage
-Bucket público `email-assets` para hospedar imagens geradas pela IA ou enviadas manualmente. Política: super-admin escreve, leitura pública.
+- Wrapper com `overflow-x-auto scrollbar-hide` embutido na própria primitiva.
+- Borda inferior contínua (mesmo quando há scroll), via wrapper `relative` com a borda no contêiner externo.
+- Máscara de fade nas laterais (esquerda/direita) usando `mask-image` para sinalizar que há conteúdo rolável — aparece só quando há overflow real (via `data-overflow` setado por um pequeno hook de medição com `ResizeObserver`).
+- Suporte a navegação por teclado (já é nativa do Radix) e por toque/scroll horizontal.
+- `TabsTrigger` ganha `shrink-0` para nunca ser comprimido.
 
-### 3. Edge Functions
+Resultado: qualquer `<TabsList>` no app fica responsivo automaticamente.
 
-**a) `generate-email-content`** (verify_jwt = true, super-admin only)
-- Input: `{ prompt: string, includeImage: boolean }`
-- Chama Lovable AI (Gemini 3 Flash) com system prompt instruindo a gerar HTML semântico (parágrafos, listas, headings) **sem** incluir header/footer/logo — apenas o miolo. Tom corporativo Akuris.
-- Se `includeImage=true`, faz uma segunda chamada para `gemini-2.5-flash-image` gerando ilustração relacionada ao tema, faz upload para `email-assets` e retorna URL pública.
-- Sanitiza HTML retornado (DOMPurify equivalente em Deno via `isomorphic-dompurify`).
-- Trata 402/429 e devolve erros estruturados.
+### 2. Configurações (`src/pages/Configuracoes.tsx`)
 
-**b) `send-email-campaign`** (verify_jwt = true, super-admin only)
-- Input: `{ campanha_id }`
-- Marca `status='enviando'`, busca todos `profiles.email` onde `ativo=true`.
-- Renderiza HTML final com `BaseEmailTemplate` envolvendo: imagem (se houver) + conteúdo principal.
-- Envia em lotes de 50 via Resend `batch.send` (ou loop com small delay), grava cada resultado em `email_campanha_logs`.
-- Atualiza contadores e `status='enviado'` ou `'falhou'`.
+- Remover `gap-0`, `overflow-x-auto`, `scrollbar-hide` da TabsList (passa a vir do componente).
+- Manter o padrão `<Icon /> + <span class="hidden sm:inline">Label</span>` para que em telas <640 px só os ícones apareçam (com `aria-label` no trigger e tooltip no hover para acessibilidade).
+- Em telas ≥640 px e <1024 px: ícone + texto com scroll horizontal e fade nas pontas.
+- Em ≥1024 px: tudo cabe sem scroll.
 
-### 4. Frontend — `src/components/configuracoes/NoticiasTab.tsx`
-Nova aba super-admin em `Configuracoes.tsx` (chave `noticias`, ícone `Newspaper`). Layout:
+### 3. Páginas/diálogos com `grid grid-cols-N` fixo
 
-- **Lista** de campanhas (rascunhos + enviadas) com status, data, total enviado.
-- **Botão "Nova campanha"** abre dialog/Sheet `EmailCampanhaEditor`.
+Trocar por TabsList padrão (flex + scroll) ou tornar o grid responsivo:
 
-**`EmailCampanhaEditor`**:
-- Campo Assunto.
-- Bloco "Gerar com IA": textarea para o pedido (ex.: "Crie um e-mail sobre o módulo de Gestão de Riscos"), checkbox "Incluir imagem ilustrativa", botão "Gerar". Loading state.
-- Após gerar, popula:
-  - URL de imagem (preview) + botão remover/trocar.
-  - Editor de conteúdo: usar **textarea** (HTML simples) com tabs "Editar HTML" / "Pré-visualização" — pré-visualização renderiza com o `BaseEmailTemplate` mock em iframe sandboxed mostrando como ficará o e-mail final.
-- Upload manual de imagem (input file → upload para `email-assets`).
-- Botões: **Salvar rascunho**, **Enviar para todos**.
+- `src/pages/Privacidade.tsx` (`grid-cols-4`): trocar para flex responsivo.
+- `src/pages/Contratos.tsx` (`grid-cols-2`): mantém (2 colunas funcionam bem em mobile).
+- `src/pages/DueDiligence.tsx` (`grid-cols-3`): trocar para flex responsivo.
+- `src/pages/Relatorios.tsx`: já é flex; só herda melhorias do componente.
+- `src/components/denuncia/DenunciaDialog.tsx` (`grid-cols-4`): flex responsivo.
+- `src/components/controles/RelatoriosDialog.tsx` (`grid-cols-4`): flex responsivo.
+- `src/components/controles/ControlesVinculacaoDialog.tsx` (`grid-cols-2`): mantém.
+- `src/components/controles/EvidenciasDialog.tsx` (`grid-cols-2`): mantém.
+- `src/components/documentos/DocumentoDialog.tsx` (`grid-cols-2`): mantém.
+- `src/components/ativos/TrilhaAuditoriaAtivos.tsx` (`grid-cols-3`): mantém (3 colunas curtas funcionam).
+- `src/components/configuracoes/integrations/AzureConfigDialog.tsx` (`grid-cols-2`): mantém.
 
-**Pré-visualização**: componente React `EmailPreview` que recria visualmente o HTML do `BaseEmailTemplate` (mesmas cores/estilos) renderizando dentro de um iframe `srcDoc`. Garante WYSIWYG sem precisar executar a edge function.
+### 4. Outros pontos com risco de overflow horizontal já fora do escopo de Tabs
 
-### 5. Confirmação de envio
-Antes de disparar, mostrar dialog: "Vai enviar para X usuários ativos. Confirmar?" — listar contagem real obtida do Supabase. Após confirmar, chama `send-email-campaign`, mostra toast e recarrega a lista.
+Varredura adicional para tabelas/cards em containers fixos sem `min-w-0`:
+- Conferir `PageHeader` em telas estreitas (descrição longa não deve gerar scroll horizontal da página).
+- Garantir que páginas com tabelas largas usem o padrão `overflow-x-auto` no wrapper da tabela (já documentado em memória `responsive/dialog-and-table-standards`); revisar `Configurações > Empresas`, `Configurações > Planos` e `Configurações > Usuários`.
 
-## Arquitetura técnica resumida
+### 5. QA
 
-```text
-[NoticiasTab UI]
-   │  rascunho/edit ─► insert email_campanhas
-   │  IA ─► generate-email-content ─► Lovable AI (texto) + Nano Banana (imagem) ─► storage email-assets
-   │  enviar ─► send-email-campaign ─► profiles(ativo) + Resend + BaseEmailTemplate
-   └─ logs ─► email_campanha_logs
-```
+Testar com viewport em 1280×720, 1024×768, 820×1180 e 414×896:
+- Configurações: todas as abas alcançáveis (scroll/ícones).
+- Privacidade, Relatórios, Due Diligence, DenunciaDialog: sem corte e sem texto espremido.
+- Tabelas internas: scroll horizontal local, página sem scrollbar lateral.
 
-## Segurança
-- RLS: super-admin only nas duas tabelas e funções (validação tanto em RLS quanto no Edge Function via `has_role`).
-- Sanitização HTML obrigatória no backend antes de gravar/enviar.
-- Rate-limit implícito pelos batches de envio.
+## Arquivos afetados
 
-## Arquivos
-- **Migração SQL** (tabelas + RLS + bucket + policies storage).
-- **Criar**: `supabase/functions/generate-email-content/index.ts`.
-- **Criar**: `supabase/functions/send-email-campaign/index.ts`.
-- **Criar**: `src/components/configuracoes/NoticiasTab.tsx`.
-- **Criar**: `src/components/configuracoes/EmailCampanhaEditor.tsx`.
-- **Criar**: `src/components/configuracoes/EmailPreview.tsx` (iframe srcDoc).
-- **Editar**: `src/pages/Configuracoes.tsx` (adicionar TabsTrigger + TabsContent "noticias").
+**Editados**
+- `src/components/ui/tabs.tsx` — TabsList responsivo com fade e scroll embutidos.
+- `src/pages/Configuracoes.tsx`
+- `src/pages/Privacidade.tsx`
+- `src/pages/DueDiligence.tsx`
+- `src/components/denuncia/DenunciaDialog.tsx`
+- `src/components/controles/RelatoriosDialog.tsx`
 
-## Não escopo
-- Sem agendamento (envio é imediato; podemos adicionar depois).
-- Sem segmentação por empresa/role nesta versão (envia para todos os ativos — conforme pedido).
-- Sem editor WYSIWYG complexo (textarea HTML + preview já atende; podemos evoluir).
-- Sem tracking de abertura/clique nesta versão.
+**Verificados (sem mudança esperada, mas auditados no QA)**
+- Demais usos listados na varredura.
+
+## Memória
+
+Atualizar `mem://ux/responsive/dialog-and-table-standards` com a nova regra: "TabsList é responsivo por padrão; nunca usar `grid grid-cols-N` rígido em TabsList que tenham >2 abas".

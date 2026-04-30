@@ -195,7 +195,7 @@ export function RelatoriosDialog({ open, onOpenChange }: RelatoriosDialogProps) 
         </DialogHeader>
 
         <Tabs value={tipoRelatorio} onValueChange={setTipoRelatorio}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList>
             <TabsTrigger value="eficacia">Eficácia</TabsTrigger>
             <TabsTrigger value="compliance">Compliance</TabsTrigger>
             <TabsTrigger value="gaps">Análise de Gaps</TabsTrigger>
