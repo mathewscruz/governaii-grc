@@ -1,71 +1,46 @@
-## Plano de melhorias do DocGen
+Vou corrigir o problema de scroll do chat do DocGen com foco no layout do modal, não apenas na barra em si.
 
-Quatro frentes, todas no escopo do módulo Documentos/DocGen — sem mexer em outros módulos.
+Diagnóstico pelo código: o DocGen usa `DialogShell` com `noScroll`, mas o `DialogContent` tem apenas `max-height` e não uma altura explícita. Como o conteúdo interno usa vários `h-full`/`flex-1`, o navegador pode calcular a área do chat como conteúdo inteiro, enquanto o modal corta com `overflow-hidden`. Resultado: a conversa fica visualmente limitada/cortada, mas a área correta não vira um container rolável de verdade. Isso combina com o print: o usuário vê mensagens no meio/final da conversa e o input, mas não consegue rolar livremente para cima/baixo.
 
-### 1. Fix do gatilho "Gerar Documento" + feedback visual
+Plano de correção:
 
-**Problema atual**: o backend marca `documento_pronto=true` se a resposta da IA contém qualquer trecho como "gerar documento", "posso gerar", etc. Isso dispara falso-positivo cedo demais. E quando o usuário clica em Gerar, o painel direito fica vazio por 20–40s sem feedback.
+1. Ajustar altura real do modal DocGen
+- Em `DocGenDialog.tsx`, passar uma `className` específica para o `DialogShell` do DocGen com altura explícita:
+  - mobile: `h-[100dvh]`
+  - desktop: `sm:h-[92vh]`
+- Isso garante que os filhos com `flex-1 min-h-0` tenham uma altura concreta para distribuir, fazendo o chat rolar corretamente.
 
-**Mudanças**:
-- `supabase/functions/docgen-chat/index.ts`:
-  - Trocar a heurística por um marcador explícito: instruir o modelo a emitir literalmente `[DOCGEN_READY]` ao final da mensagem **somente** quando tiver coletado objetivo, escopo, responsabilidades e procedimentos básicos.
-  - Detectar `[DOCGEN_READY]` na resposta, setar `documento_pronto=true` e remover o marcador antes de devolver ao frontend.
-  - Manter fallback (heurística antiga) atrás de uma flag para não regredir conversas em andamento.
-- `src/components/documentos/DocGenDialog.tsx`:
-  - Renderizar um **skeleton de documento** no painel direito enquanto `isGeneratingDoc=true` (header + 4-5 blocos de seções com `animate-pulse`).
-  - Texto "Gerando documento… isso pode levar até 40 segundos" com ícone Brain animado.
-  - Garantir que o painel direito passe a aparecer já no início da geração (não só após `generatedDocument` ficar populado).
+2. Fortalecer o container de mensagens
+- No container `messagesScrollRef`, manter `overflow-y-auto`, mas adicionar classes/propriedades para interação melhor:
+  - `overscroll-contain`
+  - `touch-pan-y`
+  - `scrollbar-gutter: stable`
+  - padding lateral suficiente para a barra não cobrir texto
+- Garantir que o container tenha `min-h-0`, `flex-1` e esteja dentro de pais com `min-h-0`/`overflow-hidden` corretos.
 
-### 2. Botão "Nova conversa" + histórico
+3. Melhorar a experiência de auto-scroll
+- Manter auto-scroll para o final quando chega nova mensagem, mas sem impedir que o usuário role manualmente depois.
+- Ajustar o auto-scroll para usar `requestAnimationFrame`, evitando rodar antes do layout final e evitando comportamentos inconsistentes em conversas longas.
 
-**Mudanças no `DocGenDialog.tsx`**:
-- Header do dialog ganha dois botões discretos:
-  - **Nova conversa** (ícone `Plus`): limpa `messages`, `conversationId`, `generatedDocument`, `documentReady` e dispara saudação de novo.
-  - **Histórico** (ícone `History`): abre um Popover/Sheet listando conversas anteriores do usuário (`docgen_conversations` filtrado por `user_id` + `empresa_id`, ordem desc, últimos 20). Cada item mostra título, data e tipo. Clicar carrega `messages` e `contexto` daquela conversa.
-- Não cria tabelas novas — `docgen_conversations` já tem tudo (mensagens em jsonb, tipo_documento_identificado, updated_at).
+4. Adicionar botão de retorno ao fim, se necessário
+- Quando o usuário estiver lendo mensagens antigas e chegar uma resposta nova, mostrar um botão discreto “Ir para o fim” dentro do chat.
+- Isso evita jogar o usuário automaticamente para baixo enquanto ele está lendo histórico e melhora a experiência em conversas longas.
 
-### 3. Novos templates de sistema
+5. Revisar responsividade
+- Validar o comportamento em desktop/laptop, especialmente no viewport próximo ao do usuário (`1101x974`), onde o layout fica em duas colunas.
+- Garantir que em mobile o chat continue ocupando a tela inteira e rolando internamente, sem depender do scroll da página.
 
-**Hoje só existem 2** (PSI e POP). Adicionar via migration:
-- Política de Senhas
-- Política de Mesa Limpa e Tela Limpa
-- Política de LGPD/Privacidade
-- Política de Backup
-- Plano de Continuidade de Negócios
-- Análise de Impacto no Negócio (BIA)
-- Código de Ética e Conduta
-- Política de Controle de Acesso
+6. Pequeno ajuste de UX visual
+- Tornar a área de mensagens visualmente mais clara como região rolável: barra visível, limite bem definido e espaço entre mensagens/input.
+- Sem mudar identidade visual: manter DM Sans, cores do Akuris e layout atual do DocGen.
 
-Cada um com `estrutura` jsonb contendo seções padrão do mercado (Objetivo, Escopo, Definições, Diretrizes, Responsabilidades, Penalidades, Revisão, Aprovação). `is_system=true`, `empresa_id` = UUID zero (padrão atual).
+Arquivos previstos:
+- `src/components/documentos/DocGenDialog.tsx`
+- Possivelmente `src/components/ui/dialog-shell.tsx` apenas se for melhor tornar o comportamento de `noScroll` mais robusto para todos os modais que usam esse padrão. Se o risco de impacto em outros módulos for maior, farei a correção isolada no DocGen.
 
-### 4. AlertDialog de descarte
-
-**Substituir** o atual toast destrutivo + `setTimeout(2s)` no `handleDialogClose`:
-- Quando o usuário tenta fechar com `hasUnsavedChanges=true`, abrir um `AlertDialog` (shadcn) com:
-  - Título: "Descartar documento gerado?"
-  - Descrição: "Você tem um documento gerado que não foi salvo no sistema nem exportado. Se fechar agora, ele será perdido."
-  - Ações: **Continuar editando** (cancela fechamento) | **Descartar** (fecha de fato).
-- Remove o setTimeout — comportamento fica previsível.
-
----
-
-### Detalhes técnicos
-
-- **Edge Function**: redeployar `docgen-chat` após edit. Manter a chamada Claude (Sonnet 4) e o `consume_ai_credit` intactos.
-- **DB**: 1 migration apenas com `INSERT INTO docgen_templates` para os 8 templates novos (idempotente via `ON CONFLICT (nome, tipo_documento) DO NOTHING` — vou checar se há unique constraint; se não houver, criar uma).
-- **Identidade visual**: tudo segue DM Sans, primary purple, padrões Sonner para toasts e shadcn AlertDialog.
-- **Multi-tenant**: histórico carrega só conversas do `user_id` + `empresa_id` atuais. Templates novos são globais (`is_system=true`), não vazam dados.
-- **Sem impacto em outros módulos**: mudanças isoladas em `DocGenDialog.tsx` + `docgen-chat/index.ts` + 1 migration.
-
-### Arquivos afetados
-- `src/components/documentos/DocGenDialog.tsx` (edit)
-- `supabase/functions/docgen-chat/index.ts` (edit)
-- `supabase/migrations/<nova>.sql` (create — só INSERT de templates + possível unique constraint)
-
-### Validação após implementar
-1. Abrir DocGen, conversar até receber `[DOCGEN_READY]` — botão "Gerar Documento" só deve aparecer aí.
-2. Clicar Gerar — skeleton aparece no painel direito imediatamente.
-3. Clicar "Nova conversa" — limpa tudo.
-4. Abrir "Histórico" — lista conversas anteriores; clicar restaura.
-5. Pedir "Política de Senhas" — backend deve casar com o template novo, não cair no fallback PSI.
-6. Tentar fechar com documento gerado não salvo — AlertDialog aparece.
+Validação após implementar:
+- Abrir uma conversa longa no DocGen.
+- Confirmar que é possível rolar para cima e para baixo dentro das mensagens.
+- Confirmar que o input permanece fixo abaixo do chat.
+- Confirmar que o preview do documento continua rolando separadamente.
+- Confirmar que o modal não corta mensagens nem depende do scroll da página.

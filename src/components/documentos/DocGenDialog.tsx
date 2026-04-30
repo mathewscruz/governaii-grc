@@ -742,8 +742,9 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
       noScroll
       hideFooter
       disableShortcuts
+      className="h-[100dvh] sm:h-[92vh]"
     >
-      <div className="flex flex-col h-full p-6 gap-4 min-h-0 overflow-hidden">
+      <div className="flex flex-col h-full p-4 sm:p-6 gap-4 min-h-0 overflow-hidden">
         {/* Toolbar de ações da conversa */}
         <div className="flex items-center justify-between gap-2 border-b pb-2">
           <div className="text-xs text-muted-foreground">
