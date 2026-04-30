@@ -11,7 +11,18 @@ import {
 } from '@/components/icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+export type KpiKey =
+  | 'ativos'
+  | 'riscos'
+  | 'incidentes'
+  | 'planos'
+  | 'contratos'
+  | 'documentos'
+  | 'due_diligence'
+  | 'denuncias';
+
 interface KPIPillData {
+  key: KpiKey;
   icon: React.ElementType;
   label: string;
   value: number | string;
@@ -42,6 +53,8 @@ interface KPIPillsProps {
   ddExpirados: number;
   denunciasAbertas: number;
   denunciasNovas: number;
+  /** Quando definido, intercepta clique para drill-down em Drawer ao invés de navegar. */
+  onPillClick?: (key: KpiKey) => void;
 }
 
 export function KPIPills(props: KPIPillsProps) {
@@ -50,6 +63,7 @@ export function KPIPills(props: KPIPillsProps) {
 
   const pills: KPIPillData[] = [
     {
+      key: 'ativos',
       icon: AtivosIcon,
       label: t('kpi.assets'),
       value: props.ativos,
@@ -58,6 +72,7 @@ export function KPIPills(props: KPIPillsProps) {
       bgColor: 'bg-primary/10',
     },
     {
+      key: 'riscos',
       icon: RiscosIcon,
       label: t('kpi.risks'),
       value: props.totalRiscos,
@@ -72,6 +87,7 @@ export function KPIPills(props: KPIPillsProps) {
             : undefined,
     },
     {
+      key: 'incidentes',
       icon: AlertCircle,
       label: t('kpi.incidents'),
       value: props.activeIncidents,
@@ -84,6 +100,7 @@ export function KPIPills(props: KPIPillsProps) {
           : undefined,
     },
     {
+      key: 'planos',
       icon: ListChecks,
       label: t('kpi.actionPlans'),
       value: props.planosPendentes,
@@ -96,6 +113,7 @@ export function KPIPills(props: KPIPillsProps) {
           : undefined,
     },
     {
+      key: 'contratos',
       icon: Scale,
       label: t('kpi.contracts'),
       value: props.activeContracts,
@@ -110,6 +128,7 @@ export function KPIPills(props: KPIPillsProps) {
             : undefined,
     },
     {
+      key: 'documentos',
       icon: DocumentosIcon,
       label: t('kpi.documents'),
       value: props.activeDocs,
@@ -124,6 +143,7 @@ export function KPIPills(props: KPIPillsProps) {
             : undefined,
     },
     {
+      key: 'due_diligence',
       icon: DueDiligenceIcon,
       label: t('kpi.dueDiligence'),
       value: props.ddAtivos,
@@ -136,6 +156,7 @@ export function KPIPills(props: KPIPillsProps) {
           : undefined,
     },
     {
+      key: 'denuncias',
       icon: DenunciasIcon,
       label: t('kpi.reports'),
       value: props.denunciasAbertas,
@@ -157,7 +178,7 @@ export function KPIPills(props: KPIPillsProps) {
         {pills.map((pill) => (
           <button
             key={pill.label}
-            onClick={() => (pill.onClick ? pill.onClick() : navigate(pill.route))}
+            onClick={() => (props.onPillClick ? props.onPillClick(pill.key) : pill.onClick ? pill.onClick() : navigate(pill.route))}
             className="group flex items-center gap-2 px-3 py-2 rounded-lg border bg-card hover:bg-accent/50 hover:border-primary/30 transition-all duration-200 cursor-pointer flex-shrink-0"
           >
             <div className={`p-1 rounded-md ${pill.bgColor} group-hover:scale-110 transition-transform`}>

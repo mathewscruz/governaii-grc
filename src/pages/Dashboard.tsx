@@ -11,7 +11,8 @@ import { UpcomingExpirations } from '@/components/dashboard/UpcomingExpirations'
 
 import { useTrendData } from '@/components/dashboard/TrendIndicators';
 import { HeroScoreBanner } from '@/components/dashboard/HeroScoreBanner';
-import { KPIPills } from '@/components/dashboard/KPIPills';
+import { KPIPills, type KpiKey } from '@/components/dashboard/KPIPills';
+import { KpiDrillDownDrawer, type DrillDownKey } from '@/components/dashboard/KpiDrillDownDrawer';
 import { useAtivosStats } from '@/hooks/useAtivosStats';
 import { useControlesStats } from '@/hooks/useControlesStats';
 import { useIncidentesStats } from '@/hooks/useIncidentesStats';
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const { profile } = useAuth();
   useLanguage();
   const [alertsDialogOpen, setAlertsDialogOpen] = useState(false);
+  const [drillKey, setDrillKey] = useState<DrillDownKey | null>(null);
   const [isFocusMode, setIsFocusMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem('akuris.focusMode') === '1';
@@ -136,8 +138,15 @@ export default function Dashboard() {
             ddExpirados={ddStats.data?.expiredAssessments || 0}
             denunciasAbertas={(denunciasStats.data?.novas || 0) + (denunciasStats.data?.em_andamento || 0)}
             denunciasNovas={denunciasStats.data?.novas || 0}
+            onPillClick={(key: KpiKey) => setDrillKey(key as DrillDownKey)}
           />
         )}
+
+        <KpiDrillDownDrawer
+          open={!!drillKey}
+          onOpenChange={(o) => !o && setDrillKey(null)}
+          kpiKey={drillKey}
+        />
 
 
         {/* Vencimentos + Radar + Timeline */}
