@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
-import { EmptyState } from '@/components/ui/empty-state';
+
 import { DataTable, Column } from '@/components/ui/data-table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -252,20 +252,18 @@ export default function Continuidade() {
       )}
 
       {/* Tabela */}
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      ) : planos.length === 0 ? (
-        <EmptyState
-          icon={<Shield className="h-10 w-10" />}
-          title="Nenhum plano cadastrado"
-          description="Crie seu primeiro plano de continuidade de negócios ou recuperação de desastres."
-          action={{ label: 'Criar Plano', onClick: () => setPlanoDialog({ open: true }) }}
-        />
-      ) : (
-        <DataTable data={planos} columns={columns} searchable />
-      )}
+      <DataTable
+        data={planos}
+        columns={columns}
+        searchable
+        loading={isLoading}
+        emptyState={{
+          icon: <Shield className="h-10 w-10" />,
+          title: 'Nenhum plano cadastrado',
+          description: 'Crie seu primeiro plano de continuidade de negócios ou recuperação de desastres.',
+          action: { label: 'Criar Plano', onClick: () => setPlanoDialog({ open: true }) },
+        }}
+      />
 
       {/* Dialogs */}
       <PlanoDialog
