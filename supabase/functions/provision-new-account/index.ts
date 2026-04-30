@@ -98,21 +98,43 @@ serve(async (req) => {
     const userId = authData.user.id;
     logStep("User created", { userId });
 
-    // 2. Generate slug from empresa_nome
-    const slug = empresa_nome
+    // 2. Validate CNPJ uniqueness (when provided)
+    const cnpjClean = cnpj && String(cnpj).trim() !== "" ? String(cnpj).replace(/\D/g, "") : null;
+    if (cnpjClean) {
+      const { data: existingByCnpj } = await supabaseAdmin
+        .from("empresas")
+        .select("id")
+        .eq("cnpj", cnpjClean)
+        .maybeSingle();
+      if (existingByCnpj) {
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+        throw new Error("Já existe uma empresa cadastrada com este CNPJ.");
+      }
+    }
+
+    // 3. Generate slug from empresa_nome (with collision suffix)
+    const baseSlug = empresa_nome
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
+      .replace(/^-|-$/g, "") || "empresa";
 
-    // 3. Create empresa
-    logStep("Creating empresa");
+    let slug = baseSlug;
+    for (let i = 0; i < 5; i++) {
+      const { data: clash } = await supabaseAdmin
+        .from("empresas").select("id").eq("slug", slug).maybeSingle();
+      if (!clash) break;
+      slug = `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+
+    // 4. Create empresa
+    logStep("Creating empresa", { slug });
     const { data: empresa, error: empresaError } = await supabaseAdmin
       .from("empresas")
       .insert({
         nome: empresa_nome,
-        cnpj: cnpj || null,
+        cnpj: cnpjClean,
         slug,
         status_licenca: "trial",
         data_inicio_trial: new Date().toISOString(),
@@ -150,31 +172,34 @@ serve(async (req) => {
 
     logStep("Profile created");
 
-    // 5. Apply default permissions
-    logStep("Applying default permissions");
+    // 5. Apply default permissions for the new admin
+    logStep("Applying default permissions via RPC");
     try {
-      const modules = [
-        "dashboard", "riscos", "gap-analysis", "controles", "auditorias",
-        "documentos", "incidentes", "dados", "ativos", "contratos",
-        "contas-privilegiadas", "due-diligence", "denuncia", "configuracoes",
-        "planos-acao", "relatorios", "politicas",
-      ];
-
-      const permissions = modules.map((mod) => ({
-        user_id: userId,
-        empresa_id: empresa.id,
-        module_name: mod,
-        can_access: true,
-        can_create: true,
-        can_read: true,
-        can_edit: true,
-        can_delete: true,
-      }));
-
-      await supabaseAdmin.from("user_permissions").insert(permissions);
-      logStep("Permissions applied");
+      const { error: rpcErr } = await supabaseAdmin.rpc(
+        "apply_default_permissions_for_user",
+        { user_id_param: userId }
+      );
+      if (rpcErr) {
+        logStep("Permissions RPC error (non-fatal)", { message: rpcErr.message });
+      } else {
+        logStep("Permissions applied");
+      }
     } catch (permError) {
-      logStep("Permissions warning (non-fatal)", { message: String(permError) });
+      logStep("Permissions exception (non-fatal)", { message: String(permError) });
+    }
+
+    // 5b. Insert into user_roles (RBAC source of truth)
+    try {
+      const { error: roleErr } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: userId, role: "admin" });
+      if (roleErr && !String(roleErr.message).includes("duplicate")) {
+        logStep("user_roles insert error (non-fatal)", { message: roleErr.message });
+      } else {
+        logStep("user_roles row created");
+      }
+    } catch (e) {
+      logStep("user_roles exception (non-fatal)", { message: String(e) });
     }
 
     // 6. For free plan, skip Stripe checkout entirely
