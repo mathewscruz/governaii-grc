@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/components/AuthProvider';
+import { ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +64,21 @@ interface Empresa {
 }
 
 const GerenciamentoEmpresas = () => {
+  const { profile } = useAuth();
+  const isSuperAdmin = profile?.role === 'super_admin';
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <ShieldAlert className="h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold">Acesso restrito</h3>
+        <p className="text-sm text-muted-foreground max-w-md mt-2">
+          Apenas super administradores podem gerenciar empresas.
+        </p>
+      </div>
+    );
+  }
+
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [planos, setPlanos] = useState<Plano[]>([]);
   const [loading, setLoading] = useState(true);
