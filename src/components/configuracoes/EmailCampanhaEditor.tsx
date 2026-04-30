@@ -25,7 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Sparkles, Send, Save, ImageIcon, Upload, X, Eye } from 'lucide-react';
+import { Loader2, Sparkles, Send, Save, ImageIcon, Upload, X, Eye, MailCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { EmailPreview } from './EmailPreview';
@@ -60,6 +60,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
   const [confirmSend, setConfirmSend] = useState(false);
   const [activeUserCount, setActiveUserCount] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -224,6 +225,32 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
     }
   };
 
+  const handleSendTest = async () => {
+    if (!validate()) return;
+    const savedId = await persist('rascunho');
+    if (!savedId) return;
+    setSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-email-campaign', {
+        body: { campanha_id: savedId, mode: 'test' },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const { sent, failed } = (data as any) || {};
+      if (sent > 0) {
+        toast.success(`Teste enviado para ${profile?.email ?? 'seu e-mail'}`);
+      } else {
+        toast.error(`Falha ao enviar teste${failed ? ` (${failed} erro)` : ''}`);
+      }
+      onSaved();
+    } catch (err: any) {
+      logger.error('Erro ao enviar teste', err);
+      toast.error(err?.message || 'Falha ao enviar teste');
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -334,11 +361,20 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
 
           <DialogFooter className="flex-wrap gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button variant="outline" onClick={handleSaveDraft} disabled={saving}>
+            <Button variant="outline" onClick={handleSaveDraft} disabled={saving || sending || sendingTest}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Salvar rascunho
             </Button>
-            <Button onClick={openConfirmSend} disabled={saving || sending}>
+            <Button
+              variant="secondary"
+              onClick={handleSendTest}
+              disabled={saving || sending || sendingTest}
+              title={profile?.email ? `Enviar somente para ${profile.email}` : 'Enviar somente para você'}
+            >
+              {sendingTest ? <Loader2 className="h-4 w-4 animate-spin" /> : <MailCheck className="h-4 w-4" />}
+              Enviar teste para mim
+            </Button>
+            <Button onClick={openConfirmSend} disabled={saving || sending || sendingTest}>
               <Send className="h-4 w-4" />
               Enviar para todos
             </Button>
