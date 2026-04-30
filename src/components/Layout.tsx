@@ -12,6 +12,7 @@ import PasswordChangeRequired from '@/components/PasswordChangeRequired';
 import { CommandPalette, CommandPaletteButton } from '@/components/CommandPalette';
 import { ChangelogPopover } from '@/components/ChangelogPopover';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { DensityToggle } from '@/components/ui/density-toggle';
 import PageTransition from '@/components/PageTransition';
 import TrialBanner from '@/components/TrialBanner';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
