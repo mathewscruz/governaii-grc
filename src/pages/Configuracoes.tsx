@@ -51,57 +51,57 @@ const Configuracoes = () => {
           {isSuperAdmin && (
             <TabsTrigger value="empresas" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
-              <span className="hidden md:inline">Empresas</span>
+              <span className="hidden 2xl:inline">Empresas</span>
             </TabsTrigger>
           )}
           {isSuperAdmin && (
             <TabsTrigger value="planos" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
-              <span className="hidden md:inline">Planos</span>
+              <span className="hidden 2xl:inline">Planos</span>
             </TabsTrigger>
           )}
           <TabsTrigger value="usuarios" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            <span className="hidden md:inline">Usuários & Acessos</span>
+            <span className="hidden 2xl:inline">Usuários & Acessos</span>
           </TabsTrigger>
           {isAdmin && (
             <TabsTrigger value="organizacao" className="flex items-center gap-2">
               <Landmark className="h-4 w-4" />
-              <span className="hidden md:inline">Organização</span>
+              <span className="hidden 2xl:inline">Organização</span>
             </TabsTrigger>
           )}
           {isAdmin && (
             <TabsTrigger value="integracoes" className="flex items-center gap-2">
               <Plug className="h-4 w-4" />
-              <span className="hidden md:inline">Integrações</span>
+              <span className="hidden 2xl:inline">Integrações</span>
             </TabsTrigger>
           )}
           {isAdmin && (
             <TabsTrigger value="denuncia" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
-              <span className="hidden md:inline">Denúncia</span>
+              <span className="hidden 2xl:inline">Denúncia</span>
             </TabsTrigger>
           )}
           <TabsTrigger value="assinatura" className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
-            <span className="hidden md:inline">Assinatura</span>
+            <span className="hidden 2xl:inline">Assinatura</span>
           </TabsTrigger>
           {isSuperAdmin && (
             <TabsTrigger value="financeiro-ia" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
-              <span className="hidden md:inline">Financeiro IA</span>
+              <span className="hidden 2xl:inline">Financeiro IA</span>
             </TabsTrigger>
           )}
           {isSuperAdmin && (
             <TabsTrigger value="novidades" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
-              <span className="hidden md:inline">Novidades</span>
+              <span className="hidden 2xl:inline">Novidades</span>
             </TabsTrigger>
           )}
           {isSuperAdmin && (
             <TabsTrigger value="noticias" className="flex items-center gap-2">
               <Newspaper className="h-4 w-4" />
-              <span className="hidden md:inline">Notícias</span>
+              <span className="hidden 2xl:inline">Notícias</span>
             </TabsTrigger>
           )}
         </TabsList>
