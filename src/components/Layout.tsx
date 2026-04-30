@@ -233,12 +233,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </header>
 
-          <main className="flex-1 p-4 md:p-6 overflow-auto overflow-x-hidden w-full max-w-full pb-20 md:pb-6">
+          <main className="min-w-0 flex-1 p-4 md:p-6 overflow-auto overflow-x-hidden w-full max-w-full pb-20 md:pb-6">
             <ErrorBoundary>
               <React.Suspense fallback={<ModuleLoadingSkeleton />}>
-                <PageTransition routeKey={location.pathname}>
+                <div className="min-w-0 max-w-full">
+                  <PageTransition routeKey={location.pathname}>
                   {children}
-                </PageTransition>
+                  </PageTransition>
+                </div>
               </React.Suspense>
             </ErrorBoundary>
           </main>
