@@ -137,7 +137,7 @@ export function DialogShell({
 
           <div className="flex-1 min-h-0 overflow-hidden">
             {noScroll ? (
-              <div className="h-full">{children}</div>
+              <div className="h-full flex flex-col min-h-0">{children}</div>
             ) : (
               <ScrollArea className="h-full">
                 <div className="px-6 py-6">{children}</div>
