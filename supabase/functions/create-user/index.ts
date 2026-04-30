@@ -90,6 +90,35 @@ Deno.serve(async (req) => {
       finalEmpresaId = currentUserProfile.empresa_id
     }
 
+    // Enforcement de limite de usuários do plano da empresa
+    if (finalEmpresaId) {
+      const { data: empresaPlan } = await supabaseAdmin
+        .from('empresas')
+        .select('plano:planos(limite_usuarios, nome)')
+        .eq('id', finalEmpresaId)
+        .maybeSingle()
+
+      const limite = (empresaPlan?.plano as any)?.limite_usuarios as number | null | undefined
+      const planName = (empresaPlan?.plano as any)?.nome || 'atual'
+
+      if (limite && limite > 0) {
+        const { count: currentCount } = await supabaseAdmin
+          .from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('empresa_id', finalEmpresaId)
+
+        if ((currentCount || 0) >= limite) {
+          return new Response(JSON.stringify({
+            error: 'USER_LIMIT_REACHED',
+            message: `Limite de ${limite} usuários do plano ${planName} atingido. Faça upgrade do plano para criar mais usuários.`,
+          }), {
+            status: 403,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          })
+        }
+      }
+    }
+
     console.log(`Criando usuário: ${email}`)
 
     // Verificar se já existe
