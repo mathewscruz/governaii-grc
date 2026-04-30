@@ -319,7 +319,15 @@ const AtivosEndpoints: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              <DialogFooter>
+              <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+                Passos: 1) Baixe o instalador. 2) Abra um PowerShell como Administrador. 3) Cole o comando acima.
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" asChild>
+                  <a href={AGENT_DOWNLOAD_URL} download>
+                    <Download className="h-4 w-4 mr-2" /> Baixar akuris-agent.exe
+                  </a>
+                </Button>
                 <Button onClick={closeTokenDialog}>Concluído</Button>
               </DialogFooter>
             </div>
