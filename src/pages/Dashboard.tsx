@@ -23,8 +23,6 @@ import { useRiscosStats } from '@/hooks/useRiscosStats';
 import { usePlanosAcaoStats } from '@/hooks/usePlanosAcaoStats';
 import { useDueDiligenceStats } from '@/hooks/useDueDiligenceStats';
 import { useDenunciasStats } from '@/hooks/useDenunciasStats';
-import { format } from 'date-fns';
-import { ptBR, enUS } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRadarChartData } from '@/hooks/useRadarChartData';
@@ -33,7 +31,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export default function Dashboard() {
   const { profile } = useAuth();
-  const { t, locale } = useLanguage();
+  const { t } = useLanguage();
   const [alertsDialogOpen, setAlertsDialogOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
