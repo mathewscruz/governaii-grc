@@ -225,32 +225,25 @@ const GerenciamentoEmpresas = () => {
     if (!empresaToDelete) return;
     
     try {
-      if (empresaToDelete.logo_url) {
-        try {
-          const urlParts = empresaToDelete.logo_url.split('/');
-          const fileName = urlParts[urlParts.length - 1];
-          
-          if (fileName) {
-            await supabase.storage.from('empresa-logos').remove([fileName]);
-          }
-        } catch (storageError) {
-          console.warn('Erro ao processar exclusão do logo:', storageError);
-        }
-      }
+      const confirmName = window.prompt(
+        `Esta ação é IRREVERSÍVEL. Para confirmar, digite o nome exato da empresa:\n\n"${empresaToDelete.nome}"`
+      );
+      if (!confirmName) return;
 
-      const { error } = await supabase
-        .from('empresas')
-        .delete()
-        .eq('id', empresaToDelete.id);
+      const { data, error } = await supabase.functions.invoke('delete-empresa-safe', {
+        body: { empresa_id: empresaToDelete.id, confirm_name: confirmName },
+      });
 
       if (error) throw error;
-      toast.success('Empresa excluída com sucesso');
+      if ((data as any)?.error) throw new Error((data as any).message || (data as any).error);
+
+      toast.success(`Empresa excluída. ${(data as any)?.deleted_users || 0} usuário(s) removido(s).`);
       fetchEmpresas();
       setDeleteDialogOpen(false);
       setEmpresaToDelete(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao excluir empresa:', error);
-      toast.error('Erro ao excluir empresa');
+      toast.error(error?.message || 'Erro ao excluir empresa');
     }
   };
 
