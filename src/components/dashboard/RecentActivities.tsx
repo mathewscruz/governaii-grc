@@ -4,11 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { useNavigate } from 'react-router-dom';
-import { FileText, AlertTriangle, Shield, Users, Calendar, Building, MessageSquareWarning } from 'lucide-react';
+import { FileText, AlertTriangle, Shield, Users, Calendar, Building, MessageSquareWarning, Activity as ActivityIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery } from '@tanstack/react-query';
+import { CornerAccent } from '@/components/identity/CornerAccent';
 
 interface Activity {
   id: string;
@@ -122,11 +123,14 @@ export function RecentActivities({ className }: { className?: string }) {
   };
 
   return (
-    <Card className={`w-full min-w-0 ${className || ''}`}>
-      <CardHeader>
-        <CardTitle>{t('dashboard.recentActivities')}</CardTitle>
+    <Card className={`relative w-full min-w-0 overflow-hidden ${className || ''}`}>
+      <CornerAccent />
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <ActivityIcon className="h-4 w-4 text-muted-foreground" /> {t('dashboard.recentActivities')}
+        </CardTitle>
       </CardHeader>
-      <CardContent className="max-h-[400px] overflow-y-auto">
+      <CardContent className="max-h-[400px] overflow-y-auto pt-0 pb-4">
         {isLoading ? (
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
