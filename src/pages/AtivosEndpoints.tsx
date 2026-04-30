@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, MonitorSmartphone, Wifi, WifiOff, ShieldAlert, KeyRound, MoreHorizontal, Eye, Ban, Copy, ArrowLeft } from 'lucide-react';
+import { Plus, MonitorSmartphone, Wifi, WifiOff, ShieldAlert, KeyRound, MoreHorizontal, Eye, Ban, Copy, ArrowLeft, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
