@@ -11,7 +11,18 @@ import {
 } from '@/components/icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+export type KpiKey =
+  | 'ativos'
+  | 'riscos'
+  | 'incidentes'
+  | 'planos'
+  | 'contratos'
+  | 'documentos'
+  | 'due_diligence'
+  | 'denuncias';
+
 interface KPIPillData {
+  key: KpiKey;
   icon: React.ElementType;
   label: string;
   value: number | string;
@@ -42,6 +53,8 @@ interface KPIPillsProps {
   ddExpirados: number;
   denunciasAbertas: number;
   denunciasNovas: number;
+  /** Quando definido, intercepta clique para drill-down em Drawer ao invés de navegar. */
+  onPillClick?: (key: KpiKey) => void;
 }
 
 export function KPIPills(props: KPIPillsProps) {
