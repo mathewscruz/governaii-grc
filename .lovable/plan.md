@@ -1,74 +1,51 @@
-## Causa do 404
+## Objetivo
 
-A rota `/ativos/endpoints` está no menu lateral mas **não foi registrada em `src/App.tsx`** — por isso cai no NotFound. A página `src/pages/AtivosEndpoints.tsx` já existe e funciona; só falta plugá-la no router.
+Remover tudo que foi criado nos últimos prompts referente ao **módulo Endpoints** e ao **executável do agente Windows**, sem mexer em nada mais. As demais ocorrências da palavra "endpoint" no código (categoria de ativo em `Ativos.tsx`, `AtivoDialog.tsx`, `ImportacaoAtivos.tsx`, e o conceito genérico em `api-public` / `api-inbound-webhook`) são pré-existentes e **não serão tocadas**.
 
-## O que vou fazer
+## O que será deletado
 
-### 1. Corrigir o roteamento (resolve o 404)
-- Em `src/App.tsx`: importar `AtivosEndpoints` (lazy) e adicionar a `<Route path="/ativos/endpoints">` dentro do mesmo `<Layout>` + `<ProtectedRoute moduleName="ativos">` usado pelas outras telas de Ativos.
+### 1. Código do agente Windows (Go)
+- Pasta inteira `agent/` (build.ps1, README.md, go.mod, cmd/akuris-agent/, internal/client/, internal/collector/, internal/storage/)
 
-### 2. Entregar um instalador "1-clique" para Windows
+### 2. GitHub Action de build
+- `.github/workflows/build-agent.yml`
 
-O problema hoje: o usuário precisaria compilar o `agent/` em Go, abrir PowerShell como Admin, digitar comando com `--token`. Vou simplificar tudo:
+### 3. Página do painel + rota
+- `src/pages/AtivosEndpoints.tsx` (deletar arquivo)
+- `src/App.tsx`: remover o `React.lazy` de `AtivosEndpoints` (linha 17) e o bloco `<Route path="/ativos/endpoints">` (linhas ~143–148)
+- `src/components/AppSidebar.tsx`: remover o item de menu `{ title: 'Endpoints', url: '/ativos/endpoints', ... }` (linha 73)
 
-**a) Compilar o agente (uma única vez, manual, fora do sandbox)**
+### 4. Eventos de integração relacionados
+- `src/lib/integration-events.ts`: remover as 3 entradas `endpoint_enrollado`, `endpoint_offline`, `endpoint_postura_critica` (linhas 48–50)
 
-O sandbox da Lovable não tem toolchain Go nem Windows, então a compilação do `.exe` precisa ser feita por você (ou CI) com `agent\build.ps1`. Vou deixar o `build.ps1` e o `README` do `agent/` revisados para que isso seja literalmente:
+### 5. Edge Functions
+- Apagar pastas `supabase/functions/agent-enroll/`, `supabase/functions/agent-checkin/`, `supabase/functions/agent-revoke/`
+- Chamar `supabase--delete_edge_functions(["agent-enroll","agent-checkin","agent-revoke"])` para remover do Supabase
+- Remover as 3 entradas correspondentes em `supabase/config.toml` (se existirem)
 
-```powershell
-cd agent
-.\build.ps1     # gera dist\akuris-agent.exe
-```
+### 6. Documentação
+- `docs/endpoint-agent.md` (deletar)
+- `.lovable/plan.md` (deletar — era o plano deste módulo)
 
-**b) Empacotar instalador `.bat` que faz tudo sozinho**
+### 7. Banco de dados
+Criar **uma nova migration** que desfaz as duas migrations criadas (`20260430123033` tabelas e `20260430125123` bucket). A migration nova fará:
+- `DROP TABLE IF EXISTS public.endpoint_agent_inventory CASCADE;`
+- `DROP TABLE IF EXISTS public.endpoint_agents CASCADE;`
+- `DROP TABLE IF EXISTS public.endpoint_enrollment_tokens CASCADE;`
+- `DROP FUNCTION` de quaisquer triggers/RPCs criadas naquelas migrations (vou ler o conteúdo completo antes para listar com precisão)
+- `DELETE FROM storage.objects WHERE bucket_id = 'endpoint-agent-binaries';`
+- `DROP POLICY` policies do bucket + `DELETE FROM storage.buckets WHERE id = 'endpoint-agent-binaries';`
 
-Para o usuário final não precisar abrir PowerShell nem digitar nada, vou gerar dinamicamente, no painel, um **arquivo `instalar-akuris.bat`** já com o token embutido. O fluxo do admin vira:
+Não vou apagar os arquivos `.sql` antigos — migrations passadas ficam no histórico; a migration nova é o "undo" oficial.
 
-1. Clica em **"Gerar token e baixar instalador"** no painel.
-2. Recebe um `.zip` (ou os 2 arquivos lado a lado) contendo:
-   - `akuris-agent.exe` (binário público no bucket).
-   - `instalar-akuris.bat` (gerado on-the-fly, contém o token e o servidor).
-3. Na máquina-alvo, **clique direito → "Executar como administrador"** no `.bat`. Pronto: ele copia o `.exe` para `C:\Program Files\Akuris\`, roda `install --token ... --server ...`, sobe o serviço Windows e fecha.
+### 8. Tipos gerados do Supabase
+`src/integrations/supabase/types.ts` é regenerado automaticamente após a migration de drop, então as referências a `endpoint_agents` etc. desaparecem sozinhas.
 
-O `.bat` será gerado pelo frontend (template string) e baixado via `Blob` — sem nova edge function. Conteúdo:
+## O que NÃO será tocado
 
-```bat
-@echo off
-net session >nul 2>&1 || (echo Execute como Administrador & pause & exit /b 1)
-if not exist "C:\Program Files\Akuris" mkdir "C:\Program Files\Akuris"
-copy /Y "%~dp0akuris-agent.exe" "C:\Program Files\Akuris\akuris-agent.exe"
-"C:\Program Files\Akuris\akuris-agent.exe" install ^
-  --token AKE-xxxxxxxxxxxx ^
-  --server https://lnlkahtugwmkznasapfd.supabase.co
-echo Instalacao concluida.
-pause
-```
+- Categoria `'endpoint'` em `Ativos.tsx`, `AtivoDialog.tsx`, `ImportacaoAtivos.tsx` (existia antes).
+- Bucket `endpoint-agent-binaries` no painel do Supabase, se você quiser manter os binários: a migration de drop apaga. Se preferir manter o bucket, me avisa antes de eu rodar.
 
-**c) Botões na página Endpoints**
+## Confirmação
 
-Header já tem **"Baixar agente (.exe)"** apontando para o bucket público. Vou adicionar:
-- Botão **"Baixar instalador (.bat)"** após gerar o token (download direto do `.bat` pronto).
-- Mensagem clara: *"1) Baixe os dois arquivos. 2) Coloque-os na mesma pasta. 3) Clique direito no .bat → Executar como administrador."*
-
-**d) Subir o binário no bucket (passo único, manual)**
-
-Depois que você compilar o `.exe` localmente, subir uma vez em **Supabase → Storage → endpoint-agent-binaries → upload `akuris-agent.exe`**. A partir daí, qualquer admin baixa direto pelo painel.
-
-### 3. Limpeza
-
-- Remover URL do Supabase hardcoded no Go (`agent/cmd/akuris-agent/main.go`) — manter `--server` obrigatório vindo do `.bat`. Isso evita ter que recompilar se a URL mudar.
-
-## Limites técnicos honestos
-
-- **Não consigo compilar o `.exe` para você no sandbox da Lovable** (sem Go, sem Windows, sem assinatura de código). A compilação é um passo único do seu lado.
-- **Não consigo empacotar `.zip` automaticamente no clique** sem JSZip — para evitar dependência nova, vou fazer download de 2 arquivos separados (.exe do bucket + .bat gerado). Se preferir um único `.zip`, me avisa e adiciono `jszip` (~40 KB).
-- **Sem assinatura de código (signtool)**, o Windows SmartScreen vai mostrar aviso "Editor desconhecido" na primeira execução. Para remover isso é necessário um certificado EV de code signing (~US$ 200–400/ano) — fica para fase 3.
-
-## Arquivos afetados
-
-- `src/App.tsx` — adicionar import + rota `/ativos/endpoints`.
-- `src/pages/AtivosEndpoints.tsx` — botão "Baixar instalador (.bat)" e instruções.
-- `agent/cmd/akuris-agent/main.go` — tornar `--server` obrigatório (sem default hardcoded).
-- `agent/README.md` e `docs/endpoint-agent.md` — atualizar com o fluxo do `.bat`.
-
-Posso prosseguir?
+Posso prosseguir com a remoção completa conforme acima?
