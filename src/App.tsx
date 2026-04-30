@@ -77,6 +77,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
+          <ErrorBoundary>
           <Routes>
             {/* Rotas públicas com Suspense individual (não tem sidebar para preservar) */}
             <Route path="/auth" element={<Suspense fallback={<RouteFallback />}><Auth /></Suspense>} />
