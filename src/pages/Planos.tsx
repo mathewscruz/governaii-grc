@@ -1,154 +1,120 @@
-import React, { useState } from 'react';
-import { Check, Sparkles, Crown, Shield, Zap } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Check, Sparkles, Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { STRIPE_PLANS, PlanKey } from '@/lib/stripe-plans';
 import { cn } from '@/lib/utils';
-
-const planIcons: Record<PlanKey, React.ElementType> = {
-  free: Sparkles,
-  starter: Shield,
-  professional: Zap,
-  enterprise: Crown,
-};
+import { fetchPlanos, formatBRL, type Plano } from '@/lib/planos-utils';
+import { PlanBadge } from '@/components/PlanBadge';
 
 export default function Planos() {
   const [isAnnual, setIsAnnual] = useState(false);
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [planos, setPlanos] = useState<Plano[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleCheckout = async (planKey: PlanKey) => {
-    setLoadingPlan(planKey);
-    try {
-      const plan = STRIPE_PLANS[planKey];
-      const priceId = plan.monthly_price_id;
+  useEffect(() => {
+    fetchPlanos()
+      .then(setPlanos)
+      .catch(() => setPlanos([]))
+      .finally(() => setLoading(false));
+  }, []);
 
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId },
-      });
-
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error: any) {
-      console.error('Checkout error:', error);
-      toast.error('Erro ao iniciar checkout. Tente novamente.');
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const getMonthlyEquivalent = (plan: typeof STRIPE_PLANS[PlanKey]) => {
-    if (isAnnual) {
-      return Math.round(plan.annual_price / 12);
-    }
-    return plan.monthly_price;
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto px-4 py-12 space-y-8">
+      <div className="flex justify-start">
+        <Button asChild variant="ghost" size="sm">
+          <Link to="/"><ArrowLeft className="h-4 w-4 mr-2" /> Voltar</Link>
+        </Button>
+      </div>
       <div className="text-center space-y-4">
         <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-          Escolha o plano ideal para sua empresa
+          Planos da plataforma Akuris
         </h1>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Todos os planos incluem <strong>14 dias de teste grátis</strong>. Cancele a qualquer momento.
+          Compare os planos disponíveis. Para contratar ou tirar dúvidas, fale com nosso time comercial.
         </p>
 
-        <div className="flex items-center justify-center gap-3 pt-2">
-          <Label htmlFor="billing-toggle" className={cn("text-sm", !isAnnual && "text-foreground font-medium")}>
-            Mensal
-          </Label>
-          <Switch
-            id="billing-toggle"
-            checked={isAnnual}
-            onCheckedChange={setIsAnnual}
-          />
-          <Label htmlFor="billing-toggle" className={cn("text-sm", isAnnual && "text-foreground font-medium")}>
-            Anual
-          </Label>
-          {isAnnual && (
-            <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
-              10% de desconto
-            </Badge>
-          )}
-        </div>
+        {planos.some(p => p.preco_anual > 0) && (
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Label htmlFor="billing-toggle" className={cn('text-sm', !isAnnual && 'text-foreground font-medium')}>
+              Mensal
+            </Label>
+            <Switch id="billing-toggle" checked={isAnnual} onCheckedChange={setIsAnnual} />
+            <Label htmlFor="billing-toggle" className={cn('text-sm', isAnnual && 'text-foreground font-medium')}>
+              Anual
+            </Label>
+            {isAnnual && (
+              <Badge variant="secondary">Economize ~10%</Badge>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        {(Object.entries(STRIPE_PLANS) as [PlanKey, typeof STRIPE_PLANS[PlanKey]][]).map(([key, plan]) => {
-          const Icon = planIcons[key];
-          const isPopular = 'popular' in plan && plan.popular;
-          const monthlyPrice = getMonthlyEquivalent(plan);
+        {planos.map((plano) => {
+          const monthlyPrice = isAnnual && plano.preco_anual > 0
+            ? Math.round(plano.preco_anual / 12)
+            : plano.preco_mensal;
+          const isPopular = plano.is_destaque;
 
           return (
             <Card
-              key={key}
+              key={plano.id}
               className={cn(
-                "relative flex flex-col transition-all duration-200 hover:shadow-lg",
-                isPopular && "border-primary shadow-md scale-[1.02]"
+                'relative flex flex-col transition-all duration-200 hover:shadow-lg',
+                isPopular && 'border-primary shadow-md scale-[1.02]'
               )}
             >
               {isPopular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <Badge className="bg-primary text-primary-foreground px-4 py-1">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Mais popular
+                    <Sparkles className="h-3 w-3 mr-1" /> Mais popular
                   </Badge>
                 </div>
               )}
 
-              <CardHeader className="text-center pb-2 pt-6">
-                <div className={cn(
-                  "mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl",
-                  key === 'starter' && "bg-muted",
-                  key === 'professional' && "bg-primary/10",
-                  key === 'enterprise' && "bg-amber-100",
-                )}>
-                  <Icon className={cn(
-                    "h-6 w-6",
-                    key === 'starter' && "text-muted-foreground",
-                    key === 'professional' && "text-primary",
-                    key === 'enterprise' && "text-amber-600",
-                  )} />
+              <CardHeader className="text-center pb-2 pt-6 space-y-3">
+                <div className="flex justify-center">
+                  <PlanBadge planCode={plano.codigo} planName={plano.nome} showName={false} size="lg" />
                 </div>
-                <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
-                <p className="text-sm text-muted-foreground">{plan.description}</p>
+                <h3 className="text-xl font-bold text-foreground">{plano.nome}</h3>
+                {plano.descricao && (
+                  <p className="text-sm text-muted-foreground">{plano.descricao}</p>
+                )}
               </CardHeader>
 
               <CardContent className="flex-1 space-y-4">
                 <div className="text-center">
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-4xl font-bold text-foreground">
-                      {formatCurrency(monthlyPrice)}
-                    </span>
+                    <span className="text-4xl font-bold text-foreground">{formatBRL(monthlyPrice)}</span>
                     <span className="text-muted-foreground">/mês</span>
                   </div>
-                  {isAnnual && (
+                  {isAnnual && plano.preco_anual > 0 && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      {formatCurrency(plan.annual_price)} cobrado anualmente
+                      {formatBRL(plano.preco_anual)} cobrado anualmente
                     </p>
                   )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {plano.creditos_franquia} créditos IA/mês ·{' '}
+                    {plano.limite_usuarios ? `até ${plano.limite_usuarios} usuários` : 'usuários ilimitados'}
+                  </p>
                 </div>
 
                 <div className="space-y-2.5 pt-2">
-                  {plan.features.map((feature, i) => (
+                  {plano.recursos_destacados.map((feature, i) => (
                     <div key={i} className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                       <span className="text-sm text-foreground">{feature}</span>
                     </div>
                   ))}
@@ -156,18 +122,10 @@ export default function Planos() {
               </CardContent>
 
               <CardFooter className="pt-4">
-                <Button
-                  className="w-full"
-                  variant={isPopular ? "default" : "outline"}
-                  size="lg"
-                  disabled={loadingPlan !== null}
-                  onClick={() => handleCheckout(key)}
-                >
-                  {loadingPlan === key ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
-                  ) : (
-                    'Começar teste grátis'
-                  )}
+                <Button asChild className="w-full" variant={isPopular ? 'default' : 'outline'} size="lg">
+                  <a href="mailto:contato@akuris.com.br?subject=Interesse%20em%20um%20plano%20Akuris">
+                    Falar com o time comercial
+                  </a>
                 </Button>
               </CardFooter>
             </Card>
@@ -175,9 +133,8 @@ export default function Planos() {
         })}
       </div>
 
-      <div className="text-center text-sm text-muted-foreground space-y-1 max-w-lg mx-auto">
-        <p>🔒 Pagamento seguro via Stripe. Seus dados estão protegidos.</p>
-        <p>Sem compromisso durante o período de teste. Cancele quando quiser.</p>
+      <div className="text-center text-sm text-muted-foreground">
+        <p>Precisa de algo customizado? <a href="mailto:contato@akuris.com.br" className="text-primary hover:underline">Fale com a gente</a>.</p>
       </div>
     </div>
   );
