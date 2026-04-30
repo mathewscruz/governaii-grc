@@ -327,7 +327,7 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
       content: (
         <div className="space-y-4 max-w-3xl">
           <Tabs value={arquivoModo} onValueChange={(v) => setArquivoModo(v as 'upload' | 'url')}>
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList>
               <TabsTrigger value="upload"><Upload className="h-4 w-4 mr-2" />Upload</TabsTrigger>
               <TabsTrigger value="url"><Link2 className="h-4 w-4 mr-2" />URL Externa</TabsTrigger>
             </TabsList>
