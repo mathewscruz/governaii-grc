@@ -294,108 +294,134 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="py-2 transition-all duration-300 ease-out">
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-2">
-              {getVisibleMenuItems().map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.subItems ? (
-                    <Collapsible
-                      open={openGroups.includes(item.title)}
-                      onOpenChange={() => toggleGroup(item.title)}
-                    >
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton 
-                        className={`w-full justify-between transition-colors duration-200 h-9 px-3 group ${
-                            hasActiveSubItem(item.subItems) 
-                              ? 'bg-primary/10 border-l-2 border-primary' 
-                              : 'hover:bg-sidebar-accent/50'
-                          }`}
+        {getVisibleSections().map((section) => (
+          <SidebarGroup key={section.id}>
+            {!isCollapsed && (
+              <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/40 px-3 mb-1">
+                {section.label}
+              </SidebarGroupLabel>
+            )}
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-1">
+                {section.items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    {item.subItems ? (
+                      <Collapsible
+                        open={openGroups.includes(item.title)}
+                        onOpenChange={() => toggleGroup(item.title)}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton
+                            className={`w-full justify-between transition-colors duration-200 h-9 px-3 rounded-md group ${
+                              hasActiveSubItem(item.subItems)
+                                ? 'bg-primary/10 text-primary'
+                                : 'hover:bg-sidebar-accent/60'
+                            }`}
+                          >
+                            <div className="flex items-center min-w-0">
+                              <span className="relative flex-shrink-0 mr-3">
+                                <item.icon
+                                  className={`h-4 w-4 transition-colors duration-200 ${
+                                    hasActiveSubItem(item.subItems) || openGroups.includes(item.title)
+                                      ? 'text-primary'
+                                      : ''
+                                  }`}
+                                />
+                                {/* Dot indicator: filho ativo enquanto grupo está fechado */}
+                                {hasActiveSubItem(item.subItems) && !openGroups.includes(item.title) && (
+                                  <span className="absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                                )}
+                              </span>
+                              {!isCollapsed && (
+                                <span
+                                  className={`text-sm font-medium transition-colors duration-200 truncate ${
+                                    hasActiveSubItem(item.subItems)
+                                      ? 'text-primary font-semibold'
+                                      : openGroups.includes(item.title)
+                                      ? 'text-primary'
+                                      : ''
+                                  }`}
+                                >
+                                  {item.title}
+                                </span>
+                              )}
+                            </div>
+                            {!isCollapsed && (
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform duration-200 flex-shrink-0 ${
+                                  openGroups.includes(item.title) ? 'rotate-180 text-primary' : ''
+                                }`}
+                              />
+                            )}
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        {!isCollapsed && (
+                          <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                            <div className="space-y-1 mt-1 ml-6 pl-2 border-l-2 border-sidebar-border/30">
+                              {item.subItems.map((subItem) => (
+                                <SidebarMenuButton
+                                  key={subItem.title}
+                                  asChild
+                                  className="transition-colors duration-200 h-9"
+                                >
+                                  <NavLink
+                                    to={subItem.url}
+                                    onMouseEnter={() => prefetchRoute(subItem.url)}
+                                    className={({ isActive }) =>
+                                      `flex items-center w-full min-w-0 px-3 ${getNavCls({ isActive })}`
+                                    }
+                                  >
+                                    <subItem.icon
+                                      className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
+                                        isActive(subItem.url) ? 'text-primary-foreground' : ''
+                                      }`}
+                                    />
+                                    <span className="text-sm truncate">{subItem.title}</span>
+                                  </NavLink>
+                                </SidebarMenuButton>
+                              ))}
+                            </div>
+                          </CollapsibleContent>
+                        )}
+                      </Collapsible>
+                    ) : (
+                      <SidebarMenuButton
+                        asChild
+                        className="transition-colors duration-200 h-9 min-w-0 px-3"
+                      >
+                        <NavLink
+                          to={item.url!}
+                          onClick={handleNavClick}
+                          onMouseEnter={() => prefetchRoute(item.url!)}
+                          className={({ isActive }) =>
+                            `flex items-center w-full min-w-0 px-3 ${getNavCls({ isActive })}`
+                          }
                         >
                           <div className="flex items-center min-w-0">
-                            <item.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
-                              hasActiveSubItem(item.subItems) || openGroups.includes(item.title) 
-                                ? 'text-primary' 
-                                : ''
-                            }`} />
+                            <item.icon
+                              className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
+                                isActive(item.url!) ? 'text-primary-foreground' : ''
+                              }`}
+                            />
                             {!isCollapsed && (
-                              <span className={`text-sm font-medium transition-colors duration-200 truncate ${
-                                hasActiveSubItem(item.subItems) 
-                                  ? 'text-primary font-semibold' 
-                                  : openGroups.includes(item.title) ? 'text-primary' : ''
-                              }`}>
+                              <span
+                                className={`text-sm font-medium transition-colors duration-200 truncate ${
+                                  isActive(item.url!) ? 'text-primary-foreground font-semibold' : ''
+                                }`}
+                              >
                                 {item.title}
                               </span>
                             )}
                           </div>
-                          {!isCollapsed && (
-                             <ChevronDown 
-                               className={`h-4 w-4 transition-transform duration-200 flex-shrink-0 ${
-                                 openGroups.includes(item.title) 
-                                   ? 'rotate-180 text-primary' 
-                                   : ''
-                               }`} 
-                             />
-                          )}
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      {!isCollapsed && (
-                         <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                          <div className="space-y-1 mt-2 ml-6 pl-2 border-l-2 border-sidebar-border/30">
-                            {item.subItems.map((subItem) => (
-                              <SidebarMenuButton 
-                                key={subItem.title} 
-                                asChild
-                                className="transition-colors duration-200 h-9"
-                              >
-                                 <NavLink 
-                                   to={subItem.url} 
-                                   onMouseEnter={() => prefetchRoute(subItem.url)}
-                                   className={({ isActive }) => getNavCls({ isActive })}
-                                 >
-                                   <subItem.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
-                                     isActive(subItem.url) ? 'text-primary' : ''
-                                   }`} />
-                                   <span className={`text-sm transition-colors duration-200 truncate ${
-                                     isActive(subItem.url) ? 'text-primary font-semibold' : ''
-                                   }`}>
-                                     {subItem.title}
-                                   </span>
-                                 </NavLink>
-                              </SidebarMenuButton>
-                            ))}
-                          </div>
-                        </CollapsibleContent>
-                      )}
-                    </Collapsible>
-                  ) : (
-                    <SidebarMenuButton asChild className="transition-colors duration-200 h-9 min-w-0 px-3">
-                      <NavLink 
-                        to={item.url} 
-                        onClick={handleNavClick}
-                        onMouseEnter={() => prefetchRoute(item.url)}
-                        className={({ isActive }) => `flex items-center w-full min-w-0 ${getNavCls({ isActive })}`}
-                      >
-                        <div className="flex items-center min-w-0">
-                          <item.icon className={`h-4 w-4 mr-3 flex-shrink-0 transition-colors duration-200 ${
-                            isActive(item.url) ? 'text-primary' : ''
-                          }`} />
-                          {!isCollapsed && (
-                            <span className={`text-sm font-medium transition-colors duration-200 truncate ${
-                              isActive(item.url) ? 'text-primary font-semibold' : ''
-                            }`}>
-                              {item.title}
-                            </span>
-                          )}
-                        </div>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  )}
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    )}
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
 
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
