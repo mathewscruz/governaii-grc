@@ -226,6 +226,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
               <div className="hidden sm:flex"><CommandPaletteButton /></div>
+              <div className="hidden lg:flex"><DensityToggle /></div>
               <div className="hidden md:flex"><ChangelogPopover /></div>
               <ThemeToggle />
               <NotificationCenter />
