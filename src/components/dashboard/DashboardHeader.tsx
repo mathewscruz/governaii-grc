@@ -46,7 +46,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
       <div className="min-w-0">
         <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate">
-          {greeting}, {firstName}
+          Dashboard
         </h1>
         <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
           {criticalCount > 0 ? (
