@@ -187,6 +187,7 @@ export const pt = {
     logout: 'Sair',
     confirmLogout: 'Confirmar saída',
     confirmLogoutDesc: 'Tem certeza que deseja sair do sistema?',
+    signOutFailed: 'Não foi possível encerrar a sessão. Tente novamente.',
     sectionOperation: 'Operação',
     sectionGrcCore: 'GRC Core',
     sectionCompliance: 'Compliance & Governança',
