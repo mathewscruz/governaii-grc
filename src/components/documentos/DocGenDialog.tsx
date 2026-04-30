@@ -744,6 +744,71 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
       disableShortcuts
     >
       <div className="flex flex-col h-full p-6 gap-4 min-h-0 overflow-hidden">
+        {/* Toolbar de ações da conversa */}
+        <div className="flex items-center justify-between gap-2 border-b pb-2">
+          <div className="text-xs text-muted-foreground">
+            {currentDocName ? <span><strong className="text-foreground">{currentDocName}</strong> · </span> : null}
+            {messages.length} mensagem{messages.length === 1 ? '' : 's'} nesta conversa
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1"
+              onClick={startNewConversation}
+              disabled={isLoading || isGeneratingDoc}
+            >
+              <Plus className="h-4 w-4" />
+              Nova conversa
+            </Button>
+            <Popover
+              open={historyOpen}
+              onOpenChange={(o) => {
+                setHistoryOpen(o);
+                if (o) loadHistory();
+              }}
+            >
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1" disabled={isLoading || isGeneratingDoc}>
+                  <History className="h-4 w-4" />
+                  Histórico
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 p-0">
+                <div className="p-3 border-b">
+                  <h4 className="text-sm font-semibold">Conversas anteriores</h4>
+                  <p className="text-xs text-muted-foreground">Suas últimas 20 conversas no DocGen.</p>
+                </div>
+                <div className="max-h-72 overflow-y-auto">
+                  {historyLoading && (
+                    <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
+                    </div>
+                  )}
+                  {!historyLoading && historyItems.length === 0 && (
+                    <div className="p-4 text-sm text-muted-foreground">Nenhuma conversa anterior.</div>
+                  )}
+                  {!historyLoading && historyItems.map((it) => (
+                    <button
+                      key={it.id}
+                      onClick={() => loadConversation(it.id)}
+                      className="w-full text-left p-3 hover:bg-accent border-b last:border-b-0 transition-colors"
+                    >
+                      <div className="text-sm font-medium truncate">{it.titulo || 'Conversa sem título'}</div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
+                        {it.tipo_documento_identificado && (
+                          <Badge variant="secondary" className="text-[10px] py-0 h-4">{it.tipo_documento_identificado}</Badge>
+                        )}
+                        <span>{new Date(it.updated_at).toLocaleString()}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
         <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
           {/* Chat Area */}
           <div className="flex-1 flex flex-col min-h-0 min-w-0">
