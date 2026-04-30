@@ -254,7 +254,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl max-h-[92vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-6xl">
           <DialogHeader>
             <DialogTitle>{id ? 'Editar campanha' : 'Nova campanha de e-mail'}</DialogTitle>
             <DialogDescription>
