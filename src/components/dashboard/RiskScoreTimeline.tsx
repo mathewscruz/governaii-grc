@@ -241,10 +241,11 @@ export function RiskScoreTimeline() {
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col pt-0 pb-4">
-        <div className="h-56 sm:h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: 4 }}>
+      <CardContent className="flex-1 flex flex-col pt-0 pb-4 min-h-0">
+        <div className="relative flex-1 min-h-[14rem] w-full">
+          <div className="absolute inset-0">
+            <ResponsiveContainer width="100%" height="100%" debounce={50}>
+            <ComposedChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="grad-criticos" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.35} />
@@ -329,6 +330,7 @@ export function RiskScoreTimeline() {
               )}
             </ComposedChart>
           </ResponsiveContainer>
+          </div>
         </div>
       </CardContent>
     </Card>
