@@ -136,7 +136,15 @@ Deno.serve(async (req) => {
 
     console.log('E-mail enviado com sucesso:', data)
 
-    return new Response(JSON.stringify({ success: true, data }), {
+    // Atualiza metadata do convite
+    try {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ invitation_sent_at: new Date().toISOString(), invitation_link: setupPasswordUrl })
+        .eq('user_id', userProfile.user_id)
+    } catch (e) { console.error('Falha ao atualizar invitation metadata:', e) }
+
+    return new Response(JSON.stringify({ success: true, data, setupPasswordUrl }), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
