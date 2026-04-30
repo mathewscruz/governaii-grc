@@ -1,71 +1,47 @@
 ## Objetivo
 
-1. **Voltar o visual do gauge meia-lua** no Hero Banner, mantendo o cálculo correto da Maturidade GRC e o bloco de informações (status, X/8 módulos, tendência).
-2. **Remover o `%` redundante** do card "Maturidade GRC" no radar lateral.
-3. **Substituir os 3 KPI Pills redundantes** com o Hero Banner por indicadores mais relevantes.
+Refinar visualmente a lista de Maturidade GRC: paleta sóbria padronizada (sem verde/amarelo berrantes), tipografia mais leve e barras mais finas — alinhada com a identidade do sistema (Navy + Primary Purple).
 
-## 1. Voltar o gauge (visual antigo, dado novo)
+## Mudanças
 
-**Recriar** `src/components/dashboard/HealthScoreGauge.tsx` no mesmo estilo da imagem original (arco semicircular preenchido, número grande no centro, label de status embaixo). Diferenças vs. versão antiga:
-- Recebe o `GrcMaturity` completo (não um número solto), garantindo que mostre **exatamente o mesmo score do card lateral** (no exemplo: 64 / Bom).
-- Cor do arco varia por nível: verde (≥80) / roxo (≥60) / amarelo (≥40) / vermelho (<40) / cinza (sem dados).
-- Quando `status === 'no_data'` exibe `—` em vez de `0`.
+### 1. Paleta unificada (em `MultiDimensionalRadar.tsx`)
 
-**Editar** `HeroScoreBanner.tsx`:
-- Substituir o "bloco compacto" atual pelo novo gauge à esquerda.
-- À direita do gauge, manter (em coluna compacta) o que o usuário pediu para preservar:
-  - Badge `Bom` + chip `5/8 módulos`
-  - Linha de tendência `+18 pts vs. 30d` (quando houver)
-- Resultado visual: gauge grande à esquerda, mini-bloco de contexto logo abaixo/ao lado, e o "Olá, Nome" + métricas continuam à direita como antes.
+Trocar a escala atual (verde/roxo/amarelo/vermelho saturados) por **variações de opacidade do `primary`**, mantendo apenas o `destructive` atenuado para "Crítico":
 
-## 2. Remover `%` duplicado do card "Maturidade GRC"
+| Faixa      | Cor da barra atual     | Nova cor (sóbria)        |
+|------------|------------------------|--------------------------|
+| ≥ 80%      | `bg-green-500`         | `bg-primary` (cheio)     |
+| 60–79%     | `bg-primary`           | `bg-primary/70`          |
+| 40–59%     | `bg-yellow-500`        | `bg-primary/40`          |
+| < 40%      | `bg-destructive`       | `bg-destructive/70`      |
+| Sem dados  | `bg-muted`             | `bg-muted-foreground/20` |
 
-**Editar** `MultiDimensionalRadar.tsx` (cabeçalho do card):
-- Manter apenas o badge `Bom` + ícone de status (sem o número grande `64%`), já que o número agora está no gauge do Hero.
-- Subtítulo: `5 de 8 módulos com dados` para manter contexto sem repetir o score.
-- A lista de módulos individuais (Riscos 100%, Ativos 80% etc.) continua igual — esses % são por módulo, não duplicam o consolidado.
+**Texto do %**: `text-foreground` para ≥60%, `text-muted-foreground` para 40-59%, `text-destructive` apenas para <40%. Acaba o contraste agressivo de cor por linha — fica monocromático com pequenos sinais.
 
-## 3. KPI Pills — remover redundâncias e adicionar indicadores relevantes
+### 2. Refinamento tipográfico e de espaçamento
 
-### Remover (já aparecem no Hero Banner)
-- ❌ **Alertas (OK)** — já exibido como "Alertas Críticos" no Hero
-- ❌ **Controles** — já exibido como "Controles Ativos" no Hero
-- ❌ **Conformidade 49%** — já exibido como "Conformidade 49%" no Hero
+- Barra de progresso: altura `h-1.5` → **`h-1`** (mais discreta, padrão "premium").
+- Track das barras: `bg-muted` → **`bg-muted/60`** (menos contraste).
+- % do score: `font-bold` → **`font-semibold`** + `tabular-nums` (números alinhados verticalmente).
+- Nome do módulo: adicionar `tracking-tight` e usar `text-foreground/90` para suavizar.
+- "Sem dados": remover o `italic`, usar `text-muted-foreground/70` mais leve.
+- Padding da linha: `p-2` → **`px-2 py-2.5`** (respiro vertical).
+- Hover: `hover:bg-muted/50` → **`hover:bg-muted/40`** + `rounded-md` (era `rounded-lg`).
+- Ícone do módulo: `text-foreground/70` → **`text-muted-foreground`** (deixa o nome em destaque, não o ícone).
+- Chevron: opacidade reduzida (`text-muted-foreground/40` no idle).
 
-### Manter
-- ✅ Ativos · Incidentes · Contratos · Documentos (não estão no Hero)
+### 3. Sem mexer
 
-### Adicionar (4 novos pills relevantes e acionáveis)
+- Estrutura/dados (continua usando `useRadarChartData` e `useGrcMaturityScore`).
+- Tooltip de detalhes (já está bom).
+- Lógica de classificação (>=80 / 60 / 40).
 
-| Pill | Valor | Badge contextual | Rota |
-|---|---|---|---|
-| **Riscos** | total de riscos cadastrados | `X críticos` (destructive) ou `X altos` (warning) | `/riscos` |
-| **Planos de Ação** | pendentes em aberto | `X atrasados` (destructive) | `/planos-acao` |
-| **Due Diligence** | assessments ativos | `X expirados` (destructive) ou `X em progresso` (info) | `/due-diligence` |
-| **Denúncias** | abertas + em andamento | `X novas` (warning) | `/denuncia` |
+## Arquivo afetado
 
-Esses 4 são **acionáveis** (mostram trabalho a fazer) e não duplicam o Hero. Cobrem os módulos de GRC core que hoje não têm pill.
+- `src/components/dashboard/MultiDimensionalRadar.tsx` (apenas as funções `getScoreColor`, `getScoreTextColor` e o JSX do `MaturityRow`).
 
-**Editar** `KPIPills.tsx` e `Dashboard.tsx`:
-- Remover os 3 pills redundantes da prop e do array.
-- Adicionar as novas props (`totalRiscos`, `riscosCriticos`, `planosPendentes`, `planosAtrasados`, `ddAtivos`, `ddExpirados`, `denunciasAbertas`, `denunciasNovas`).
-- `Dashboard.tsx` já usa `useRiscosStats`, `useDueDiligenceStats`, `useDenunciasStats` (via `useRadarChartData`). Para Planos de Ação, vou reusar o hook existente (`usePlanosAcaoStats` se houver) ou contar via Supabase com o filtro `empresa_id` e status pendente.
+## Resultado esperado
 
-## Verificações
-
-- Reusar o **hook unificado `useGrcMaturityScore`** — não recriar média.
-- Manter a regra zero-base (módulos sem dados não puxam o score pra baixo).
-- Manter `.eq('empresa_id', empresaId)` em qualquer query nova.
-- i18n: adicionar chaves PT/EN dos novos pills.
-
-## Arquivos afetados
-
-- **Recriado**: `src/components/dashboard/HealthScoreGauge.tsx`
-- **Editado**: `src/components/dashboard/HeroScoreBanner.tsx`, `src/components/dashboard/MultiDimensionalRadar.tsx`, `src/components/dashboard/KPIPills.tsx`, `src/pages/Dashboard.tsx`, `src/i18n/pt.ts`, `src/i18n/en.ts`
-- **Talvez novo**: `src/hooks/usePlanosAcaoStats.ts` (se ainda não existir)
-
-## Fora de escopo
-- Não criar tabela nova de snapshots GRC.
-- Não mexer na lista de módulos do card de Maturidade (continua mostrando os 8).
+Lista monocromática roxa com gradação por opacidade, barras finas, números alinhados, hover discreto. Mantém legibilidade dos status (cheio = excelente, 70% opacidade = bom, 40% = atenção, vermelho atenuado = crítico) sem o "arco-íris" atual.
 
 Aprova?

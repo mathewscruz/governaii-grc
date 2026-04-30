@@ -17,19 +17,18 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   AlertTriangle, Shield, Monitor, Zap, Target, ClipboardCheck, FileText, MessageSquareWarning,
 };
 
+// Paleta sóbria padronizada — variações do primary + destructive atenuado para crítico.
 const getScoreColor = (score: number, hasData: boolean) => {
-  if (!hasData) return 'bg-muted';
-  if (score >= 80) return 'bg-green-500';
-  if (score >= 60) return 'bg-primary';
-  if (score >= 40) return 'bg-yellow-500';
-  return 'bg-destructive';
+  if (!hasData) return 'bg-muted-foreground/20';
+  if (score >= 80) return 'bg-primary';
+  if (score >= 60) return 'bg-primary/70';
+  if (score >= 40) return 'bg-primary/40';
+  return 'bg-destructive/70';
 };
 
 const getScoreTextColor = (score: number, hasData: boolean) => {
   if (!hasData) return 'text-muted-foreground';
-  if (score >= 80) return 'text-green-500';
-  if (score >= 60) return 'text-primary';
-  if (score >= 40) return 'text-yellow-500';
+  if (score >= 40) return 'text-foreground';
   return 'text-destructive';
 };
 
@@ -43,32 +42,36 @@ const MaturityRow = ({ item, navigate, t }: { item: RadarDataPoint; navigate: an
       <TooltipTrigger asChild>
         <button
           onClick={() => navigate(item.link)}
-          className="group flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+          className="group flex items-center gap-3 w-full px-2 py-2.5 rounded-md hover:bg-muted/40 transition-colors text-left"
         >
-          <div className="flex-shrink-0 h-7 w-7 rounded-md bg-muted/80 flex items-center justify-center group-hover:bg-muted">
-            <Icon className="h-3.5 w-3.5 text-foreground/70" />
+          <div className="flex-shrink-0 h-7 w-7 rounded-md bg-muted/60 flex items-center justify-center group-hover:bg-muted transition-colors">
+            <Icon className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
-          
+
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-foreground truncate">{item.subject}</span>
-              <div className="flex items-center gap-1.5">
-                {item.hasData ? (
-                  <span className={`text-xs font-bold ${textColor}`}>{item.score}%</span>
-                ) : (
-                  <span className="text-[10px] text-muted-foreground italic">{t('dashboard.noData') || 'Sem dados'}</span>
-                )}
-              </div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-medium text-foreground/90 truncate tracking-tight">
+                {item.subject}
+              </span>
+              {item.hasData ? (
+                <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
+                  {item.score}%
+                </span>
+              ) : (
+                <span className="text-[10px] text-muted-foreground/70 font-normal">
+                  {t('dashboard.noData') || 'Sem dados'}
+                </span>
+              )}
             </div>
-            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-              <div 
+            <div className="w-full h-1 bg-muted/60 rounded-full overflow-hidden">
+              <div
                 className={`h-full rounded-full transition-all duration-700 ease-out ${colorClass}`}
                 style={{ width: item.hasData ? `${Math.max(item.score, 2)}%` : '0%' }}
               />
             </div>
           </div>
 
-          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-foreground/70 transition-colors flex-shrink-0" />
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors flex-shrink-0" />
         </button>
       </TooltipTrigger>
       <TooltipContent side="left" className="max-w-[220px]">
