@@ -230,16 +230,14 @@ async function fetchComplianceData(empresaId: string) {
   const fwResult = await (supabase as any).from('gap_analysis_frameworks').select('id, nome, versao, tipo_framework').eq('ativo', true);
   const frameworks = fwResult?.data || [];
   const { data: controles } = await supabase.from('controles').select('*').eq('empresa_id', empresaId);
-  const { data: politicas } = await supabase.from('politicas').select('*').eq('empresa_id', empresaId);
   const { data: auditorias } = await supabase.from('auditorias').select('*').eq('empresa_id', empresaId);
-  const f = (frameworks || []) as any[]; const c = controles || []; const p = politicas || []; const a = auditorias || [];
+  const f = (frameworks || []) as any[]; const c = controles || []; const a = auditorias || [];
   return {
     sections: [
       { title: 'Status Geral de Compliance', metrics: [
         { label: 'Frameworks', value: f.length },
         { label: 'Controles', value: c.length },
         { label: 'Controles Ativos', value: c.filter(x => x.status === 'ativo').length },
-        { label: 'Politicas', value: p.length },
         { label: 'Auditorias', value: a.length },
       ]},
       { title: 'Frameworks', tableHeaders: ['Nome', 'Versao', 'Tipo'],
