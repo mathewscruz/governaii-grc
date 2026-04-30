@@ -29,6 +29,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Button } from '@/components/ui/button';
 import akurisLogo from '@/assets/akuris-logo.png';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { AkurisMarkPattern } from '@/components/identity/AkurisMarkPattern';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -76,8 +77,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Tela de bloqueio para empresa inativa
   if (isCompanyInactive) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(216,60%,8%)] via-[hsl(216,45%,12%)] to-[hsl(216,60%,8%)] p-4">
-        <div className="max-w-md w-full text-center space-y-6">
+      <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(216,60%,8%)] via-[hsl(216,45%,12%)] to-[hsl(216,60%,8%)] p-4 overflow-hidden">
+        <AkurisMarkPattern opacity={0.06} />
+        <div className="relative max-w-md w-full text-center space-y-6">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
             <Lock className="h-8 w-8 text-destructive" />
           </div>
@@ -110,8 +112,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Tela de bloqueio para trial expirado
   if (isTrialExpired) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(216,60%,8%)] via-[hsl(216,45%,12%)] to-[hsl(216,60%,8%)] p-4">
-        <div className="max-w-md w-full text-center space-y-6">
+      <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(216,60%,8%)] via-[hsl(216,45%,12%)] to-[hsl(216,60%,8%)] p-4 overflow-hidden">
+        <AkurisMarkPattern opacity={0.06} />
+        <div className="relative max-w-md w-full text-center space-y-6">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-warning/10">
             <AlertTriangle className="h-8 w-8 text-warning" />
           </div>
