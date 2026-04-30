@@ -226,9 +226,16 @@ const AtivosEndpoints: React.FC = () => {
         title="Endpoints"
         description="Inventário automático de computadores via agente Akuris"
         actions={
-          <Button onClick={() => setTokenDialogOpen(true)}>
-            <KeyRound className="h-4 w-4 mr-2" /> Gerar token de instalação
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <a href={AGENT_DOWNLOAD_URL} download>
+                <Download className="h-4 w-4 mr-2" /> Baixar agente (.exe)
+              </a>
+            </Button>
+            <Button onClick={() => setTokenDialogOpen(true)}>
+              <KeyRound className="h-4 w-4 mr-2" /> Gerar token de instalação
+            </Button>
+          </div>
         }
       />
 
