@@ -4024,6 +4024,89 @@ export type Database = {
         }
         Relationships: []
       }
+      email_campanha_logs: {
+        Row: {
+          campanha_id: string
+          created_at: string
+          email: string
+          erro: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          campanha_id: string
+          created_at?: string
+          email: string
+          erro?: string | null
+          id?: string
+          status: string
+        }
+        Update: {
+          campanha_id?: string
+          created_at?: string
+          email?: string
+          erro?: string | null
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campanha_logs_campanha_id_fkey"
+            columns: ["campanha_id"]
+            isOneToOne: false
+            referencedRelation: "email_campanhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campanhas: {
+        Row: {
+          assunto: string
+          conteudo_html: string
+          created_at: string
+          criado_por: string
+          enviado_em: string | null
+          erro: string | null
+          id: string
+          imagem_url: string | null
+          status: string
+          total_destinatarios: number
+          total_enviados: number
+          total_falhados: number
+          updated_at: string
+        }
+        Insert: {
+          assunto: string
+          conteudo_html?: string
+          created_at?: string
+          criado_por: string
+          enviado_em?: string | null
+          erro?: string | null
+          id?: string
+          imagem_url?: string | null
+          status?: string
+          total_destinatarios?: number
+          total_enviados?: number
+          total_falhados?: number
+          updated_at?: string
+        }
+        Update: {
+          assunto?: string
+          conteudo_html?: string
+          created_at?: string
+          criado_por?: string
+          enviado_em?: string | null
+          erro?: string | null
+          id?: string
+          imagem_url?: string | null
+          status?: string
+          total_destinatarios?: number
+          total_enviados?: number
+          total_falhados?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       empresa_reminder_settings: {
         Row: {
           created_at: string

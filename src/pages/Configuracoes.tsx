@@ -2,7 +2,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
-import { Users, Building2, Plug, MessageSquare, CreditCard, Sparkles, Landmark, DollarSign, Package } from 'lucide-react';
+import { Users, Building2, Plug, MessageSquare, CreditCard, Sparkles, Landmark, DollarSign, Package, Newspaper } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
 import { IntegrationHub } from '@/components/configuracoes/IntegrationHub';
@@ -15,6 +15,7 @@ import { OrganizacaoTab } from '@/components/configuracoes/OrganizacaoTab';
 import { FinanceiroIATab } from '@/components/configuracoes/FinanceiroIATab';
 import { GerenciamentoPlanos } from '@/components/configuracoes/GerenciamentoPlanos';
 import GerenciamentoChangelog from '@/components/configuracoes/GerenciamentoChangelog';
+import NoticiasTab from '@/components/configuracoes/NoticiasTab';
 
 const Configuracoes = () => {
   const { profile, loading } = useAuth();
@@ -95,6 +96,12 @@ const Configuracoes = () => {
             <TabsTrigger value="novidades" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
               <span className="hidden sm:inline">Novidades</span>
+            </TabsTrigger>
+          )}
+          {isSuperAdmin && (
+            <TabsTrigger value="noticias" className="flex items-center gap-2">
+              <Newspaper className="h-4 w-4" />
+              <span className="hidden sm:inline">Notícias</span>
             </TabsTrigger>
           )}
         </TabsList>
@@ -204,6 +211,21 @@ const Configuracoes = () => {
               </CardHeader>
               <CardContent>
                 <GerenciamentoChangelog />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+        {isSuperAdmin && (
+          <TabsContent value="noticias">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Newspaper className="h-5 w-5" />
+                  Notícias & Comunicados
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <NoticiasTab />
               </CardContent>
             </Card>
           </TabsContent>
