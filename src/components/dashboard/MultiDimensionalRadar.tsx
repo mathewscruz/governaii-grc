@@ -5,7 +5,8 @@ import { useRadarChartData, RadarDataPoint } from "@/hooks/useRadarChartData";
 import { useGrcMaturityScore } from "@/hooks/useGrcMaturityScore";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, AlertCircle, XCircle, FileText, ChevronRight, Minus } from 'lucide-react';
+import { CheckCircle2, AlertCircle, XCircle, FileText, ChevronRight, Minus, BarChart3 } from 'lucide-react';
+import { CornerAccent } from '@/components/identity/CornerAccent';
 import {
   RiscosIcon,
   ControlesIcon,
@@ -119,9 +120,14 @@ export const MultiDimensionalRadar = () => {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
-        <CardContent><Skeleton className="h-[350px] w-full" /></CardContent>
+      <Card className="relative h-full w-full flex flex-col overflow-hidden min-w-0">
+        <CornerAccent />
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-muted-foreground" /> {t('dashboard.maturity')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 pt-0"><Skeleton className="h-full w-full" /></CardContent>
       </Card>
     );
   }
@@ -129,10 +135,13 @@ export const MultiDimensionalRadar = () => {
   const StatusIcon = statusConfig.icon;
 
   return (
-    <Card className="h-full w-full flex flex-col overflow-hidden min-w-0">
+    <Card className="relative h-full w-full flex flex-col overflow-hidden min-w-0">
+      <CornerAccent />
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold">{t('dashboard.maturity')}</CardTitle>
-        <div className="flex items-center gap-2 mt-2">
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-muted-foreground" /> {t('dashboard.maturity')}
+        </CardTitle>
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
           <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
           <Badge variant={statusConfig.variant} className="text-[10px]">
             {statusConfig.label}
@@ -144,7 +153,7 @@ export const MultiDimensionalRadar = () => {
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 pt-0 pb-3">
+      <CardContent className="flex-1 pt-0 pb-4">
         <div className="space-y-0.5">
           {(data ?? []).map((item) => (
             <MaturityRow key={item.subject} item={item} navigate={navigate} t={t} />

@@ -241,10 +241,10 @@ export function RiskScoreTimeline() {
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col pt-0">
-        <div className="h-52 sm:h-72 w-full overflow-hidden">
+      <CardContent className="flex-1 flex flex-col pt-0 pb-4">
+        <div className="h-56 sm:h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+            <ComposedChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: 4 }}>
               <defs>
                 <linearGradient id="grad-criticos" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.35} />
@@ -267,13 +267,15 @@ export function RiskScoreTimeline() {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                padding={{ left: 8, right: 8 }}
+                padding={{ left: 12, right: 12 }}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
                 allowDecimals={false}
-                width={28}
+                width={32}
+                domain={[0, 'auto']}
+                padding={{ top: 8, bottom: 8 }}
                 tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
               />
               <Tooltip content={customTooltip} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }} />

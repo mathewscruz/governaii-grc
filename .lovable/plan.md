@@ -1,71 +1,48 @@
-## Plano — Refinos UX (Sair, Sidebar, Riscos, Dashboard, Transições)
+# Ajuste do gráfico e padronização dos cards do dashboard
 
-### 1. Botão "Sair" sem efeito
-**Diagnóstico:** `confirmSignOut` em `AppSidebar.tsx` chama `signOut()` (`AuthProvider`) que executa apenas `supabase.auth.signOut()`. Se a chamada lançar (sessão já invalidada por inatividade, MFA, etc.) o erro vai só pro `console.error` e o `AlertDialogAction` fecha o dialog sem feedback. Resultado para o usuário: clica e "nada acontece".
+## Problemas identificados
 
-**Correções em `confirmSignOut`:**
-- Limpar storage local sensível: `localStorage.removeItem('akuris.focusMode')`, manter apenas tokens necessários ao Supabase fazer cleanup.
-- Forçar `supabase.auth.signOut({ scope: 'local' })` como fallback se a primeira chamada falhar (sessão expirada).
-- Após sucesso/falha, fechar o `ConfirmDialog` (`setShowLogoutConfirm(false)`) e navegar com `window.location.replace('/auth')` — garante reset completo do estado de React Query, contextos e service worker.
-- Mostrar `toast.error(t('sidebar.signOutFailed'))` em caso de erro real (não silencioso).
-- Adicionar estado `isSigningOut` e propagar `loading` ao `<ConfirmDialog>` para feedback visual (já suportado pelo componente).
+**1. Gráfico "Evolução dos Riscos" cortado nas bordas**
+- O `ResponsiveContainer` está dentro de um `div` com `overflow-hidden`, e a margem esquerda do `ComposedChart` está em `-16` — isso empurra o eixo Y para fora e corta os labels (`0`, `1`, `2`...) e a primeira coluna (`Sem 1`).
+- A linha vermelha de "Críticos" também está colada à borda inferior porque não há `domain` definido no `YAxis`, e a margem inferior é `0`.
 
-### 2. Animação suave ao abrir submenu
-**Atual:** já usa `Collapsible` com `animate-accordion-down/up` (200ms), mas a entrada parece "seca" porque os itens internos aparecem instantaneamente.
+**2. Cards do dashboard inconsistentes**
+Os 3 cards da grid (`UpcomingExpirations`, `MultiDimensionalRadar`, `RiskScoreTimeline`) têm estilos diferentes:
 
-**Refinos em `AppSidebar.tsx`:**
-- Adicionar fade-in + leve translate nos sub-itens com delay escalonado: cada `<NavLink>` recebe `style={{ animationDelay: `${index * 30}ms` }}` + classe `animate-fade-in`.
-- Suavizar a curva do collapsible aumentando para `0.25s ease-out` (override em `tailwind.config.ts` ou via classe utilitária local).
-- Adicionar `transition-transform duration-200` ao `ChevronDown` que indica abertura, com `rotate-180` quando aberto (verificar se já existe; reforçar).
+| Item | Vencimentos | Maturidade | Evolução Riscos |
+|---|---|---|---|
+| Tamanho do título | `text-base` | `text-sm` | `text-base` |
+| Padding header | default (`p-6`) | `pb-3` | `pb-3` |
+| CornerAccent (identidade) | não | não | sim |
+| Ícone no título | sim (Calendar) | não | não |
+| Altura mínima | `h-full` | `h-full` | `h-full` (mas conteúdo varia) |
 
-### 3. Card e gráfico "Evolução de Riscos"
-Análise do `RiskScoreTimeline.tsx`:
+## Mudanças
 
-**Problemas atuais:**
-- Header poluído: título + tabs + número grande + ícone trend + badge tudo empilhado, sem hierarquia clara.
-- Linhas do `LineChart` competem visualmente (4 cores próximas) e os `dot` permanentes adicionam ruído.
-- Tooltip custom usa `bg-card` sem blur/sombra elegante.
-- Eixos sem labels e sem grid sutil.
-- Footer com 4 colunas duplica a informação que já está no gráfico.
-- `text-green-600` hardcoded em "trend down" (viola design tokens).
+### 1. `RiskScoreTimeline.tsx` — corrigir corte do gráfico
+- Remover `overflow-hidden` do wrapper do chart e ajustar margens: `{ top: 8, right: 12, bottom: 4, left: 4 }`.
+- Aumentar `width` do `YAxis` de `28` para `32` para acomodar os números sem corte.
+- Adicionar `domain={[0, 'auto']}` no `YAxis` e `padding={{ top: 8, bottom: 8 }}` para a linha de Críticos não ficar colada na base.
+- Reduzir altura do chart container ligeiramente para caber melhor (`h-56 sm:h-64`).
 
-**Melhorias propostas:**
-- **Header simplificado:** título à esquerda, tabs (Semana/Mês/Ano) à direita compactas (`size="sm"`). Sub-linha única: "X críticos · Y altos · variação ▲/▼ Z% vs período anterior" com ícone trend usando `text-success`/`text-destructive` (token).
-- **Gráfico:**
-  - Trocar `LineChart` por `AreaChart` com gradient sutil (violeta primário para "altos+críticos") + linha de "críticos" sobreposta destacada — visual moderno tipo Linear/Vercel.
-  - Remover `dot` padrão; manter apenas `activeDot` no hover.
-  - Curva `monotone` mantida; `strokeWidth={2}`.
-  - `CartesianGrid` apenas horizontal (`vertical={false}`), `stroke="hsl(var(--border))"`, opacity 0.4.
-  - YAxis com `width={28}` e tick discreto; XAxis com `padding={{ left: 8, right: 8 }}`.
-  - Tooltip Akuris: `bg-popover/95 backdrop-blur border border-border shadow-elegant rounded-lg`, dot colorido + label + valor, com data formatada.
-  - Legenda inline acima do gráfico (chips clicáveis para mostrar/ocultar séries).
-- **Footer:** substituir grid de 4 números pelos mesmos chips da legenda, evitando duplicação. Ou remover se a legenda já cobrir.
-- Aplicar `<CornerAccent />` no card para reforçar identidade Akuris.
-- Substituir `Loader2 animate-spin` por `Skeleton` no estado de loading (consistência com o resto).
+### 2. Padronização dos 3 cards (`UpcomingExpirations`, `MultiDimensionalRadar`, `RiskScoreTimeline`)
+Aplicar o mesmo "shell" visual, usando o RiskScoreTimeline como referência (já tem `CornerAccent` da identidade Onda 2):
 
-### 4. Header do Dashboard
-**Em `DashboardHeader.tsx`:** remover totalmente o parágrafo de sumário (`<p>` linhas 51-58 com ícone + "Tudo certo / X críticos"). Manter apenas o `<h1>Dashboard</h1>`. O timestamp e ações ficam à direita inalterados. A informação de itens críticos já é exposta pelo Hero Score Banner e pelos KPI Pills logo abaixo, então não há perda funcional.
+- **Estrutura uniforme**: `Card` com `relative h-full w-full flex flex-col overflow-hidden min-w-0` + `<CornerAccent />` no topo.
+- **Header padronizado**: `CardHeader className="pb-3"` com `CardTitle className="text-base font-semibold"` e ícone proprietário/lucide na cor `text-muted-foreground` à esquerda do título.
+- **Subtítulo opcional** com micro-stats em `text-xs text-muted-foreground` (já existe nos 3, só padronizar tamanho).
+- **CardContent**: `flex-1 pt-0` para que o conteúdo ocupe o espaço restante e os 3 cards alinhem a base.
 
-Ajustar também a prop `criticalCount` para `undefined`-friendly (mantém compat). Pode-se simplificar removendo a prop, mas para evitar quebra mantemos o tipo e ignoramos no render.
+### 3. Pequenos ajustes de consistência
+- Título do `MultiDimensionalRadar` passa de `text-sm` para `text-base font-semibold` e ganha ícone (`BarChart3` ou ícone proprietário de Maturidade).
+- Título do `UpcomingExpirations` mantém o ícone `Calendar`, mas com cor `text-muted-foreground` (não warning) para uniformizar — a cor de status fica nos badges dos itens.
+- Adicionar `<CornerAccent />` em `UpcomingExpirations` e `MultiDimensionalRadar` para reforçar a identidade visual em todo o trio.
 
-### 5. Transição suave entre módulos
-**Diagnóstico:** `PageTransition.tsx` aplica `animate-page-enter` (definido em `tailwind.config.ts` com 0.12s). O efeito existe, mas:
-- Duração curta demais (120ms) — quase imperceptível.
-- A animação não re-dispara entre rotas porque o `<div>` não tem `key={routeKey}` — React reusa o mesmo nó, então a classe `animate-*` só roda uma vez no mount inicial. Isso explica por que parece funcionar no primeiro acesso ao Dashboard mas não nas trocas seguintes.
+## Arquivos afetados
+- `src/components/dashboard/RiskScoreTimeline.tsx` — corrigir corte do gráfico.
+- `src/components/dashboard/UpcomingExpirations.tsx` — adicionar CornerAccent, padronizar header.
+- `src/components/dashboard/MultiDimensionalRadar.tsx` — adicionar CornerAccent, ajustar tamanho do título e ícone.
 
-**Correções:**
-- Em `PageTransition.tsx`: adicionar `key={children-route}` ou aceitar `routeKey` (já recebido) e aplicar como `key` no `<div>` — força remount → animação re-dispara.
-- Aumentar duração da `page-enter` de 0.12s para 0.22s `ease-out` em `tailwind.config.ts` para sensação mais perceptível, mas ainda snappy.
-- Adicionar leve `translate-y` (já está no keyframe) e garantir `will-change: opacity, transform` via classe `animate-page-enter` para suavidade em GPU.
-
-### Resumo de arquivos
-```text
-src/components/AppSidebar.tsx              — confirmSignOut robusto + fade escalonado nos sub-itens
-src/components/dashboard/DashboardHeader.tsx — remove sumário "Nada crítico"
-src/components/dashboard/RiskScoreTimeline.tsx — AreaChart + header limpo + tooltip Akuris + tokens
-src/components/PageTransition.tsx          — key={routeKey} para re-disparar animação
-tailwind.config.ts                         — page-enter 0.22s ease-out
-src/i18n/pt.ts + en.ts                     — chave `sidebar.signOutFailed`
-```
-
-Sem mudanças em backend/RLS.
+## Não escopo
+- Lógica de dados, queries Supabase e i18n permanecem inalterados.
+- A grid do `Dashboard.tsx` (`grid-cols-1 md:grid-cols-2 xl:grid-cols-3`) já está correta e não muda.
