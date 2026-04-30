@@ -31,15 +31,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const { t, locale } = useLanguage();
   const dateLocale = locale === 'pt' ? ptBR : enUS;
 
-  const greeting = React.useMemo(() => {
-    const h = new Date().getHours();
-    if (h < 12) return t('dashboard_v3.greetingMorning');
-    if (h < 18) return t('dashboard_v3.greetingAfternoon');
-    return t('dashboard_v3.greetingEvening');
-  }, [t]);
-
-  const firstName = userName?.split(' ')[0] || 'Akuris';
-
   const summary = React.useMemo(() => {
     if (criticalCount === 0) return t('dashboard_v3.allClear');
     const tpl =
@@ -55,7 +46,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
       <div className="min-w-0">
         <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate">
-          {greeting}, {firstName}
+          Dashboard
         </h1>
         <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
           {criticalCount > 0 ? (
