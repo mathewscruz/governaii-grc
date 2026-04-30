@@ -145,11 +145,18 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     }
   }, [open, frameworkName]);
 
-  // Auto scroll para última mensagem (rola o container do chat, não a página)
+  // Auto scroll para última mensagem (rola só o container do chat).
+  // Só rola automaticamente se o usuário já estava perto do fim — assim
+  // não interrompe a leitura de mensagens antigas.
   useEffect(() => {
     const el = messagesScrollRef.current;
-    if (el) {
-      el.scrollTop = el.scrollHeight;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const nearBottom = distanceFromBottom < 120;
+    if (nearBottom) {
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+      });
     }
   }, [messages, isLoading]);
 
