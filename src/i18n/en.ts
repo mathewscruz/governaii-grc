@@ -210,6 +210,7 @@ export const en = {
     criticalSummaryPlural: '{{count}} critical items need your attention',
     allClear: 'Nothing critical right now',
     updatedAt: 'Updated at {{time}}',
+  },
   userProfile: {
     myProfile: 'My profile',
     editProfile: 'Edit profile',
