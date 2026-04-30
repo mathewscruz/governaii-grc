@@ -35,6 +35,17 @@ export default function Dashboard() {
   const { profile } = useAuth();
   const { t, locale } = useLanguage();
   const [alertsDialogOpen, setAlertsDialogOpen] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('akuris.focusMode') === '1';
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('akuris.focusMode', isFocusMode ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  }, [isFocusMode]);
   const queryClient = useQueryClient();
   
   const ativosStats = useAtivosStats();
