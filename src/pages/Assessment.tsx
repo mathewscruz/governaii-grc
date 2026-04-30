@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
+import { getCompanyLogo } from '@/lib/brand-logo';
 
 const assessmentLogger = {
   info: (message: string, data?: any) => {
@@ -155,26 +156,20 @@ const TopBar = ({
 
         {/* Center: Company + template */}
         <div className="flex items-center gap-3 min-w-0 flex-1 justify-center">
-          {assessment.empresa.logo_url && !logoError ? (
-            <div className="relative h-8 w-8 shrink-0">
-              {logoLoading && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[hsl(250,80%,60%)]"></div>
-                </div>
-              )}
-              <img
-                src={assessment.empresa.logo_url}
-                alt={`Logo ${assessment.empresa.nome}`}
-                className={cn('h-8 w-8 object-contain rounded', logoLoading ? 'opacity-0' : 'opacity-100', 'transition-opacity duration-300')}
-                onLoad={onLogoLoad}
-                onError={onLogoError}
-              />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-8 w-8 bg-white/10 rounded shrink-0">
-              <Building2 className="h-4 w-4 text-white/40" />
-            </div>
-          )}
+          <div className="relative h-8 w-8 shrink-0">
+            {logoLoading && assessment.empresa.logo_url && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[hsl(250,80%,60%)]"></div>
+              </div>
+            )}
+            <img
+              src={logoError ? getCompanyLogo(null) : getCompanyLogo(assessment.empresa.logo_url)}
+              alt={`Logo ${assessment.empresa.nome}`}
+              className={cn('h-8 w-8 object-contain rounded', logoLoading && assessment.empresa.logo_url ? 'opacity-0' : 'opacity-100', 'transition-opacity duration-300')}
+              onLoad={onLogoLoad}
+              onError={onLogoError}
+            />
+          </div>
           <div className="min-w-0 hidden sm:block">
             <p className="text-xs text-white/40 leading-tight">Solicitado por</p>
             <p className="text-sm text-white font-medium leading-tight truncate">{assessment.empresa.nome}</p>
