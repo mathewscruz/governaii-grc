@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, UserCheck, User, Clock, MoreHorizontal, Shield, Mail, Users, ShieldCheck, Key } from 'lucide-react';
+import { Plus, Edit, Trash2, UserCheck, User, Clock, MoreHorizontal, Shield, Mail, Users, ShieldCheck, Key, Copy } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
