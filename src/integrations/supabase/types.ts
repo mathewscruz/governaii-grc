@@ -5844,6 +5844,8 @@ export type Database = {
           empresa_id: string | null
           foto_url: string | null
           id: string
+          invitation_link: string | null
+          invitation_sent_at: string | null
           nome: string
           permission_profile_id: string | null
           preferred_locale: string
@@ -5858,6 +5860,8 @@ export type Database = {
           empresa_id?: string | null
           foto_url?: string | null
           id?: string
+          invitation_link?: string | null
+          invitation_sent_at?: string | null
           nome: string
           permission_profile_id?: string | null
           preferred_locale?: string
@@ -5872,6 +5876,8 @@ export type Database = {
           empresa_id?: string | null
           foto_url?: string | null
           id?: string
+          invitation_link?: string | null
+          invitation_sent_at?: string | null
           nome?: string
           permission_profile_id?: string | null
           preferred_locale?: string
@@ -6860,6 +6866,38 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      trial_reminders_sent: {
+        Row: {
+          empresa_id: string
+          id: string
+          milestone: string
+          recipient_email: string | null
+          sent_at: string
+        }
+        Insert: {
+          empresa_id: string
+          id?: string
+          milestone: string
+          recipient_email?: string | null
+          sent_at?: string
+        }
+        Update: {
+          empresa_id?: string
+          id?: string
+          milestone?: string
+          recipient_email?: string | null
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trial_reminders_sent_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_invitation_reminders: {
         Row: {
