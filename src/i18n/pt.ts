@@ -210,6 +210,7 @@ export const pt = {
     criticalSummaryPlural: '{{count}} itens críticos exigem sua atenção',
     allClear: 'Nada crítico no momento',
     updatedAt: 'Atualizado às {{time}}',
+  },
   userProfile: {
     myProfile: 'Meu perfil',
     editProfile: 'Editar perfil',
