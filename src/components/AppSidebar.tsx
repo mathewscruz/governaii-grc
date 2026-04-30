@@ -70,7 +70,6 @@ const getMenuItems = (t: (key: string) => string) => [
       { title: t('sidebar.assets'), url: '/ativos', icon: Server, moduleName: 'ativos' },
       { title: t('sidebar.licenses'), url: '/ativos/licencas', icon: FileKey, moduleName: 'ativos' },
       { title: t('sidebar.keys'), url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
-      { title: 'Endpoints', url: '/ativos/endpoints', icon: Server, moduleName: 'ativos' },
     ],
   },
   {

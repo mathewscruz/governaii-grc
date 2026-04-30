@@ -45,9 +45,6 @@ export const INTEGRATION_EVENTS: IntegrationEvent[] = [
   // Ativos
   { id: 'ativo_criado', label: 'Ativo cadastrado', modulo: 'Ativos' },
   { id: 'ativo_atualizado', label: 'Ativo atualizado', modulo: 'Ativos' },
-  { id: 'endpoint_enrollado', label: 'Endpoint enrollado', modulo: 'Ativos' },
-  { id: 'endpoint_offline', label: 'Endpoint offline', modulo: 'Ativos' },
-  { id: 'endpoint_postura_critica', label: 'Endpoint com postura crítica', modulo: 'Ativos' },
 
   // Políticas
   { id: 'politica_criada', label: 'Política criada', modulo: 'Políticas' },
