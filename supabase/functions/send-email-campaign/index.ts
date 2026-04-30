@@ -104,8 +104,9 @@ serve(async (req) => {
       }).eq("id", campanha_id);
     }
 
-    // Renderizar HTML uma vez
-    const subjectFinal = campanha.assunto;
+    // Renderizar HTML uma vez — remover qualquer prefixo [TESTE] / [Teste] / [teste] do assunto
+    const stripTestePrefix = (s: string) => (s ?? "").replace(/^\s*\[\s*teste\s*\]\s*/i, "").trim();
+    const subjectFinal = stripTestePrefix(campanha.assunto || "");
     const html = await renderAsync(
       React.createElement(BaseEmailTemplate, {
         previewText: subjectFinal,
