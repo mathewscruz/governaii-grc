@@ -1,8 +1,14 @@
 import { Toaster as Sonner, toast } from "sonner"
+import { Icon } from "@/components/icons/Icon"
 import { CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
+/**
+ * Toaster Akuris — usa ícones proprietários (stroke 1.5) e cores semânticas
+ * dos tokens (success/destructive/warning/info), em vez de cores Tailwind cruas.
+ * Mantém glassmorphism e border-l-3 colorido por tipo.
+ */
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
@@ -14,10 +20,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
       duration={4000}
       gap={8}
       icons={{
-        success: <CheckCircle2 className="h-5 w-5 text-emerald-500" />,
-        error: <XCircle className="h-5 w-5 text-red-500" />,
-        warning: <AlertTriangle className="h-5 w-5 text-amber-500" />,
-        info: <Info className="h-5 w-5 text-blue-500" />,
+        success: <Icon as={CheckCircle2} size="md" className="text-success" />,
+        error: <Icon as={XCircle} size="md" className="text-destructive" />,
+        warning: <Icon as={AlertTriangle} size="md" className="text-warning" />,
+        info: <Icon as={Info} size="md" className="text-info" />,
       }}
       toastOptions={{
         classNames: {
@@ -32,13 +38,13 @@ const Toaster = ({ ...props }: ToasterProps) => {
           closeButton:
             "group-[.toast]:bg-transparent group-[.toast]:border-0 group-[.toast]:text-muted-foreground group-[.toast]:hover:text-foreground group-[.toast]:transition-colors",
           success:
-            "group-[.toaster]:border-l-[3px] group-[.toaster]:border-l-emerald-500 group-[.toaster]:bg-emerald-50/90 group-[.toaster]:dark:bg-emerald-950/30 group-[.toaster]:backdrop-blur-xl",
+            "group-[.toaster]:border-l-[3px] group-[.toaster]:border-l-success group-[.toaster]:bg-success/5 group-[.toaster]:dark:bg-success/10",
           error:
-            "group-[.toaster]:border-l-[3px] group-[.toaster]:border-l-red-500 group-[.toaster]:bg-red-50/90 group-[.toaster]:dark:bg-red-950/30 group-[.toaster]:backdrop-blur-xl",
+            "group-[.toaster]:border-l-[3px] group-[.toaster]:border-l-destructive group-[.toaster]:bg-destructive/5 group-[.toaster]:dark:bg-destructive/10",
           warning:
-            "group-[.toaster]:border-l-[3px] group-[.toaster]:border-l-amber-500 group-[.toaster]:bg-amber-50/90 group-[.toaster]:dark:bg-amber-950/30 group-[.toaster]:backdrop-blur-xl",
+            "group-[.toaster]:border-l-[3px] group-[.toaster]:border-l-warning group-[.toaster]:bg-warning/5 group-[.toaster]:dark:bg-warning/10",
           info:
-            "group-[.toaster]:border-l-[3px] group-[.toaster]:border-l-blue-500 group-[.toaster]:bg-blue-50/90 group-[.toaster]:dark:bg-blue-950/30 group-[.toaster]:backdrop-blur-xl",
+            "group-[.toaster]:border-l-[3px] group-[.toaster]:border-l-info group-[.toaster]:bg-info/5 group-[.toaster]:dark:bg-info/10",
         },
       }}
       {...props}
