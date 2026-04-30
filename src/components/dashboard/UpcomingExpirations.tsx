@@ -8,6 +8,7 @@ import { formatDateOnly } from '@/lib/date-utils';
 import { differenceInDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { CornerAccent } from '@/components/identity/CornerAccent';
 
 interface ExpirationItem {
   id: string;
@@ -93,25 +94,33 @@ export function UpcomingExpirations() {
 
   if (isLoading) {
     return (
-    <Card className="h-full flex flex-col">
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Calendar className="h-4 w-4" /> {t('dashboard.upcomingExpirations')}</CardTitle></CardHeader>
-        <CardContent className="flex items-center justify-center h-48"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></CardContent>
+      <Card className="relative h-full w-full flex flex-col overflow-hidden min-w-0">
+        <CornerAccent />
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" /> {t('dashboard.upcomingExpirations')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center pt-0">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-warning" /> {t('dashboard.upcomingExpirations')}
+    <Card className="relative h-full w-full flex flex-col overflow-hidden min-w-0">
+      <CornerAccent />
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" /> {t('dashboard.upcomingExpirations')}
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1">
+      <CardContent className="flex-1 pt-0 pb-4">
         {!items || items.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">{t('dashboard.noExpirations')}</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {items.map(item => {
               const config = typeConfig[item.type];
               const Icon = config.icon;
