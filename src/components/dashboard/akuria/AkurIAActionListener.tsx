@@ -46,7 +46,7 @@ const MODULE_FRIENDLY: Record<string, string> = {
   contrato: "Contratos",
   ativo: "Ativos",
   denuncia: "Denúncias",
-  politica: "Políticas",
+  
   fornecedor: "Fornecedores",
 };
 

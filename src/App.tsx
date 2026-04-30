@@ -41,7 +41,7 @@ const LandingPage = React.lazy(() => import('@/pages/LandingPage'));
 const PoliticaPrivacidade = React.lazy(() => import('@/pages/PoliticaPrivacidade'));
 const PlanosAcao = React.lazy(() => import('@/pages/PlanosAcao'));
 const Relatorios = React.lazy(() => import('@/pages/Relatorios'));
-const Politicas = React.lazy(() => import('@/pages/Politicas'));
+
 const Registro = React.lazy(() => import('@/pages/Registro'));
 const Planos = React.lazy(() => import('@/pages/Planos'));
 const DefinirSenha = React.lazy(() => import('@/pages/DefinirSenha'));
@@ -109,13 +109,6 @@ function App() {
               <Layout>
                 <ProtectedRoute moduleName="relatorios" fallbackToRoleCheck={false}>
                   <Relatorios />
-                </ProtectedRoute>
-              </Layout>
-            } />
-            <Route path="/politicas" element={
-              <Layout>
-                <ProtectedRoute moduleName="politicas" fallbackToRoleCheck={false}>
-                  <Politicas />
                 </ProtectedRoute>
               </Layout>
             } />

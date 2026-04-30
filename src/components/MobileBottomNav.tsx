@@ -36,7 +36,7 @@ export function MobileBottomNav() {
     { title: t('sidebar.privacy'), url: '/privacidade', icon: Eye },
     { title: t('sidebar.dueDiligence'), url: '/due-diligence', icon: BookOpen },
     { title: t('sidebar.compliance'), url: '/denuncia', icon: CheckSquare },
-    { title: t('sidebar.policies'), url: '/politicas', icon: GraduationCap },
+    
     { title: t('sidebar.reports'), url: '/relatorios', icon: FileBarChart },
     { title: t('sidebar.settings'), url: '/configuracoes', icon: Settings },
   ];

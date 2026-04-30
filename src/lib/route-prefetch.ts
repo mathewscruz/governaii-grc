@@ -19,7 +19,7 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   '/privacidade': () => import('@/pages/Privacidade'),
   '/due-diligence': () => import('@/pages/DueDiligence'),
   '/denuncia': () => import('@/pages/Denuncia'),
-  '/politicas': () => import('@/pages/Politicas'),
+  
   '/continuidade': () => import('@/pages/Continuidade'),
   '/relatorios': () => import('@/pages/Relatorios'),
   '/configuracoes': () => import('@/pages/Configuracoes'),
