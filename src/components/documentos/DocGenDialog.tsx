@@ -822,7 +822,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           <div className="flex-1 flex flex-col min-h-0 min-w-0">
             <div
               ref={messagesScrollRef}
-              className="flex-1 min-h-0 overflow-y-auto pr-2 -mr-2"
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-3 -mr-2"
+              style={{ scrollbarGutter: 'stable' }}
             >
               <div className="space-y-4 p-1">
                 {messages.map((message, index) => (
