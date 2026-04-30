@@ -329,7 +329,7 @@ export const KpiDrillDownDrawer: React.FC<KpiDrillDownDrawerProps> = ({ open, on
         <SheetHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
-              <Icon as={config.icon} size="md" className="text-primary" />
+              <Icon as={config.icon as any} size="md" className="text-primary" />
             </div>
             <div className="min-w-0">
               <SheetTitle className="truncate">{config.title}</SheetTitle>
@@ -350,14 +350,14 @@ export const KpiDrillDownDrawer: React.FC<KpiDrillDownDrawerProps> = ({ open, on
             <EmptyState
               title="Não foi possível carregar"
               description="Tente novamente em instantes."
-              icon={AlertCircle}
+              icon={<Icon as={AlertCircle} size="lg" />}
             />
           )}
           {!isLoading && !isError && (items?.length ?? 0) === 0 && (
             <EmptyState
               title="Nada por aqui"
               description="Não há itens prioritários para exibir agora."
-              icon={config.icon as any}
+              icon={<Icon as={config.icon as any} size="lg" />}
               variant="illustrated"
             />
           )}
@@ -376,7 +376,9 @@ export const KpiDrillDownDrawer: React.FC<KpiDrillDownDrawerProps> = ({ open, on
                   <div className="text-sm font-medium text-foreground truncate">{item.title}</div>
                   <div className="mt-1 flex items-center gap-2 flex-wrap">
                     {item.status && (
-                      <StatusBadge label={item.status} variant={item.variant ?? 'default'} size="sm" />
+                      <StatusBadge tone={item.tone ?? 'neutral'} variant="soft">
+                        {item.status}
+                      </StatusBadge>
                     )}
                     {item.date && (
                       <span className="text-[11px] text-muted-foreground tabular-nums">{item.date}</span>
