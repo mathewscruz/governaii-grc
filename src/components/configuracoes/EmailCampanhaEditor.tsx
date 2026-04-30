@@ -45,6 +45,8 @@ interface Props {
   onSaved: () => void;
 }
 
+const stripTestePrefix = (value: string) => value.replace(/\[\s*teste\s*\]\s*/gi, '').trim();
+
 export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: Props) {
   const { profile } = useAuth();
   const [id, setId] = useState<string | null>(null);
@@ -65,7 +67,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
   useEffect(() => {
     if (open) {
       setId(campanha?.id ?? null);
-      setAssunto(campanha?.assunto ?? '');
+      setAssunto(stripTestePrefix(campanha?.assunto ?? ''));
       setConteudoHtml(campanha?.conteudo_html ?? '');
       setImagemUrl(campanha?.imagem_url ?? null);
       setAiPrompt('');
@@ -88,7 +90,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
       if ((data as any)?.error) throw new Error((data as any).error);
       setConteudoHtml((data as any).html || '');
       if ((data as any).imageUrl) setImagemUrl((data as any).imageUrl);
-      if (aiIncludeSubject && (data as any).subject) setAssunto((data as any).subject);
+      if (aiIncludeSubject && (data as any).subject) setAssunto(stripTestePrefix((data as any).subject));
       toast.success('Conteúdo gerado pela IA');
     } catch (err: any) {
       logger.error('Erro ao gerar conteúdo', err);
@@ -147,7 +149,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
     setSaving(true);
     try {
       const payload = {
-        assunto: assunto.trim().replace(/^\s*\[\s*teste\s*\]\s*/i, '').trim(),
+        assunto: stripTestePrefix(assunto),
         conteudo_html: conteudoHtml,
         imagem_url: imagemUrl,
         status,
