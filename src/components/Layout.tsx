@@ -12,7 +12,6 @@ import PasswordChangeRequired from '@/components/PasswordChangeRequired';
 import { CommandPalette, CommandPaletteButton } from '@/components/CommandPalette';
 import { ChangelogPopover } from '@/components/ChangelogPopover';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { DensityToggle } from '@/components/ui/density-toggle';
 import PageTransition from '@/components/PageTransition';
 import TrialBanner from '@/components/TrialBanner';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
@@ -227,7 +226,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
               <div className="hidden sm:flex"><CommandPaletteButton /></div>
-              <div className="hidden lg:flex"><DensityToggle /></div>
               <div className="hidden md:flex"><ChangelogPopover /></div>
               <ThemeToggle />
               <NotificationCenter />
