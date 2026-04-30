@@ -79,7 +79,7 @@ async function buildContextSummary(supabase: any, empresaId: string): Promise<st
   const [
     riscosRes, controlesRes, incidentesRes, denunciasRes,
     auditoriaRes, documentosRes, frameworksRes, evaluationsRes, contratosRes,
-    ativosRes, contasRes, dadosRes, politicasRes,
+    ativosRes, contasRes, dadosRes,
     planosRes, fornecedoresRes
   ] = await Promise.all([
     supabase.from('riscos').select('id, nome, nivel_risco_inicial, nivel_risco_residual, status, aceito, status_aprovacao, responsavel').eq('empresa_id', empresaId),
@@ -94,7 +94,7 @@ async function buildContextSummary(supabase: any, empresaId: string): Promise<st
     supabase.from('ativos').select('id, nome, tipo, criticidade, status').eq('empresa_id', empresaId),
     supabase.from('contas_privilegiadas').select('id, usuario_beneficiario, tipo_acesso, nivel_privilegio, status, data_expiracao').eq('empresa_id', empresaId),
     supabase.from('dados_pessoais').select('id, nome, categoria_dados, sensibilidade, base_legal').eq('empresa_id', empresaId),
-    supabase.from('politicas').select('id, titulo, status, versao, data_validade').eq('empresa_id', empresaId),
+    
     supabase.from('planos_acao').select('id, titulo, status, prioridade, prazo').eq('empresa_id', empresaId),
     supabase.from('fornecedores').select('id, nome, status, categoria').eq('empresa_id', empresaId),
   ]);
@@ -111,7 +111,7 @@ async function buildContextSummary(supabase: any, empresaId: string): Promise<st
   const ativos: any[] = ativosRes.data || [];
   const contas: any[] = contasRes.data || [];
   const dados: any[] = dadosRes.data || [];
-  const politicas: any[] = politicasRes.data || [];
+  
   const planos: any[] = planosRes.data || [];
   const fornecedores: any[] = fornecedoresRes.data || [];
 
@@ -187,12 +187,6 @@ CONTAS PRIVILEGIADAS (${contas.length} total):
 DADOS PESSOAIS - LGPD (${dados.length} total):
 - ${dados.filter(d => d.sensibilidade === 'critico' || d.sensibilidade === 'sensivel').length} sensíveis/críticos
 - Itens: ${listItems(dados, 'nome')}
-
-POLÍTICAS (${politicas.length} total):
-- ${politicas.filter(p => p.status === 'ativa' || p.status === 'vigente' || p.status === 'ativo').length} vigentes
-- ${politicas.filter(p => p.data_validade && new Date(p.data_validade) < now).length} vencidas
-- Itens: ${listItems(politicas, 'titulo')}
-
 PLANOS DE AÇÃO (${planos.length} total):
 - ${planos.filter(p => ['em_andamento', 'aberto', 'pendente'].includes(p.status || '')).length} em andamento/abertos
 - ${planos.filter(p => p.status === 'concluido').length} concluídos
@@ -237,7 +231,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/contas-privilegiadas': 'Contas Privilegiadas',
   '/continuidade': 'Continuidade de Negócios',
   '/denuncia': 'Canal de Denúncias',
-  '/politicas': 'Políticas',
+  
   '/due-diligence': 'Due Diligence',
 };
 
@@ -329,7 +323,7 @@ CONTEXTO ATUAL DO USUÁRIO:
 - Idioma preferido: ${isEN ? 'English' : 'Português'}
 
 Seu papel:
-- Responder perguntas sobre TODOS os módulos: Riscos, Controles, Incidentes, Auditorias, Documentos, Compliance/Frameworks, Contratos, Denúncias, Ativos, Contas Privilegiadas, Dados Pessoais, Políticas, Planos de Ação, Fornecedores, Continuidade de Negócios (BCP/DRP)
+- Responder perguntas sobre TODOS os módulos: Riscos, Controles, Incidentes, Auditorias, Documentos, Compliance/Frameworks, Contratos, Denúncias, Ativos, Contas Privilegiadas, Dados Pessoais, Planos de Ação, Fornecedores, Continuidade de Negócios (BCP/DRP)
 - Dar insights e recomendações baseados nos dados reais da empresa
 - Explicar conceitos de GRC quando solicitado
 - ${toneInstruction}
@@ -345,7 +339,7 @@ AÇÕES EXECUTÁVEIS (importante):
 Quando fizer sentido, embuta tags de ação no FINAL da sua resposta para que o usuário possa agir com 1 clique. Use EXATAMENTE este formato:
 
   [ACTION:navigate:/rota] → para navegar a uma tela. Ex: [ACTION:navigate:/riscos]
-  [ACTION:create:modulo] → para iniciar criação assistida. Módulos válidos: risco, incidente, controle, plano_acao, documento, contrato, ativo, denuncia, politica, fornecedor. Ex: [ACTION:create:risco]
+  [ACTION:create:modulo] → para iniciar criação assistida. Módulos válidos: risco, incidente, controle, plano_acao, documento, contrato, ativo, denuncia, fornecedor. Ex: [ACTION:create:risco]
   [ACTION:open:modulo:UUID] → para abrir um item específico (use somente UUIDs reais que aparecem no contexto). Ex: [ACTION:open:risco:abc-123]
 
 Regras das ações:

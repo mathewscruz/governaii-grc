@@ -180,7 +180,7 @@ export const en = {
     compliance: 'Compliance',
     dueDiligence: 'Due Diligence',
     whistleblowing: 'Whistleblowing Channel',
-    policies: 'Policies',
+    
     reports: 'Reports',
     businessContinuity: 'Business Continuity',
     settings: 'Settings',

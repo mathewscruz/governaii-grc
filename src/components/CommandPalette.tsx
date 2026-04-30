@@ -50,7 +50,7 @@ const MODULES = [
   { name: 'Revisão de Acessos', path: '/revisao-acessos', icon: FileCheck, keywords: ['revisao', 'acesso', 'review'] },
   { name: 'Due Diligence', path: '/due-diligence', icon: ClipboardList, keywords: ['due diligence', 'fornecedor', 'terceiro'] },
   { name: 'Canal de Denúncias', path: '/denuncia', icon: Megaphone, keywords: ['denuncia', 'canal', 'ouvidoria'] },
-  { name: 'Políticas', path: '/politicas', icon: ScrollText, keywords: ['politica', 'norma', 'regulamento'] },
+  
   { name: 'Planos de Ação', path: '/planos-acao', icon: ClipboardList, keywords: ['plano', 'acao', 'tarefa'] },
   { name: 'Relatórios', path: '/relatorios', icon: BarChart3, keywords: ['relatorio', 'report', 'exportar'] },
   { name: 'Configurações', path: '/configuracoes', icon: Settings, keywords: ['config', 'empresa', 'usuario', 'integracao'] },

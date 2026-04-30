@@ -148,18 +148,16 @@ async function fetchIncidentesData(empresaId: string) {
 }
 
 async function fetchLGPDData(empresaId: string) {
-  const [{ data: dados }, { data: sol }, { data: pol }] = await Promise.all([
+  const [{ data: dados }, { data: sol }] = await Promise.all([
     supabase.from('dados_pessoais').select('*').eq('empresa_id', empresaId),
     supabase.from('dados_solicitacoes_titular').select('*').eq('empresa_id', empresaId),
-    supabase.from('politicas').select('*').eq('empresa_id', empresaId),
   ]);
-  const d = dados || []; const s = sol || []; const p = pol || [];
+  const d = dados || []; const s = sol || [];
   return {
     sections: [
       { title: 'Panorama LGPD', metrics: [
         { label: 'Dados Pessoais Mapeados', value: d.length },
         { label: 'Solicitacoes de Titulares', value: s.length },
-        { label: 'Politicas Ativas', value: p.filter(x => x.status === 'ativa').length },
       ]},
       { title: 'Dados Pessoais Mapeados', tableHeaders: ['Nome', 'Categoria', 'Base Legal', 'Sensibilidade'],
         tableRows: d.map(x => [x.nome, x.categoria_dados || '-', x.base_legal || '-', x.sensibilidade || '-']),
@@ -232,16 +230,14 @@ async function fetchComplianceData(empresaId: string) {
   const fwResult = await (supabase as any).from('gap_analysis_frameworks').select('id, nome, versao, tipo_framework').eq('ativo', true);
   const frameworks = fwResult?.data || [];
   const { data: controles } = await supabase.from('controles').select('*').eq('empresa_id', empresaId);
-  const { data: politicas } = await supabase.from('politicas').select('*').eq('empresa_id', empresaId);
   const { data: auditorias } = await supabase.from('auditorias').select('*').eq('empresa_id', empresaId);
-  const f = (frameworks || []) as any[]; const c = controles || []; const p = politicas || []; const a = auditorias || [];
+  const f = (frameworks || []) as any[]; const c = controles || []; const a = auditorias || [];
   return {
     sections: [
       { title: 'Status Geral de Compliance', metrics: [
         { label: 'Frameworks', value: f.length },
         { label: 'Controles', value: c.length },
         { label: 'Controles Ativos', value: c.filter(x => x.status === 'ativo').length },
-        { label: 'Politicas', value: p.length },
         { label: 'Auditorias', value: a.length },
       ]},
       { title: 'Frameworks', tableHeaders: ['Nome', 'Versao', 'Tipo'],

@@ -127,7 +127,7 @@ const getMenuItems = (t: (key: string) => string) => [
     subItems: [
       { title: t('sidebar.dueDiligence'), url: '/due-diligence', icon: BookOpen, moduleName: 'due-diligence' },
       { title: t('sidebar.whistleblowing'), url: '/denuncia', icon: MessageSquare, moduleName: 'denuncia' },
-      { title: t('sidebar.policies'), url: '/politicas', icon: GraduationCap, moduleName: 'politicas' },
+      
     ],
   },
   {

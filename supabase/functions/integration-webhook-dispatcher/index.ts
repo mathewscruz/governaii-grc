@@ -35,7 +35,7 @@ function extrairModulo(evento: string): string {
     'auditoria': 'Auditorias',
     'contrato': 'Contratos',
     'denuncia': 'Denúncias',
-    'politica': 'Políticas',
+    
     'chave': 'Chaves Criptográficas',
     'licenca': 'Licenças',
     'conta': 'Contas Privilegiadas',
