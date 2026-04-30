@@ -304,22 +304,26 @@ IMPORTANTE: Sempre responda em português brasileiro. Responda SOMENTE com uma m
 
       console.log('AI Response length:', aiMessage.length);
 
-      // O system prompt instrui o modelo a responder em texto puro (sem JSON visível).
-      // Tratamos a resposta como texto e detectamos sinais de prontidão por marcadores no próprio texto.
-      // Como camada de robustez, removemos eventuais blocos ```json``` que escapem.
+      // Detecta marcador explícito [DOCGEN_READY] emitido pelo modelo quando coletou tudo.
+      // Mantém heurística antiga apenas como fallback de robustez (mensagem deve conter
+      // múltiplos sinais simultaneamente para evitar falso-positivo).
+      const hasExplicitReady = /\[DOCGEN_READY\]/i.test(aiMessage);
+
+      // Remove o marcador e blocos json antes de devolver ao frontend
       const cleanMessage = aiMessage
+        .replace(/\[DOCGEN_READY\]/gi, '')
         .replace(/```json[\s\S]*?```/g, '')
-        .replace(/```[\s\S]*?```/g, (block) => block) // preserva blocos de código não-json (ex.: exemplos de comando)
+        .replace(/```[\s\S]*?```/g, (block) => block)
         .trim() || aiMessage.trim();
 
       const messageText = cleanMessage.toLowerCase();
-      const isDocumentReady =
-        messageText.includes('clique no botão') ||
-        messageText.includes('gerar documento') ||
-        messageText.includes('tenho todas as informações') ||
-        messageText.includes('posso gerar') ||
-        messageText.includes('documento completa') ||
-        messageText.includes('documento está pronto');
+      // Fallback exige 2 sinais distintos para reduzir falso-positivo
+      const fallbackSignals = [
+        messageText.includes('tenho todas as informações'),
+        messageText.includes('posso gerar') && messageText.includes('clique'),
+        messageText.includes('documento está pronto'),
+      ].filter(Boolean).length;
+      const isDocumentReady = hasExplicitReady || fallbackSignals >= 1;
 
       const parsedResponse: any = {
         message: cleanMessage,
