@@ -1,144 +1,71 @@
+## Plano — Refinos UX (Sair, Sidebar, Riscos, Dashboard, Transições)
 
-# Evolução Visual Akuris — Identidade & UX
+### 1. Botão "Sair" sem efeito
+**Diagnóstico:** `confirmSignOut` em `AppSidebar.tsx` chama `signOut()` (`AuthProvider`) que executa apenas `supabase.auth.signOut()`. Se a chamada lançar (sessão já invalidada por inatividade, MFA, etc.) o erro vai só pro `console.error` e o `AlertDialogAction` fecha o dialog sem feedback. Resultado para o usuário: clica e "nada acontece".
 
-Análise feita em cima do estado atual: tema Navy/Violet bem definido, ícones já com stroke 1.5 e catálogo semântico iniciado, sidebar com gradient, dashboard com Hero Banner + KPI Pills + maturidade GRC monocromática. A base é sólida — abaixo está o que vale **criar, refinar e remover** para destravar uma identidade verdadeiramente proprietária.
+**Correções em `confirmSignOut`:**
+- Limpar storage local sensível: `localStorage.removeItem('akuris.focusMode')`, manter apenas tokens necessários ao Supabase fazer cleanup.
+- Forçar `supabase.auth.signOut({ scope: 'local' })` como fallback se a primeira chamada falhar (sessão expirada).
+- Após sucesso/falha, fechar o `ConfirmDialog` (`setShowLogoutConfirm(false)`) e navegar com `window.location.replace('/auth')` — garante reset completo do estado de React Query, contextos e service worker.
+- Mostrar `toast.error(t('sidebar.signOutFailed'))` em caso de erro real (não silencioso).
+- Adicionar estado `isSigningOut` e propagar `loading` ao `<ConfirmDialog>` para feedback visual (já suportado pelo componente).
 
----
+### 2. Animação suave ao abrir submenu
+**Atual:** já usa `Collapsible` com `animate-accordion-down/up` (200ms), mas a entrada parece "seca" porque os itens internos aparecem instantaneamente.
 
-## 1. Linguagem visual proprietária ("Akuris Signature")
+**Refinos em `AppSidebar.tsx`:**
+- Adicionar fade-in + leve translate nos sub-itens com delay escalonado: cada `<NavLink>` recebe `style={{ animationDelay: `${index * 30}ms` }}` + classe `animate-fade-in`.
+- Suavizar a curva do collapsible aumentando para `0.25s ease-out` (override em `tailwind.config.ts` ou via classe utilitária local).
+- Adicionar `transition-transform duration-200` ao `ChevronDown` que indica abertura, com `rotate-180` quando aberto (verificar se já existe; reforçar).
 
-Hoje o sistema parece "premium genérico". Faltam **elementos de marca repetíveis** que o olho associe imediatamente à Akuris.
+### 3. Card e gráfico "Evolução de Riscos"
+Análise do `RiskScoreTimeline.tsx`:
 
-### Criar
-- **Akuris Mark Pattern**: padrão sutil de fundo (grade fina + pontos violeta a 4% opacidade) usado em cards Hero, telas de bloqueio (trial/empresa inativa) e estados vazios. Vira "papel timbrado" digital.
-- **Corner Accent (canto superior esquerdo dos cards principais)**: pequeno chevron violeta de 12px no canto, exclusivo de Cards de "destaque" (Hero, KPI principal, modal de IA). Substitui a `governaii-accent-bar` lateral animada (que está pouco usada) por algo mais discreto e moderno.
-- **Divider com glyph**: separadores horizontais com um diamante violeta de 6px no centro — usado entre seções de páginas longas (Configurações, Relatórios, Detalhe de Risco).
-- **Tipografia hierárquica oficial**: definir 4 estilos canônicos (`display`, `title`, `body`, `caption`) com tracking customizado em DM Sans (`-0.02em` em títulos grandes, `0` em body). Hoje cada página decide sozinha.
+**Problemas atuais:**
+- Header poluído: título + tabs + número grande + ícone trend + badge tudo empilhado, sem hierarquia clara.
+- Linhas do `LineChart` competem visualmente (4 cores próximas) e os `dot` permanentes adicionam ruído.
+- Tooltip custom usa `bg-card` sem blur/sombra elegante.
+- Eixos sem labels e sem grid sutil.
+- Footer com 4 colunas duplica a informação que já está no gráfico.
+- `text-green-600` hardcoded em "trend down" (viola design tokens).
 
-### Remover
-- A barra lateral animada `accent-bar-pulse` (pulsa o ano todo, vira ruído).
-- Gradientes `gradient-accent` triplos (3 stops violeta) — substituir por gradiente de 2 stops, mais elegante.
+**Melhorias propostas:**
+- **Header simplificado:** título à esquerda, tabs (Semana/Mês/Ano) à direita compactas (`size="sm"`). Sub-linha única: "X críticos · Y altos · variação ▲/▼ Z% vs período anterior" com ícone trend usando `text-success`/`text-destructive` (token).
+- **Gráfico:**
+  - Trocar `LineChart` por `AreaChart` com gradient sutil (violeta primário para "altos+críticos") + linha de "críticos" sobreposta destacada — visual moderno tipo Linear/Vercel.
+  - Remover `dot` padrão; manter apenas `activeDot` no hover.
+  - Curva `monotone` mantida; `strokeWidth={2}`.
+  - `CartesianGrid` apenas horizontal (`vertical={false}`), `stroke="hsl(var(--border))"`, opacity 0.4.
+  - YAxis com `width={28}` e tick discreto; XAxis com `padding={{ left: 8, right: 8 }}`.
+  - Tooltip Akuris: `bg-popover/95 backdrop-blur border border-border shadow-elegant rounded-lg`, dot colorido + label + valor, com data formatada.
+  - Legenda inline acima do gráfico (chips clicáveis para mostrar/ocultar séries).
+- **Footer:** substituir grid de 4 números pelos mesmos chips da legenda, evitando duplicação. Ou remover se a legenda já cobrir.
+- Aplicar `<CornerAccent />` no card para reforçar identidade Akuris.
+- Substituir `Loader2 animate-spin` por `Skeleton` no estado de loading (consistência com o resto).
 
----
+### 4. Header do Dashboard
+**Em `DashboardHeader.tsx`:** remover totalmente o parágrafo de sumário (`<p>` linhas 51-58 com ícone + "Tudo certo / X críticos"). Manter apenas o `<h1>Dashboard</h1>`. O timestamp e ações ficam à direita inalterados. A informação de itens críticos já é exposta pelo Hero Score Banner e pelos KPI Pills logo abaixo, então não há perda funcional.
 
-## 2. Sistema de cores — refinar sem quebrar
+Ajustar também a prop `criticalCount` para `undefined`-friendly (mantém compat). Pode-se simplificar removendo a prop, mas para evitar quebra mantemos o tipo e ignoramos no render.
 
-A paleta Navy/Violet está boa, mas há **excesso de violeta puro** em superfícies, o que cansa visualmente.
+### 5. Transição suave entre módulos
+**Diagnóstico:** `PageTransition.tsx` aplica `animate-page-enter` (definido em `tailwind.config.ts` com 0.12s). O efeito existe, mas:
+- Duração curta demais (120ms) — quase imperceptível.
+- A animação não re-dispara entre rotas porque o `<div>` não tem `key={routeKey}` — React reusa o mesmo nó, então a classe `animate-*` só roda uma vez no mount inicial. Isso explica por que parece funcionar no primeiro acesso ao Dashboard mas não nas trocas seguintes.
 
-### Refinar
-- **Surface tokens semânticos**: criar `--surface-1` (cards), `--surface-2` (cards aninhados), `--surface-3` (popovers) com micro-elevação por luminosidade ao invés de shadow. Hoje tudo é `bg-card` chapado.
-- **Status colors mais sóbrios**: success/warning/destructive estão saturados demais (typical Tailwind). Reduzir saturação em 15-20% para combinar com o Navy.
-- **Violeta apenas como ação**: aplicar a regra "violeta = clicável ou métrica positiva". Hoje aparece em borders decorativos, ícones inativos, dividers — dilui o significado.
+**Correções:**
+- Em `PageTransition.tsx`: adicionar `key={children-route}` ou aceitar `routeKey` (já recebido) e aplicar como `key` no `<div>` — força remount → animação re-dispara.
+- Aumentar duração da `page-enter` de 0.12s para 0.22s `ease-out` em `tailwind.config.ts` para sensação mais perceptível, mas ainda snappy.
+- Adicionar leve `translate-y` (já está no keyframe) e garantir `will-change: opacity, transform` via classe `animate-page-enter` para suavidade em GPU.
 
-### Adicionar
-- **Token `--brand-ink`** (texto sobre violeta) bem calibrado para acessibilidade AA.
-- **Modo Light revisitado**: hoje o light mode é quase um afterthought. Polir backgrounds (atualmente quase brancos demais) com `200 30% 96%` para dar respiro.
+### Resumo de arquivos
+```text
+src/components/AppSidebar.tsx              — confirmSignOut robusto + fade escalonado nos sub-itens
+src/components/dashboard/DashboardHeader.tsx — remove sumário "Nada crítico"
+src/components/dashboard/RiskScoreTimeline.tsx — AreaChart + header limpo + tooltip Akuris + tokens
+src/components/PageTransition.tsx          — key={routeKey} para re-disparar animação
+tailwind.config.ts                         — page-enter 0.22s ease-out
+src/i18n/pt.ts + en.ts                     — chave `sidebar.signOutFailed`
+```
 
----
-
-## 3. Layout shell e navegação
-
-### Sidebar
-- **Agrupar visualmente os 13 itens em 3 seções rotuladas**: `OPERAÇÃO` (Dashboard, Planos), `GRC CORE` (Riscos, Controles, Gap, Ativos), `COMPLIANCE & GOVERNANÇA` (Contratos, Documentos, Privacidade, Due Diligence, Denúncia, Continuidade), `INSIGHTS` (Relatórios). Hoje é uma lista plana de 13 itens — alta carga cognitiva.
-- **Active state mais sutil**: trocar `border-l-4 border-primary + bg-primary/15` por **pílula violeta inteira arredondada** (estilo Linear/Notion). Mais moderno e menos "barulhento".
-- **Indicador de submenu fechado mas com filho ativo**: hoje só destaca quando aberto — adicionar dot violeta no chevron quando há rota ativa dentro de um grupo colapsado.
-- **Footer**: incluir versão do app + badge de ambiente (Trial/Pro) acima do logout, hoje só aparece o logout.
-
-### Header
-- **Breadcrumb com ícone do módulo** (usando os ícones proprietários) antes do nome.
-- **Página atual em destaque tipográfico** (não em `font-semibold`, mas em bloco com label "VOCÊ ESTÁ EM").
-- **Spotlight/Command Palette mais visível**: hoje o `CommandPaletteButton` é discreto. Aumentar para uma barra "Buscar em tudo · ⌘K" estilo Linear.
-
-### Remover
-- Botão "Voltar" do header — ele compete com a sidebar e o breadcrumb. Manter apenas em mobile.
-
----
-
-## 4. Cards, tabelas e densidade
-
-### Cards
-- Padding padronizado em **3 tamanhos** (`compact` 12px, `default` 20px, `feature` 32px). Hoje cada card escolhe.
-- **Header de card unificado**: ícone proprietário + título + ação opcional à direita. Componente `<ModuleCardHeader>` reutilizável.
-- Remover sombras pesadas em cards aninhados — usar apenas `border` interno.
-
-### Tabelas
-- **Density toggle** (compact/comfortable) salvo por usuário, no topo de toda lista grande (Riscos, Controles, Ativos, Documentos).
-- **Coluna de status como pílula colorida** padronizada via `<StatusBadge>` — hoje cada módulo desenha a sua.
-- **Row hover com micro-animação** de slide do accent violeta lateral (4px) ao invés de mudar bg de toda linha.
-- **Skeleton row** real (não bloco genérico) para tabelas durante loading.
-
-### Estados vazios
-- Criar **EmptyState ilustrado** com SVG proprietário (mesma família dos ícones de módulo). Hoje usamos texto + ícone Lucide pequeno — frio.
-- Cada módulo ganha sua própria ilustração de "vazio" combinando com o ícone do módulo.
-
----
-
-## 5. Dashboard — próxima onda
-
-A reforma recente já elevou bastante. Próximos passos:
-
-- **Saudação contextual** ("Bom dia, Pedro · 3 itens críticos exigem atenção") em vez de só "Dashboard".
-- **Modo Foco**: botão que esconde KPI pills e mantém só o Hero Score + ações pendentes — útil para gestores.
-- **Drill-down inline**: clicar numa barra de maturidade abre um drawer lateral (não navega de página).
-- **Last update timestamp** discreto no rodapé do Hero ("Atualizado há 2 min").
-
----
-
-## 6. Microinterações e transições
-
-### Adicionar
-- **Page transitions mais curtas** (180ms ease-out, hoje parece ~300ms).
-- **Skeleton com shimmer violeta sutil** (atual é cinza puro).
-- **Hover em ícones de ação** (editar/deletar) com leve scale 1.05 + tooltip rápido (delay 200ms).
-- **Toast com ícone proprietário** ao invés do ícone Sonner padrão.
-- **Botão primário com ripple violeta** ao clicar (substitui o "press feedback" trivial).
-
-### Remover
-- `governaii-card-hover` com `translateY(-2px)` global — exagerado em cards de dashboard. Manter só em cards clicáveis.
-
----
-
-## 7. Acessibilidade & polimento
-
-- **Foco de teclado visível**: hoje é o ring padrão; criar ring violeta com offset 2px e raio combinado com o componente.
-- **Contraste do `muted-foreground`** no dark mode (`200 10% 55%`) está no limite de AA — subir para 60-65%.
-- **Toggle de tema no header** (ainda não existe atalho fácil), com ícone proprietário sun/moon.
-
----
-
-## 8. O que NÃO mexer
-- Paleta principal (Navy + Violet) — já é identidade.
-- DM Sans — manter.
-- Sistema de ícones recém-criado — apenas expandir.
-- Estrutura do Hero Banner + KPI Pills do dashboard.
-
----
-
-## Entrega proposta (faseada)
-
-Sugiro implementar em **3 ondas pequenas** (cada uma aprovada antes da próxima) para você ver o impacto sem risco:
-
-**Onda 1 — Fundamentos (alto impacto, baixo risco)**
-- Surface tokens semânticos + saturação dos status
-- Sidebar reagrupada em seções + active state em pílula
-- Active-dot em grupos colapsados
-- Componente `<ModuleCardHeader>` e `<StatusBadge>` unificados
-- Foco de teclado violeta global
-
-**Onda 2 — Identidade (visual proprietário)**
-- Akuris Mark Pattern (background sutil)
-- Corner Accent nos cards principais (substitui `accent-bar-pulse`)
-- EmptyStates ilustrados por módulo
-- Toast com ícone proprietário
-- Skeleton com shimmer violeta
-
-**Onda 3 — Polimento UX**
-- Saudação contextual + Modo Foco no Dashboard
-- Density toggle nas tabelas grandes
-- Drill-down em drawer no Dashboard
-- Spotlight/Command Palette mais proeminente
-- Toggle de tema no header
-
----
-
-**Posso começar pela Onda 1?** Se preferir, podemos também rodar uma única onda combinando os itens que mais te interessam.
+Sem mudanças em backend/RLS.
