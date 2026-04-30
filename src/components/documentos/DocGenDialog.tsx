@@ -906,7 +906,12 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           {(generatedDocument || isGeneratingDoc) && (
             <div className="w-full lg:w-1/2 lg:border-l lg:pl-4 border-t pt-4 lg:border-t-0 lg:pt-0 flex flex-col min-h-0 overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                <h3 className="font-semibold">{isEditingLayout ? 'Editor de Layout' : 'Preview do Documento'}</h3>
+                <h3 className="font-semibold">
+                  {!generatedDocument && isGeneratingDoc
+                    ? 'Gerando documento…'
+                    : isEditingLayout ? 'Editor de Layout' : 'Preview do Documento'}
+                </h3>
+                {generatedDocument && (
                   <div className="flex flex-wrap gap-2">
                     <Button onClick={() => setIsEditingLayout(!isEditingLayout)} size="sm" variant="outline" className="gap-1">
                       {isEditingLayout ? 'Concluir Layout' : 'Editar Layout'}
@@ -928,9 +933,31 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
+                )}
               </div>
 
-              {isEditingLayout ? (
+              {!generatedDocument && isGeneratingDoc ? (
+                <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                    <Brain className="h-4 w-4 animate-pulse text-primary" />
+                    <span>Compondo seu documento. Isso pode levar até 40 segundos…</span>
+                  </div>
+                  <div className="space-y-5 animate-pulse">
+                    <div>
+                      <div className="h-6 w-2/3 bg-muted rounded mb-2" />
+                      <div className="h-3 w-1/3 bg-muted rounded" />
+                    </div>
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div key={i} className="space-y-2">
+                        <div className="h-4 w-1/2 bg-muted rounded" />
+                        <div className="h-3 w-full bg-muted rounded" />
+                        <div className="h-3 w-11/12 bg-muted rounded" />
+                        <div className="h-3 w-10/12 bg-muted rounded" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : isEditingLayout ? (
                 <div className="flex-1 min-h-0 overflow-y-auto">
                   <DocLayoutBuilder value={generatedDocument} onChange={setGeneratedDocument} />
                 </div>
