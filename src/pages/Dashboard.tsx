@@ -31,7 +31,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export default function Dashboard() {
   const { profile } = useAuth();
-  const { t } = useLanguage();
+  useLanguage();
   const [alertsDialogOpen, setAlertsDialogOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
