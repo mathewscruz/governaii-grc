@@ -52,6 +52,12 @@ const Configuracoes = () => {
               <span className="hidden sm:inline">Empresas</span>
             </TabsTrigger>
           )}
+          {isSuperAdmin && (
+            <TabsTrigger value="planos" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              <span className="hidden sm:inline">Planos</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="usuarios" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Usuários & Acessos</span>
