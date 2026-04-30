@@ -190,17 +190,32 @@ Deno.serve(async (req) => {
     // Aplicar permissões
     try {
       if (permission_profile_id) {
-        await supabaseAdmin.rpc('apply_permission_profile', { 
-          profile_id: permission_profile_id,
-          target_user_id: authData.user.id 
+        const { error: rpcErr } = await supabaseAdmin.rpc('apply_permission_profile', {
+          _user_id: authData.user.id,
+          _profile_id: permission_profile_id,
         })
+        if (rpcErr) console.error('Erro ao aplicar perfil de permissão:', rpcErr)
       } else {
-        await supabaseAdmin.rpc('apply_default_permissions_for_user', { 
-          user_id_param: authData.user.id 
+        const { error: rpcErr } = await supabaseAdmin.rpc('apply_default_permissions_for_user', {
+          user_id_param: authData.user.id,
         })
+        if (rpcErr) console.error('Erro ao aplicar permissões padrão:', rpcErr)
       }
     } catch (permError) {
       console.error('Exceção ao aplicar permissões:', permError)
+    }
+
+    // Inserir/atualizar role em user_roles (fonte de verdade RBAC)
+    try {
+      const validRole: 'super_admin' | 'admin' | 'user' | 'readonly' =
+        ['super_admin', 'admin', 'user', 'readonly'].includes(role) ? role : 'user'
+      // app_role enum: ('admin', 'moderator', 'user') OR project enum — usar a role pedida quando válida
+      const { error: roleErr } = await supabaseAdmin
+        .from('user_roles')
+        .upsert({ user_id: authData.user.id, role: validRole }, { onConflict: 'user_id,role' })
+      if (roleErr) console.error('Erro ao inserir user_roles:', roleErr)
+    } catch (e) {
+      console.error('Exceção ao inserir user_roles:', e)
     }
 
     // Gerar link de invite para o usuário definir sua senha
