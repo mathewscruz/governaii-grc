@@ -1,118 +1,144 @@
-## Diagnóstico
 
-Mapeei o uso de ícones no sistema. Números reais:
+# Evolução Visual Akuris — Identidade & UX
 
-- **246 arquivos** importam `lucide-react`
-- **364 ícones únicos** em uso (excessivo — Lucide é o "padrão default" da indústria, não dá identidade)
-- **911 ocorrências** de `h-4 w-4` (tamanho default), 155 de `h-5 w-5`, 127 de `h-3 w-3`, 66 de `h-3.5 w-3.5` — **convenção solta**
-- **Apenas 29 ocorrências** de `strokeWidth` customizado — 99% dos ícones usam o stroke padrão Lucide (2.0), o que dá aquele ar "site genérico de IA"
-- **Inconsistências semânticas**:
-  - "Editar" usa `Edit`, `Edit2`, `Pencil`, `PencilLine` (4 metáforas)
-  - "Sucesso/check" usa `Check`, `CheckCircle`, `CheckCircle2`, `CheckSquare` (4 variantes, espalhadas em 70+ arquivos)
-  - "Alerta" alterna entre `AlertTriangle` e `AlertCircle` sem regra clara
-  - "Excluir" usa `Trash` e `Trash2` misturados
-- **Já existe** `src/components/icons/AkurisSidebarIcon.tsx` — único ícone proprietário hoje, com `strokeWidth={1.75}` e estilo limpo. Ponto de partida da identidade.
+Análise feita em cima do estado atual: tema Navy/Violet bem definido, ícones já com stroke 1.5 e catálogo semântico iniciado, sidebar com gradient, dashboard com Hero Banner + KPI Pills + maturidade GRC monocromática. A base é sólida — abaixo está o que vale **criar, refinar e remover** para destravar uma identidade verdadeiramente proprietária.
 
-**Conclusão**: o sistema é visualmente "Lucide cru" — bom mas indistinguível de qualquer outro app feito com IA. A ausência de regra de stroke/tamanho e o excesso de variantes para o mesmo conceito são as causas principais.
+---
 
-## Estratégia (sem refazer 246 arquivos)
+## 1. Linguagem visual proprietária ("Akuris Signature")
 
-Em vez de redesenhar 364 ícones (irreal), vamos criar **identidade por sistema de regras + wrapper + ícones-âncora proprietários** nos pontos onde o usuário realmente repara:
+Hoje o sistema parece "premium genérico". Faltam **elementos de marca repetíveis** que o olho associe imediatamente à Akuris.
 
-1. **Sistema de regras** que padroniza o "feel" Akuris em todo Lucide (stroke fino + tamanhos canônicos).
-2. **Ícones proprietários** apenas para os módulos GRC core (8 módulos) — esses sim com identidade própria.
-3. **Catálogo central** que elimina a inconsistência semântica (uma metáfora por ação).
+### Criar
+- **Akuris Mark Pattern**: padrão sutil de fundo (grade fina + pontos violeta a 4% opacidade) usado em cards Hero, telas de bloqueio (trial/empresa inativa) e estados vazios. Vira "papel timbrado" digital.
+- **Corner Accent (canto superior esquerdo dos cards principais)**: pequeno chevron violeta de 12px no canto, exclusivo de Cards de "destaque" (Hero, KPI principal, modal de IA). Substitui a `governaii-accent-bar` lateral animada (que está pouco usada) por algo mais discreto e moderno.
+- **Divider com glyph**: separadores horizontais com um diamante violeta de 6px no centro — usado entre seções de páginas longas (Configurações, Relatórios, Detalhe de Risco).
+- **Tipografia hierárquica oficial**: definir 4 estilos canônicos (`display`, `title`, `body`, `caption`) com tracking customizado em DM Sans (`-0.02em` em títulos grandes, `0` em body). Hoje cada página decide sozinha.
 
-## Mudanças
+### Remover
+- A barra lateral animada `accent-bar-pulse` (pulsa o ano todo, vira ruído).
+- Gradientes `gradient-accent` triplos (3 stops violeta) — substituir por gradiente de 2 stops, mais elegante.
 
-### 1. Token de "Akuris Icon Style" (regra global)
+---
 
-Criar `src/components/icons/Icon.tsx`:
+## 2. Sistema de cores — refinar sem quebrar
 
-```tsx
-// Wrapper que aplica o estilo Akuris a qualquer Lucide icon.
-// Stroke 1.5 (vs. 2.0 padrão) + linecap round + tamanhos via prop semântica.
-type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-const SIZE_MAP = { xs: 12, sm: 14, md: 16, lg: 20, xl: 24 };
+A paleta Navy/Violet está boa, mas há **excesso de violeta puro** em superfícies, o que cansa visualmente.
 
-export function Icon({ as: LucideIcon, size = 'md', strokeWidth = 1.5, className, ...rest }) {
-  return <LucideIcon size={SIZE_MAP[size]} strokeWidth={strokeWidth} className={className} {...rest} />;
-}
-```
+### Refinar
+- **Surface tokens semânticos**: criar `--surface-1` (cards), `--surface-2` (cards aninhados), `--surface-3` (popovers) com micro-elevação por luminosidade ao invés de shadow. Hoje tudo é `bg-card` chapado.
+- **Status colors mais sóbrios**: success/warning/destructive estão saturados demais (typical Tailwind). Reduzir saturação em 15-20% para combinar com o Navy.
+- **Violeta apenas como ação**: aplicar a regra "violeta = clicável ou métrica positiva". Hoje aparece em borders decorativos, ícones inativos, dividers — dilui o significado.
 
-Ganho: **stroke 1.5 = a "assinatura" Akuris** (mais fino, mais premium, distinto de Vercel/Linear/etc. que usam 2.0).
+### Adicionar
+- **Token `--brand-ink`** (texto sobre violeta) bem calibrado para acessibilidade AA.
+- **Modo Light revisitado**: hoje o light mode é quase um afterthought. Polir backgrounds (atualmente quase brancos demais) com `200 30% 96%` para dar respiro.
 
-### 2. Catálogo semântico (`src/components/icons/index.ts`)
+---
 
-Re-exportar os 30 ícones mais usados com nomes de domínio + escolha única por metáfora:
+## 3. Layout shell e navegação
 
-```tsx
-// Ações
-export { Pencil as IconEdit } from 'lucide-react';      // unifica Edit/Edit2/Pencil
-export { Trash2 as IconDelete } from 'lucide-react';    // unifica Trash/Trash2
-export { Check as IconCheck } from 'lucide-react';      // checkmark inline
-export { CheckCircle2 as IconSuccess } from 'lucide-react'; // status sucesso
-export { AlertTriangle as IconWarning } from 'lucide-react';
-export { AlertCircle as IconInfo } from 'lucide-react';
-export { XCircle as IconError } from 'lucide-react';
-export { MoreHorizontal as IconMore } from 'lucide-react';
-// ...
-```
+### Sidebar
+- **Agrupar visualmente os 13 itens em 3 seções rotuladas**: `OPERAÇÃO` (Dashboard, Planos), `GRC CORE` (Riscos, Controles, Gap, Ativos), `COMPLIANCE & GOVERNANÇA` (Contratos, Documentos, Privacidade, Due Diligence, Denúncia, Continuidade), `INSIGHTS` (Relatórios). Hoje é uma lista plana de 13 itens — alta carga cognitiva.
+- **Active state mais sutil**: trocar `border-l-4 border-primary + bg-primary/15` por **pílula violeta inteira arredondada** (estilo Linear/Notion). Mais moderno e menos "barulhento".
+- **Indicador de submenu fechado mas com filho ativo**: hoje só destaca quando aberto — adicionar dot violeta no chevron quando há rota ativa dentro de um grupo colapsado.
+- **Footer**: incluir versão do app + badge de ambiente (Trial/Pro) acima do logout, hoje só aparece o logout.
 
-Regra documentada no header do arquivo: **"sempre importar daqui, nunca direto do lucide-react para esses 30 conceitos"**. Linter/code review pega o resto.
+### Header
+- **Breadcrumb com ícone do módulo** (usando os ícones proprietários) antes do nome.
+- **Página atual em destaque tipográfico** (não em `font-semibold`, mas em bloco com label "VOCÊ ESTÁ EM").
+- **Spotlight/Command Palette mais visível**: hoje o `CommandPaletteButton` é discreto. Aumentar para uma barra "Buscar em tudo · ⌘K" estilo Linear.
 
-### 3. Ícones proprietários para os 8 módulos GRC
+### Remover
+- Botão "Voltar" do header — ele compete com a sidebar e o breadcrumb. Manter apenas em mobile.
 
-Criar `src/components/icons/modules/` com SVGs próprios desenhados com a mesma linguagem do `AkurisSidebarIcon` (viewBox 24, stroke 1.75, linecap round, mini elemento de "confiança" — ponto, check, ou rail):
+---
 
-| Módulo        | Ícone proprietário                                              |
-|---------------|------------------------------------------------------------------|
-| Riscos        | Diamante com ponto central (em vez de `AlertTriangle` genérico)  |
-| Controles     | Escudo com 3 linhas (em vez de `Shield` puro)                    |
-| Ativos        | Cubo isométrico com base (em vez de `HardDrive`)                 |
-| Incidentes    | Raio com círculo de impacto (em vez de `Zap`)                    |
-| Gap Analysis  | Alvo com linha de "gap" (em vez de `Target` puro)                |
-| Due Diligence | Lupa com mini check (em vez de `Search`)                         |
-| Documentos    | Folha com canto dobrado + selo (em vez de `FileText`)            |
-| Denúncias     | Balão com ponto (em vez de `MessageSquareWarning`)               |
+## 4. Cards, tabelas e densidade
 
-Cada um exporta `{Riscos,Controles,Ativos,...}Icon` em ~30 linhas de SVG. Esses são os pontos onde o usuário **mais reconhece** a marca: sidebar, KPI Pills, Maturity Card, breadcrumbs do Command Center. Substituir nesses 4 lugares já dá identidade visível.
+### Cards
+- Padding padronizado em **3 tamanhos** (`compact` 12px, `default` 20px, `feature` 32px). Hoje cada card escolhe.
+- **Header de card unificado**: ícone proprietário + título + ação opcional à direita. Componente `<ModuleCardHeader>` reutilizável.
+- Remover sombras pesadas em cards aninhados — usar apenas `border` interno.
 
-### 4. Aplicar nos pontos de alto impacto (NÃO em tudo)
+### Tabelas
+- **Density toggle** (compact/comfortable) salvo por usuário, no topo de toda lista grande (Riscos, Controles, Ativos, Documentos).
+- **Coluna de status como pílula colorida** padronizada via `<StatusBadge>` — hoje cada módulo desenha a sua.
+- **Row hover com micro-animação** de slide do accent violeta lateral (4px) ao invés de mudar bg de toda linha.
+- **Skeleton row** real (não bloco genérico) para tabelas durante loading.
 
-Ondas de aplicação:
-- **Onda 1 (este turno)**: substituir Lucide pelos novos `*Icon` proprietários em:
-  - `AppSidebar.tsx` (módulos GRC)
-  - `KPIPills.tsx` (já refatorado recentemente)
-  - `MultiDimensionalRadar.tsx` (`iconMap`)
-  - `useRadarChartData.tsx` (campo `icon`)
-- **Não tocar agora**: ações genéricas (editar, excluir, etc.) em 246 arquivos. Apenas documentar o catálogo — migração orgânica em PRs futuros via memory rule.
+### Estados vazios
+- Criar **EmptyState ilustrado** com SVG proprietário (mesma família dos ícones de módulo). Hoje usamos texto + ícone Lucide pequeno — frio.
+- Cada módulo ganha sua própria ilustração de "vazio" combinando com o ícone do módulo.
 
-### 5. Memory rule
+---
 
-Adicionar `mem://design/icons/akuris-icon-system` com:
-- "Stroke 1.5 = assinatura visual; nunca usar 2.0"
-- "Importar ícones de ação de `@/components/icons`, nunca direto de `lucide-react`"
-- "Módulos GRC usam `*Icon` proprietários de `@/components/icons/modules`"
-- Tamanhos canônicos: xs=12, sm=14, md=16, lg=20, xl=24
+## 5. Dashboard — próxima onda
 
-E referenciar no `mem://index.md` Core: "Ícones: stroke 1.5, módulos GRC com SVG proprietário".
+A reforma recente já elevou bastante. Próximos passos:
 
-## Fora de escopo
+- **Saudação contextual** ("Bom dia, Pedro · 3 itens críticos exigem atenção") em vez de só "Dashboard".
+- **Modo Foco**: botão que esconde KPI pills e mantém só o Hero Score + ações pendentes — útil para gestores.
+- **Drill-down inline**: clicar numa barra de maturidade abre um drawer lateral (não navega de página).
+- **Last update timestamp** discreto no rodapé do Hero ("Atualizado há 2 min").
 
-- Migrar os 246 arquivos para o wrapper `<Icon>` agora — fica como rule para PRs futuros.
-- Substituir ícones de bibliotecas terceiras (radix, etc.) — só `lucide-react`.
-- Redesenhar os ícones de status (toasts, badges) — esses já funcionam bem.
+---
 
-## Arquivos afetados (Onda 1)
+## 6. Microinterações e transições
 
-- **Criar**: `src/components/icons/Icon.tsx`, `src/components/icons/index.ts`, `src/components/icons/modules/{Riscos,Controles,Ativos,Incidentes,GapAnalysis,DueDiligence,Documentos,Denuncias}Icon.tsx` (8 arquivos), `mem://design/icons/akuris-icon-system`
-- **Editar**: `src/components/AppSidebar.tsx`, `src/components/dashboard/KPIPills.tsx`, `src/components/dashboard/MultiDimensionalRadar.tsx`, `src/hooks/useRadarChartData.tsx`, `mem://index.md`
+### Adicionar
+- **Page transitions mais curtas** (180ms ease-out, hoje parece ~300ms).
+- **Skeleton com shimmer violeta sutil** (atual é cinza puro).
+- **Hover em ícones de ação** (editar/deletar) com leve scale 1.05 + tooltip rápido (delay 200ms).
+- **Toast com ícone proprietário** ao invés do ícone Sonner padrão.
+- **Botão primário com ripple violeta** ao clicar (substitui o "press feedback" trivial).
 
-## Resultado esperado
+### Remover
+- `governaii-card-hover` com `translateY(-2px)` global — exagerado em cards de dashboard. Manter só em cards clicáveis.
 
-- Visual perceptivelmente diferente de "site Lovable padrão": linhas mais finas, módulos GRC com assinatura própria.
-- Zero quebra: catálogo é re-export, wrapper é opt-in, ícones proprietários só nos pontos editados.
-- Rumo claro de migração para o resto do sistema sem precisar fazer tudo de uma vez.
+---
 
-Aprova?
+## 7. Acessibilidade & polimento
+
+- **Foco de teclado visível**: hoje é o ring padrão; criar ring violeta com offset 2px e raio combinado com o componente.
+- **Contraste do `muted-foreground`** no dark mode (`200 10% 55%`) está no limite de AA — subir para 60-65%.
+- **Toggle de tema no header** (ainda não existe atalho fácil), com ícone proprietário sun/moon.
+
+---
+
+## 8. O que NÃO mexer
+- Paleta principal (Navy + Violet) — já é identidade.
+- DM Sans — manter.
+- Sistema de ícones recém-criado — apenas expandir.
+- Estrutura do Hero Banner + KPI Pills do dashboard.
+
+---
+
+## Entrega proposta (faseada)
+
+Sugiro implementar em **3 ondas pequenas** (cada uma aprovada antes da próxima) para você ver o impacto sem risco:
+
+**Onda 1 — Fundamentos (alto impacto, baixo risco)**
+- Surface tokens semânticos + saturação dos status
+- Sidebar reagrupada em seções + active state em pílula
+- Active-dot em grupos colapsados
+- Componente `<ModuleCardHeader>` e `<StatusBadge>` unificados
+- Foco de teclado violeta global
+
+**Onda 2 — Identidade (visual proprietário)**
+- Akuris Mark Pattern (background sutil)
+- Corner Accent nos cards principais (substitui `accent-bar-pulse`)
+- EmptyStates ilustrados por módulo
+- Toast com ícone proprietário
+- Skeleton com shimmer violeta
+
+**Onda 3 — Polimento UX**
+- Saudação contextual + Modo Foco no Dashboard
+- Density toggle nas tabelas grandes
+- Drill-down em drawer no Dashboard
+- Spotlight/Command Palette mais proeminente
+- Toggle de tema no header
+
+---
+
+**Posso começar pela Onda 1?** Se preferir, podemos também rodar uma única onda combinando os itens que mais te interessam.
