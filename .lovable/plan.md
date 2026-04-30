@@ -1,80 +1,141 @@
 
+# Akuris Endpoint Agent — Inventário Automático de Ativos
 
-# Varredura Geral — Oportunidades de Melhoria de UX
+Vamos criar um agente leve em **Go** (binário único) instalável como **serviço Windows**, que se registra na empresa via **token de enrollment** e reporta periodicamente um **inventário completo + postura de segurança**. Os dados serão consolidados no módulo de **Ativos** existente, respeitando o isolamento multi-tenant (`empresa_id`).
 
-Após analisar a estrutura da aplicação, identifiquei **5 melhorias concretas** que trariam impacto significativo na experiencia do usuário:
+## Arquitetura
 
----
+```text
+[Endpoint Windows]                       [Supabase / Akuris]
+ akuris-agent.exe  --enroll TOKEN  -->   edge: agent-enroll
+   (gera device_id + agent_token)        (valida token da empresa,
+            |                              cria registro em ativos)
+            v
+ Serviço Windows (a cada 60 min)  -->   edge: agent-checkin
+   coleta WMI/PowerShell                (valida agent_token,
+   envia JSON de inventário              upsert em ativos +
+                                         endpoint_inventory_snapshots)
+                                              |
+                                              v
+                                    Página: Ativos > Endpoints
+                                    (lista, detalhe, status online,
+                                     última coleta, postura)
+```
 
-## 1. ErrorBoundary ausente na maioria das paginas
+## Mudanças de banco (multi-tenant, RLS)
 
-**Problema**: Apenas 2 paginas (GapAnalysisFrameworks e GapAnalysisFrameworkDetail) utilizam o `ErrorBoundary`. Se qualquer outro modulo (Riscos, Contratos, Documentos, Incidentes, etc.) tiver um erro de renderizacao, o usuario ve uma tela branca sem explicacao.
+Novas tabelas (todas com `empresa_id` + RLS por `has_empresa_access`):
 
-**Solucao**: Envolver todas as paginas protegidas com `ErrorBoundary` diretamente no `Layout.tsx` (em volta do `{children}`), garantindo cobertura global sem precisar editar cada pagina individualmente.
+1. `endpoint_enrollment_tokens`
+   - `id`, `empresa_id`, `token_hash` (sha256), `descricao`, `criado_por`, `expira_em`, `max_usos`, `usos`, `revogado`, `created_at`.
+   - Token bruto exibido **uma única vez** ao admin no painel.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Envolver `{children}` dentro de `<ErrorBoundary>` no `<main>` |
+2. `endpoint_agents`
+   - `id` (uuid = device_id), `empresa_id`, `ativo_id` (FK para `ativos`), `agent_token_hash`, `hostname`, `so`, `versao_agente`, `ultimo_checkin`, `ip_publico`, `status` (`online`/`offline`/`stale`), `created_at`, `updated_at`.
 
----
+3. `endpoint_inventory_snapshots`
+   - `id`, `empresa_id`, `agent_id`, `coletado_em`, `payload` (jsonb completo), `hash_payload`. Histórico de coletas (rotação após N dias).
 
-## 2. Feedback de "carregando" inconsistente entre modulos
+Função RPC `mark_offline_endpoints()` chamada por cron (pg_cron) marca agentes sem check-in há > 2h como `offline`.
 
-**Problema**: Apenas Dashboard e Riscos tem skeletons de carregamento. Outros modulos (Contratos, Documentos, Incidentes, Privacidade, etc.) mostram spinner generico ou nada, criando uma experiencia desconexa.
+## Edge Functions
 
-**Solucao**: Criar um componente `PageSkeleton` reutilizavel com variantes (tabela, cards, dashboard) e aplicar nos modulos que ainda nao tem loading adequado.
+Todas com `verify_jwt = false` (autenticação custom por token), CORS, validação Zod, rate limit por IP.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/ui/page-skeleton.tsx` | Novo componente com variantes de skeleton |
+- **`agent-enroll`** (POST)
+  - Body: `{ enrollment_token, hostname, os_info, mac_addresses }`.
+  - Valida hash do token, expiração, usos restantes, empresa.
+  - Cria/recupera registro em `ativos` (tipo `tecnologia`, tag `Endpoint:<device_id>`).
+  - Cria `endpoint_agents`, gera `agent_token` (retornado uma vez).
+  - Incrementa `usos`.
 
----
+- **`agent-checkin`** (POST)
+  - Header: `X-Agent-Token`.
+  - Body: payload completo de inventário (schema validado).
+  - Faz upsert em `ativos` (campos: nome, versao, fornecedor, modelo, status), insere snapshot, atualiza `ultimo_checkin`.
+  - Resposta inclui `next_checkin_seconds` e `config` (intervalo, módulos a coletar).
 
-## 3. Paginas sem EmptyState padronizado
+- **`agent-revoke`** (admin, JWT obrigatório)
+  - Revoga `agent_token` ou `enrollment_token`.
 
-**Problema**: Apenas 3 paginas (Contratos, Documentos, GapAnalysisFrameworks) usam o componente `EmptyState`. Os demais modulos mostram tabelas vazias sem orientacao ao usuario sobre o que fazer. Isso e especialmente ruim para novos usuarios.
+## Frontend (módulo Ativos)
 
-**Solucao**: Adicionar `EmptyState` com acao de criacao nos modulos que ainda nao tem: Riscos, Incidentes, Ativos, Politicas, PlanosAcao, Denuncia.
+Nova aba **"Endpoints"** dentro de `/ativos`:
 
-| Arquivo | Mudanca |
-|---------|---------|
-| Paginas sem empty state | Adicionar `<EmptyState>` quando dados retornam vazio |
+- **Tabela de agentes**: hostname, SO, status (badge online/offline), último check-in, postura de segurança (BitLocker, AV, Firewall, patches), botão "Ver detalhes" e "Revogar".
+- **Diálogo "Detalhes do Endpoint"**: tabs Hardware, Software instalado (com busca), Postura de Segurança, Histórico de coletas.
+- **Diálogo "Gerar token de enrollment"**: admin define descrição, validade (7/30/90 dias), max_usos. Mostra token + comando de instalação pronto:
 
----
+  ```text
+  akuris-agent.exe install --token AKR-xxxxxxxxxxxx --server https://...
+  ```
 
-## 4. Ausencia de atalhos de teclado documentados para o usuario
+- **KPIs no header da aba**: total de endpoints, online agora, sem check-in 24h, com postura crítica.
+- Identidade visual padrão (Navy/Purple, DM Sans, StatCards, Sonner toasts, fullscreen mobile).
+- i18n PT/EN.
 
-**Problema**: Existe um `CommandPalette` (Cmd+K) funcional, mas nao ha nenhum indicador ou documentacao visivel para o usuario mobile/desktop sobre atalhos disponiveis. Muitos usuarios nunca descobrirao esse recurso.
+## Notificações
 
-**Solucao**: Adicionar uma secao "Atalhos de Teclado" no `CommandPalette` (ou um item no menu de perfil do usuario) mostrando os atalhos disponiveis (Cmd+K para busca, Ctrl+B para sidebar).
+Centralizadas no sino do header (padrão do projeto) e via `useIntegrationNotify`:
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/CommandPalette.tsx` | Adicionar grupo "Atalhos" na paleta |
+- Novo endpoint enrollado.
+- Endpoint offline há > 24h.
+- Postura crítica detectada (ex.: BitLocker desativado, AV inativo, patches críticos pendentes).
 
----
+Novos eventos em `src/lib/integration-events.ts`:
+`endpoint_enrollado`, `endpoint_offline`, `endpoint_postura_critica`.
 
-## 5. Botao de "Voltar" no header nao tem tooltip
+## O Agente (Go)
 
-**Problema**: O botao de voltar (`ArrowLeft`) no header do `Layout.tsx` nao tem tooltip, e em mobile pode ser confundido com outros icones. Alem disso, usar `navigate(-1)` pode levar o usuario para fora da aplicacao se o historico estiver vazio.
+Repositório novo: pasta `agent/` na raiz do projeto (não compilada pelo Vite). Estrutura:
 
-**Solucao**: Adicionar tooltip "Voltar" e tratar o fallback para `/dashboard` quando nao ha historico de navegacao.
+```text
+agent/
+  cmd/akuris-agent/main.go      # CLI: install / uninstall / enroll / run
+  internal/collector/           # WMI, registry, netstat (gopsutil + go-ole)
+    hardware.go                 # CPU, RAM, disco, modelo, serial
+    os.go                       # versão SO, build, usuário logado
+    software.go                 # programas instalados (Uninstall registry)
+    security.go                 # BitLocker, Defender/AV, Firewall, patches
+    network.go                  # IPs, MACs, portas escutando
+  internal/client/              # HTTP client p/ edge functions
+  internal/service/             # integração com Windows Service (kardianos/service)
+  internal/storage/             # config local em %ProgramData%\Akuris\agent.json
+  build.ps1                     # cross-compile + assinatura + MSI (WiX)
+```
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/Layout.tsx` | Tooltip + fallback seguro no botao voltar |
+Bibliotecas: `github.com/shirou/gopsutil/v3`, `github.com/kardianos/service`, `golang.org/x/sys/windows/registry`.
 
----
+Comportamento:
+- Primeiro run: `--enroll TOKEN` → chama `agent-enroll`, salva `device_id` + `agent_token` cifrado com DPAPI em `%ProgramData%\Akuris\`.
+- Roda como serviço `AkurisAgent` (LocalSystem). Loop a cada 60 min (configurável pelo servidor): coleta + POST em `agent-checkin`.
+- Retry exponencial offline; buffer local de até 24 snapshots.
+- Auto-update opcional (fase 2).
 
-## Resumo de Prioridade
+Entregáveis:
+- `akuris-agent.exe` (binário) e `AkurisAgent.msi` (instalador silencioso para GPO/Intune).
+- Documentação em `docs/endpoint-agent.md` (instalação manual, GPO, Intune, desinstalação, troubleshooting).
 
-| # | Melhoria | Impacto | Esforco |
-|---|----------|---------|---------|
-| 1 | ErrorBoundary global | Alto (evita tela branca) | Baixo |
-| 2 | PageSkeleton reutilizavel | Medio (consistencia visual) | Medio |
-| 3 | EmptyState nos modulos faltantes | Alto (orienta novos usuarios) | Medio |
-| 4 | Documentar atalhos de teclado | Baixo (discoverability) | Baixo |
-| 5 | Tooltip + fallback no botao voltar | Baixo (previne bug de navegacao) | Baixo |
+## Segurança
 
-Recomendo comecar pelos itens 1 e 5 (rapidos e de alto impacto) e depois 3 (experiencia de primeiro uso).
+- Tokens armazenados como **hash SHA-256** no banco (nunca texto puro).
+- `agent_token` cifrado no endpoint via **DPAPI** (escopo machine).
+- RLS estrita: agente só consegue tocar `ativos`/snapshots da própria `empresa_id` (validado no edge antes de qualquer escrita).
+- Rate limit em `agent-enroll` (10/min/IP) e `agent-checkin` (1/min/agent_token).
+- Logs de auditoria em `audit_logs` para enroll, revoke e mudanças de postura.
 
+## Escopo desta entrega
+
+Fase 1 (este plano):
+1. Migrações (3 tabelas + RLS + RPC + cron).
+2. 3 edge functions (`agent-enroll`, `agent-checkin`, `agent-revoke`).
+3. UI: aba **Endpoints** em `/ativos` com tabela, detalhe, geração de token e revogação.
+4. Notificações (sino + integrações) para os 3 eventos.
+5. Esqueleto do agente Go em `agent/` com coletores, modo serviço, build script PowerShell e documentação.
+
+Fase 2 (futura, fora deste plano): assinatura de código do .exe/.msi, auto-update, suporte Linux/macOS, integração com Intune via Graph (já parcialmente existente em `azure-integration`).
+
+## Observações
+
+- O agente em Go **não** roda no sandbox da Lovable; ele é compilado localmente/CI pelo seu time. Vou deixar `build.ps1` pronto e instruções claras.
+- Se preferir, podemos publicar o binário em um bucket público do Supabase para download direto pelo painel — me avise se quer isso já na fase 1.
