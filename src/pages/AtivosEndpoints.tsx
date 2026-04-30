@@ -345,36 +345,46 @@ const AtivosEndpoints: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
-                Copie o token agora — ele não será exibido novamente.
+              <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-200">
+                ✓ Token gerado. Baixe os 2 arquivos abaixo, coloque-os na <strong>mesma pasta</strong> da máquina Windows e dê <strong>clique direito → "Executar como administrador"</strong> no <code>.bat</code>.
               </div>
-              <div>
-                <Label>Token</Label>
-                <div className="flex gap-2">
-                  <Input readOnly value={generatedToken} className="font-mono text-xs" />
-                  <Button size="icon" variant="outline" onClick={() => { navigator.clipboard.writeText(generatedToken); toast.success('Token copiado'); }}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div>
-                <Label>Comando de instalação (Windows, executar como Admin)</Label>
-                <div className="flex gap-2">
-                  <Input readOnly value={installCommand} className="font-mono text-xs" />
-                  <Button size="icon" variant="outline" onClick={() => { navigator.clipboard.writeText(installCommand); toast.success('Comando copiado'); }}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
-                Passos: 1) Baixe o instalador. 2) Abra um PowerShell como Administrador. 3) Cole o comando acima.
-              </div>
-              <DialogFooter className="gap-2">
-                <Button variant="outline" asChild>
+
+              <div className="space-y-2">
+                <Button onClick={downloadInstallerBat} className="w-full" size="lg">
+                  <Download className="h-4 w-4 mr-2" /> 1. Baixar instalador (.bat) — com seu token
+                </Button>
+                <Button variant="outline" asChild className="w-full" size="lg">
                   <a href={AGENT_DOWNLOAD_URL} download>
-                    <Download className="h-4 w-4 mr-2" /> Baixar akuris-agent.exe
+                    <Download className="h-4 w-4 mr-2" /> 2. Baixar agente (akuris-agent.exe)
                   </a>
                 </Button>
+              </div>
+
+              <details className="text-xs text-muted-foreground">
+                <summary className="cursor-pointer hover:text-foreground">Instalação manual / linha de comando</summary>
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <Label className="text-xs">Token (não será exibido novamente)</Label>
+                    <div className="flex gap-2">
+                      <Input readOnly value={generatedToken} className="font-mono text-xs" />
+                      <Button size="icon" variant="outline" onClick={() => { navigator.clipboard.writeText(generatedToken); toast.success('Token copiado'); }}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Comando equivalente (PowerShell Admin)</Label>
+                    <div className="flex gap-2">
+                      <Input readOnly value={installCommand} className="font-mono text-xs" />
+                      <Button size="icon" variant="outline" onClick={() => { navigator.clipboard.writeText(installCommand); toast.success('Comando copiado'); }}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </details>
+
+              <DialogFooter>
                 <Button onClick={closeTokenDialog}>Concluído</Button>
               </DialogFooter>
             </div>
