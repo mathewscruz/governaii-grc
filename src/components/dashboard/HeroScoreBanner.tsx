@@ -2,6 +2,8 @@ import { Shield, AlertTriangle, Target } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { GrcMaturity } from '@/hooks/useGrcMaturityScore';
 import { HealthScoreGauge } from './HealthScoreGauge';
+import { AkurisMarkPattern } from '@/components/identity/AkurisMarkPattern';
+import { CornerAccent } from '@/components/identity/CornerAccent';
 
 interface HeroScoreBannerProps {
   maturity: GrcMaturity;
