@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
@@ -68,7 +67,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
   const [isEditingLayout, setIsEditingLayout] = useState(false);
   const [showCreditsDialog, setShowCreditsDialog] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesScrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Dialog de criação via DocGen
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -113,24 +113,33 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
         }
       };
       fetchCategorias();
-      // Iniciar conversa com saudação contextualizada
-      const greeting = frameworkName
-        ? `Olá! Sou o DocGen, seu assistente inteligente para criação de documentos.\n\nVejo que você está trabalhando com o framework **${frameworkName}**. Posso ajudá-lo a gerar políticas, procedimentos ou normas alinhados a esse framework, usando os gaps identificados na sua avaliação para garantir que o documento cubra os pontos necessários.\n\nQue tipo de documento você gostaria de criar?`
-        : 'Olá! Sou o DocGen, seu assistente inteligente para criação de documentos. Estou aqui para ajudá-lo a criar qualquer tipo de documento que você precisa.\n\nPode me contar que tipo de documento você gostaria de criar?';
-      setMessages([
-        {
-          role: 'assistant',
-          content: greeting,
-          timestamp: new Date(),
-        },
-      ]);
+      // Iniciar conversa com saudação contextualizada (apenas se chat estiver vazio — preserva conversa em andamento)
+      setMessages(prev => {
+        if (prev.length > 0) return prev;
+        const greeting = frameworkName
+          ? `Olá! Sou o DocGen, seu assistente inteligente para criação de documentos.\n\nVejo que você está trabalhando com o framework **${frameworkName}**. Posso ajudá-lo a gerar políticas, procedimentos ou normas alinhados a esse framework, usando os gaps identificados na sua avaliação para garantir que o documento cubra os pontos necessários.\n\nQue tipo de documento você gostaria de criar?`
+          : 'Olá! Sou o DocGen, seu assistente inteligente para criação de documentos. Estou aqui para ajudá-lo a criar qualquer tipo de documento que você precisa.\n\nPode me contar que tipo de documento você gostaria de criar?';
+        return [{ role: 'assistant', content: greeting, timestamp: new Date() }];
+      });
+      // Foco no input ao abrir
+      setTimeout(() => inputRef.current?.focus(), 200);
     }
-  }, [open]);
+  }, [open, frameworkName]);
 
-  // Auto scroll para última mensagem
+  // Auto scroll para última mensagem (rola o container do chat, não a página)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const el = messagesScrollRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [messages, isLoading]);
+
+  // Foco no input quando IA termina de responder
+  useEffect(() => {
+    if (!isLoading && open) {
+      inputRef.current?.focus();
+    }
+  }, [isLoading, open]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || !userInfo || isLoading) return;
@@ -535,16 +544,20 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     return parts;
   };
 
+  const escapeHtmlAttr = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
   const renderLineWithTooltips = (line: string): string => {
     let processedLine = line;
-    
+
     Object.entries(TOOLTIPS).forEach(([term, definition]) => {
       const regex = new RegExp(`\\b${term}\\b`, 'gi');
+      const safeDef = escapeHtmlAttr(definition);
       processedLine = processedLine.replace(regex, (match) => {
-        return `<span class="underline decoration-dotted text-primary cursor-help" title="${definition}">${match}</span>`;
+        return `<span class="underline decoration-dotted text-primary cursor-help" title="${safeDef}">${match}</span>`;
       });
     });
-    
+
     return processedLine;
   };
 
@@ -587,8 +600,9 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     }
   }, [generatedDocument]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter envia, Shift+Enter quebra linha. Ignora durante composição IME (acentos compostos).
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       sendMessage();
     }
