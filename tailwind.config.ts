@@ -180,7 +180,7 @@ export default {
 					'100%': { transform: 'rotate(1080deg)' }
 				},
 				'page-enter': {
-					'0%': { opacity: '0', transform: 'translateY(6px)' },
+					'0%': { opacity: '0.4', transform: 'translateY(4px)' },
 					'100%': { opacity: '1', transform: 'translateY(0)' }
 				}
 			},
@@ -194,7 +194,7 @@ export default {
 				'shimmer': 'shimmer 2s infinite linear',
 				'pulse-subtle': 'pulse-subtle 3s infinite ease-in-out',
 				'spin-burst': 'spin-burst 5s ease-in-out infinite',
-				'page-enter': 'page-enter 0.22s cubic-bezier(0.22, 1, 0.36, 1)'
+				'page-enter': 'page-enter 0.22s cubic-bezier(0.22, 1, 0.36, 1) both'
 			},
 			spacing: {
 				'xs': 'var(--spacing-xs)',
