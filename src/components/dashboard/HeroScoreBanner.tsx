@@ -1,8 +1,7 @@
-import { Shield, AlertTriangle, Target, CheckCircle2, AlertCircle, XCircle, Minus, TrendingUp, TrendingDown } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Shield, AlertTriangle, Target } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { GrcMaturity } from '@/hooks/useGrcMaturityScore';
-import { useMaturityTrend } from '@/hooks/useMaturityTrend';
+import { HealthScoreGauge } from './HealthScoreGauge';
 
 interface HeroScoreBannerProps {
   maturity: GrcMaturity;
@@ -12,22 +11,6 @@ interface HeroScoreBannerProps {
   userName: string;
 }
 
-const STATUS_ICON = {
-  excellent: CheckCircle2,
-  good: CheckCircle2,
-  warning: AlertCircle,
-  critical: XCircle,
-  no_data: Minus,
-} as const;
-
-const STATUS_BG = {
-  excellent: 'bg-green-500/10 border-green-500/20',
-  good: 'bg-primary/10 border-primary/20',
-  warning: 'bg-yellow-500/10 border-yellow-500/20',
-  critical: 'bg-destructive/10 border-destructive/20',
-  no_data: 'bg-muted/30 border-border',
-} as const;
-
 export function HeroScoreBanner({
   maturity,
   criticalAlerts,
@@ -36,8 +19,6 @@ export function HeroScoreBanner({
   userName,
 }: HeroScoreBannerProps) {
   const { t } = useLanguage();
-  const StatusIcon = STATUS_ICON[maturity.status];
-  const { data: trend } = useMaturityTrend(maturity.score);
 
   const metrics = [
     {
