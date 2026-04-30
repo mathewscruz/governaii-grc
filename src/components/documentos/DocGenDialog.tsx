@@ -651,20 +651,23 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
       hideFooter
       disableShortcuts
     >
-      <div className="flex flex-col h-full p-6 gap-4 min-h-0">
-        <div className="flex-1 flex gap-4 min-h-0">
+      <div className="flex flex-col h-full p-6 gap-4 min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
           {/* Chat Area */}
-          <div className="flex-1 flex flex-col min-h-0">
-            <ScrollArea className="flex-1 pr-4 min-h-0">
-              <div className="space-y-4 p-1 min-h-[300px]">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0">
+            <div
+              ref={messagesScrollRef}
+              className="flex-1 min-h-0 overflow-y-auto pr-2 -mr-2"
+            >
+              <div className="space-y-4 p-1">
                 {messages.map((message, index) => (
                   <div
                     key={index}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <Card className={`max-w-[85%] ${
-                      message.role === 'user' 
-                        ? 'bg-primary text-primary-foreground' 
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-muted'
                     }`}>
                       <CardContent className="p-3">
@@ -698,17 +701,17 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                     </Card>
                   </div>
                 )}
-                <div ref={messagesEndRef} />
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Input Area */}
             <div className="mt-4 flex gap-2">
               <Textarea
+                ref={inputRef}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Digite sua mensagem aqui..."
+                onKeyDown={handleKeyDown}
+                placeholder="Digite sua mensagem aqui... (Enter envia, Shift+Enter quebra linha)"
                 className="flex-1 min-h-[60px] resize-none"
                 disabled={isLoading}
               />
@@ -717,6 +720,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                 disabled={!inputMessage.trim() || isLoading}
                 size="icon"
                 className="h-[60px]"
+                aria-label="Enviar mensagem"
               >
                 <Send className="h-4 w-4" />
               </Button>
@@ -743,10 +747,10 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
 
           {/* Document Preview */}
           {generatedDocument && (
-            <div className="w-1/2 border-l pl-4 flex flex-col overflow-hidden">
-              <div className="flex items-center justify-between mb-4">
+            <div className="w-full lg:w-1/2 lg:border-l lg:pl-4 border-t pt-4 lg:border-t-0 lg:pt-0 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <h3 className="font-semibold">{isEditingLayout ? 'Editor de Layout' : 'Preview do Documento'}</h3>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button onClick={() => setIsEditingLayout(!isEditingLayout)} size="sm" variant="outline" className="gap-1">
                       {isEditingLayout ? 'Concluir Layout' : 'Editar Layout'}
                     </Button>
@@ -768,13 +772,13 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                     </DropdownMenu>
                   </div>
               </div>
-              
+
               {isEditingLayout ? (
-                <div className="h-full">
+                <div className="flex-1 min-h-0 overflow-y-auto">
                   <DocLayoutBuilder value={generatedDocument} onChange={setGeneratedDocument} />
                 </div>
               ) : (
-                <ScrollArea className="flex-1 pr-2">
+                <div className="flex-1 min-h-0 overflow-y-auto pr-2">
                   <div className="space-y-5 text-sm leading-relaxed">
                     <div>
                       {generatedDocument.metadados?.logo_url && (
@@ -798,7 +802,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                       </div>
                     ))}
                   </div>
-                </ScrollArea>
+                </div>
               )}
 
             </div>
