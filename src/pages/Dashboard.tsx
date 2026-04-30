@@ -114,9 +114,6 @@ export default function Dashboard() {
         {/* KPI Pills */}
         <KPIPills
           ativos={ativosStats.data?.total || 0}
-          criticalAlerts={dashboardData?.criticalAlerts || 0}
-          activeControls={controlesStats.data?.ativos || 0}
-          controlsExpiring={controlesStats.data?.vencendoAvaliacao || 0}
           activeIncidents={activeIncidents}
           incidentsThisMonth={incidentesStats.data?.mes || 0}
           activeContracts={contratosStats.data?.ativos || 0}
@@ -125,10 +122,15 @@ export default function Dashboard() {
           activeDocs={documentosStats.data?.ativos || 0}
           docsExpiring={documentosStats.data?.vencendo30Dias || 0}
           docsPending={documentosStats.data?.pendentesAprovacao || 0}
-          complianceScore={gapStats.data?.averageCompliance || 0}
-          totalFrameworks={gapStats.data?.totalFrameworks || 0}
-          trends={trends}
-          onAlertsClick={() => setAlertsDialogOpen(true)}
+          totalRiscos={riscosStats.data?.total || 0}
+          riscosCriticos={riscosStats.data?.criticos || 0}
+          riscosAltos={riscosStats.data?.altos || 0}
+          planosPendentes={planosStats.data?.pendentes || 0}
+          planosAtrasados={planosStats.data?.atrasados || 0}
+          ddAtivos={ddStats.data?.activeAssessments || 0}
+          ddExpirados={ddStats.data?.expiredAssessments || 0}
+          denunciasAbertas={(denunciasStats.data?.novas || 0) + (denunciasStats.data?.em_andamento || 0)}
+          denunciasNovas={denunciasStats.data?.novas || 0}
         />
 
 
