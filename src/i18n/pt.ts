@@ -187,6 +187,10 @@ export const pt = {
     logout: 'Sair',
     confirmLogout: 'Confirmar saída',
     confirmLogoutDesc: 'Tem certeza que deseja sair do sistema?',
+    sectionOperation: 'Operação',
+    sectionGrcCore: 'GRC Core',
+    sectionCompliance: 'Compliance & Governança',
+    sectionInsights: 'Insights',
   },
   userProfile: {
     myProfile: 'Meu perfil',
