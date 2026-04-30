@@ -31,8 +31,6 @@ const CREATE_ROUTES: Record<string, string> = {
   ativos: "/ativos",
   denuncia: "/denuncia",
   denuncias: "/denuncia",
-  politica: "/politicas",
-  politicas: "/politicas",
   fornecedor: "/due-diligence",
   fornecedores: "/due-diligence",
 };
