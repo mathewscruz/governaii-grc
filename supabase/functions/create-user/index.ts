@@ -207,12 +207,14 @@ Deno.serve(async (req) => {
 
     // Inserir/atualizar role em user_roles (fonte de verdade RBAC)
     try {
-      const validRole: 'super_admin' | 'admin' | 'user' | 'readonly' =
-        ['super_admin', 'admin', 'user', 'readonly'].includes(role) ? role : 'user'
-      // app_role enum: ('admin', 'moderator', 'user') OR project enum — usar a role pedida quando válida
+      // app_role enum aceita: user, admin, super_admin (não tem readonly)
+      const appRole: 'super_admin' | 'admin' | 'user' =
+        role === 'super_admin' ? 'super_admin'
+        : role === 'admin' ? 'admin'
+        : 'user'
       const { error: roleErr } = await supabaseAdmin
         .from('user_roles')
-        .upsert({ user_id: authData.user.id, role: validRole }, { onConflict: 'user_id,role' })
+        .upsert({ user_id: authData.user.id, role: appRole }, { onConflict: 'user_id,role' })
       if (roleErr) console.error('Erro ao inserir user_roles:', roleErr)
     } catch (e) {
       console.error('Exceção ao inserir user_roles:', e)
