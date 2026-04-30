@@ -47,7 +47,7 @@ const Configuracoes = () => {
       />
 
       <Tabs defaultValue={defaultTab} className="space-y-6">
-        <TabsList className="xl:flex-nowrap">
+        <TabsList>
           {isSuperAdmin && (
             <TabsTrigger value="empresas" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
