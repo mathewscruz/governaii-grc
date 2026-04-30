@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
@@ -68,7 +67,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
   const [isEditingLayout, setIsEditingLayout] = useState(false);
   const [showCreditsDialog, setShowCreditsDialog] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesScrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Dialog de criação via DocGen
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -113,24 +113,33 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
         }
       };
       fetchCategorias();
-      // Iniciar conversa com saudação contextualizada
-      const greeting = frameworkName
-        ? `Olá! Sou o DocGen, seu assistente inteligente para criação de documentos.\n\nVejo que você está trabalhando com o framework **${frameworkName}**. Posso ajudá-lo a gerar políticas, procedimentos ou normas alinhados a esse framework, usando os gaps identificados na sua avaliação para garantir que o documento cubra os pontos necessários.\n\nQue tipo de documento você gostaria de criar?`
-        : 'Olá! Sou o DocGen, seu assistente inteligente para criação de documentos. Estou aqui para ajudá-lo a criar qualquer tipo de documento que você precisa.\n\nPode me contar que tipo de documento você gostaria de criar?';
-      setMessages([
-        {
-          role: 'assistant',
-          content: greeting,
-          timestamp: new Date(),
-        },
-      ]);
+      // Iniciar conversa com saudação contextualizada (apenas se chat estiver vazio — preserva conversa em andamento)
+      setMessages(prev => {
+        if (prev.length > 0) return prev;
+        const greeting = frameworkName
+          ? `Olá! Sou o DocGen, seu assistente inteligente para criação de documentos.\n\nVejo que você está trabalhando com o framework **${frameworkName}**. Posso ajudá-lo a gerar políticas, procedimentos ou normas alinhados a esse framework, usando os gaps identificados na sua avaliação para garantir que o documento cubra os pontos necessários.\n\nQue tipo de documento você gostaria de criar?`
+          : 'Olá! Sou o DocGen, seu assistente inteligente para criação de documentos. Estou aqui para ajudá-lo a criar qualquer tipo de documento que você precisa.\n\nPode me contar que tipo de documento você gostaria de criar?';
+        return [{ role: 'assistant', content: greeting, timestamp: new Date() }];
+      });
+      // Foco no input ao abrir
+      setTimeout(() => inputRef.current?.focus(), 200);
     }
-  }, [open]);
+  }, [open, frameworkName]);
 
-  // Auto scroll para última mensagem
+  // Auto scroll para última mensagem (rola o container do chat, não a página)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const el = messagesScrollRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [messages, isLoading]);
+
+  // Foco no input quando IA termina de responder
+  useEffect(() => {
+    if (!isLoading && open) {
+      inputRef.current?.focus();
+    }
+  }, [isLoading, open]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || !userInfo || isLoading) return;
@@ -535,16 +544,20 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     return parts;
   };
 
+  const escapeHtmlAttr = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
   const renderLineWithTooltips = (line: string): string => {
     let processedLine = line;
-    
+
     Object.entries(TOOLTIPS).forEach(([term, definition]) => {
       const regex = new RegExp(`\\b${term}\\b`, 'gi');
+      const safeDef = escapeHtmlAttr(definition);
       processedLine = processedLine.replace(regex, (match) => {
-        return `<span class="underline decoration-dotted text-primary cursor-help" title="${definition}">${match}</span>`;
+        return `<span class="underline decoration-dotted text-primary cursor-help" title="${safeDef}">${match}</span>`;
       });
     });
-    
+
     return processedLine;
   };
 
@@ -587,8 +600,9 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     }
   }, [generatedDocument]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter envia, Shift+Enter quebra linha. Ignora durante composição IME (acentos compostos).
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       sendMessage();
     }
@@ -637,20 +651,23 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
       hideFooter
       disableShortcuts
     >
-      <div className="flex flex-col h-full p-6 gap-4 min-h-0">
-        <div className="flex-1 flex gap-4 min-h-0">
+      <div className="flex flex-col h-full p-6 gap-4 min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
           {/* Chat Area */}
-          <div className="flex-1 flex flex-col min-h-0">
-            <ScrollArea className="flex-1 pr-4 min-h-0">
-              <div className="space-y-4 p-1 min-h-[300px]">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0">
+            <div
+              ref={messagesScrollRef}
+              className="flex-1 min-h-0 overflow-y-auto pr-2 -mr-2"
+            >
+              <div className="space-y-4 p-1">
                 {messages.map((message, index) => (
                   <div
                     key={index}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <Card className={`max-w-[85%] ${
-                      message.role === 'user' 
-                        ? 'bg-primary text-primary-foreground' 
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-muted'
                     }`}>
                       <CardContent className="p-3">
@@ -684,17 +701,17 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                     </Card>
                   </div>
                 )}
-                <div ref={messagesEndRef} />
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Input Area */}
             <div className="mt-4 flex gap-2">
               <Textarea
+                ref={inputRef}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Digite sua mensagem aqui..."
+                onKeyDown={handleKeyDown}
+                placeholder="Digite sua mensagem aqui... (Enter envia, Shift+Enter quebra linha)"
                 className="flex-1 min-h-[60px] resize-none"
                 disabled={isLoading}
               />
@@ -703,6 +720,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                 disabled={!inputMessage.trim() || isLoading}
                 size="icon"
                 className="h-[60px]"
+                aria-label="Enviar mensagem"
               >
                 <Send className="h-4 w-4" />
               </Button>
@@ -729,10 +747,10 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
 
           {/* Document Preview */}
           {generatedDocument && (
-            <div className="w-1/2 border-l pl-4 flex flex-col overflow-hidden">
-              <div className="flex items-center justify-between mb-4">
+            <div className="w-full lg:w-1/2 lg:border-l lg:pl-4 border-t pt-4 lg:border-t-0 lg:pt-0 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <h3 className="font-semibold">{isEditingLayout ? 'Editor de Layout' : 'Preview do Documento'}</h3>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button onClick={() => setIsEditingLayout(!isEditingLayout)} size="sm" variant="outline" className="gap-1">
                       {isEditingLayout ? 'Concluir Layout' : 'Editar Layout'}
                     </Button>
@@ -754,13 +772,13 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                     </DropdownMenu>
                   </div>
               </div>
-              
+
               {isEditingLayout ? (
-                <div className="h-full">
+                <div className="flex-1 min-h-0 overflow-y-auto">
                   <DocLayoutBuilder value={generatedDocument} onChange={setGeneratedDocument} />
                 </div>
               ) : (
-                <ScrollArea className="flex-1 pr-2">
+                <div className="flex-1 min-h-0 overflow-y-auto pr-2">
                   <div className="space-y-5 text-sm leading-relaxed">
                     <div>
                       {generatedDocument.metadados?.logo_url && (
@@ -784,7 +802,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                       </div>
                     ))}
                   </div>
-                </ScrollArea>
+                </div>
               )}
 
             </div>
