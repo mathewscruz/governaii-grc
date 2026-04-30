@@ -293,73 +293,36 @@ IMPORTANTE: Sempre responda em português brasileiro. Responda SOMENTE com uma m
 
       console.log('AI Response length:', aiMessage.length);
 
-      // Parse da resposta da IA
-      let parsedResponse;
-      try {
-        const jsonMatch = aiMessage.match(/```json\s*(\{[\s\S]*?\})\s*```/);
-        if (jsonMatch) {
-          parsedResponse = JSON.parse(jsonMatch[1]);
-        } else {
-          const jsonStart = aiMessage.indexOf('{');
-          const jsonEnd = aiMessage.lastIndexOf('}') + 1;
-          if (jsonStart !== -1 && jsonEnd > jsonStart) {
-            const jsonString = aiMessage.substring(jsonStart, jsonEnd);
-            parsedResponse = JSON.parse(jsonString);
-          } else {
-            throw new Error('JSON não encontrado');
-          }
-        }
-        
-        if (!parsedResponse.message) {
-          const cleanMessage = aiMessage
-            .replace(/```json[\s\S]*?```/g, '')
-            .replace(/\{[\s\S]*?\}/g, '')
-            .trim();
-          parsedResponse.message = cleanMessage || aiMessage;
-        }
-        
-        if (parsedResponse.message) {
-          parsedResponse.message = parsedResponse.message
-            .replace(/```json[\s\S]*?```/g, '')
-            .replace(/\{[\s\S]*?\}/g, '')
-            .replace(/tipo_documento_identificado[\s\S]*$/g, '')
-            .replace(/frameworks_relacionados[\s\S]*$/g, '')
-            .replace(/informacoes_[\s\S]*$/g, '')
-            .trim();
-        }
-        
-      } catch (error) {
-        console.log('Erro ao fazer parse da resposta JSON:', error);
-        
-        let cleanMessage = aiMessage
-          .replace(/```json[\s\S]*?```/g, '')
-          .replace(/\{[\s\S]*?\}/g, '')
-          .replace(/"[^"]*":\s*[^,}]*/g, '')
-          .replace(/tipo_documento_identificado[\s\S]*$/g, '')
-          .replace(/frameworks_relacionados[\s\S]*$/g, '')
-          .replace(/informacoes_[\s\S]*$/g, '')
-          .trim();
-        
-        const isDocumentReady = aiMessage.toLowerCase().includes('documento foi gerado') || 
-                               aiMessage.toLowerCase().includes('documento está pronto') ||
-                               aiMessage.toLowerCase().includes('pronto para ser implementado') ||
-                               aiMessage.toLowerCase().includes('gerar_documento');
-        
-        parsedResponse = {
-          message: cleanMessage || 'Resposta processada com sucesso.',
-          tipo_documento_identificado: context.tipo_documento_identificado,
-          etapa_atual: isDocumentReady ? 'pronto' : (context.etapa_atual || 'coleta'),
-          documento_pronto: isDocumentReady
-        };
-      }
+      // O system prompt instrui o modelo a responder em texto puro (sem JSON visível).
+      // Tratamos a resposta como texto e detectamos sinais de prontidão por marcadores no próprio texto.
+      // Como camada de robustez, removemos eventuais blocos ```json``` que escapem.
+      const cleanMessage = aiMessage
+        .replace(/```json[\s\S]*?```/g, '')
+        .replace(/```[\s\S]*?```/g, (block) => block) // preserva blocos de código não-json (ex.: exemplos de comando)
+        .trim() || aiMessage.trim();
 
-      const messageText = parsedResponse.message.toLowerCase();
-      const isDocumentReady = messageText.includes('clique no botão') || 
-                             messageText.includes('gerar documento') ||
-                             messageText.includes('tenho todas as informações') ||
-                             messageText.includes('posso gerar') ||
-                             messageText.includes('documento completa') ||
-                             messageText.includes('documento está pronto');
+      const messageText = cleanMessage.toLowerCase();
+      const isDocumentReady =
+        messageText.includes('clique no botão') ||
+        messageText.includes('gerar documento') ||
+        messageText.includes('tenho todas as informações') ||
+        messageText.includes('posso gerar') ||
+        messageText.includes('documento completa') ||
+        messageText.includes('documento está pronto');
+
+      const parsedResponse: any = {
+        message: cleanMessage,
+        tipo_documento_identificado:
+          extractDocumentType(messageText) || context.tipo_documento_identificado,
+        documento_nome_identificado:
+          extractDocumentName(messageText) || (context as any).documento_nome_identificado,
+        frameworks_relacionados:
+          extractFrameworks(messageText) || (context as any).frameworks_relacionados,
+        etapa_atual: isDocumentReady ? 'pronto' : (context.etapa_atual || 'coleta'),
+        documento_pronto: isDocumentReady,
+        termos_com_tooltip: [],
+        informacoes_necessarias: [],
+      };
 
       messages.push({ role: 'assistant', content: parsedResponse.message });
 
