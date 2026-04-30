@@ -47,6 +47,8 @@ interface Usuario {
   foto_url?: string;
   created_at: string;
   permission_profile_id?: string;
+  invitation_sent_at?: string | null;
+  invitation_link?: string | null;
   empresas?: {
     nome: string;
   };
