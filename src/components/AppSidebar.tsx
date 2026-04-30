@@ -46,6 +46,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -158,13 +159,16 @@ export function AppSidebar() {
   const { t } = useLanguage();
   const location = useLocation();
   const currentPath = location.pathname;
-  const menuItems = getMenuItems(t);
-  
+  const menuSections = getMenuSections(t);
+
+  // All items flat (used for active-group lookup)
+  const allItems = menuSections.flatMap((s) => s.items);
+
   // Function to get which group contains the active route
   const getActiveGroup = () => {
-    for (const item of menuItems) {
+    for (const item of allItems) {
       if (item.subItems) {
-        const hasActiveSubItem = item.subItems.some(subItem => currentPath === subItem.url);
+        const hasActiveSubItem = item.subItems.some((subItem) => currentPath === subItem.url);
         if (hasActiveSubItem) {
           return item.title;
         }
@@ -176,7 +180,7 @@ export function AppSidebar() {
   // Start with groups that contain active routes open
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  
+
   const isCollapsed = state === 'collapsed';
 
   // Open group automatically when it contains the active route
@@ -188,29 +192,30 @@ export function AppSidebar() {
   }, [currentPath]);
 
   const toggleGroup = (groupTitle: string) => {
-    setOpenGroups(prev => {
+    setOpenGroups((prev) => {
       if (prev.includes(groupTitle)) {
-        return prev.filter(title => title !== groupTitle);
+        return prev.filter((title) => title !== groupTitle);
       }
       return [groupTitle];
     });
   };
 
   const isActive = (path: string) => currentPath === path;
-  
+
   const hasActiveSubItem = (subItems: any[]) => {
-    return subItems.some(subItem => currentPath === subItem.url);
+    return subItems.some((subItem) => currentPath === subItem.url);
   };
 
   // Função para fechar grupos ao navegar para item sem submenu
   const handleNavClick = () => {
     setOpenGroups([]);
   };
-  
+
+  // Active state em pílula (estilo Linear/Notion)
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive 
-      ? 'bg-primary/15 text-primary border-l-4 border-primary font-semibold shadow-sm' 
-      : 'hover:bg-sidebar-accent/50 text-sidebar-foreground';
+    isActive
+      ? 'bg-primary text-primary-foreground font-semibold rounded-md shadow-sm'
+      : 'hover:bg-sidebar-accent/60 text-sidebar-foreground rounded-md';
 
   const handleSignOut = () => {
     setShowLogoutConfirm(true);
@@ -227,7 +232,6 @@ export function AppSidebar() {
   // Determina qual logo usar com cache busting melhorado
   const getLogoSrc = () => {
     if (company?.logo_url) {
-      // Se o logo já tem timestamp, usar como está; senão, adicionar timestamp
       const hasTimestamp = company.logo_url.includes('?t=');
       return hasTimestamp ? company.logo_url : `${company.logo_url}?t=${Date.now()}`;
     }
@@ -235,34 +239,36 @@ export function AppSidebar() {
   };
 
   const getLogoAlt = () => {
-    return company?.nome || "Akuris";
+    return company?.nome || 'Akuris';
   };
 
   // Função para verificar se um item tem acesso
   const hasAccess = (item: any) => {
-    if (!item.moduleName) return true; // Se não tem moduleName, mostra por padrão
+    if (!item.moduleName) return true;
     return canAccess(item.moduleName);
   };
 
-  // Filtrar itens do menu baseado nas permissões
-  const getVisibleMenuItems = () => {
-    return menuItems.filter(item => {
-      if (item.subItems) {
-        // Para grupos, mostrar se pelo menos um subitem tem acesso
-        const visibleSubItems = item.subItems.filter(hasAccess);
-        return visibleSubItems.length > 0;
-      }
-      return hasAccess(item);
-    }).map(item => {
-      if (item.subItems) {
-        // Filtrar subitems por permissão
-        return {
-          ...item,
-          subItems: item.subItems.filter(hasAccess)
-        };
-      }
-      return item;
-    });
+  // Filtrar seções/itens do menu baseado nas permissões
+  const getVisibleSections = () => {
+    return menuSections
+      .map((section) => ({
+        ...section,
+        items: section.items
+          .filter((item) => {
+            if (item.subItems) {
+              const visibleSubItems = item.subItems.filter(hasAccess);
+              return visibleSubItems.length > 0;
+            }
+            return hasAccess(item);
+          })
+          .map((item) => {
+            if (item.subItems) {
+              return { ...item, subItems: item.subItems.filter(hasAccess) };
+            }
+            return item;
+          }),
+      }))
+      .filter((section) => section.items.length > 0);
   };
 
   return (
