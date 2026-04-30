@@ -107,7 +107,8 @@ export function AdherenceResultView({ assessment, onBack, frameworkId, onApplied
 
   const handleExportPDF = async () => {
     try {
-      await exportAssessmentToPDF(assessment, details, empresa?.logo_url);
+      const { getCompanyLogoUrl } = await import('@/lib/brand-logo');
+      await exportAssessmentToPDF(assessment, details, getCompanyLogoUrl(empresa?.logo_url));
       toast({ title: "PDF exportado", description: "O relatório foi exportado com sucesso." });
     } catch (error) {
       console.error('Error exporting PDF:', error);

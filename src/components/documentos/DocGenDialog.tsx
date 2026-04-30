@@ -974,13 +974,12 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                 <div className="flex-1 min-h-0 overflow-y-auto pr-2">
                   <div className="space-y-5 text-sm leading-relaxed">
                     <div>
-                      {generatedDocument.metadados?.logo_url && (
-                        <img
-                          src={generatedDocument.metadados.logo_url}
-                          alt={`Logo da ${userInfo?.nome || 'empresa'}`}
-                          className="h-10 mb-3 object-contain"
-                        />
-                      )}
+                      <img
+                        src={generatedDocument.metadados?.logo_url || companyInfo?.logo_url || '/akuris-logo.png'}
+                        alt={`Logo da ${userInfo?.nome || 'Akuris'}`}
+                        className="h-10 mb-3 object-contain"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/akuris-logo.png'; }}
+                      />
                       <h4 className="font-bold text-lg">{generatedDocument.titulo}</h4>
                       <p className="text-muted-foreground">
                         Versão: {generatedDocument.versao} | {generatedDocument.data_criacao}
