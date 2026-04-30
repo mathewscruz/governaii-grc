@@ -330,6 +330,7 @@ export function RiskScoreTimeline() {
               )}
             </ComposedChart>
           </ResponsiveContainer>
+          </div>
         </div>
       </CardContent>
     </Card>
