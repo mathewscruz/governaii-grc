@@ -25,6 +25,7 @@ import { ptBR, enUS } from 'date-fns/locale';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRadarChartData } from '@/hooks/useRadarChartData';
+import { useGrcMaturityScore } from '@/hooks/useGrcMaturityScore';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function Dashboard() {
@@ -42,6 +43,7 @@ export default function Dashboard() {
   const { data: dashboardData, isLoading: dashboardLoading, dataUpdatedAt } = useDashboardStats();
   const { data: trends } = useTrendData();
   const { data: radarData } = useRadarChartData();
+  const maturity = useGrcMaturityScore();
 
   const isLoading = ativosStats.isLoading || controlesStats.isLoading || incidentesStats.isLoading || dashboardLoading;
 
@@ -73,9 +75,6 @@ export default function Dashboard() {
     );
   }
 
-  const healthScore = radarData && radarData.length > 0
-    ? Math.round(radarData.reduce((sum, d) => sum + d.score, 0) / radarData.length)
-    : 0;
   const activeIncidents = (incidentesStats.data?.abertos || 0) + (incidentesStats.data?.investigacao || 0);
 
   return (
@@ -97,7 +96,7 @@ export default function Dashboard() {
 
         {/* Hero Score Banner */}
         <HeroScoreBanner
-          healthScore={healthScore}
+          maturity={maturity}
           criticalAlerts={dashboardData?.criticalAlerts || 0}
           activeControls={controlesStats.data?.ativos || 0}
           complianceScore={gapStats.data?.averageCompliance || 0}
