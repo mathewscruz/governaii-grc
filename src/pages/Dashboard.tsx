@@ -1,8 +1,7 @@
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { RefreshCw, Clock } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MultiDimensionalRadar } from '@/components/dashboard/MultiDimensionalRadar';
 import { RecentActivities } from '@/components/dashboard/RecentActivities';
 import { RiskScoreTimeline } from '@/components/dashboard/RiskScoreTimeline';
@@ -26,7 +25,7 @@ import { useDueDiligenceStats } from '@/hooks/useDueDiligenceStats';
 import { useDenunciasStats } from '@/hooks/useDenunciasStats';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRadarChartData } from '@/hooks/useRadarChartData';
 import { useGrcMaturityScore } from '@/hooks/useGrcMaturityScore';
