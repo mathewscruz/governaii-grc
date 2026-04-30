@@ -143,11 +143,58 @@ const AtivosEndpoints: React.FC = () => {
     setTokenForm({ descricao: '', validade_dias: '30', max_usos: '50' });
   };
 
-  const AGENT_DOWNLOAD_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/endpoint-agent-binaries/akuris-agent.exe`;
+  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+  const AGENT_DOWNLOAD_URL = `${SUPABASE_URL}/storage/v1/object/public/endpoint-agent-binaries/akuris-agent.exe`;
 
   const installCommand = generatedToken
-    ? `akuris-agent.exe install --token ${generatedToken} --server ${import.meta.env.VITE_SUPABASE_URL}`
+    ? `akuris-agent.exe install --token ${generatedToken} --server ${SUPABASE_URL}`
     : '';
+
+  const downloadInstallerBat = () => {
+    if (!generatedToken) return;
+    const bat = [
+      '@echo off',
+      'setlocal',
+      'net session >nul 2>&1',
+      'if %errorlevel% NEQ 0 (',
+      '  echo.',
+      '  echo  ERRO: Execute este arquivo como Administrador',
+      '  echo  ^(clique direito no arquivo .bat ^> "Executar como administrador"^)',
+      '  echo.',
+      '  pause',
+      '  exit /b 1',
+      ')',
+      'echo Instalando Akuris Endpoint Agent...',
+      'if not exist "C:\\Program Files\\Akuris" mkdir "C:\\Program Files\\Akuris"',
+      'copy /Y "%~dp0akuris-agent.exe" "C:\\Program Files\\Akuris\\akuris-agent.exe" >nul',
+      'if %errorlevel% NEQ 0 (',
+      '  echo ERRO: nao encontrei akuris-agent.exe na mesma pasta deste instalador.',
+      '  pause',
+      '  exit /b 1',
+      ')',
+      `"C:\\Program Files\\Akuris\\akuris-agent.exe" install --token ${generatedToken} --server ${SUPABASE_URL}`,
+      'if %errorlevel% NEQ 0 (',
+      '  echo ERRO: falha ao registrar o agente. Verifique conexao com a internet.',
+      '  pause',
+      '  exit /b 1',
+      ')',
+      'echo.',
+      'echo Akuris Agent instalado com sucesso. O servico ja esta rodando.',
+      'echo.',
+      'pause',
+      '',
+    ].join('\r\n');
+    const blob = new Blob([bat], { type: 'application/bat' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'instalar-akuris.bat';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Instalador .bat baixado');
+  };
 
   const columns: Column<EndpointAgent>[] = [
     {
