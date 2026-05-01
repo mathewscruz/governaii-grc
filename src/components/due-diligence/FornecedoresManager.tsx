@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit2, Trash2, Building, Mail, Phone, Filter, Eye, X, Shield, ClipboardList, MoreHorizontal } from 'lucide-react';
@@ -247,12 +248,13 @@ export function FornecedoresManager() {
   };
 
   const getRiskBadge = (stats: { total: number; lastScore: number | null; pending: number }) => {
-    if (stats.total === 0) return <Badge variant="outline" className="text-xs"><Shield className="h-3 w-3 mr-1" />Nunca avaliado</Badge>;
-    if (stats.lastScore === null) return <Badge variant="outline" className="text-xs border-amber-300 text-amber-700"><Shield className="h-3 w-3 mr-1" />Pendente</Badge>;
+    const shieldIcon = <Shield strokeWidth={1.5} className="h-3 w-3" />;
+    if (stats.total === 0) return <StatusBadge size="sm" tone="neutral" icon={shieldIcon}>Nunca avaliado</StatusBadge>;
+    if (stats.lastScore === null) return <StatusBadge size="sm" tone="warning" icon={shieldIcon}>Pendente</StatusBadge>;
     const score = stats.lastScore * 10;
-    if (score >= 80) return <Badge className="text-xs bg-green-100 text-green-800 border border-green-200"><Shield className="h-3 w-3 mr-1" />{score.toFixed(0)}%</Badge>;
-    if (score >= 60) return <Badge className="text-xs bg-amber-100 text-amber-800 border border-amber-200"><Shield className="h-3 w-3 mr-1" />{score.toFixed(0)}%</Badge>;
-    return <Badge className="text-xs bg-red-100 text-red-800 border border-red-200"><Shield className="h-3 w-3 mr-1" />{score.toFixed(0)}%</Badge>;
+    if (score >= 80) return <StatusBadge size="sm" tone="success" icon={shieldIcon}>{score.toFixed(0)}%</StatusBadge>;
+    if (score >= 60) return <StatusBadge size="sm" tone="warning" icon={shieldIcon}>{score.toFixed(0)}%</StatusBadge>;
+    return <StatusBadge size="sm" tone="destructive" intensity="high" icon={shieldIcon}>{score.toFixed(0)}%</StatusBadge>;
   };
 
   const filteredFornecedores = fornecedores.filter(f => {

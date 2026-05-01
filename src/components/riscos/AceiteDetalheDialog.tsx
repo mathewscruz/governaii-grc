@@ -78,9 +78,9 @@ export function AceiteDetalheDialog({ open, onOpenChange, risco }: Props) {
   const getRevisaoStatus = () => {
     if (!risco.data_proxima_revisao) return null;
     const dias = differenceInDays(new Date(risco.data_proxima_revisao), new Date());
-    if (dias < 0) return { label: 'Vencida', color: 'bg-red-100 text-red-800 border-red-200', dias: Math.abs(dias) };
-    if (dias <= 7) return { label: `${dias} dias restantes`, color: 'bg-yellow-100 text-yellow-800 border-yellow-200', dias };
-    return { label: `${dias} dias restantes`, color: 'bg-green-100 text-green-800 border-green-200', dias };
+    if (dias < 0) return { label: 'Vencida', tone: 'destructive' as const, dias: Math.abs(dias) };
+    if (dias <= 7) return { label: `${dias} dias restantes`, tone: 'warning' as const, dias };
+    return { label: `${dias} dias restantes`, tone: 'success' as const, dias };
   };
 
   const revisaoStatus = getRevisaoStatus();
