@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { logger } from '@/lib/logger';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 const Auth = () => {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
