@@ -23,7 +23,7 @@ import { BuscaAvancadaDocumentos } from '@/components/documentos/BuscaAvancadaDo
 import { UploadMultiplosDialog } from '@/components/documentos/UploadMultiplosDialog';
 import { DocumentoPreview } from '@/components/documentos/DocumentoPreview';
 import { TrilhaAuditoriaDocumentos } from '@/components/documentos/TrilhaAuditoriaDocumentos';
-import { DocGenDialog } from '@/components/documentos/DocGenDialog';
+import { useDocGen } from '@/contexts/DocGenContext';
 import { RenovarDocumentoDialog } from '@/components/documentos/RenovarDocumentoDialog';
 import { HistoricoVersoesDialog } from '@/components/documentos/HistoricoVersoesDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -92,7 +92,7 @@ export default function Documentos() {
   const [buscaAvancada, setBuscaAvancada] = useState(false);
   const [uploadMultiplos, setUploadMultiplos] = useState(false);
   const [filtrosAvancados, setFiltrosAvancados] = useState<any>(null);
-  const [showDocGenDialog, setShowDocGenDialog] = useState(false);
+  const { openDocGen } = useDocGen();
   const [relatoriosDialog, setRelatoriosDialog] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [renovarDialog, setRenovarDialog] = useState<{ open: boolean; documento?: Documento }>({ open: false });
@@ -525,11 +525,11 @@ export default function Documentos() {
                   </Button>
                   <Button 
                     size="sm"
-                    onClick={() => setShowDocGenDialog(true)} 
+                    onClick={() => openDocGen({ onDone: invalidateDocumentos })} 
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   >
                     <Brain className="h-4 w-4 mr-2" />
-                    DocGen
+                    Gerador de Documentos (IA)
                   </Button>
                   <Button 
                     size="sm"
@@ -902,15 +902,6 @@ export default function Documentos() {
           onOpenChange={setUploadMultiplos}
           onSuccess={invalidateDocumentos}
           categorias={categorias}
-        />
-
-        <DocGenDialog
-          open={showDocGenDialog}
-          onOpenChange={setShowDocGenDialog}
-          onDocumentSaved={() => {
-            invalidateDocumentos();
-            setShowDocGenDialog(false);
-          }}
         />
 
         <DocumentosRelatorios

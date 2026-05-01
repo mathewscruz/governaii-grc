@@ -135,7 +135,7 @@ const LandingPage = () => {
       icon: FileText,
       title: "Documentos",
       description: "Repositório centralizado com versionamento automático, workflow de aprovação, controle de validade e distribuição controlada.",
-      details: "Com o módulo de Documentos você pode:\n\n• Controle completo de versões\n• Workflow de aprovação configurável\n• Alertas de renovação automáticos\n• Geração de documentos com IA (DocGen)\n• Categorização e busca avançada\n• Vinculação a controles e auditorias",
+      details: "Com o módulo de Documentos você pode:\n\n• Controle completo de versões\n• Workflow de aprovação configurável\n• Alertas de renovação automáticos\n• Gerador de Documentos com IA\n• Validação de evidências por IA\n• Categorização e busca avançada\n• Vinculação a controles e auditorias",
     },
     {
       icon: Lock,

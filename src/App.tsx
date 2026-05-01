@@ -9,6 +9,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { RouteFallback } from '@/components/ui/route-fallback';
+import { DocGenProvider } from '@/contexts/DocGenContext';
 
 
 // Lazy-loaded pages
@@ -77,6 +78,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
+          <DocGenProvider>
           <ErrorBoundary>
           <Routes>
             {/* Rotas públicas com Suspense individual (não tem sidebar para preservar) */}
@@ -260,6 +262,7 @@ function App() {
             <Route path="*" element={<Suspense fallback={<RouteFallback />}><NotFound /></Suspense>} />
           </Routes>
           </ErrorBoundary>
+          </DocGenProvider>
         </Router>
         
         <SonnerToaster />

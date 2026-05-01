@@ -143,7 +143,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
       </TooltipProvider>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-3xl lg:max-w-4xl max-h-[88vh] overflow-y-auto p-5 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
@@ -167,9 +167,9 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
                 <div>
                   <p className="text-sm font-medium">
                     Score projetado: <span className="text-primary font-bold">
-                      {recommendations.score_estimado_apos_acoes}{props.scoreType === 'percentage' ? '%' : '/5'}
+                      {Number(recommendations.score_estimado_apos_acoes).toFixed(1)}{props.scoreType === 'percentage' ? '%' : '/5'}
                     </span>
-                    <span className="text-muted-foreground ml-1">(atual: {props.overallScore}{props.scoreType === 'percentage' ? '%' : '/5'})</span>
+                    <span className="text-muted-foreground ml-1">(atual: {Number(props.overallScore).toFixed(1)}{props.scoreType === 'percentage' ? '%' : '/5'})</span>
                   </p>
                   <p className="text-xs text-muted-foreground">{recommendations.proximo_marco}</p>
                 </div>
@@ -183,13 +183,13 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
                   </h4>
                   <div className="space-y-2">
                     {recommendations.top_5_prioridades.map((p, i) => (
-                      <div key={i} className="flex items-start gap-2 p-2 rounded border bg-card">
+                      <div key={i} className="flex items-start gap-2 p-2.5 rounded border bg-card">
                         <span className="text-xs font-mono text-muted-foreground mt-0.5 shrink-0">{p.codigo}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{p.titulo}</p>
-                          <p className="text-xs text-muted-foreground">{p.justificativa}</p>
+                          <p className="text-sm font-medium break-words">{p.titulo}</p>
+                          <p className="text-xs text-muted-foreground break-words">{p.justificativa}</p>
                         </div>
-                        {getEffortBadge(p.esforco)}
+                        <div className="shrink-0">{getEffortBadge(p.esforco)}</div>
                       </div>
                     ))}
                   </div>
