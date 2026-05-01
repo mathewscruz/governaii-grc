@@ -245,7 +245,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
                     </div>
 
                     {assessment.status === 'processando' && (
-                      <div className="flex items-center gap-2 text-blue-600 text-sm">
+                      <div className="flex items-center gap-2 text-info text-sm">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <span>Identificando requisitos relevantes e analisando... (1-2 minutos)</span>
                       </div>
