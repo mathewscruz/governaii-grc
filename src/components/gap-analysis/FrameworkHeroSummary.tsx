@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 import { ResponsiveContainer, AreaChart, Area, Tooltip as ReTooltip, ReferenceLine, YAxis } from 'recharts';
 import { TrendingUp, TrendingDown, Minus, ArrowRight, LineChart as LineChartIcon } from 'lucide-react';
 import { FrameworkConfig, getMaturityLevel } from '@/lib/framework-configs';
@@ -133,8 +133,9 @@ export function FrameworkHeroSummary({
   if (loading) {
     return (
       <Card>
-        <CardContent className="p-5">
-          <Skeleton className="h-32 w-full" />
+        <CardContent className="p-5 min-h-[160px] flex flex-col items-center justify-center gap-2">
+          <AkurisPulse size={48} />
+          <p className="text-xs text-muted-foreground">Calculando aderência...</p>
         </CardContent>
       </Card>
     );
@@ -222,7 +223,9 @@ export function FrameworkHeroSummary({
 
             <div className="relative h-[110px] -mx-1">
               {historyLoading ? (
-                <Skeleton className="h-full w-full" />
+                <div className="h-full w-full flex items-center justify-center">
+                  <AkurisPulse size={36} />
+                </div>
               ) : history.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-muted/20">
                   <div className="flex items-center justify-center h-7 w-7 rounded-full bg-muted">
