@@ -173,6 +173,177 @@ export const resolveSeveridadeTone = (raw?: string | null): ToneResult => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Controles: status (ativo, inativo, em_revisao, descontinuado)
+// ─────────────────────────────────────────────────────────────────────────────
+export const resolveControleStatusTone = (raw?: string | null): ToneResult => {
+  const v = norm(raw);
+  switch (v) {
+    case 'ativo':
+      return { tone: 'success', icon: <CheckCircle2 {...ICON_PROPS} /> };
+    case 'inativo':
+      return { tone: 'neutral' };
+    case 'em revisao':
+    case 'em_revisao':
+      return { tone: 'warning', icon: <FileSearch {...ICON_PROPS} /> };
+    case 'descontinuado':
+      return { tone: 'destructive', icon: <XCircle {...ICON_PROPS} /> };
+    default:
+      return { tone: 'neutral' };
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Criticidade (controles, ativos)
+// ─────────────────────────────────────────────────────────────────────────────
+export const resolveCriticidadeTone = (raw?: string | null): ToneResult => {
+  const v = norm(raw);
+  if (v === 'critico' || v === 'critica')
+    return { tone: 'destructive', intensity: 'high', icon: <AlertTriangle {...ICON_PROPS} /> };
+  if (v === 'alto' || v === 'alta') return { tone: 'destructive' };
+  if (v === 'medio' || v === 'media') return { tone: 'warning' };
+  if (v === 'baixo' || v === 'baixa') return { tone: 'success' };
+  return { tone: 'neutral' };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Auditoria: status do item (pendente, em_andamento, concluido, nao_aplicavel)
+// ─────────────────────────────────────────────────────────────────────────────
+export const resolveItemAuditoriaStatusTone = (raw?: string | null): ToneResult => {
+  const v = norm(raw);
+  switch (v) {
+    case 'pendente':
+      return { tone: 'neutral', icon: <Clock {...ICON_PROPS} /> };
+    case 'em andamento':
+    case 'em_andamento':
+      return { tone: 'info', icon: <Activity {...ICON_PROPS} /> };
+    case 'concluido':
+      return { tone: 'success', icon: <CheckCircle2 {...ICON_PROPS} /> };
+    case 'nao aplicavel':
+    case 'nao_aplicavel':
+      return { tone: 'neutral' };
+    default:
+      return { tone: 'neutral' };
+  }
+};
+
+// Alias semântico — Prioridade (alta/media/baixa)
+export const resolvePrioridadeTone = resolveCriticidadeTone;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Contratos: status de marco (pendente, concluido, atrasado, cancelado)
+// ─────────────────────────────────────────────────────────────────────────────
+export const resolveMarcoStatusTone = (raw?: string | null): ToneResult => {
+  const v = norm(raw);
+  switch (v) {
+    case 'pendente':
+      return { tone: 'warning', icon: <Clock {...ICON_PROPS} /> };
+    case 'concluido':
+      return { tone: 'success', icon: <CheckCircle2 {...ICON_PROPS} /> };
+    case 'atrasado':
+      return { tone: 'destructive', intensity: 'high', icon: <AlertTriangle {...ICON_PROPS} /> };
+    case 'cancelado':
+      return { tone: 'neutral', icon: <XCircle {...ICON_PROPS} /> };
+    default:
+      return { tone: 'neutral' };
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Contratos: tipo de marco (categoria — tons distintos sem alarme)
+// ─────────────────────────────────────────────────────────────────────────────
+export const resolveMarcoTipoTone = (raw?: string | null): ToneResult => {
+  const v = norm(raw);
+  switch (v) {
+    case 'vencimento':
+      return { tone: 'destructive' };
+    case 'renovacao':
+      return { tone: 'info' };
+    case 'pagamento':
+      return { tone: 'success' };
+    case 'entrega':
+      return { tone: 'primary' };
+    case 'revisao':
+      return { tone: 'warning' };
+    default:
+      return { tone: 'neutral' };
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Gap Analysis: status de conformidade
+// ─────────────────────────────────────────────────────────────────────────────
+export const resolveConformityTone = (raw?: string | null): ToneResult => {
+  const v = norm(raw);
+  switch (v) {
+    case 'conforme':
+      return { tone: 'success', icon: <CheckCircle2 {...ICON_PROPS} /> };
+    case 'parcial':
+      return { tone: 'warning' };
+    case 'nao conforme':
+    case 'nao_conforme':
+      return { tone: 'destructive', icon: <XCircle {...ICON_PROPS} /> };
+    case 'nao aplicavel':
+    case 'nao_aplicavel':
+      return { tone: 'neutral' };
+    case 'nao avaliado':
+    case 'nao_avaliado':
+      return { tone: 'neutral' };
+    default:
+      return { tone: 'neutral' };
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Estado ativo/inativo (boolean)
+// ─────────────────────────────────────────────────────────────────────────────
+export const resolveAtivoTone = (ativo?: boolean | null): ToneResult => {
+  if (ativo) return { tone: 'success', icon: <CheckCircle2 {...ICON_PROPS} /> };
+  return { tone: 'neutral' };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Acessos privilegiados: tipo de acesso (leitura, escrita, admin, completo)
+// ─────────────────────────────────────────────────────────────────────────────
+export const resolveTipoAcessoTone = (raw?: string | null): ToneResult => {
+  const v = norm(raw);
+  switch (v) {
+    case 'leitura':
+      return { tone: 'info' };
+    case 'escrita':
+      return { tone: 'success' };
+    case 'admin':
+      return { tone: 'warning', icon: <ShieldCheck {...ICON_PROPS} /> };
+    case 'completo':
+      return { tone: 'destructive', intensity: 'high', icon: <AlertTriangle {...ICON_PROPS} /> };
+    default:
+      return { tone: 'neutral' };
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Documentos: tipo de vinculação (categoria semântica)
+// ─────────────────────────────────────────────────────────────────────────────
+export const resolveTipoVinculacaoTone = (raw?: string | null): ToneResult => {
+  const v = norm(raw);
+  switch (v) {
+    case 'relacionado':
+      return { tone: 'info' };
+    case 'evidencia':
+      return { tone: 'success' };
+    case 'suporte':
+      return { tone: 'warning' };
+    case 'implementacao':
+      return { tone: 'primary' };
+    case 'aprovacao':
+      return { tone: 'destructive' };
+    case 'revisao':
+      return { tone: 'neutral' };
+    default:
+      return { tone: 'neutral' };
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Genérico (fallback heurístico para qualquer status snake_case)
 // ─────────────────────────────────────────────────────────────────────────────
 export const resolveGenericTone = (raw?: string | null): ToneResult => {

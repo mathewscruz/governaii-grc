@@ -10,6 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Plus, Link, Trash2, FileText, Shield, AlertTriangle, CheckCircle, Building, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveTipoVinculacaoTone } from '@/lib/status-tone';
+import { formatStatus } from '@/lib/text-utils';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Documento {
@@ -315,22 +318,11 @@ export function VinculacoesDialog({ open, onOpenChange, documento, empresaId }: 
     return moduloConfig?.label || modulo;
   };
 
-  const getTipoVinculacaoBadge = (tipo: string) => {
-    const colors = {
-      'relacionado': 'bg-blue-100 text-blue-800',
-      'evidencia': 'bg-green-100 text-green-800',
-      'suporte': 'bg-yellow-100 text-yellow-800',
-      'implementacao': 'bg-purple-100 text-purple-800',
-      'aprovacao': 'bg-red-100 text-red-800',
-      'revisao': 'bg-gray-100 text-gray-800',
-    };
-
-    return (
-      <Badge className={colors[tipo as keyof typeof colors] || 'bg-gray-100 text-gray-800'}>
-        {tipo}
-      </Badge>
-    );
-  };
+  const getTipoVinculacaoBadge = (tipo: string) => (
+    <StatusBadge size="sm" {...resolveTipoVinculacaoTone(tipo)}>
+      {formatStatus(tipo)}
+    </StatusBadge>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

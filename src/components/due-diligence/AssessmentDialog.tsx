@@ -6,6 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveDueDiligenceStatusTone } from '@/lib/status-tone';
+import { formatStatus } from '@/lib/text-utils';
 import { supabase } from '@/integrations/supabase/client';
 import { FornecedorSelector } from './FornecedorSelector';
 import { useToast } from '@/hooks/use-toast';
@@ -277,30 +280,7 @@ export function AssessmentDialog({
     }
   };
 
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'concluido':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'em_andamento':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'enviado':
-        return 'bg-slate-100 text-slate-800 border-slate-200';
-      case 'expirado':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-  
-  const getStatusLabel = (status: string): string => {
-    switch (status) {
-      case 'concluido': return 'Concluído';
-      case 'em_andamento': return 'Em Andamento';
-      case 'enviado': return 'Enviado';
-      case 'expirado': return 'Expirado';
-      default: return status;
-    }
-  };
+  // status badge handled via StatusBadge + resolveDueDiligenceStatusTone
 
   if (mode === 'view' && assessment) {
     return (
@@ -333,7 +313,7 @@ export function AssessmentDialog({
               <div>
                 <Label>Status</Label>
                 <div className="mt-1">
-                  <Badge className={`${getStatusColor(assessment.status)} border whitespace-nowrap`}>{getStatusLabel(assessment.status)}</Badge>
+                  <StatusBadge size="md" {...resolveDueDiligenceStatusTone(assessment.status)}>{formatStatus(assessment.status)}</StatusBadge>
                 </div>
               </div>
             </div>
