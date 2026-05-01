@@ -3,6 +3,7 @@ import { Globe, Trash2, Eye, Plus, Search, ExternalLink, FileText, AlertTriangle
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { DataTable } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -59,11 +60,11 @@ interface Descoberta {
 const getSensitivityBadge = (sensitivity: string) => {
   switch (sensitivity) {
     case 'critico':
-      return <Badge variant="destructive" className="text-xs">Crítico</Badge>;
+      return <StatusBadge size="sm" tone="destructive" intensity="high">Crítico</StatusBadge>;
     case 'sensivel':
-      return <Badge className="bg-amber-500/20 text-amber-600 border-amber-500/30 text-xs">Sensível</Badge>;
+      return <StatusBadge size="sm" tone="warning">Sensível</StatusBadge>;
     default:
-      return <Badge variant="secondary" className="text-xs">Comum</Badge>;
+      return <StatusBadge size="sm" tone="neutral">Comum</StatusBadge>;
   }
 };
 
@@ -240,7 +241,7 @@ export function DescoberDadosTab({ onRefresh }: DescoberDadosTabProps) {
       sortable: true,
       render: (value: number) => (
         value > 0 ? (
-          <Badge className="bg-amber-500/20 text-amber-600 border-amber-500/30">{value}</Badge>
+          <StatusBadge size="sm" tone="warning">{value}</StatusBadge>
         ) : <span className="text-muted-foreground">0</span>
       )
     },
@@ -250,7 +251,7 @@ export function DescoberDadosTab({ onRefresh }: DescoberDadosTabProps) {
       sortable: true,
       render: (value: number) => (
         value > 0 ? (
-          <Badge variant="destructive">{value}</Badge>
+          <StatusBadge size="sm" tone="destructive" intensity="high">{value}</StatusBadge>
         ) : <span className="text-muted-foreground">0</span>
       )
     },
@@ -260,7 +261,7 @@ export function DescoberDadosTab({ onRefresh }: DescoberDadosTabProps) {
       sortable: true,
       render: (value: number) => (
         value > 0 ? (
-          <Badge className="bg-green-500/20 text-green-600 border-green-500/30">{value}</Badge>
+          <StatusBadge size="sm" tone="success">{value}</StatusBadge>
         ) : <span className="text-muted-foreground">0</span>
       )
     },

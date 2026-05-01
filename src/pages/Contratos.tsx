@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveRevisaoTone } from '@/lib/status-tone';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -247,9 +249,9 @@ export default function Contratos() {
     const diffDays = Math.ceil((dataVenc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
     
     if (diffDays < 0) {
-      return <Badge variant="destructive" className="ml-2 text-xs whitespace-nowrap">Vencido</Badge>;
+      return <StatusBadge size="sm" {...resolveRevisaoTone(diffDays)} className="ml-2">Vencido</StatusBadge>;
     } else if (diffDays <= 30) {
-      return <Badge variant="secondary" className="ml-2 text-xs bg-amber-100 text-amber-800 whitespace-nowrap">{diffDays}d</Badge>;
+      return <StatusBadge size="sm" {...resolveRevisaoTone(diffDays)} className="ml-2">{diffDays}d</StatusBadge>;
     }
     return null;
   };

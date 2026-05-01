@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveDueDiligenceStatusTone } from '@/lib/status-tone';
+import { formatStatus } from '@/lib/text-utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { StatCard } from '@/components/ui/stat-card';
@@ -96,23 +99,7 @@ export function DueDiligenceDashboard() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'concluido': return 'bg-green-100 text-green-800 border-green-200';
-      case 'em_andamento': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'enviado': return 'bg-slate-100 text-slate-800 border-slate-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'concluido': return 'Concluído';
-      case 'em_andamento': return 'Em Andamento';
-      case 'enviado': return 'Enviado';
-      default: return status;
-    }
-  };
+  // (status mapping removido — usar resolveDueDiligenceStatusTone + formatStatus)
 
   const isExpired = (date: string) => new Date() > new Date(date);
 
@@ -182,11 +169,11 @@ export function DueDiligenceDashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     {assessment.data_expiracao && isExpired(assessment.data_expiracao) && assessment.status !== 'concluido' && (
-                      <Badge variant="destructive" className="text-xs">Expirado</Badge>
+                      <StatusBadge size="sm" tone="destructive">Expirado</StatusBadge>
                     )}
-                    <Badge className={`${getStatusColor(assessment.status)} border text-xs`}>
-                      {getStatusLabel(assessment.status)}
-                    </Badge>
+                    <StatusBadge size="sm" {...resolveDueDiligenceStatusTone(assessment.status)}>
+                      {formatStatus(assessment.status)}
+                    </StatusBadge>
                   </div>
                 </div>
               ))}

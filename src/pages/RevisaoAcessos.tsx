@@ -12,6 +12,8 @@ import { useAuth } from "@/components/AuthProvider";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { resolveRevisaoTone } from "@/lib/status-tone";
 import { ReviewDialog } from "@/components/revisao-acessos/ReviewDialog";
 import { ReviewItemsDialog } from "@/components/revisao-acessos/ReviewItemsDialog";
 import { SistemaUsuariosList } from "@/components/revisao-acessos/SistemaUsuariosList";
@@ -149,14 +151,14 @@ export default function RevisaoAcessos() {
       return (
         <div className="flex items-center gap-2">
           <span>{formatDateOnly(dataLimite)}</span>
-          <Badge variant="destructive" className="whitespace-nowrap">Vencida</Badge>
+          <StatusBadge size="sm" {...resolveRevisaoTone(-1)}>Vencida</StatusBadge>
         </div>
       );
     } else if (diffDays <= 7) {
       return (
         <div className="flex items-center gap-2">
           <span>{formatDateOnly(dataLimite)}</span>
-          <Badge variant="secondary" className="bg-amber-100 text-amber-800 whitespace-nowrap">Vence em {diffDays}d</Badge>
+          <StatusBadge size="sm" {...resolveRevisaoTone(diffDays)}>Vence em {diffDays}d</StatusBadge>
         </div>
       );
     }

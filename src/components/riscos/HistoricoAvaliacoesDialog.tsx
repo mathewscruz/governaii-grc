@@ -8,7 +8,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { TrendingDown, TrendingUp, Minus, Clock, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getNivelRiscoColor } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveNivelRiscoTone } from '@/lib/status-tone';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Props {
@@ -99,9 +100,9 @@ export function HistoricoAvaliacoesDialog({ open, onOpenChange, riscoId, riscoNo
                             <Badge variant="outline" className="text-xs">
                               {item.tipo === 'inicial' ? 'Inicial' : 'Residual'}
                             </Badge>
-                            <Badge className={`${getNivelRiscoColor(item.nivel_risco)} border`}>
+                            <StatusBadge size="sm" {...resolveNivelRiscoTone(item.nivel_risco)}>
                               {item.nivel_risco}
-                            </Badge>
+                            </StatusBadge>
                             {getTrendIcon(item.nivel_risco, previousItem?.nivel_risco)}
                           </div>
                           <span className="text-xs text-muted-foreground">

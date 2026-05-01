@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
@@ -421,12 +422,12 @@ const NotificationCenter: React.FC = () => {
     }
   };
 
-  const getTypeColor = (type: string) => {
+  const getTypeTone = (type: string): 'success' | 'warning' | 'destructive' | 'info' => {
     switch (type) {
-      case 'success': return 'bg-green-100 text-green-800 border-green-200';
-      case 'warning': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'error': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'success': return 'success';
+      case 'warning': return 'warning';
+      case 'error': return 'destructive';
+      default: return 'info';
     }
   };
 
@@ -519,9 +520,9 @@ const NotificationCenter: React.FC = () => {
                       )}
                       
                       <div className="flex items-center justify-between mt-2">
-                        <span className={`text-xs px-2 py-1 rounded-full border ${getTypeColor(notification.type)}`}>
+                        <StatusBadge size="sm" tone={getTypeTone(notification.type)}>
                           {getTypeLabel(notification.type)}
-                        </span>
+                        </StatusBadge>
                         
                         <div className="flex items-center gap-1">
                           <span className="text-xs text-muted-foreground">

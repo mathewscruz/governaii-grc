@@ -20,7 +20,9 @@ import { AssessmentResponsesViewer } from './AssessmentResponsesViewer';
 import { ReportsSidebar } from './ReportsSidebar';
 import { IntegrationSuggestions } from './IntegrationSuggestions';
 import { formatDateOnly } from '@/lib/date-utils';
-import { getDueDiligenceStatusColor, formatStatus } from '@/lib/text-utils';
+import { formatStatus } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveDueDiligenceStatusTone } from '@/lib/status-tone';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Assessment {
@@ -358,7 +360,7 @@ export function AssessmentsManagerEnhanced({ filter }: AssessmentsManagerEnhance
   }, [searchTerm, statusFilter, categoriaFilter]);
 
   const getStatusBadge = (status: string) => {
-    return <Badge className={`${getDueDiligenceStatusColor(status)} border whitespace-nowrap`}>{formatStatus(status)}</Badge>;
+    return <StatusBadge size="sm" {...resolveDueDiligenceStatusTone(status)}>{formatStatus(status)}</StatusBadge>;
   };
 
   const getScoreColor = (score?: number) => {

@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { formatDateOnly } from '@/lib/date-utils';
-import { getNivelRiscoColor } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveNivelRiscoTone } from '@/lib/status-tone';
 import { CheckCircle, User, Calendar, FileText, Clock, AlertTriangle } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 
@@ -77,9 +78,9 @@ export function AceiteDetalheDialog({ open, onOpenChange, risco }: Props) {
   const getRevisaoStatus = () => {
     if (!risco.data_proxima_revisao) return null;
     const dias = differenceInDays(new Date(risco.data_proxima_revisao), new Date());
-    if (dias < 0) return { label: 'Vencida', color: 'bg-red-100 text-red-800 border-red-200', dias: Math.abs(dias) };
-    if (dias <= 7) return { label: `${dias} dias restantes`, color: 'bg-yellow-100 text-yellow-800 border-yellow-200', dias };
-    return { label: `${dias} dias restantes`, color: 'bg-green-100 text-green-800 border-green-200', dias };
+    if (dias < 0) return { label: 'Vencida', tone: 'destructive' as const, dias: Math.abs(dias) };
+    if (dias <= 7) return { label: `${dias} dias restantes`, tone: 'warning' as const, dias };
+    return { label: `${dias} dias restantes`, tone: 'success' as const, dias };
   };
 
   const revisaoStatus = getRevisaoStatus();
@@ -100,11 +101,11 @@ export function AceiteDetalheDialog({ open, onOpenChange, risco }: Props) {
             <h3 className="font-semibold text-lg">{risco.nome}</h3>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Nível Inicial:</span>
-              <Badge className={`${getNivelRiscoColor(risco.nivel_risco_inicial)} border`}>{risco.nivel_risco_inicial}</Badge>
+              <StatusBadge {...resolveNivelRiscoTone(risco.nivel_risco_inicial)}>{risco.nivel_risco_inicial}</StatusBadge>
               {risco.nivel_risco_residual && (
                 <>
                   <span className="text-sm text-muted-foreground ml-2">Residual:</span>
-                  <Badge className={`${getNivelRiscoColor(risco.nivel_risco_residual)} border`}>{risco.nivel_risco_residual}</Badge>
+                  <StatusBadge {...resolveNivelRiscoTone(risco.nivel_risco_residual)}>{risco.nivel_risco_residual}</StatusBadge>
                 </>
               )}
             </div>
@@ -151,7 +152,7 @@ export function AceiteDetalheDialog({ open, onOpenChange, risco }: Props) {
                   {risco.data_proxima_revisao ? formatDateOnly(risco.data_proxima_revisao) : 'Não agendada'}
                 </p>
                 {revisaoStatus && (
-                  <Badge className={`${revisaoStatus.color} text-xs`}>{revisaoStatus.label}</Badge>
+                  <StatusBadge size="sm" tone={revisaoStatus.tone}>{revisaoStatus.label}</StatusBadge>
                 )}
               </div>
             </div>

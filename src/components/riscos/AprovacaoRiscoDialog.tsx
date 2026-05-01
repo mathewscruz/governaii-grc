@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveAprovacaoTone } from '@/lib/status-tone';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -190,12 +191,11 @@ export function AprovacaoRiscoDialog({ open, onOpenChange, risco, onSuccess }: P
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'aprovado': return <Badge className="bg-green-100 text-green-800 border-green-200">Aprovado</Badge>;
-      case 'rejeitado': return <Badge className="bg-red-100 text-red-800 border-red-200">Rejeitado</Badge>;
-      case 'pendente': return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Pendente</Badge>;
-      default: return <Badge variant="outline">Rascunho</Badge>;
+    if (status === 'aprovado' || status === 'rejeitado' || status === 'pendente') {
+      const labels: Record<string, string> = { aprovado: 'Aprovado', rejeitado: 'Rejeitado', pendente: 'Pendente' };
+      return <StatusBadge {...resolveAprovacaoTone(status)}>{labels[status]}</StatusBadge>;
     }
+    return <StatusBadge tone="neutral">Rascunho</StatusBadge>;
   };
 
   return (
@@ -336,7 +336,7 @@ export function AprovacaoRiscoDialog({ open, onOpenChange, risco, onSuccess }: P
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs capitalize">{item.acao}</Badge>
+                        <StatusBadge size="sm" tone="neutral" variant="outline" className="capitalize">{item.acao}</StatusBadge>
                         {item.comentario && (
                           <span className="text-muted-foreground flex items-center gap-1">
                             <MessageSquare className="h-3 w-3" />

@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Plus, Shield, AlertTriangle, CheckCircle, Clock, Edit, Trash2, MoreHorizontal, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveRevisaoTone } from '@/lib/status-tone';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
@@ -270,14 +272,14 @@ export default function ContasPrivilegiadas() {
           return (
             <div className="flex items-center gap-2">
               <span>{formatDateOnly(conta.data_expiracao)}</span>
-              <Badge variant="destructive" className="whitespace-nowrap">Expirada</Badge>
+              <StatusBadge size="sm" {...resolveRevisaoTone(-1)}>Expirada</StatusBadge>
             </div>
           );
         } else if (diffDays <= 30 && diffDays >= 0 && conta.status === 'ativo') {
           return (
             <div className="flex items-center gap-2">
               <span>{formatDateOnly(conta.data_expiracao)}</span>
-              <Badge variant="secondary" className="bg-amber-100 text-amber-800 whitespace-nowrap">Vence em {diffDays}d</Badge>
+              <StatusBadge size="sm" {...resolveRevisaoTone(diffDays)}>Vence em {diffDays}d</StatusBadge>
             </div>
           );
         }
