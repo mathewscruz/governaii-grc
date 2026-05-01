@@ -617,7 +617,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
         <CardHeader><CardTitle>Requisitos do {frameworkName}</CardTitle></CardHeader>
         <CardContent>
           <SearchAndFilterBar />
-          <IconLegend />
+
           <Tabs value={activeSection} onValueChange={(v) => { setActiveSection(v); setActiveTab('all'); setCurrentPage(1); }}>
             <TabsList className="mb-4">
               {config.sections.map(section => (
@@ -667,8 +667,8 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       <CardHeader><CardTitle>Requisitos do {frameworkName}</CardTitle></CardHeader>
       <CardContent>
         <SearchAndFilterBar />
-        <IconLegend />
-        
+
+
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setCurrentPage(1); }}>
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
             <TabsTrigger value="all">Todos ({requirements.length})</TabsTrigger>
