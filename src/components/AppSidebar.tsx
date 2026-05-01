@@ -5,14 +5,12 @@ import {
   AlertTriangle, 
   FileCheck, 
   Lock, 
-  CheckSquare, 
   Settings,
   ChevronDown,
   Database,
   FileText,
   Handshake,
   BookOpen,
-  Users,
   AlertCircle,
   HardDrive,
   MessageSquare,
@@ -23,10 +21,15 @@ import {
   Server,
   FileKey,
   KeyRound,
+  Key,
   ListTodo,
   FileBarChart,
   GraduationCap,
-  ShieldAlert
+  ShieldCheck,
+  UserCheck,
+  UserCog,
+  BadgeCheck,
+  LifeBuoy
 } from 'lucide-react';
 import {
   RiscosIcon,
