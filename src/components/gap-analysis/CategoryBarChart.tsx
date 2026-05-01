@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getScoreBgClass, normalizeScore } from "@/lib/gap-analysis-tokens";
+import type { FrameworkConfig } from "@/lib/framework-configs";
 
 interface CategoryScore {
   category: string;
@@ -11,9 +12,7 @@ interface CategoryScore {
 
 interface CategoryBarChartProps {
   categoryScores: CategoryScore[];
-  config: {
-    scoreType: 'decimal' | 'percentage' | 'scale_0_5';
-  };
+  config: FrameworkConfig;
   onCategoryClick?: (category: string) => void;
   activeCategory?: string;
 }
@@ -29,10 +28,12 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({
   const formatScore = (score: number) =>
     config.scoreType === 'percentage' ? `${score.toFixed(0)}%` : score.toFixed(1);
 
+  const title = config.sectionLabel || config.domainLabel || 'Aderência por Categoria';
+
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Aderência por Categoria</CardTitle>
+        <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">

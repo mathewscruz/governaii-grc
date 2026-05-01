@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { toast } from 'sonner';
 import { exportSoAPDF } from './SoAExportPDF';
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 
 interface SoAItem {
   id: string;
@@ -213,9 +214,9 @@ export function SoATab({ frameworkId, frameworkName, frameworkVersion }: SoATabP
 
   if (loading) {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-24 bg-muted rounded-lg" />
-        <div className="h-64 bg-muted rounded-lg" />
+      <div className="min-h-[280px] flex flex-col items-center justify-center gap-3">
+        <AkurisPulse size={56} />
+        <p className="text-sm text-muted-foreground">Carregando SoA...</p>
       </div>
     );
   }

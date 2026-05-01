@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
+// (Skeleton removido — substituído por AkurisPulse)
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
@@ -326,24 +326,9 @@ const MarkdownContent = ({ content }: { content: string }) => {
 };
 
 const GuidanceSkeleton = () => (
-  <div className="space-y-4">
-    <div className="space-y-2">
-      <Skeleton className="h-5 w-48" />
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-4 w-[90%]" />
-      <Skeleton className="h-4 w-[80%]" />
-    </div>
-    <div className="space-y-2">
-      <Skeleton className="h-5 w-56" />
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-4 w-[85%]" />
-    </div>
-    <div className="space-y-2">
-      <Skeleton className="h-5 w-44" />
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-4 w-[75%]" />
-      <Skeleton className="h-4 w-[90%]" />
-    </div>
+  <div className="min-h-[180px] flex flex-col items-center justify-center gap-2 py-6">
+    <AkurisPulse size={48} />
+    <p className="text-xs text-muted-foreground">Carregando orientação...</p>
   </div>
 );
 
