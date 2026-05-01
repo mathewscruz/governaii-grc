@@ -268,8 +268,10 @@ export default function AuditoriasContent() {
             title={stat.title}
             value={stat.value}
             description={stat.description}
-            icon={<stat.icon className="h-4 w-4" />}
+            icon={<stat.icon />}
             loading={isLoading}
+            drillDown={index === 0 ? "auditorias" : undefined}
+            showAccent={index === 0}
           />
         ))}
       </div>

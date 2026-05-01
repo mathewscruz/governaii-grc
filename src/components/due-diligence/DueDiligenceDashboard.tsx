@@ -124,30 +124,36 @@ export function DueDiligenceDashboard() {
           title="Fornecedores Ativos"
           value={stats.totalFornecedores}
           description={`${stats.totalTemplates} templates disponíveis`}
-          icon={<Users className="h-4 w-4" />}
+          icon={<Users />}
           loading={loading}
+          variant="primary"
+          showAccent
+          drillDown="due_diligence"
+          emptyHint="Cadastre fornecedores para iniciar avaliações."
         />
         <StatCard
           title="Avaliações Concluídas"
           value={stats.completedAssessments}
           description={`${stats.pendingAssessments} pendentes`}
-          icon={<CheckCircle className="h-4 w-4" />}
+          icon={<CheckCircle />}
           loading={loading}
           variant="success"
+          drillDown="due_diligence"
         />
         <StatCard
           title="Expiradas / Atenção"
           value={stats.expiredAssessments}
           description="Requerem ação imediata"
-          icon={<AlertTriangle className="h-4 w-4" />}
+          icon={<AlertTriangle />}
           loading={loading}
           variant={stats.expiredAssessments > 0 ? "destructive" : "default"}
+          drillDown="due_diligence"
         />
         <StatCard
           title="Score Médio"
           value={`${stats.averageScore.toFixed(0)}%`}
           description="Média geral dos fornecedores"
-          icon={<TrendingUp className="h-4 w-4" />}
+          icon={<TrendingUp />}
           loading={loading}
           variant={stats.averageScore >= 80 ? 'success' : stats.averageScore >= 60 ? 'warning' : stats.averageScore > 0 ? 'destructive' : 'default'}
         />
