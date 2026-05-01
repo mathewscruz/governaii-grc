@@ -1,22 +1,21 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Download, FileBarChart, Brain, FileDown, HelpCircle } from 'lucide-react';
+import { ChevronLeft, Download, FileBarChart, FileDown, HelpCircle, MoreHorizontal, FileText } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { GenericScoreDashboard } from '@/components/gap-analysis/GenericScoreDashboard';
 import { GenericRequirementsTable } from '@/components/gap-analysis/GenericRequirementsTable';
 import { CategoryBarChart } from '@/components/gap-analysis/CategoryBarChart';
-import { CategoryStatusCards } from '@/components/gap-analysis/CategoryStatusCards';
+import { FrameworkHeroSummary } from '@/components/gap-analysis/FrameworkHeroSummary';
 import { FrameworkHistoryTab } from '@/components/gap-analysis/FrameworkHistoryTab';
 import { AdherenceAssessmentView } from '@/components/gap-analysis/adherence/AdherenceAssessmentView';
 import { AdherenceResultView } from '@/components/gap-analysis/adherence/AdherenceResultView';
 import { AIRecommendationsButton } from '@/components/gap-analysis/AIRecommendationsCard';
 import { RemediationTab } from '@/components/gap-analysis/RemediationTab';
 import { FrameworkOnboarding } from '@/components/gap-analysis/FrameworkOnboarding';
-import { JourneyProgressBar } from '@/components/gap-analysis/JourneyProgressBar';
 import { SoATab } from '@/components/gap-analysis/SoATab';
 import { useDocGen } from '@/contexts/DocGenContext';
 
