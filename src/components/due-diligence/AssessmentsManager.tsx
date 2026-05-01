@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveDueDiligenceStatusTone } from '@/lib/status-tone';
+import { formatStatus } from '@/lib/text-utils';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Mail, Eye, BarChart3, Calendar, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -113,21 +116,14 @@ export function AssessmentsManager() {
     }
 
     setFilteredAssessments(filtered);
-  };
+
+
+
+
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'concluido':
-        return <Badge className="bg-green-100 text-green-800">Concluído</Badge>;
-      case 'em_andamento':
-        return <Badge variant="secondary">Em Andamento</Badge>;
-      case 'enviado':
-        return <Badge variant="outline">Enviado</Badge>;
-      case 'expirado':
-        return <Badge variant="destructive">Expirado</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+    return <StatusBadge size="sm" {...resolveDueDiligenceStatusTone(status)}>{formatStatus(status)}</StatusBadge>;
+  };
   };
 
   const getScoreColor = (score: number) => {
