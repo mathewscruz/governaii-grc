@@ -11,11 +11,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
-import { Key, Plus, Copy, Trash2, Eye, EyeOff, Loader2, RotateCcw } from 'lucide-react';
+import { Key, Plus, Copy, Trash2, Eye, EyeOff, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface ApiKey {
   id: string;
   nome: string;
@@ -205,7 +206,7 @@ curl -X POST -H "X-API-Key: gai_sua_chave_aqui" \\
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+        <div className="flex justify-center py-8"><AkurisPulse size={24} /></div>
       ) : keys.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-10 text-center">

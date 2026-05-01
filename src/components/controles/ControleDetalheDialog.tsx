@@ -8,28 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Edit,
-  MessageSquare,
-  Send,
-  Trash2,
-  User,
-  Calendar,
-  Loader2,
-  AtSign,
-  Shield,
-  Activity,
-  Link2,
-  FileText,
-  Paperclip,
-  Upload,
-  Download,
-} from "lucide-react";
+import { Edit, MessageSquare, Send, Trash2, User, Calendar, AtSign, Shield, Activity, Link2, FileText, Paperclip, Upload, Download } from 'lucide-react';
 import { toast } from "sonner";
 import { formatDateOnly } from "@/lib/date-utils";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { capitalizeText } from "@/lib/text-utils";
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface ControleDetalheDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -585,7 +570,7 @@ export function ControleDetalheDialog({
                   className="self-end"
                 >
                   {isSubmittingComment ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <AkurisPulse size={16} />
                   ) : (
                     <Send className="h-4 w-4" />
                   )}
@@ -646,7 +631,7 @@ export function ControleDetalheDialog({
                     disabled={isUploading}
                   />
                   {isUploading ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    <AkurisPulse size={20} className="text-muted-foreground" />
                   ) : (
                     <Upload className="h-5 w-5 text-muted-foreground" />
                   )}

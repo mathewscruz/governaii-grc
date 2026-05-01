@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, CheckCircle2, XCircle, ExternalLink, Send, AlertCircle, RefreshCw, Monitor, Cloud } from 'lucide-react';
+import { CheckCircle2, XCircle, ExternalLink, Send, AlertCircle, RefreshCw, Monitor, Cloud } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface AzureConfigDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -238,7 +239,7 @@ export function AzureConfigDialog({
           Cancelar
         </Button>
         <Button size="sm" onClick={handleSave} disabled={saving || !tenantId || !clientId}>
-          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          {saving && <AkurisPulse size={16} className="mr-2" />}
           Salvar
         </Button>
       </div>
@@ -342,7 +343,7 @@ export function AzureConfigDialog({
                 className="flex-1"
               >
                 {testing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <AkurisPulse size={16} className="mr-2" />
                 ) : testResult === 'success' ? (
                   <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
                 ) : testResult === 'error' ? (
@@ -441,7 +442,7 @@ export function AzureConfigDialog({
                     disabled={syncing || selectedSync.length === 0}
                   >
                     {syncing ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <AkurisPulse size={16} className="mr-2" />
                     ) : (
                       <RefreshCw className="h-4 w-4 mr-2" />
                     )}

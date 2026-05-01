@@ -4,10 +4,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Users, Shield, Loader2, Star } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Shield, Star } from 'lucide-react';
 import { PermissionProfileDialog } from './PermissionProfileDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Profile {
   id: string;
   name: string;
@@ -102,7 +103,7 @@ export const PermissionProfilesList: React.FC<Props> = ({ empresaId }) => {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin" />
+        <AkurisPulse size={24} />
       </div>
     );
   }

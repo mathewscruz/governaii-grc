@@ -7,20 +7,11 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { 
-  FileText, 
-  Download, 
-  Eye, 
-  CheckCircle, 
-  Clock, 
-  User, 
-  Calendar,
-  AlertCircle,
-  Loader2
-} from "lucide-react";
+import { FileText, Download, Eye, CheckCircle, Clock, User, Calendar, AlertCircle } from 'lucide-react';
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface DocumentoHistorico {
   id: string;
   versao: number;
@@ -171,7 +162,7 @@ export const HistoricoVersoesDialog = ({
         <ScrollArea className="h-[calc(85vh-120px)]">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <AkurisPulse size={32} className="text-muted-foreground" />
             </div>
           ) : (
             <div className="space-y-4 pr-4">

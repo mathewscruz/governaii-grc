@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Target, Zap, TrendingUp, ArrowRight } from 'lucide-react';
+import { Target, Zap, TrendingUp, ArrowRight } from 'lucide-react';
 import { AkurisAIIcon } from '@/components/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface AIRecommendationsDialogProps {
   frameworkId: string;
   frameworkNome: string;
@@ -132,7 +133,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
                 className="h-9 w-9 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground p-0 disabled:opacity-50 disabled:cursor-not-allowed shadow-elegant"
               >
                 {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5}/>
+                  <AkurisPulse size={16} />
                 ) : (
                   <AkurisAIIcon className="h-4 w-4"/>
                 )}
@@ -154,7 +155,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
 
           {loading && !recommendations ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" strokeWidth={1.5}/>
+              <AkurisPulse size={32} className="text-primary" />
               <p className="text-sm text-muted-foreground">Analisando sua conformidade...</p>
             </div>
           ) : recommendations ? (
@@ -220,7 +221,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
 
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button variant="outline" size="sm" onClick={handleAnalyze} disabled={loading} className="flex-1">
-                  {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" strokeWidth={1.5}/> : <AkurisAIIcon className="h-4 w-4 mr-2"/>}
+                  {loading ? <AkurisPulse size={16} className="mr-2" /> : <AkurisAIIcon className="h-4 w-4 mr-2"/>}
                   Atualizar Análise
                 </Button>
                 {props.onGoToRemediation && (

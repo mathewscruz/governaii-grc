@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, History } from "lucide-react";
+import { History } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { logger } from '@/lib/logger';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface AuditEntry {
   id: string;
   campo_alterado: string;
@@ -86,7 +87,7 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ requirem
   if (loading) {
     return (
       <div className="flex items-center justify-center py-4">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" strokeWidth={1.5}/>
+        <AkurisPulse size={16} className="text-muted-foreground" />
       </div>
     );
   }

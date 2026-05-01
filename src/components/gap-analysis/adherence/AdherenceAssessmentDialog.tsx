@@ -8,13 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
-import { Loader2, FileText, Shield, Upload, X } from 'lucide-react';
+import { FileText, Shield, Upload, X } from 'lucide-react';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import { AdherenceAnalysisProgress } from './AdherenceAnalysisProgress';
 import { logger } from '@/lib/logger';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface AdherenceAssessmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -565,7 +566,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting || isExtracting || loadingFrameworks || !uploadedFile}>
-                {(isSubmitting || isExtracting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" strokeWidth={1.5}/>}
+                {(isSubmitting || isExtracting) && <AkurisPulse size={16} className="mr-2" />}
                 {isExtracting ? 'Extraindo texto...' : 'Iniciar Análise'}
               </Button>
             </div>

@@ -3,13 +3,14 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, FileKey, KeyRound, Handshake, Shield, Loader2 } from 'lucide-react';
+import { Calendar, FileKey, KeyRound, Handshake, Shield } from 'lucide-react';
 import { formatDateOnly } from '@/lib/date-utils';
 import { differenceInDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CornerAccent } from '@/components/identity/CornerAccent';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface ExpirationItem {
   id: string;
   name: string;
@@ -102,7 +103,7 @@ export function UpcomingExpirations() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center pt-0">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <AkurisPulse size={24} className="text-muted-foreground" />
         </CardContent>
       </Card>
     );

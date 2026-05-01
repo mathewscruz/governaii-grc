@@ -9,10 +9,11 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { DollarSign, TrendingUp, TrendingDown, BarChart3, Building2, AlertTriangle, Loader2, Cpu } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, BarChart3, Building2, AlertTriangle, Cpu } from 'lucide-react';
 import { AkurisAIIcon } from '@/components/icons';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 // --- Constants: AI models, pricing, and function mapping ---
 
 interface ModelPricing {
@@ -480,7 +481,7 @@ export function FinanceiroIATab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <Button onClick={handleAIAnalysis} disabled={aiLoading || loading}>
-            {aiLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <AkurisAIIcon className="h-4 w-4 mr-2" />}
+            {aiLoading ? <AkurisPulse size={16} className="mr-2" /> : <AkurisAIIcon className="h-4 w-4 mr-2" />}
             {aiLoading ? 'Analisando...' : 'Gerar Análise de Rentabilidade'}
           </Button>
 

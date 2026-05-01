@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, Loader2 } from "lucide-react";
+import { Mail } from 'lucide-react';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface EmailTestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -49,7 +50,7 @@ export function EmailTestDialog({ open, onOpenChange }: EmailTestDialogProps) {
       <Button size="sm" onClick={handleSendTest} disabled={loading}>
         {loading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <AkurisPulse size={16} className="mr-2" />
             Enviando...
           </>
         ) : (

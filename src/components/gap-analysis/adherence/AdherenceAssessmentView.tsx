@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Eye, Loader2, FileCheck, AlertTriangle, TrendingUp, Target, Trash2 } from 'lucide-react';
+import { Plus, Eye, FileCheck, AlertTriangle, TrendingUp, Target, Trash2 } from 'lucide-react';
 import { useAdherenceStats } from '@/hooks/useAdherenceStats';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import type { AdherenceAssessment } from './types';
 import { logger } from '@/lib/logger';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface AdherenceAssessmentViewProps {
   onViewResult: (assessment: AdherenceAssessment) => void;
   frameworkId?: string;
@@ -62,7 +63,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'concluido': return 'Concluído';
-      case 'processando': return <><Loader2 className="h-3 w-3 mr-1 animate-spin inline" strokeWidth={1.5}/>Processando</>;
+      case 'processando': return <><AkurisPulse size={12} className="mr-1 inline" />Processando</>;
       case 'erro': return 'Erro';
       default: return status;
     }
@@ -246,7 +247,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
 
                     {assessment.status === 'processando' && (
                       <div className="flex items-center gap-2 text-info text-sm">
-                        <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5}/>
+                        <AkurisPulse size={16} />
                         <span>Identificando requisitos relevantes e analisando... (1-2 minutos)</span>
                       </div>
                     )}

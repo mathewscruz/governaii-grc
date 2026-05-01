@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, FileText, Download, Save, Loader2, Plus, History } from 'lucide-react';
+import { Send, FileText, Download, Save, Plus, History } from 'lucide-react';
 import { AkurisAIIcon } from '@/components/icons';
 import DocLayoutBuilder from './DocLayoutBuilder';
 import { DocumentoDialog } from '@/components/documentos/DocumentoDialog';
@@ -29,6 +29,7 @@ import { Document as DocxDocument, Packer, Paragraph, HeadingLevel, TextRun, Ima
 import { CreditsExhaustedDialog } from '@/components/CreditsExhaustedDialog';
 import { useAuth } from '@/components/AuthProvider';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -808,7 +809,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                 <div className="max-h-72 overflow-y-auto">
                   {historyLoading && (
                     <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
+                      <AkurisPulse size={16} /> Carregando…
                     </div>
                   )}
                   {!historyLoading && historyItems.length === 0 && (
@@ -878,7 +879,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                     <Card className="bg-muted">
                       <CardContent className="p-3">
                         <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <AkurisPulse size={16} />
                           <span className="text-sm">DocGen está pensando...</span>
                         </div>
                       </CardContent>
@@ -919,7 +920,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
                   className="gap-2"
                 >
                   {isGeneratingDoc ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <AkurisPulse size={16} />
                   ) : (
                     <FileText className="h-4 w-4" />
                   )}

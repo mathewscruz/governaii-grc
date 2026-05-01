@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, Loader2 } from 'lucide-react';
+import { Shield, Users } from 'lucide-react';
 import { PermissionProfilesList } from './PermissionProfilesList';
 import { UserPermissionsList } from './UserPermissionsList';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface PermissionMatrixProps {
   selectedUserId?: string;
 }
@@ -33,7 +34,7 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({ selectedUser
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <AkurisPulse size={32} />
       </div>
     );
   }

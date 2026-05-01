@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Loader2, Shield, Search, Users } from 'lucide-react';
+import { Shield, Search, Users } from 'lucide-react';
 import { UserPermissionDialog } from './UserPermissionDialog';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface User {
   user_id: string;
   nome: string;
@@ -97,7 +98,7 @@ export const UserPermissionsList: React.FC<Props> = ({ empresaId, selectedUserId
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin" />
+        <AkurisPulse size={24} />
       </div>
     );
   }

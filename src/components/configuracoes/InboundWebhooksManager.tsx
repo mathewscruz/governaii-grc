@@ -12,9 +12,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
-import { Webhook, Plus, Copy, Trash2, Loader2, Send, Code } from 'lucide-react';
+import { Webhook, Plus, Copy, Trash2, Send, Code } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface InboundWebhook {
   id: string;
   nome: string;
@@ -228,7 +229,7 @@ export function InboundWebhooksManager() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+        <div className="flex justify-center py-8"><AkurisPulse size={24} /></div>
       ) : webhooks.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-10 text-center">
@@ -301,7 +302,7 @@ export function InboundWebhooksManager() {
                         onClick={() => handleTestWebhook(wh)}
                       >
                         {testingWebhook === wh.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <AkurisPulse size={14} />
                         ) : (
                           <Send className="h-3.5 w-3.5" />
                         )}

@@ -14,10 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Shield, Loader2 } from "lucide-react";
+import { Search, Shield } from 'lucide-react';
 import { toast } from "sonner";
 import { formatStatus, getControleTipoColor, getItemStatusColor, getCriticidadeColor } from "@/lib/text-utils";
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface ImportarControlesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -223,7 +224,7 @@ export function ImportarControlesDialog({
               Cancelar
             </Button>
             <Button onClick={handleImport} disabled={selectedIds.length === 0 || isImporting}>
-              {isImporting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {isImporting && <AkurisPulse size={16} className="mr-2" />}
               Importar Selecionados
             </Button>
           </div>

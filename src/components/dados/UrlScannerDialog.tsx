@@ -10,11 +10,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
-import { Search, Globe, FileText, AlertTriangle, Shield, Plus, Loader2, ExternalLink, Settings2 } from "lucide-react";
+import { Search, Globe, FileText, AlertTriangle, Shield, Plus, ExternalLink, Settings2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface FormField {
   name: string;
   type: string;
@@ -361,7 +362,7 @@ export const UrlScannerDialog = ({ isOpen, onClose, onImport }: UrlScannerDialog
               <Button onClick={handleScan} disabled={isScanning}>
                 {isScanning ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <AkurisPulse size={16} className="mr-2" />
                     Escaneando...
                   </>
                 ) : (

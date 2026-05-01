@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
-import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw, HelpCircle, Building2, Settings, FileCheck, CheckSquare, Shield, Target, Check, type LucideIcon } from "lucide-react";
+import { Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw, HelpCircle, Building2, Settings, FileCheck, CheckSquare, Shield, Target, Check, type LucideIcon } from 'lucide-react';
 import { AkurisAIIcon } from "@/components/icons";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 import type { ConformityStatus } from "@/lib/gap-analysis-tokens";
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface RequirementDetail {
   id: string;
   codigo: string;
@@ -752,13 +753,13 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                 onChange={handleStatusChange}
                 disabled={savingStatus || loading}
               />
-              {savingStatus && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              {savingStatus && <AkurisPulse size={14} className="text-muted-foreground" />}
             </div>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <AkurisPulse size={32} className="text-primary" />
             </div>
           ) : (
             <div className="flex flex-col md:flex-row min-h-0 flex-1 overflow-hidden">
@@ -1042,7 +1043,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                                               onClick={() => handleValidateEvidence(file)}
                                             >
                                               {isValidating ? (
-                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                                <AkurisPulse size={12} />
                                               ) : (
                                                 <AkurisAIIcon size={12} className="mr-1 text-primary" />
                                               )}

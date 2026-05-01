@@ -17,13 +17,10 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDateOnly } from '@/lib/date-utils';
-import { 
-  Plus, FileText, Download, Pencil, Trash2, Eye, MoreHorizontal,
-  FileBarChart, BarChart3, Shield, AlertTriangle, BookOpen, Clock, Loader2,
-  Briefcase, Package, Search, Users, FileCheck, MessageSquare
-} from 'lucide-react';
+import { Plus, FileText, Download, Pencil, Trash2, Eye, MoreHorizontal, FileBarChart, BarChart3, Shield, AlertTriangle, BookOpen, Clock, Briefcase, Package, Search, Users, FileCheck, MessageSquare } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 const templateConfigs: Record<string, { nome: string; descricao: string; icon: any; cor: string }> = {
   executivo_trimestral: { nome: 'Resumo Executivo Trimestral', descricao: 'Panorama trimestral de riscos, compliance e incidentes para a diretoria', icon: BarChart3, cor: 'text-primary' },
   compliance_geral: { nome: 'Status Geral de Compliance', descricao: 'Aderência a frameworks, controles, políticas e auditorias ativas', icon: BookOpen, cor: 'text-violet-600' },
@@ -270,7 +267,7 @@ export default function Relatorios() {
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem onClick={() => handleExportPDF(rel)} disabled={exporting === rel.id}>
-                          {exporting === rel.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                          {exporting === rel.id ? <AkurisPulse size={16} className="mr-2" /> : <Download className="h-4 w-4 mr-2" />}
                           Exportar PDF
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setEditRelatorio(rel)}>

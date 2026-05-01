@@ -9,9 +9,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Plus, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { MODULOS_DISPONIVEIS, type Plano } from '@/lib/planos-utils';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -246,7 +247,7 @@ export const PlanoFormDialog: React.FC<Props> = ({ open, onOpenChange, plano, on
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancelar</Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+            {saving ? <AkurisPulse size={16} className="mr-2" /> : null}
             Salvar
           </Button>
         </DialogFooter>

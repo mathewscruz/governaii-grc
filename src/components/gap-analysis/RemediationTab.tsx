@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
-import { ExternalLink, ClipboardList, Clock, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
+import { ExternalLink, ClipboardList, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { logger } from '@/lib/logger';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface RemediationTabProps {
   frameworkId: string;
   frameworkName: string;
@@ -131,7 +132,7 @@ export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, fra
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" strokeWidth={1.5}/>
+        <AkurisPulse size={32} className="text-primary" />
       </div>
     );
   }

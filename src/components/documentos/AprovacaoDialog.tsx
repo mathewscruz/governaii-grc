@@ -6,19 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  CheckCircle,
-  XCircle,
-  Clock,
-  User,
-  Plus,
-  MessageSquare,
-  FileText,
-  Eye,
-  Loader2,
-  ExternalLink,
-  ShieldCheck,
-} from 'lucide-react';
+import { CheckCircle, XCircle, Clock, User, Plus, MessageSquare, FileText, Eye, ExternalLink, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -28,6 +16,7 @@ import { logger } from '@/lib/logger';
 import { MasterDetailDialog, type MasterDetailItem } from '@/components/ui/master-detail-dialog';
 import { Separator } from '@/components/ui/separator';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Documento {
   id: string;
   nome: string;
@@ -604,7 +593,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
               <Button type="submit" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <AkurisPulse size={16} className="mr-2" />
                     Enviando...
                   </>
                 ) : (
@@ -632,7 +621,7 @@ export function AprovacaoDialog({ open, onOpenChange, documento, onSuccess, empr
           <div className="flex-1 overflow-hidden bg-muted/20">
             {loadingPreview ? (
               <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <AkurisPulse size={32} className="text-muted-foreground" />
               </div>
             ) : !documento?.arquivo_url ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
