@@ -190,12 +190,11 @@ export function AprovacaoRiscoDialog({ open, onOpenChange, risco, onSuccess }: P
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'aprovado': return <Badge className="bg-green-100 text-green-800 border-green-200">Aprovado</Badge>;
-      case 'rejeitado': return <Badge className="bg-red-100 text-red-800 border-red-200">Rejeitado</Badge>;
-      case 'pendente': return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Pendente</Badge>;
-      default: return <Badge variant="outline">Rascunho</Badge>;
+    if (status === 'aprovado' || status === 'rejeitado' || status === 'pendente') {
+      const labels: Record<string, string> = { aprovado: 'Aprovado', rejeitado: 'Rejeitado', pendente: 'Pendente' };
+      return <StatusBadge {...resolveAprovacaoTone(status)}>{labels[status]}</StatusBadge>;
     }
+    return <StatusBadge tone="neutral">Rascunho</StatusBadge>;
   };
 
   return (

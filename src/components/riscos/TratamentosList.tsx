@@ -10,7 +10,9 @@ import { toast } from 'sonner';
 import { formatDateOnly } from '@/lib/date-utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { TratamentoDialog } from './TratamentoDialog';
-import { formatStatus, getTratamentoTipoColor, getTratamentoStatusColor } from '@/lib/text-utils';
+import { formatStatus } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveTratamentoTipoTone, resolveTratamentoStatusTone } from '@/lib/status-tone';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface ResponsavelProfile {
@@ -222,9 +224,9 @@ export function TratamentosList({ riscoId, riscoNome, riscoData }: TratamentosLi
                 {tratamentos.map((tratamento) => (
                   <TableRow key={tratamento.id}>
                     <TableCell>
-                      <Badge className={`border whitespace-nowrap ${getTratamentoTipoColor(tratamento.tipo_tratamento)}`}>
+                      <StatusBadge size="sm" {...resolveTratamentoTipoTone(tratamento.tipo_tratamento)}>
                         {formatStatus(tratamento.tipo_tratamento)}
-                      </Badge>
+                      </StatusBadge>
                     </TableCell>
                     <TableCell className="max-w-xs">
                       <div className="truncate" title={tratamento.descricao}>
@@ -232,9 +234,9 @@ export function TratamentosList({ riscoId, riscoNome, riscoData }: TratamentosLi
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={`border whitespace-nowrap ${getTratamentoStatusColor(tratamento.status)}`}>
+                      <StatusBadge size="sm" {...resolveTratamentoStatusTone(tratamento.status)}>
                         {formatStatus(tratamento.status)}
-                      </Badge>
+                      </StatusBadge>
                     </TableCell>
                     <TableCell>
                       {tratamento.responsavel_profile ? (
