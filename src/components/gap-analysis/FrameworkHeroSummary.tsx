@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ResponsiveContainer, AreaChart, Area, Tooltip as ReTooltip } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, ArrowRight } from 'lucide-react';
+import { ResponsiveContainer, AreaChart, Area, Tooltip as ReTooltip, ReferenceLine, YAxis } from 'recharts';
+import { TrendingUp, TrendingDown, Minus, ArrowRight, LineChart as LineChartIcon } from 'lucide-react';
 import { FrameworkConfig, getMaturityLevel } from '@/lib/framework-configs';
 import { useScoreHistory, ScoreHistoryPeriod } from '@/hooks/useScoreHistory';
 
