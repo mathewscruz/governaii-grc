@@ -117,6 +117,19 @@ export function FrameworkHeroSummary({
     return { value: diff, dir: diff > 0 ? ('up' as const) : ('down' as const) };
   }, [history]);
 
+  // Dados para sparkline: duplica único ponto para a área renderizar como faixa
+  const sparkData = useMemo(() => {
+    if (history.length === 0) return [];
+    if (history.length === 1) {
+      return [{ ...history[0], date: 'início' }, history[0]];
+    }
+    return history;
+  }, [history]);
+
+  const isPercentage = config.scoreType === 'percentage';
+  const goalY = isPercentage ? 80 : 4;
+  const yDomain: [number, number] = isPercentage ? [0, 100] : [0, 5];
+
   if (loading) {
     return (
       <Card>
