@@ -436,9 +436,9 @@ export default function ControlesContent() {
       label: 'Tipo',
       sortable: true,
       render: (value: any, controle: Controle) => (
-        <Badge className={`${getControleTipoColor(controle.tipo)} whitespace-nowrap`}>
+        <StatusBadge size="sm" {...resolveControleTipoTone(controle.tipo)}>
           {capitalizeText(controle.tipo)}
-        </Badge>
+        </StatusBadge>
       )
     },
     {

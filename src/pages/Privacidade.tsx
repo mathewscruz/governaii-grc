@@ -153,7 +153,6 @@ export default function Privacidade() {
   };
 
   const getSensibilidadeBadge = (tipo: string, sensibilidade: string) => {
-    const colorClass = getSensibilidadeColor(tipo, sensibilidade);
     const label = (tipo === 'sensivel' || sensibilidade === 'muito_sensivel') 
       ? 'Sensível' 
       : sensibilidade === 'sensivel' 

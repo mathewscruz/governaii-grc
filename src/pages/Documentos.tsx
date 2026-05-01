@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { resolveRevisaoTone } from '@/lib/status-tone';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -40,7 +38,7 @@ import { PageSkeleton } from '@/components/ui/page-skeleton';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { capitalizeText, formatStatus } from '@/lib/text-utils';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { resolveItemStatusTone, resolveTipoDocumentoTone, resolveClassificacaoTone } from '@/lib/status-tone';
+import { resolveItemStatusTone, resolveTipoDocumentoTone, resolveClassificacaoTone, resolveRevisaoTone } from '@/lib/status-tone';
 import { formatDateOnly } from '@/lib/date-utils';
 
 interface Documento {
