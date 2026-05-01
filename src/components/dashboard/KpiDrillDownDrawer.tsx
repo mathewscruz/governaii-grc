@@ -92,45 +92,63 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
         fetcher: async (empresaId) => {
           const { data, error } = await supabase
             .from('riscos')
-            .select('id, titulo, severidade, status, updated_at')
+            .select('id, nome, nivel_risco_residual, nivel_risco_inicial, status, updated_at')
             .eq('empresa_id', empresaId)
-            .neq('status', 'aceito')
-            .order('severidade', { ascending: false })
-            .limit(5);
+            .eq('aceito', false)
+            .order('updated_at', { ascending: false })
+            .limit(20);
           if (error) throw error;
-          return (data || []).map((r: any) => ({
-            id: r.id,
-            title: r.titulo,
-            subtitle: r.status,
-            status: r.severidade,
-            tone: r.severidade === 'critico' ? 'destructive' : r.severidade === 'alto' ? 'warning' : 'neutral',
-            date: fmtDate(r.updated_at),
-          }));
+          const rank = (n?: string) => {
+            const v = (n || '').toLowerCase();
+            if (v.includes('crit')) return 4;
+            if (v.includes('alt')) return 3;
+            if (v.includes('med') || v.includes('méd')) return 2;
+            if (v.includes('baix')) return 1;
+            return 0;
+          };
+          return (data || [])
+            .map((r: any) => ({ ...r, _nivel: r.nivel_risco_residual || r.nivel_risco_inicial }))
+            .sort((a: any, b: any) => rank(b._nivel) - rank(a._nivel))
+            .slice(0, 5)
+            .map((r: any) => {
+              const nivel = (r._nivel || '').toLowerCase();
+              return {
+                id: r.id,
+                title: r.nome,
+                subtitle: r.status,
+                status: r._nivel || 'sem nível',
+                tone: (nivel.includes('crit') ? 'destructive' : nivel.includes('alt') ? 'warning' : nivel.includes('med') ? 'info' : 'neutral') as DrillItem['tone'],
+                date: fmtDate(r.updated_at),
+              };
+            });
         },
       };
     case 'incidentes':
       return {
         title: 'Incidentes ativos',
-        description: 'Incidentes em aberto ou investigação.',
+        description: 'Incidentes em aberto ou em tratamento.',
         icon: IncidentesIcon,
         route: '/incidentes',
         fetcher: async (empresaId) => {
           const { data, error } = await supabase
             .from('incidentes')
-            .select('id, titulo, status, severidade, created_at')
+            .select('id, titulo, status, criticidade, created_at')
             .eq('empresa_id', empresaId)
-            .in('status', ['aberto', 'investigacao'])
+            .in('status', ['aberto', 'em_analise', 'em_tratamento', 'investigacao'])
             .order('created_at', { ascending: false })
             .limit(5);
           if (error) throw error;
-          return (data || []).map((i: any) => ({
-            id: i.id,
-            title: i.titulo,
-            subtitle: i.status,
-            status: i.severidade,
-            tone: i.severidade === 'critico' ? 'destructive' : 'warning',
-            date: fmtDate(i.created_at),
-          }));
+          return (data || []).map((i: any) => {
+            const c = (i.criticidade || '').toLowerCase();
+            return {
+              id: i.id,
+              title: i.titulo,
+              subtitle: i.status,
+              status: i.criticidade,
+              tone: (c.includes('crit') ? 'destructive' : c.includes('alt') ? 'warning' : 'info') as DrillItem['tone'],
+              date: fmtDate(i.created_at),
+            };
+          });
         },
       };
     case 'planos':
@@ -195,7 +213,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
         fetcher: async (empresaId) => {
           const { data, error } = await supabase
             .from('contratos')
-            .select('id, titulo, status, data_fim')
+            .select('id, nome, numero_contrato, status, data_fim')
             .eq('empresa_id', empresaId)
             .order('data_fim', { ascending: true, nullsFirst: false })
             .limit(5);
@@ -205,8 +223,8 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
             const expired = c.data_fim && c.data_fim < today;
             return {
               id: c.id,
-              title: c.titulo,
-              subtitle: c.status,
+              title: c.nome || c.numero_contrato || 'Contrato',
+              subtitle: c.numero_contrato || c.status,
               status: expired ? 'vencido' : c.status,
               tone: (expired ? 'destructive' : 'info') as DrillItem['tone'],
               date: fmtDate(c.data_fim),
@@ -223,18 +241,18 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
         fetcher: async (empresaId) => {
           const { data, error } = await supabase
             .from('documentos')
-            .select('id, titulo, status, data_revisao')
+            .select('id, nome, status, data_vencimento')
             .eq('empresa_id', empresaId)
-            .order('data_revisao', { ascending: true, nullsFirst: false })
+            .order('data_vencimento', { ascending: true, nullsFirst: false })
             .limit(5);
           if (error) throw error;
           return (data || []).map((d: any) => ({
             id: d.id,
-            title: d.titulo,
+            title: d.nome,
             subtitle: d.status,
             status: d.status,
-            tone: (d.status === 'pendente_aprovacao' ? 'warning' : 'info') as DrillItem['tone'],
-            date: fmtDate(d.data_revisao),
+            tone: (d.status === 'pendente' || d.status === 'pendente_aprovacao' ? 'warning' : 'info') as DrillItem['tone'],
+            date: fmtDate(d.data_vencimento),
           }));
         },
       };
@@ -247,19 +265,22 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
         fetcher: async (empresaId) => {
           const { data, error } = await supabase
             .from('due_diligence_assessments')
-            .select('id, terceiro_nome, status, score, updated_at')
+            .select('id, fornecedor_nome, status, score_final, updated_at')
             .eq('empresa_id', empresaId)
             .order('updated_at', { ascending: false })
             .limit(5);
           if (error) throw error;
-          return (data || []).map((d: any) => ({
-            id: d.id,
-            title: d.terceiro_nome,
-            subtitle: d.status,
-            status: typeof d.score === 'number' ? `Score ${d.score}` : undefined,
-            tone: (d.score < 50 ? 'destructive' : d.score < 70 ? 'warning' : 'success') as DrillItem['tone'],
-            date: fmtDate(d.updated_at),
-          }));
+          return (data || []).map((d: any) => {
+            const score = d.score_final;
+            return {
+              id: d.id,
+              title: d.fornecedor_nome,
+              subtitle: d.status,
+              status: typeof score === 'number' ? `Score ${score}` : undefined,
+              tone: (typeof score !== 'number' ? 'neutral' : score < 50 ? 'destructive' : score < 70 ? 'warning' : 'success') as DrillItem['tone'],
+              date: fmtDate(d.updated_at),
+            };
+          });
         },
       };
     case 'denuncias':
@@ -271,29 +292,51 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
         fetcher: async (empresaId) => {
           const { data, error } = await supabase
             .from('denuncias')
-            .select('id, protocolo, categoria, status, created_at')
+            .select('id, protocolo, titulo, gravidade, status, created_at')
             .eq('empresa_id', empresaId)
-            .in('status', ['novas', 'em_andamento'])
+            .in('status', ['nova', 'novas', 'em_investigacao', 'em_andamento'])
             .order('created_at', { ascending: false })
             .limit(5);
           if (error) throw error;
-          return (data || []).map((d: any) => ({
-            id: d.id,
-            title: d.protocolo || d.categoria || 'Denúncia',
-            subtitle: d.categoria,
-            status: d.status,
-            tone: 'warning' as DrillItem['tone'],
-            date: fmtDate(d.created_at),
-          }));
+          return (data || []).map((d: any) => {
+            const g = (d.gravidade || '').toLowerCase();
+            return {
+              id: d.id,
+              title: d.titulo || d.protocolo || 'Denúncia',
+              subtitle: d.protocolo,
+              status: d.gravidade || d.status,
+              tone: (g.includes('crit') || g.includes('alt') ? 'destructive' : 'warning') as DrillItem['tone'],
+              date: fmtDate(d.created_at),
+            };
+          });
         },
       };
     case 'controles':
       return {
-        title: 'Controles',
-        description: 'Controles ativos.',
+        title: 'Controles internos',
+        description: 'Controles ativos por criticidade.',
         icon: ControlesIcon,
-        route: '/sistemas',
-        fetcher: async () => [],
+        route: '/controles',
+        fetcher: async (empresaId) => {
+          const { data, error } = await supabase
+            .from('controles')
+            .select('id, nome, codigo, status, criticidade, proxima_avaliacao')
+            .eq('empresa_id', empresaId)
+            .order('criticidade', { ascending: false })
+            .limit(5);
+          if (error) throw error;
+          return (data || []).map((c: any) => {
+            const cr = (c.criticidade || '').toLowerCase();
+            return {
+              id: c.id,
+              title: c.nome,
+              subtitle: c.codigo || c.status,
+              status: c.criticidade || c.status,
+              tone: (cr.includes('alt') || cr.includes('crit') ? 'warning' : 'info') as DrillItem['tone'],
+              date: fmtDate(c.proxima_avaliacao),
+            };
+          });
+        },
       };
 
     // ── Novos módulos ──────────────────────────────────────────────────────
