@@ -199,7 +199,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
               {recommendations.quick_wins?.length > 0 && (
                 <div>
                   <h4 className="text-sm font-semibold flex items-center gap-1.5 mb-2">
-                    <Zap className="h-4 w-4 text-amber-500" />
+                    <Zap className="h-4 w-4 text-warning" />
                     Quick Wins (Vitórias Rápidas)
                   </h4>
                   <div className="space-y-2">
