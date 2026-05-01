@@ -14,6 +14,7 @@ import { ChangelogPopover } from '@/components/ChangelogPopover';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import PageTransition from '@/components/PageTransition';
 import TrialBanner from '@/components/TrialBanner';
+import { AiCreditsExhaustedBanner } from '@/components/ui/ai-credits-banner';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { PageSkeleton } from '@/components/ui/page-skeleton';
 import { ModuleLoadingSkeleton } from '@/components/ui/module-loading-skeleton';
@@ -163,6 +164,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background rounded-2xl m-2 border border-[hsl(230,20%,20%)]/30">
           {/* Banner de Trial */}
           <TrialBanner />
+          {/* Banner global — créditos de IA esgotados */}
+          <AiCreditsExhaustedBanner />
           
           <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card flex-shrink-0">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
