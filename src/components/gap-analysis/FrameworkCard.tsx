@@ -1,9 +1,15 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Shield, Lock, Scale, Building2 } from "lucide-react";
 import { FrameworkLogo } from "./FrameworkLogos";
+import {
+  CATEGORY_BADGE_CLASS,
+  CATEGORY_LABEL,
+  getEffortLevel,
+  getScoreTextClass,
+  type FrameworkCategory,
+} from "@/lib/gap-analysis-tokens";
 
 interface FrameworkProgress {
   totalRequirements: number;
@@ -33,11 +39,11 @@ interface FrameworkCardProps {
   onClick: () => void;
 }
 
-const CATEGORY_MAP: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  seguranca: { label: 'Segurança', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Shield },
-  privacidade: { label: 'Privacidade', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: Lock },
-  qualidade: { label: 'Qualidade', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Scale },
-  governanca: { label: 'Governança', color: 'bg-purple-100 text-purple-700 border-purple-200', icon: Building2 },
+const CATEGORY_ICON: Record<FrameworkCategory, React.ElementType> = {
+  seguranca: Shield,
+  privacidade: Lock,
+  governanca: Building2,
+  qualidade: Scale,
 };
 
 const FRAMEWORK_AUDIENCES: Record<string, string> = {
@@ -55,18 +61,12 @@ const FRAMEWORK_AUDIENCES: Record<string, string> = {
   'HIPAA': 'Proteção de dados de saúde (EUA)',
 };
 
-function getCategory(tipo: string): string {
+function getCategory(tipo: string): FrameworkCategory {
   const t = tipo?.toLowerCase() || '';
   if (t.includes('privacidade') || t.includes('privacy') || t.includes('lgpd') || t.includes('gdpr')) return 'privacidade';
   if (t.includes('governanca') || t.includes('governance') || t.includes('cobit') || t.includes('sox')) return 'governanca';
   if (t.includes('qualidade') || t.includes('quality') || t.includes('iso 9') || t.includes('itil')) return 'qualidade';
   return 'seguranca';
-}
-
-function getEffortLevel(count: number): { label: string; color: string } {
-  if (count <= 30) return { label: 'Baixo', color: 'bg-emerald-100 text-emerald-700' };
-  if (count <= 100) return { label: 'Médio', color: 'bg-amber-100 text-amber-700' };
-  return { label: 'Alto', color: 'bg-red-100 text-red-700' };
 }
 
 export const FrameworkCard: React.FC<FrameworkCardProps> = ({
@@ -80,7 +80,7 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
   variant = 'available',
   onClick,
 }) => {
-  const progressPercent = progress && progress.totalRequirements > 0 
+  const progressPercent = progress && progress.totalRequirements > 0
     ? Math.round((progress.evaluatedRequirements / progress.totalRequirements) * 100)
     : 0;
 
@@ -91,10 +91,10 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
     const parcialPercent = Math.round((statusCounts.parcial / totalApplicable) * 100);
     const naoConformePercent = Math.round((statusCounts.nao_conforme / totalApplicable) * 100);
     const pendenteCount = statusCounts.nao_avaliado;
-    
+
     return (
-      <Card 
-        className="group hover:shadow-lg transition-all duration-300 cursor-pointer h-full flex flex-col border-l-4 border-l-primary/60"
+      <Card
+        className="group hover:shadow-elegant transition-all duration-300 cursor-pointer h-full flex flex-col border-l-4 border-l-primary/60"
         onClick={onClick}
       >
         <div className="flex items-start gap-4 p-4 pb-3">
@@ -111,15 +111,9 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
 
         {/* Score & Progress section */}
         <div className="px-4 pb-3 space-y-3">
-          {/* Main score */}
           {progress && (
             <div className="flex items-baseline gap-2">
-              <span className={`text-2xl font-bold ${
-                progress.averageScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
-                progress.averageScore >= 60 ? 'text-primary' :
-                progress.averageScore >= 40 ? 'text-amber-600 dark:text-amber-400' :
-                'text-destructive'
-              }`}>
+              <span className={`text-2xl font-bold ${getScoreTextClass(progress.averageScore)}`}>
                 {progress.averageScore}%
               </span>
               <span className="text-xs text-muted-foreground">de conformidade geral</span>
@@ -132,13 +126,13 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
               <div className="flex items-center gap-2 mb-1">
                 <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden flex">
                   {conformePercent > 0 && (
-                    <div className="h-full bg-emerald-500 transition-all" style={{ width: `${conformePercent}%` }} />
+                    <div className="h-full bg-success transition-all" style={{ width: `${conformePercent}%` }} />
                   )}
                   {parcialPercent > 0 && (
-                    <div className="h-full bg-amber-500 transition-all" style={{ width: `${parcialPercent}%` }} />
+                    <div className="h-full bg-warning transition-all" style={{ width: `${parcialPercent}%` }} />
                   )}
                   {naoConformePercent > 0 && (
-                    <div className="h-full bg-red-500 transition-all" style={{ width: `${naoConformePercent}%` }} />
+                    <div className="h-full bg-destructive transition-all" style={{ width: `${naoConformePercent}%` }} />
                   )}
                 </div>
                 <span className="text-[11px] text-muted-foreground whitespace-nowrap">
@@ -151,20 +145,20 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
           {/* Status summary - compact pills */}
           <div className="flex flex-wrap gap-1.5">
             {statusCounts.conforme > 0 && (
-              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-success/10 text-success border border-success/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-success" />
                 {statusCounts.conforme} Conforme
               </span>
             )}
             {statusCounts.parcial > 0 && (
-              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-warning/10 text-warning border border-warning/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-warning" />
                 {statusCounts.parcial} Parcial
               </span>
             )}
             {statusCounts.nao_conforme > 0 && (
-              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive border border-destructive/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
                 {statusCounts.nao_conforme} Não Conforme
               </span>
             )}
@@ -183,13 +177,13 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
         </div>
 
         <div className="flex justify-end p-3 pt-0 mt-auto">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
             className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
             onClick={(e) => { e.stopPropagation(); onClick(); }}
           >
-            <ArrowRight className="h-5 w-5" />
+            <ArrowRight className="h-5 w-5" strokeWidth={1.5} />
           </Button>
         </div>
       </Card>
@@ -198,32 +192,33 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
 
   // Available variant - compact card with category tag and effort
   const cat = getCategory(tipo_framework);
-  const catCfg = CATEGORY_MAP[cat];
+  const CategoryIcon = CATEGORY_ICON[cat];
   const effort = getEffortLevel(requirementCount);
   const audience = FRAMEWORK_AUDIENCES[nome];
 
   return (
-    <Card 
-      className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300 cursor-pointer h-full flex flex-col"
+    <Card
+      className="group hover:shadow-elegant hover:border-primary/30 transition-all duration-300 cursor-pointer h-full flex flex-col"
       onClick={onClick}
     >
       <div className="p-3 pb-0">
-        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 border ${catCfg.color}`}>
-          {catCfg.label}
+        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 inline-flex items-center gap-1 ${CATEGORY_BADGE_CLASS[cat]}`}>
+          <CategoryIcon className="h-2.5 w-2.5" strokeWidth={1.5} />
+          {CATEGORY_LABEL[cat]}
         </Badge>
       </div>
 
       <div className="flex justify-center pt-3 pb-2">
         <FrameworkLogo nome={nome} className="h-10 w-10" />
       </div>
-      
+
       <div className="text-center px-3 pb-1">
         <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
           {nome}
         </h3>
         <span className="text-xs text-muted-foreground">{versao}</span>
       </div>
-      
+
       <div className="flex-1 px-3 py-1">
         <p className="text-xs text-muted-foreground text-center line-clamp-2">
           {audience || descricao || 'Framework de conformidade organizacional'}
@@ -233,20 +228,20 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
       <div className="px-3 py-2 flex items-center justify-center gap-2">
         <span className="text-xs text-muted-foreground">{requirementCount} requisitos</span>
         <span className="text-muted-foreground">·</span>
-        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${effort.color}`}>
+        <Badge variant={effort.variant} className="text-[10px] px-1.5 py-0">
           Esforço {effort.label}
         </Badge>
       </div>
-      
+
       <div className="flex justify-center p-3 pt-0">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
           className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
           onClick={(e) => { e.stopPropagation(); onClick(); }}
         >
           Iniciar Avaliação
-          <ArrowRight className="h-4 w-4 ml-1" />
+          <ArrowRight className="h-4 w-4 ml-1" strokeWidth={1.5} />
         </Button>
       </div>
     </Card>

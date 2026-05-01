@@ -10,13 +10,9 @@ interface StatusBlocksProps {
   blockSize?: 'sm' | 'md';
 }
 
-const STATUS_COLORS = {
-  conforme: 'bg-emerald-500',
-  parcial: 'bg-amber-400',
-  nao_conforme: 'bg-red-500',
-  nao_aplicavel: 'bg-blue-400',
-  nao_avaliado: 'bg-muted-foreground/20',
-} as const;
+import { STATUS_BG_CLASS } from '@/lib/gap-analysis-tokens';
+
+const STATUS_COLORS = STATUS_BG_CLASS;
 
 const STATUS_LABELS: Record<string, string> = {
   conforme: 'Conforme',

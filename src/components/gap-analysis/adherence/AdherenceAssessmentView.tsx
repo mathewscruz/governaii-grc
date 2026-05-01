@@ -48,16 +48,14 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
     { cacheKey: `adherence-assessments-${frameworkId || 'all'}`, cacheDuration: 0 }
   );
 
-  const getStatusColor = (status: string): string => {
+  type Variant = 'success' | 'warning' | 'destructive' | 'secondary' | 'outline';
+
+  const getStatusVariant = (status: string): Variant => {
     switch (status) {
-      case 'concluido':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'processando':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'erro':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'concluido': return 'success';
+      case 'processando': return 'secondary';
+      case 'erro': return 'destructive';
+      default: return 'outline';
     }
   };
 
@@ -70,17 +68,12 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
     }
   };
 
-  const getResultColor = (resultado?: string): string => {
-    if (!resultado) return '';
+  const getResultVariant = (resultado?: string): Variant => {
     switch (resultado) {
-      case 'conforme':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'nao_conforme':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'parcial':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'conforme': return 'success';
+      case 'nao_conforme': return 'destructive';
+      case 'parcial': return 'warning';
+      default: return 'outline';
     }
   };
 
@@ -238,8 +231,8 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h4 className="font-semibold">{assessment.nome_analise}</h4>
-                      <Badge className={`${getStatusColor(assessment.status)} border whitespace-nowrap`}>{getStatusLabel(assessment.status)}</Badge>
-                      {assessment.resultado_geral && <Badge className={`${getResultColor(assessment.resultado_geral)} border whitespace-nowrap`}>{getResultLabel(assessment.resultado_geral)}</Badge>}
+                      <Badge variant={getStatusVariant(assessment.status)} className="whitespace-nowrap">{getStatusLabel(assessment.status)}</Badge>
+                      {assessment.resultado_geral && <Badge variant={getResultVariant(assessment.resultado_geral)} className="whitespace-nowrap">{getResultLabel(assessment.resultado_geral)}</Badge>}
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-3">
@@ -252,7 +245,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
                     </div>
 
                     {assessment.status === 'processando' && (
-                      <div className="flex items-center gap-2 text-blue-600 text-sm">
+                      <div className="flex items-center gap-2 text-info text-sm">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <span>Identificando requisitos relevantes e analisando... (1-2 minutos)</span>
                       </div>
