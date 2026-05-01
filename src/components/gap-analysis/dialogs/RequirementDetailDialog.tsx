@@ -1042,6 +1042,61 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
           registro_origem_titulo: `${requirement.codigo} - ${requirement.titulo}`,
         }}
       />
+
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ExternalLink className="h-4 w-4 text-primary" strokeWidth={1.5} />
+              Adicionar link como evidência
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="link-url" className="text-xs">URL <span className="text-destructive">*</span></Label>
+              <Input
+                id="link-url"
+                type="url"
+                placeholder="https://..."
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="link-name" className="text-xs">Nome do link (opcional)</Label>
+              <Input
+                id="link-name"
+                placeholder="Ex.: Política de Segurança no Confluence"
+                value={linkName}
+                onChange={(e) => setLinkName(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground">Se vazio, usaremos o domínio da URL.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                const url = linkUrl.trim();
+                if (!url) { toast.error('Informe a URL'); return; }
+                let safeName = linkName.trim();
+                if (!safeName) {
+                  try { safeName = new URL(url).hostname; } catch { safeName = url; }
+                }
+                setFormData(prev => ({
+                  ...prev,
+                  evidence_files: [...prev.evidence_files, { type: 'link', name: safeName, url }],
+                }));
+                setLinkDialogOpen(false);
+                toast.success('Link adicionado como evidência');
+              }}
+            >
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
