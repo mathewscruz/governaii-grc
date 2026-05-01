@@ -43,9 +43,8 @@ export function useAiCredits(): AiCreditsState {
         .eq('id', empresaId)
         .maybeSingle();
       if (error) throw error;
-      setConsumidos(data?.creditos_consumidos ?? 0);
-      // @ts-expect-error nested select
-      setFranquia(data?.plano?.creditos_franquia ?? 0);
+      setConsumidos((data as any)?.creditos_consumidos ?? 0);
+      setFranquia((data as any)?.plano?.creditos_franquia ?? 0);
     } catch (err) {
       logger.error('useAiCredits.fetchSaldo', { error: err instanceof Error ? err.message : String(err) });
     } finally {
