@@ -14,6 +14,7 @@ import { WizardSummaryCard, WizardSummaryRow } from '@/components/ui/wizard-summ
 import { FieldHelpTooltip } from '@/components/ui/field-help-tooltip';
 import { useWizardDraft } from '@/hooks/useWizardDraft';
 import { logger } from '@/lib/logger';
+import { formatStatus } from '@/lib/text-utils';
 
 interface Contrato {
   id: string;

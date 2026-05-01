@@ -10,6 +10,7 @@ import { ScoreVisualization } from './ScoreVisualization';
 import { FileText, Download, User, Calendar, Mail } from 'lucide-react';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { formatStatus } from '@/lib/text-utils';
 interface Assessment {
   id: string;
   fornecedor_nome: string;

@@ -10,6 +10,7 @@ import { UserSelect } from '@/components/riscos/UserSelect';
 import { WizardDialog, WizardTab, WizardTabState } from '@/components/ui/wizard-dialog';
 import { WizardSummaryCard, WizardSummaryRow } from '@/components/ui/wizard-summary-card';
 import { FieldHelpTooltip } from '@/components/ui/field-help-tooltip';
+import { formatStatus } from '@/lib/text-utils';
 
 interface AtivoFormData {
   nome: string;

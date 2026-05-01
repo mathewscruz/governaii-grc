@@ -23,6 +23,7 @@ import { WizardDialog, WizardTab, WizardTabState } from '@/components/ui/wizard-
 import { WizardSummaryCard, WizardSummaryRow } from '@/components/ui/wizard-summary-card';
 import { FieldHelpTooltip } from '@/components/ui/field-help-tooltip';
 import { useWizardDraft } from '@/hooks/useWizardDraft';
+import { formatStatus } from '@/lib/text-utils';
 
 const incidenteSchema = z.object({
   titulo: z.string().min(1, 'Título é obrigatório'),

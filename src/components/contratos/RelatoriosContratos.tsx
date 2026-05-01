@@ -15,6 +15,7 @@ import { ptBR } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import { loadAkurisLogo, addAkurisHeader, addAkurisFooter, addSectionTitle, drawTableHeader, formatLabel, AKURIS_COLORS } from '@/lib/pdf-utils';
 import { exportCSV } from '@/lib/csv-utils';
+import { formatStatus } from '@/lib/text-utils';
 
 interface RelatorioData {
   contratos: any[];

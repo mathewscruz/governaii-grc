@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { formatStatus } from '@/lib/text-utils';
 interface Documento {
   id: string;
   nome: string;

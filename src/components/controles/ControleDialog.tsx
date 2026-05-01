@@ -17,6 +17,7 @@ import { WizardDialog, WizardTab, WizardTabState } from "@/components/ui/wizard-
 import { WizardSummaryCard, WizardSummaryRow } from "@/components/ui/wizard-summary-card";
 import { FieldHelpTooltip } from "@/components/ui/field-help-tooltip";
 import { logger } from "@/lib/logger";
+import { formatStatus } from '@/lib/text-utils';
 
 const formatDateForDatabase = (dateString: string): string | null => (!dateString ? null : dateString);
 const formatDateForInput = (dateString: string | null): string => (!dateString ? '' : dateString.split('T')[0]);

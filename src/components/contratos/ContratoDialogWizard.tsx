@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { Check, ChevronLeft, ChevronRight, FileText, DollarSign, Calendar, Users, ClipboardList } from 'lucide-react';
+import { formatStatus } from '@/lib/text-utils';
 
 interface Contrato {
   id: string;

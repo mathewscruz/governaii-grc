@@ -16,6 +16,7 @@ import { ptBR, enUS } from 'date-fns/locale';
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
 import { resolveNotificationModule } from '@/lib/notification-icons';
 import { cn } from '@/lib/utils';
+import { formatStatus } from '@/lib/text-utils';
 
 interface Notification {
   id: string;

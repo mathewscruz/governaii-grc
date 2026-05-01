@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link, Unlink, Shield, Package } from "lucide-react";
+import { formatStatus } from '@/lib/text-utils';
 
 interface ControlesVinculacaoDialogProps {
   open: boolean;

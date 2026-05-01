@@ -30,6 +30,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { logger } from '@/lib/logger';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatStatus } from '@/lib/text-utils';
 
 export type DrillDownKey =
   | 'ativos'

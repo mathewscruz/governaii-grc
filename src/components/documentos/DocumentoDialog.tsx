@@ -19,6 +19,7 @@ import { WizardDialog, WizardTab, WizardTabState } from '@/components/ui/wizard-
 import { WizardSummaryCard, WizardSummaryRow } from '@/components/ui/wizard-summary-card';
 import { FieldHelpTooltip } from '@/components/ui/field-help-tooltip';
 import { logger } from '@/lib/logger';
+import { formatStatus } from '@/lib/text-utils';
 
 interface Documento {
   id: string; nome: string; descricao?: string; tipo: string; classificacao?: string;
