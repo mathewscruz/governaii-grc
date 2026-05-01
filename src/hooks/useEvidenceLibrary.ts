@@ -143,7 +143,7 @@ export function useEvidenceLibrary(empresaId: string | null) {
           .eq('arquivo_hash', arquivo_hash)
           .maybeSingle();
         if (dup) {
-          akurisToast({ module: 'gap-analysis', tone: 'info', title: 'Arquivo já existe na biblioteca', description: dup.nome });
+          akurisToast({ module: 'gap', tone: 'info', title: 'Arquivo já existe na biblioteca', description: dup.nome });
           await fetchAll();
           return dup as EvidenceLibraryItem;
         }
