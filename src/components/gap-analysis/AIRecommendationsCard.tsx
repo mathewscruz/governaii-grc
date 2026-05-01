@@ -128,7 +128,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
                 onClick={canAnalyze ? handleOpen : undefined}
                 disabled={loading || !canAnalyze}
                 aria-disabled={!canAnalyze}
-                className="h-9 w-9 rounded-full bg-purple-600 hover:bg-purple-700 text-white p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 w-9 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground p-0 disabled:opacity-50 disabled:cursor-not-allowed shadow-elegant"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
