@@ -647,7 +647,7 @@ export const KpiDrillDownDrawer: React.FC<KpiDrillDownDrawerProps> = ({ open, on
 
   const config = React.useMemo(() => (kpiKey ? buildConfig(kpiKey) : null), [kpiKey]);
 
-  const { data: items, isLoading, isError } = useQuery({
+  const { data: items, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['drill-down', kpiKey, empresaId],
     queryFn: async () => {
       if (!config || !empresaId) return [];
@@ -687,11 +687,16 @@ export const KpiDrillDownDrawer: React.FC<KpiDrillDownDrawerProps> = ({ open, on
             </div>
           )}
           {isError && (
-            <EmptyState
-              title="Não foi possível carregar"
-              description="Tente novamente em instantes."
-              icon={<Icon as={AlertCircle} size="lg" />}
-            />
+            <div className="flex flex-col items-center gap-3 py-8">
+              <EmptyState
+                title="Não foi possível carregar"
+                description="Verifique sua conexão e tente novamente."
+                icon={<Icon as={AlertCircle} size="lg" />}
+              />
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+                {isFetching ? 'Tentando...' : 'Tentar novamente'}
+              </Button>
+            </div>
           )}
           {!isLoading && !isError && (items?.length ?? 0) === 0 && (
             <EmptyState
