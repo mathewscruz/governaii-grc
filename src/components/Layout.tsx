@@ -239,6 +239,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <AkurIAActionListener />
       </div>
     </SidebarProvider>
+    </KpiDrillDownProvider>
   );
 };
 
