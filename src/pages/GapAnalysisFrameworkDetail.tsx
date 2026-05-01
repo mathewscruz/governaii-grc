@@ -145,6 +145,13 @@ export default function GapAnalysisFrameworkDetail() {
 
   const defaultConfig = useMemo(() => getFrameworkConfig('default')!, []);
 
+  // SoA (Statement of Applicability) só é exigida pela ISO 27001 e ISO 27701.
+  const supportsSoA = useMemo(() => {
+    if (!framework) return false;
+    const n = framework.nome.toLowerCase();
+    return n.includes('27001') || n.includes('27701');
+  }, [framework]);
+
   const {
     overallScore, pillarScores, domainScores, areaScores, sectionScores,
     categoryScores, totalRequirements, evaluatedRequirements, loading: scoreLoading,
