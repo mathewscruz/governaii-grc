@@ -133,20 +133,20 @@ const getMenuSections = (t: (key: string) => string): MenuSection[] => [
         title: t('sidebar.security'),
         icon: Lock,
         subItems: [
-          { title: t('sidebar.privilegedAccounts'), url: '/contas-privilegiadas', icon: Users, moduleName: 'contas-privilegiadas' },
-          { title: t('sidebar.accessReview'), url: '/revisao-acessos', icon: CheckSquare, moduleName: 'contas-privilegiadas' },
+          { title: t('sidebar.privilegedAccounts'), url: '/contas-privilegiadas', icon: UserCog, moduleName: 'contas-privilegiadas' },
+          { title: t('sidebar.accessReview'), url: '/revisao-acessos', icon: UserCheck, moduleName: 'contas-privilegiadas' },
           { title: t('sidebar.incidents'), url: '/incidentes', icon: IncidentesIcon, moduleName: 'incidentes' },
         ],
       },
       {
         title: t('sidebar.compliance'),
-        icon: CheckSquare,
+        icon: BadgeCheck,
         subItems: [
           { title: t('sidebar.dueDiligence'), url: '/due-diligence', icon: DueDiligenceIcon, moduleName: 'due-diligence' },
           { title: t('sidebar.whistleblowing'), url: '/denuncia', icon: DenunciasIcon, moduleName: 'denuncia' },
         ],
       },
-      { title: t('sidebar.businessContinuity'), url: '/continuidade', icon: ShieldAlert, moduleName: 'continuidade' },
+      { title: t('sidebar.businessContinuity'), url: '/continuidade', icon: LifeBuoy, moduleName: 'continuidade' },
     ],
   },
   {
