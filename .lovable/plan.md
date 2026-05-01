@@ -1,92 +1,123 @@
-## Diagnóstico — estrutura atual
+## Diagnóstico — por que os cards parecem "genéricos de IA"
 
-A boa notícia: a arquitetura já é **fortemente unificada**. Todos os frameworks (NIST, ISO 27001, PCI, SOC 2, LGPD, GDPR, HIPAA, CIS, COBIT, SOX, NIS2, ISO 27701/9001/14001/37301/20000/31000, ITIL, CCPA, COSO ERM/IC) compartilham:
+Hoje todo módulo usa um único `StatCard` com:
 
-- **Página única**: `GapAnalysisFrameworkDetail.tsx` com as mesmas abas (Avaliação, Análise de Documentos, Remediação, SoA*, Histórico).
-- **Hero**: `FrameworkHeroSummary` (donut + sparkline + chips de domínio/seção + linha contextual).
-- **Gráfico de categorias**: `CategoryBarChart` (barras horizontais clicáveis).
-- **Tabela de requisitos**: `GenericRequirementsTable` (com tabs por seção quando `config.sections` existir, senão tabs por categoria).
-- **Dialog de detalhe**: `RequirementDetailDialog` (mesmo layout, IA, evidências, plano de ação).
-- **Aderência por documento**: `AdherenceAssessmentView` / `AdherenceResultView`.
-- **Histórico**: `FrameworkHistoryTab`.
-- **Exports**: `ExportFrameworkPDF` (técnico) e `ExportBoardPDF` (executivo) iguais para todos.
+```text
+┌────────────────────────────┐
+│ Título (cinza)    [📦]     │  ← ícone numa pílula colorida sempre igual
+│                            │
+│   42                       │  ← valor médio
+│   Críticos: 3 | Altos: 5   │  ← descrição densa e textual
+└────────────────────────────┘
+```
 
-Particularidades vêm 100% de `getFrameworkConfig()` em `src/lib/framework-configs.ts` (escala 0-5 vs %, labels de score, domínios, seções, nomes de pilares). SoA é exclusiva de ISO 27001/27701, conforme regulação. Isso está correto.
+Problemas:
+- Hierarquia plana: o valor não é o herói.
+- A "pílula colorida do ícone" no canto direito é o cliché dos templates de SaaS/IA.
+- Descrição como `"Críticos: 3 | Altos: 5"` força o usuário a ler texto em vez de ver.
+- `loading` usa `animate-pulse` (viola padrão `AkurisPulse`).
+- Cards quase nunca são clicáveis — usuário vê o número e fica preso ali.
+- Sem comparação temporal padronizada, sem composição visual do total.
 
-## Inconsistências encontradas (precisam ser corrigidas)
+## Onda 5 — Cards editoriais com drill-down
 
-1. **Loaders divergentes** — viola a regra "AkurisPulse é o ÚNICO loader":
-   - `GapAnalysisFrameworkDetail` usa `animate-pulse` cru (linhas 206-209).
-   - `GenericRequirementsTable` usa `animate-pulse` cru (l. 762-765).
-   - `FrameworkHeroSummary` usa `<Skeleton/>` em 2 pontos (l. 137, 225).
-   - `GenericScoreDashboard` usa 4× `<Skeleton/>` (l. 123-124).
-   - `RequirementDetailDialog` define um `GuidanceSkeleton` com 11× `<Skeleton/>` (l. 328-345).
-   - `ScoreEvolutionChart` usa `<Skeleton/>` (l. 77).
-   - `AdherenceAssessmentView` usa `animate-pulse` (l. 222).
-   - `SoATab` usa `animate-pulse` (l. 216).
+### A. Reescrever o `StatCard` com gramática editorial sóbria
 
-2. **Título do gráfico de categorias hardcoded** — `CategoryBarChart` mostra sempre "Aderência por Categoria", ignorando `config.domainLabel` / `config.sectionLabel`. NIST deveria dizer "Aderência por Pilar", ISO 27001 "Aderência por Domínio do Anexo A", COBIT "por Domínio COBIT", etc. (os labels já existem no config, só não estão sendo lidos).
+Layout novo (padrão "Linear/Stripe/Notion"):
 
-3. **Tipo do `config` em `CategoryBarChart` não casa** — declarado como `'decimal' | 'percentage' | 'scale_0_5'`, mas o sistema usa `'percentage' | 'scale_0_5'`. Trocar para o tipo `FrameworkConfig` real para evitar drift.
+```text
+┌─────────────────────────────────┐
+│ ◇ Riscos ativos          ↗ +12% │  ← ícone discreto inline + delta
+│                                 │
+│ 42                              │  ← número HERÓI (4xl, tracking-tight)
+│                                 │
+│ ████████░░░░ 3 críticos · 5 altos│ ← micro-segmentação visual
+│                                 │
+│ Ver todos        →              │  ← CTA discreto quando clicável
+└─────────────────────────────────┘
+```
 
-4. **Componentes mortos** que confundem manutenção:
-   - `charts/PrivacyTreemap.tsx` — não importado em lugar nenhum.
-   - `GenericScoreDashboard.tsx` — substituído pelo `FrameworkHeroSummary`, sem usos.
-   - `ScoreEvolutionChart.tsx` — sparkline já vive dentro do Hero, sem usos.
-   - `JourneyProgressBar.tsx`, `StatusBlocks.tsx`, `CategoryStatusCards.tsx`, `WelcomeHero.tsx` — verificar e remover se órfãos.
+Mudanças concretas no componente:
+- **Ícone inline ao lado do título** (16px, stroke 1.5, cor `text-muted-foreground`), sem pílula colorida. Reforça assinatura Akuris.
+- **Valor**: `text-4xl font-semibold tracking-tight`, sem `font-bold`. Mais editorial, menos "ChatGPT card".
+- **Delta inline no canto superior direito** (não embaixo): seta + percentual + tooltip "vs período anterior".
+- **Nova prop `segments`**: `[{ label: 'Críticos', value: 3, tone: 'destructive' }, ...]` que renderiza uma **barra segmentada fina** (h-1.5) acima da legenda textual condensada. Substitui as descrições `"Críticos: 3 | Altos: 5"`.
+- **Variant agora pinta apenas a cor da accent bar lateral** (esquerda, 2px) — sem background colorido, sem pílula. Sutileza > agressividade.
+- **Hover real**: borda passa a `border-primary/40`, surge sombra `shadow-elegant`, cursor pointer e a CTA "Ver todos →" aparece com fade. Comunica que é interativo.
+- **Loading**: substituir `animate-pulse` por `<AkurisPulse size={32}/>` centralizado dentro do card, com altura reservada.
+- **Nova prop `drillDown?: { key: DrillDownKey }`** que conecta direto ao `KpiDrillDownDrawer` já existente. Card vira clicável automaticamente se essa prop existir.
+- **CornerAccent sutil** (já existe no projeto) opcional via prop, dando a assinatura Akuris no canto.
+- **`emptyHint` ganha tratamento visual** — quando valor é 0 o número fica `text-muted-foreground` e o hint surge como uma linha discreta com ícone `Sparkles` em vez de itálico.
 
-5. **Hardcode "Requisitos do {frameworkName}"** está OK (é o nome do framework), mas o card usa `Card/CardHeader/CardTitle` enquanto o Hero não — divergência menor de hierarquia visual; manter como está.
+### B. Estender o `KpiDrillDownDrawer` para cobrir todos os módulos
 
-## Plano de correção
+Hoje suporta: `ativos`, `riscos`, `incidentes`, `planos`, `contratos`, `documentos`, `due_diligence`, `denuncias`, `controles`.
 
-### A. Substituir todos os loaders por `AkurisPulse`
-Em cada arquivo listado em (1):
-- Trocar blocos `animate-pulse` + `<Skeleton/>` por `<AkurisPulse/>` centralizado (com label contextual quando fizer sentido, ex.: "Carregando requisitos...", "Calculando aderência...").
-- Manter altura/área reservada para evitar layout shift (wrapper com `min-h-[Xpx] flex items-center justify-center`).
-- No `RequirementDetailDialog`, substituir o bloco `GuidanceSkeleton` inteiro por um `AkurisPulse` com label "Carregando orientação...".
+Adicionar fetchers para os módulos que ainda não têm:
+- `ativos_chaves`, `ativos_licencas` (vencendo, expiradas)
+- `auditorias` (itens pendentes/em atraso)
+- `continuidade` (planos sem teste, testes vencidos)
+- `gap_analysis` (frameworks com pior aderência, requisitos não conformes)
+- `revisao_acessos` (revisões pendentes, atrasadas)
+- `privacidade` (ROPAs incompletas, solicitações de titular pendentes)
+- `riscos_aceite` (aceites próximos da revisão)
+- `planos_acao` (atrasados)
+- `sistemas` (sem responsável, sem revisão)
+- `contas_privilegiadas` (sem rotação recente)
 
-### B. Tornar o título do `CategoryBarChart` dinâmico
-- Importar `FrameworkConfig` e usar `config.sectionLabel ?? config.domainLabel ?? 'Aderência por Categoria'` no `CardTitle`.
-- Atualizar a prop `config` para o tipo `FrameworkConfig` (remover o tipo inline divergente).
-- Sem mudanças visuais para frameworks sem label customizado.
+Cada fetcher: top 5 itens reais com título, subtítulo, status colorido e data, mantendo `.eq('empresa_id', empresaId)` (regra core de segurança). CTA "Ver todos" no rodapé navega para a rota do módulo.
 
-### C. Remover componentes órfãos
-Após `rg` confirmar zero importações, deletar:
-- `src/components/gap-analysis/charts/PrivacyTreemap.tsx` (e a pasta `charts/` se vazia)
-- `src/components/gap-analysis/GenericScoreDashboard.tsx`
-- `src/components/gap-analysis/ScoreEvolutionChart.tsx`
-- Demais órfãos confirmados (`JourneyProgressBar`, `StatusBlocks`, `CategoryStatusCards`, `WelcomeHero` se não usados).
+### C. Revisão página por página dos ~20 lugares com `StatCard`
 
-### D. Validação final (em todos os frameworks)
-Checklist a rodar manualmente em pelo menos 4 frameworks de tipos distintos (NIST escala 0-5, ISO 27001 com seções+domínios, LGPD %, COSO ERM com domínios coloridos):
-- Hero: donut, sparkline, chips de domínio/seção exibidos com o `domainLabel`/`sectionLabel` correto.
-- Gráfico de categorias: título dinâmico, barras clicáveis filtrando a tabela.
-- Tabela: tabs por seção quando aplicável, senão tabs por categoria; colunas Prazo/Responsável aparecem.
-- Dialog de requisito: idêntico em todos, com IA, evidências e plano de ação.
-- Loader: apenas `AkurisPulse` visível em qualquer estado de loading.
-- Export PDF técnico e executivo geram corretamente.
+Para cada página, fazer 3 coisas:
+
+1. **Eleger o KPI herói** (1 card mais relevante) e dar destaque (`variant="primary"` + `segments` quando faz sentido). Os outros viram secundários.
+2. **Conectar `drillDown`** ao drawer correspondente.
+3. **Substituir descrições densas por `segments`** quando o card representa um agregado com partes (criticidade, status, prioridade).
+
+Exemplo Ativos:
+
+```text
+Antes: "Críticos: 3 | Altos: 5 | Médios: 12 | Baixos: 8"
+Depois: segments=[
+  { label: 'Críticos', value: 3, tone: 'destructive' },
+  { label: 'Altos', value: 5, tone: 'warning' },
+  { label: 'Médios', value: 12, tone: 'info' },
+  { label: 'Baixos', value: 8, tone: 'success' },
+]
+→ renderiza barra horizontal segmentada proporcionalmente + legenda compacta.
+```
+
+Páginas a revisar (ordem de impacto): `Riscos`, `Incidentes`, `Ativos`, `Documentos`, `Contratos`, `PlanosAcao`, `Continuidade`, `RevisaoAcessos`, `Privacidade`, `Denuncia`, `Ativos*`, `ContasPrivilegiadas`, `RiscosAceite`, `GapAnalysisFrameworks`, `Relatorios`, `governanca/*`, `due-diligence/*`, `gap-analysis/RemediationTab`, `configuracoes/*`.
+
+### D. Garantir consistência
+
+- Atualizar `mem://ux/ui-consistency-standards` com a nova gramática.
+- Criar `mem://design/foundations/cards-editorial-onda5` documentando: anatomia (ícone inline, valor herói, segments, delta, CTA hover), proibições (sem pílula colorida, sem `animate-pulse`, descrições densas viram `segments` quando possível) e padrão de drill-down obrigatório quando aplicável.
+
+## Particularidades preservadas
+
+- API atual do `StatCard` continua válida (`title`, `value`, `description`, `icon`, `variant`, `loading`, `emptyHint`, `trend`, `badge`) — props novas (`segments`, `drillDown`) são opcionais. Páginas existentes continuam funcionando até serem migradas.
+- Cores/variants seguem os tokens semânticos (`success`, `warning`, `destructive`, `info`, `primary`).
+- Acessibilidade: card clicável vira `role="button"`, suporta `Enter`/`Space`, foco visível com `ring-primary`.
+- Mobile: barra de segments cai para baixo do valor; delta vai para linha 2; tudo testado em 360px.
 
 ## Arquivos afetados
 
-**Editar**:
-- `src/pages/GapAnalysisFrameworkDetail.tsx`
-- `src/components/gap-analysis/GenericRequirementsTable.tsx`
-- `src/components/gap-analysis/FrameworkHeroSummary.tsx`
-- `src/components/gap-analysis/CategoryBarChart.tsx`
-- `src/components/gap-analysis/dialogs/RequirementDetailDialog.tsx`
-- `src/components/gap-analysis/adherence/AdherenceAssessmentView.tsx`
-- `src/components/gap-analysis/SoATab.tsx`
+**Editar (componente)**:
+- `src/components/ui/stat-card.tsx` — nova anatomia, `segments`, `drillDown`, `AkurisPulse`, hover real.
+- `src/components/dashboard/KpiDrillDownDrawer.tsx` — novos fetchers, expor `useKpiDrillDown(key)` para uso externo.
 
-**Remover (após confirmação de zero usos)**:
-- `src/components/gap-analysis/charts/PrivacyTreemap.tsx`
-- `src/components/gap-analysis/GenericScoreDashboard.tsx`
-- `src/components/gap-analysis/ScoreEvolutionChart.tsx`
-- + órfãos confirmados na varredura
+**Editar (consumidores — ~22 arquivos)**:
+- Pages: `Riscos`, `Incidentes`, `Ativos`, `AtivosChaves`, `AtivosLicencas`, `Documentos`, `Contratos`, `PlanosAcao`, `Continuidade`, `RevisaoAcessos`, `Privacidade`, `Denuncia`, `ContasPrivilegiadas`, `RiscosAceite`, `GapAnalysisFrameworks`, `Relatorios`.
+- Components: `governanca/SistemasContent`, `governanca/ControlesContent`, `governanca/AuditoriasContent`, `due-diligence/DueDiligenceDashboard`, `gap-analysis/RemediationTab`, `configuracoes/FinanceiroIATab`, `configuracoes/CreditosIAManager`, `configuracoes/ReminderSettings`, `configuracoes/GerenciamentoUsuariosEnhanced`, `gap-analysis/adherence/AdherenceAssessmentView`.
 
-## Particularidades preservadas (não mexer)
-- Escala de score por framework (0-5 NIST vs % nos demais).
-- Labels de score (Excelente/Bom/... vs Conforme/Parcial/...).
-- Domínios coloridos específicos (ISO 27001 Anexo A, COBIT EDM/APO/BAI/DSS/MEA, COSO, etc.).
-- Seções (ISO 27001 SGSI vs Anexo A; ISO 9001/14001 PDCA).
-- Aba SoA exclusiva de ISO 27001 e 27701.
-- Tradução de pilares NIST (`NIST_PILLAR_NAMES`).
+**Criar (memória)**:
+- `mem://design/foundations/cards-editorial-onda5` — documenta anatomia e regras.
+
+## Não vai mudar
+
+- `Card` base, tokens de cor, `Badge`, `StatusBadge`, `EmptyState`.
+- Lógica de cálculo das stats (`useDashboardStats`, `useRiscosStats`, etc.).
+- Estrutura de páginas além dos blocos de StatCard.
+- Identidade Navy/Purple, DM Sans.
