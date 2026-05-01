@@ -1,117 +1,59 @@
 ## Diagnóstico
 
-Olhando o dashboard atual do framework e comparando com as referências (Oneleet, Drata-like) que você mandou, concordo: **está poluído**. Hoje a aba "Avaliação" empilha **5 blocos pesados** antes da tabela de requisitos:
+A tela que você mandou é o card **"Evolução do Score"** (componente `ScoreEvolutionChart`), que aparece principalmente na aba **Histórico** do framework. O motivo de ficar "tudo branco" é simples: quando há apenas **1 registro de score** no banco, o `LineChart` do Recharts não consegue desenhar uma linha (precisa de pelo menos 2 pontos), então sobra só um pontinho perdido no meio do canvas.
 
-1. `JourneyProgressBar` (banner contextual com ícone IA)
-2. `GenericScoreDashboard` — donut + pílula de Maturidade + 4 pílulas de domínios + barra de progresso
-3. `ScoreEvolutionChart` — card grande de evolução
-4. `CategoryBarChart` — "Aderência por Categoria" em barras
-5. `CategoryStatusCards` — "Visão por Categoria" em cards (mesmos dados, formato diferente)
+Além disso, o componente atual tem outros problemas visuais:
 
-Existe **redundância clara**: itens 4 e 5 mostram aderência por categoria com visuais diferentes; itens 1 e 2 ambos comunicam progresso e próximo passo. Além disso há **ícones genéricos de IA** espalhados (`Sparkles`, `Brain`) no header e no banner, que destoam da identidade Akuris definida (ícones proprietários, stroke 1.5).
+- 4 botões grandes (`Dia / Semana / Mês / Ano`) que pesam o cabeçalho e destoam do segmented control compacto que adotamos no `FrameworkHeroSummary`
+- Sem gradiente / sem área preenchida → linha seca
+- Sem mostrar o valor atual nem o delta vs. anterior no cabeçalho
+- Empty state genérico ("Nenhum histórico disponível ainda") sem orientação
+- Sem referência visual da meta (80% / nível "Bom")
 
-A **tela inicial** (escolher framework) tem um Hero longo com 3 cards "Como funciona" + 3 sugestões + radar comparativo + cards ativos + cards disponíveis. As referências mostram um caminho mais limpo: **um card-resumo focado por framework + lista enxuta**.
+## Plano de melhoria
 
----
+Reescrever o `ScoreEvolutionChart` mantendo a API (props `frameworkId` + `scoreType`), as cores semânticas e o hook `useScoreHistory`. Mudanças visuais:
 
-## Plano de redesenho
-
-Mantenho 100% das cores, tipografia (DM Sans), tokens semânticos e ícones proprietários Akuris. Nada de mexer no design system — só na densidade, hierarquia e nos ícones genéricos de IA.
-
-### Parte 1 — Dashboard do framework (`GapAnalysisFrameworkDetail`)
-
-**Nova hierarquia** (do topo para baixo, dentro da aba "Avaliação"):
+### 1. Header mais informativo
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ HeroSummary  (1 card único, à la referência Oneleet/Drata)  │
-│ ┌────────────┐  ┌──────────────────────────────────────────┐│
-│ │  Donut 96  │  │  Sparkline de evolução (últimos 6 m)     ││
-│ │  47%       │  │  + período: Dia · Semana · Mês · Ano     ││
-│ │  Nível 1   │  │  + delta vs mês anterior (▲ +9%)         ││
-│ │  17/131    │  └──────────────────────────────────────────┘│
-│ └────────────┘                                               │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ Aderência por Categoria  (1 bloco único, lista de barras)   │
-│ Contexto      ▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱  0%   0/4 req.        │
-│ Liderança     ▰▰▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱▱  37%  3/8 req.        │
-│ Apoio         ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰  100% 12/12 req.      │
-│ ...           [linha clicável → filtra a tabela abaixo]      │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ Tabela de requisitos (já existente, sem mudanças)            │
-└─────────────────────────────────────────────────────────────┘
+Evolução do Score                            [Dia][Semana][Mês][Ano]
+47% ▲ +3.2% vs. anterior
 ```
 
-**O que muda em concreto:**
+- Título + valor atual em destaque + delta colorido (verde/vermelho/cinza com ícone `TrendingUp/Down/Minus`)
+- Toggle de período em formato segmentado compacto (igual ao do hero), em vez de 4 botões grandes
+- Quando só há 1 ponto: troca o delta por um chip discreto "primeiro registro"
 
-1. **Novo componente `FrameworkHeroSummary`** que substitui:
-   - `JourneyProgressBar` (mensagem fica como uma linha discreta dentro do hero, não banner colorido)
-   - O card "Score Geral de Conformidade" do `GenericScoreDashboard`
-   - O card `ScoreEvolutionChart` (o gráfico vira sparkline ao lado do donut, no mesmo card)
-   - O bloco "Domínios do Anexo A" (vira chips menores na parte inferior do hero, só quando o framework tem domínios)
+### 2. Gráfico de área com gradiente (em vez de linha seca)
 
-2. **Remover `CategoryStatusCards`** — a "Visão por Categoria" em cards é redundante com o `CategoryBarChart`, que é mais escaneável (igual à referência). Mantemos só o gráfico de barras, e tornamos cada linha **clicável** para filtrar a tabela.
+- `AreaChart` com `linearGradient` primary → transparente (mesmo padrão do hero)
+- Linha mais grossa (2.5px), pontos sutis, `activeDot` com halo branco no hover
+- `CartesianGrid` apenas horizontal, opacidade reduzida
+- `YAxis` sem linha de eixo, ticks discretos
+- `ReferenceLine` tracejada na linha de meta (80% percentage / 4.0 decimal) com label "Meta" em verde
+- Cursor do tooltip tracejado (não barra cheia)
+- Tooltip com sombra suave + labels alinhados ao design system
 
-3. **Remover ícones genéricos de IA do header**:
-   - `Brain` do botão "Gerador de Documentos (IA)" → `AkurisAIIcon`
-   - `Sparkles` do `AIRecommendationsButton` → `AkurisAIIcon`
-   - `PlayCircle`/`Award` do `JourneyProgressBar` (eliminado, ver item 1)
-   - `Sparkles`/`Brain`/`BarChart3`/`Search` do `WelcomeHero` → mix de ícones próprios + Lucide neutros (ver Parte 2)
+### 3. Tratamento dos 3 estados de dado
 
-4. **Header da página**: agrupar as 4 ações (Consultor IA, Gerador de Documentos, Tour, Exportar) em **2 ações primárias** (Consultor IA + Exportar) e **mover Tour e Gerador de Documentos para um menu "Mais ações"** (ícone `MoreHorizontal`). Reduz peso visual e segue o padrão das referências.
+| Estado | Comportamento |
+|---|---|
+| **0 pontos** | Empty state ilustrado: card pontilhado com ícone `LineChart` em círculo + texto "Sem histórico ainda" + dica "Avalie alguns requisitos para começar a registrar a evolução do seu score nesse período." |
+| **1 ponto** | Duplica o ponto internamente (`[{...p, date:'Início'}, p]`) para que a área renderize como uma faixa horizontal preenchida → não fica mais branco. Sobrepõe um chip discreto centralizado: "Registre mais avaliações para visualizar a tendência". O ponto único fica destacado (raio 5, borda branca). |
+| **2+ pontos** | Renderização normal com área + linha + pontos + tooltip. |
 
-### Parte 2 — Tela inicial do Gap Analysis (`GapAnalysisFrameworks`)
+### 4. Ticks da escala
 
-Hoje, quando o usuário **já tem frameworks ativos**, vemos: 3 StatCards + Radar + barra de busca + grid de ativos + colapsável de disponíveis. As referências sugerem um caminho mais limpo:
+Reduzir os ticks para `[0, 25, 50, 75, 100]` (em vez de 6 níveis) — menos ruído visual.
 
-1. **Manter os 3 StatCards** (Conformidade Geral, Críticos, Avaliados) — já bem desenhados.
-2. **Remover o Radar** quando há ≤3 frameworks ativos (pouco insight, muito espaço). Manter só quando há 3+ ativos, e movê-lo para uma aba "Comparativo" colapsável discreta — não no fluxo principal.
-3. **Redesenhar `FrameworkCard` (variante `active`)** seguindo a referência Drata-like:
-   - Donut pequeno (40px) à esquerda em vez de só número
-   - Barra segmentada mais fina (já existe)
-   - Pílulas de status mais sóbrias (sem fundo colorido, só pontinho + número)
-   - Mini-sparkline de evolução à direita (4 últimos pontos), opcional se houver histórico
+### Arquivos alterados
 
-4. **`WelcomeHero`** (quando ainda não há frameworks): hoje tem 3 passos "Como funciona" que são genéricos. Reduzir para **uma linha curta** e dar mais destaque aos 3 cards de frameworks recomendados (que é a ação real). Trocar `Sparkles` do header por `AkurisAIIcon` apenas onde realmente representa IA; nos passos "Como funciona", usar ícones neutros do catálogo Akuris (não inventar significado de IA onde não há).
-
-### Parte 3 — Limpeza de ícones de IA (transversal)
-
-Inventário e substituições no escopo de Gap Analysis:
-
-| Local | Hoje | Vira |
-|---|---|---|
-| Header → "Gerador de Documentos (IA)" | `Brain` | `AkurisAIIcon` |
-| Header → Botão Consultor IA (redondo) | `Sparkles` | `AkurisAIIcon` |
-| Diálogo Consultor IA → título | `Sparkles` | `AkurisAIIcon` |
-| Diálogo Consultor IA → "Atualizar Análise" | `Sparkles` | `AkurisAIIcon` |
-| `WelcomeHero` → badge "Novo" | `Sparkles` | (remover, manter só "Novo") |
-| `WelcomeHero` → passo "Avalie com IA" | `Brain` | `AkurisAIIcon` |
-| `JourneyProgressBar` | (removido) | — |
-
-### Arquivos que vou alterar
-
-**Criar**
-- `src/components/gap-analysis/FrameworkHeroSummary.tsx` — novo card consolidado (donut + sparkline + delta + chips de domínio)
-
-**Editar**
-- `src/pages/GapAnalysisFrameworkDetail.tsx` — substituir `JourneyProgressBar` + `GenericScoreDashboard` + `CategoryStatusCards` pelo novo `FrameworkHeroSummary`; trocar ícones IA do header; agrupar ações secundárias em menu
-- `src/components/gap-analysis/CategoryBarChart.tsx` — tornar linhas clicáveis (props `onCategoryClick`, `activeCategory`) para substituir o filtro do `CategoryStatusCards`
-- `src/components/gap-analysis/AIRecommendationsCard.tsx` — substituir `Sparkles` por `AkurisAIIcon`
-- `src/components/gap-analysis/WelcomeHero.tsx` — enxugar passos "Como funciona" e trocar `Sparkles`/`Brain` por `AkurisAIIcon` apenas onde representa IA; ícones neutros nos demais
-- `src/components/gap-analysis/FrameworkCard.tsx` — refinar variante `active` com donut pequeno e visual mais sóbrio
-- `src/pages/GapAnalysisFrameworks.tsx` — manter `FrameworkComparisonRadar` apenas quando há 3+ ativos e colocá-lo dentro de um `Collapsible` discreto
-
-**Não tocar**
-- `GenericScoreDashboard.tsx` continua existindo (pode ser usado por outras telas)
-- `JourneyProgressBar.tsx` continua existindo, só é removido do detalhe
-- Todos os tokens, cores, fontes, RLS e queries permanecem iguais
+- `src/components/gap-analysis/ScoreEvolutionChart.tsx` — reescrito completo (mantém API e impacta automaticamente o `FrameworkHistoryTab` e o `GenericScoreDashboard`, que continuam funcionando sem mudança).
 
 ### Resultado esperado
 
-- **Dashboard do framework**: de 5 blocos visuais → 3 (hero + categorias + tabela). Menos scroll, mesma informação, sem perder nada.
-- **Tela inicial**: cards ativos mais informativos (donut + sparkline), Hero mais direto, comparativo só quando faz sentido (3+ frameworks).
-- **Identidade Akuris reforçada**: zero `Sparkles`/`Brain` genéricos onde representa IA do produto; todos viram `AkurisAIIcon` proprietário com stroke 1.5.
+- Card sempre tem **algo visual relevante** mesmo com 1 ponto (faixa preenchida em vez de branco)
+- Cabeçalho passa o "estado" (valor + tendência) sem o usuário precisar olhar o gráfico
+- Linha de meta deixa claro "onde a empresa quer chegar"
+- Visual coerente com o `FrameworkHeroSummary` (mesmo gradiente, mesmo segmented control)
