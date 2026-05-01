@@ -313,7 +313,7 @@ export function AssessmentDialog({
               <div>
                 <Label>Status</Label>
                 <div className="mt-1">
-                  <Badge className={`${getStatusColor(assessment.status)} border whitespace-nowrap`}>{getStatusLabel(assessment.status)}</Badge>
+                  <StatusBadge size="md" {...resolveDueDiligenceStatusTone(assessment.status)}>{formatStatus(assessment.status)}</StatusBadge>
                 </div>
               </div>
             </div>
