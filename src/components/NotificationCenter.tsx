@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Bell, Check, ExternalLink } from 'lucide-react';
+import { Bell, Check, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/AuthProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, formatDistanceToNow } from 'date-fns';
+import { ptBR, enUS } from 'date-fns/locale';
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { resolveNotificationModule } from '@/lib/notification-icons';
+import { cn } from '@/lib/utils';
 
 interface Notification {
   id: string;
