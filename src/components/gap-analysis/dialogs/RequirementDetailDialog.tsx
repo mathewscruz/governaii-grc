@@ -300,6 +300,9 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
     justification: string;
     missing?: string[];
   }>>({});
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkName, setLinkName] = useState('');
 
   const [formData, setFormData] = useState<EvaluationData>({
     responsavel_avaliacao: '', plano_acao: '', observacoes: '',
