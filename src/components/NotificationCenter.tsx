@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Bell, Check, ExternalLink } from 'lucide-react';
+import { Bell, Check, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/AuthProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, formatDistanceToNow } from 'date-fns';
+import { ptBR, enUS } from 'date-fns/locale';
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { resolveNotificationModule } from '@/lib/notification-icons';
+import { cn } from '@/lib/utils';
 
 interface Notification {
   id: string;
@@ -422,7 +424,8 @@ const NotificationCenter: React.FC = () => {
     }
   };
 
-  const getTypeTone = (type: string): 'success' | 'warning' | 'destructive' | 'info' => {
+  type Tone = 'success' | 'warning' | 'destructive' | 'info';
+  const getTypeTone = (type: string): Tone => {
     switch (type) {
       case 'success': return 'success';
       case 'warning': return 'warning';
@@ -431,126 +434,223 @@ const NotificationCenter: React.FC = () => {
     }
   };
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'error': return t('notifications.urgent');
-      case 'warning': return t('notifications.attention');
-      case 'success': return t('notifications.success');
-      default: return t('notifications.info');
-    }
+  const TONE_CLS: Record<Tone, { accent: string; chipBg: string; chipRing: string; iconText: string }> = {
+    success:     { accent: 'bg-success',     chipBg: 'bg-success/10',     chipRing: 'ring-success/25',     iconText: 'text-success' },
+    warning:     { accent: 'bg-warning',     chipBg: 'bg-warning/10',     chipRing: 'ring-warning/25',     iconText: 'text-warning' },
+    destructive: { accent: 'bg-destructive', chipBg: 'bg-destructive/10', chipRing: 'ring-destructive/25', iconText: 'text-destructive' },
+    info:        { accent: 'bg-info',        chipBg: 'bg-info/10',        chipRing: 'ring-info/25',        iconText: 'text-info' },
+  };
+
+  const dateFnsLocale = locale === 'pt' ? ptBR : enUS;
+  const formatRelative = (iso: string) => {
+    const d = new Date(iso);
+    const diffSec = (Date.now() - d.getTime()) / 1000;
+    if (diffSec < 45) return t('notifications.justNow');
+    return formatDistanceToNow(d, { addSuffix: true, locale: dateFnsLocale });
+  };
+
+  // Agrupamento por prioridade visual (urgente / atenção / informativo)
+  type Group = 'urgent' | 'attention' | 'info';
+  const groupOf = (type: string): Group =>
+    type === 'error' ? 'urgent' : type === 'warning' ? 'attention' : 'info';
+
+  const groups: Record<Group, typeof allNotifications> = { urgent: [], attention: [], info: [] };
+  allNotifications.forEach((n) => groups[groupOf(n.type)].push(n));
+
+  const groupMeta: Array<{ key: Group; label: string; tone: Tone }> = [
+    { key: 'urgent',     label: t('notifications.groupUrgent'),     tone: 'destructive' },
+    { key: 'attention',  label: t('notifications.groupAttention'),  tone: 'warning' },
+    { key: 'info',       label: t('notifications.groupInfo'),       tone: 'info' },
+  ];
+
+  const renderItem = (notification: Notification) => {
+    const tone = getTypeTone(notification.type);
+    const toneCls = TONE_CLS[tone];
+    const moduleMeta = resolveNotificationModule(notification);
+    const ModuleIcon = moduleMeta.Icon;
+    const moduleLabel = t(moduleMeta.i18nKey);
+
+    return (
+      <button
+        type="button"
+        key={notification.id}
+        onClick={() => handleNotificationClick(notification)}
+        className={cn(
+          'group relative w-full text-left px-4 py-3 transition-colors',
+          'hover:bg-muted/50 focus-visible:bg-muted/60 focus-visible:outline-none',
+          !notification.read && 'bg-primary/[0.04]'
+        )}
+      >
+        {/* Acento vertical 2px na cor do tom */}
+        <span
+          aria-hidden
+          className={cn('absolute left-0 top-3 bottom-3 w-[2px] rounded-full', toneCls.accent)}
+        />
+        <div className="flex items-start gap-3 pl-2">
+          {/* Chip ícone proprietário */}
+          <span
+            aria-hidden
+            className={cn(
+              'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1',
+              toneCls.chipBg,
+              toneCls.chipRing,
+              toneCls.iconText
+            )}
+          >
+            <ModuleIcon className="h-4 w-4" strokeWidth={1.5} />
+          </span>
+
+          <div className="min-w-0 flex-1">
+            {/* Eyebrow: módulo */}
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80 leading-none truncate">
+                {moduleLabel}
+              </p>
+              {!notification.read && (
+                <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+              )}
+            </div>
+
+            {/* Título */}
+            <p className={cn(
+              'text-[13px] font-semibold leading-tight tracking-tight',
+              !notification.read ? 'text-foreground' : 'text-muted-foreground'
+            )}>
+              {notification.title}
+            </p>
+
+            {/* Mensagem */}
+            {notification.message && (
+              <p className="text-xs text-muted-foreground leading-relaxed mt-1 line-clamp-2">
+                {notification.message}
+              </p>
+            )}
+
+            {/* Footer: tempo relativo + ação inline */}
+            <div className="flex items-center justify-between gap-2 mt-2">
+              <span className="text-[11px] text-muted-foreground/70 tabular-nums">
+                {formatRelative(notification.created_at)}
+              </span>
+              {!notification.read && !notification.isAutomatic && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    markAsReadMutation.mutate(notification.id);
+                  }}
+                  className="text-[11px] font-medium text-primary/80 hover:text-primary transition-colors inline-flex items-center gap-1"
+                >
+                  <Check className="h-3 w-3" strokeWidth={1.5} />
+                  {t('notifications.markAllRead').toLowerCase()}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </button>
+    );
   };
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="h-5 w-5" />
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label={t('notifications.title')}
+          className={cn(
+            'relative h-9 w-9 p-0 rounded-lg transition-all',
+            unreadCount > 0 && 'ring-1 ring-primary/25 bg-primary/[0.04]'
+          )}
+        >
+          <Bell className="h-[18px] w-[18px]" strokeWidth={1.5} />
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+            <span
+              className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground tabular-nums shadow-[0_2px_6px_-1px_hsl(var(--destructive)/0.5)]"
+              aria-label={`${unreadCount} ${t('notifications.unread')}`}
             >
               {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
+            </span>
           )}
         </Button>
       </PopoverTrigger>
-      
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="font-semibold">{t('notifications.title')}</h3>
-          <div className="flex items-center gap-2">
+
+      <PopoverContent
+        className="w-[384px] max-w-[calc(100vw-2rem)] p-0 overflow-hidden border-border/60 shadow-[0_16px_40px_-10px_hsl(var(--primary)/0.18)]"
+        align="end"
+        sideOffset={8}
+      >
+        {/* Header editorial */}
+        <div className="px-4 pt-4 pb-3 border-b border-border/60 bg-gradient-to-b from-surface-1 to-surface-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary/70 leading-none">
+                {t('notifications.eyebrow')}
+              </p>
+              <p className="mt-1.5 text-sm font-semibold text-foreground tracking-tight tabular-nums">
+                {unreadCount > 0
+                  ? `${unreadCount} ${unreadCount === 1 ? t('notifications.unreadOne') : t('notifications.unread')}`
+                  : t('notifications.allCaughtUp')}
+              </p>
+            </div>
             {unreadCount > 0 && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs h-7 px-2"
-                  onClick={handleMarkAllAsRead}
-                >
-                  <Check className="h-3 w-3 mr-1" />
-                  {t('notifications.markAll')}
-                </Button>
-                <Badge variant="secondary">{unreadCount} {t('notifications.unread')}</Badge>
-              </>
+              <button
+                type="button"
+                onClick={handleMarkAllAsRead}
+                className="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
+              >
+                {t('notifications.markAllRead')}
+                <ArrowRight className="h-3 w-3" strokeWidth={1.5} />
+              </button>
             )}
           </div>
         </div>
-        
-        <ScrollArea className="h-80">
+
+        <ScrollArea className="max-h-[460px]">
           {!user ? (
-            <div className="p-4 text-center text-muted-foreground">
+            <div className="px-4 py-10 text-center text-sm text-muted-foreground">
               {t('notifications.loginToView')}
             </div>
           ) : isLoading ? (
-            <div className="p-4 text-center text-muted-foreground">
-              {t('common.loading')}
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <AkurisPulse size={48} />
+              <p className="text-xs text-muted-foreground">{t('common.loading')}</p>
             </div>
           ) : allNotifications.length === 0 ? (
-            <div className="p-4 text-center text-muted-foreground">
-              {t('notifications.noNotifications')}
+            <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-success/10 ring-1 ring-success/20 text-success mb-3">
+                <CheckCircle2 className="h-6 w-6" strokeWidth={1.5} />
+              </div>
+              <p className="text-sm font-semibold text-foreground tracking-tight">
+                {t('notifications.allCaughtUp')}
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-1 max-w-[260px]">
+                {t('notifications.allCaughtUpDesc')}
+              </p>
             </div>
           ) : (
-            <div className="space-y-1">
-              {allNotifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-3 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors ${
-                    !notification.read ? 'bg-primary/5' : ''
-                  }`}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
+            <div className="divide-y divide-border/40">
+              {groupMeta.map(({ key, label, tone }) => {
+                const items = groups[key];
+                if (items.length === 0) return null;
+                return (
+                  <section key={key} aria-label={label}>
+                    <header className="flex items-center justify-between px-4 pt-3 pb-1.5">
                       <div className="flex items-center gap-2">
-                        <h4 className={`text-sm font-medium truncate ${
-                          !notification.read ? 'text-foreground' : 'text-muted-foreground'
-                        }`}>
-                          {notification.title}
-                        </h4>
-                        {!notification.read && (
-                          <div className="h-2 w-2 bg-primary rounded-full flex-shrink-0" />
-                        )}
-                      </div>
-                      
-                      {notification.message && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {notification.message}
+                        <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', TONE_CLS[tone].accent)} />
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+                          {label}
                         </p>
-                      )}
-                      
-                      <div className="flex items-center justify-between mt-2">
-                        <StatusBadge size="sm" tone={getTypeTone(notification.type)}>
-                          {getTypeLabel(notification.type)}
-                        </StatusBadge>
-                        
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(notification.created_at).toLocaleDateString(locale === 'pt' ? 'pt-BR' : 'en-US')}
-                          </span>
-                          {notification.link_to && (
-                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                          )}
-                        </div>
                       </div>
-                    </div>
-                    
-                    {!notification.read && !notification.isAutomatic && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markAsReadMutation.mutate(notification.id);
-                        }}
-                      >
-                        <Check className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                      <span className="text-[10px] font-semibold text-muted-foreground/60 tabular-nums">
+                        {items.length}
+                      </span>
+                    </header>
+                    <div>{items.map(renderItem)}</div>
+                  </section>
+                );
+              })}
             </div>
           )}
         </ScrollArea>
