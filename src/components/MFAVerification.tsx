@@ -3,17 +3,32 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
-import { Mail, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Mail, RefreshCw, Lock, ArrowLeft } from 'lucide-react';
 import logoImage from '@/assets/akuris-logo.png';
 import { useLanguage } from '@/contexts/LanguageContext';
-
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { AkurisMarkPattern } from '@/components/identity/AkurisMarkPattern';
+import { CornerAccent } from '@/components/identity/CornerAccent';
+
 interface MFAVerificationProps {
   userId: string;
   email: string;
   onVerified: () => void;
   onCancel: () => void;
 }
+
+/**
+ * Símbolo Akuris (mesmo path do AkurisPulse) — usado como identidade
+ * visual no topo do card MFA, substituindo ícones genéricos do Lucide.
+ */
+const AKURIS_PATH =
+  'M43.7,13.1 L72.3,66.9 Q76,74 68,74 L61,74 Q56,74 53.4,69.7 L42.6,52.3 Q40,48 37.4,52.3 L26.6,69.7 Q24,74 19,74 L12,74 Q4,74 7.7,66.9 L36.3,13.1 Q40,6 43.7,13.1 Z';
+
+const AkurisMark = ({ size = 28 }: { size?: number }) => (
+  <svg viewBox="0 0 80 80" width={size} height={size} aria-hidden="true">
+    <path d={AKURIS_PATH} fill="currentColor" />
+  </svg>
+);
 
 export const MFAVerification: React.FC<MFAVerificationProps> = ({
   userId,
@@ -96,31 +111,43 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
     if (code.length === 6) {
       handleVerify();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
   const maskedEmail = email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(216,60%,8%)] via-[hsl(216,45%,12%)] to-[hsl(216,60%,8%)] px-6">
-      <div className="w-full max-w-sm space-y-8">
-        <div className="text-center">
-          <img src={logoImage} alt="Akuris" className="h-16 mx-auto" />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[hsl(230,25%,7%)] to-[hsl(228,20%,9%)] px-6 py-12 relative overflow-hidden">
+      <AkurisMarkPattern opacity={0.04} />
+      <div className="absolute top-0 right-0 w-72 h-72 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+
+      <div className="w-full max-w-sm relative z-10 space-y-8">
+        <div className="text-center landing-fade-in-1">
+          <img src={logoImage} alt="Akuris" className="h-12 mx-auto object-contain" />
         </div>
 
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-md p-8 space-y-6">
-          <div className="text-center space-y-3">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/15 flex items-center justify-center">
-              <ShieldCheck className="w-8 h-8 text-primary" />
+        <div className="relative rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-md p-8 space-y-7 landing-fade-in-2 overflow-hidden">
+          <CornerAccent />
+
+          <div className="text-center space-y-4">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+              <AkurisMark size={28} />
             </div>
-            <h2 className="text-xl font-bold text-white">{t('mfaScreen.title')}</h2>
-            <div className="space-y-1">
-              <p className="text-sm text-white/50">
-                {t('mfaScreen.description')}
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                <Mail className="w-4 h-4 text-primary" />
-                <span className="text-sm text-white/80 font-medium">{maskedEmail}</span>
-              </div>
+            <div className="space-y-2">
+              <span className="block text-primary/70 text-[10px] tracking-[0.22em] font-medium uppercase">
+                {t('mfaScreen.eyebrow')}
+              </span>
+              <h2 className="text-2xl font-semibold text-white tracking-tight">
+                {t('mfaScreen.heading')}
+              </h2>
+              <p className="text-sm text-white/50">{t('mfaScreen.description')}</p>
+            </div>
+
+            <div className="flex justify-center pt-1">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.02]">
+                <Mail className="w-3.5 h-3.5 text-primary/60" />
+                <span className="text-xs text-white/80 font-medium tracking-wide">{maskedEmail}</span>
+              </span>
             </div>
           </div>
 
@@ -131,13 +158,17 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
               onChange={(value) => setCode(value)}
               disabled={isVerifying}
             >
-              <InputOTPGroup>
+              <InputOTPGroup className="gap-2">
                 {[0, 1, 2, 3, 4, 5].map((index) => (
-                  <InputOTPSlot
-                    key={index}
-                    index={index}
-                    className="w-12 h-14 text-lg font-bold bg-white/5 border-white/10 text-white"
-                  />
+                  <React.Fragment key={index}>
+                    {index === 3 && (
+                      <span className="self-center w-2 h-px bg-white/15" aria-hidden="true" />
+                    )}
+                    <InputOTPSlot
+                      index={index}
+                      className="w-11 h-14 text-lg font-semibold bg-[hsl(230,25%,9%)] border-white/[0.10] text-white rounded-lg transition-all data-[active=true]:border-primary data-[active=true]:ring-2 data-[active=true]:ring-primary/20"
+                    />
+                  </React.Fragment>
                 ))}
               </InputOTPGroup>
             </InputOTP>
@@ -145,8 +176,7 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
 
           <Button
             onClick={handleVerify}
-            variant="gradient"
-            className="w-full h-11 font-semibold"
+            className="w-full h-12 font-semibold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.5)] hover:shadow-[0_10px_30px_-8px_hsl(var(--primary)/0.6)] transition-all rounded-lg"
             disabled={isVerifying || code.length !== 6}
           >
             {isVerifying ? (
@@ -156,11 +186,20 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
             )}
           </Button>
 
+          {/* Selo de segurança */}
+          <div>
+            <div className="h-px bg-gradient-to-r from-transparent via-white/8 to-transparent mb-3" />
+            <p className="flex items-center justify-center gap-1.5 text-white/35 text-[11px]">
+              <Lock className="w-3 h-3" />
+              {t('mfaScreen.securityFootnote')}
+            </p>
+          </div>
+
           <div className="text-center space-y-3">
             <button
               onClick={handleResend}
               disabled={!canResend || isResending}
-              className="text-sm text-primary hover:text-primary/80 disabled:text-white/30 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-1"
+              className="text-sm text-primary hover:text-primary/80 disabled:text-white/30 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-1.5"
             >
               {isResending ? (
                 <><AkurisPulse size={12} /> {t('mfaScreen.resending')}</>
@@ -173,9 +212,12 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
 
             <button
               onClick={onCancel}
-              className="block w-full text-xs text-white/30 hover:text-white/50 transition-colors"
+              className="block w-full text-xs text-white/40 hover:text-white/70 transition-colors"
             >
-              {t('mfaScreen.cancelBack')}
+              <span className="inline-flex items-center gap-1.5">
+                <ArrowLeft className="w-3 h-3" />
+                {t('mfaScreen.backToLogin')}
+              </span>
             </button>
           </div>
         </div>
