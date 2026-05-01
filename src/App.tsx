@@ -262,6 +262,7 @@ function App() {
             <Route path="*" element={<Suspense fallback={<RouteFallback />}><NotFound /></Suspense>} />
           </Routes>
           </ErrorBoundary>
+          </DocGenProvider>
         </Router>
         
         <SonnerToaster />
