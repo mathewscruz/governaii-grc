@@ -1064,6 +1064,15 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                           })}
                         </div>
                       )}
+                      {/* Reaproveitamento de evidências da biblioteca + sugestões IA */}
+                      <div className="mt-4">
+                        <EvidenceReusePanel
+                          requirementId={requirement.id}
+                          frameworkId={frameworkId}
+                          evaluationId={formData.id}
+                          onLinked={() => loadData()}
+                        />
+                      </div>
                     </div>
                   </JourneyStep>
 
