@@ -121,9 +121,14 @@ export default function GapAnalysisFrameworkDetail() {
     categoryScores, totalRequirements, evaluatedRequirements, loading: scoreLoading,
   } = useFrameworkScore(frameworkId || '', config || defaultConfig, scoreRefreshKey);
 
+  const [autoOnboardingShown, setAutoOnboardingShown] = useState(false);
   useEffect(() => {
-    setShowOnboarding(!scoreLoading && evaluatedRequirements === 0 && totalRequirements > 0);
-  }, [scoreLoading, evaluatedRequirements, totalRequirements]);
+    if (autoOnboardingShown) return;
+    if (!scoreLoading && evaluatedRequirements === 0 && totalRequirements > 0) {
+      setShowOnboarding(true);
+      setAutoOnboardingShown(true);
+    }
+  }, [scoreLoading, evaluatedRequirements, totalRequirements, autoOnboardingShown]);
 
   // Se o usuário está na aba SoA mas o framework não a suporta, voltar para avaliação
   useEffect(() => {
