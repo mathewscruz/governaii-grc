@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import type { ConformityStatus } from "@/lib/gap-analysis-tokens";
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { EvidenceReusePanel } from '@/components/gap-analysis/dialogs/EvidenceReusePanel';
 interface RequirementDetail {
   id: string;
   codigo: string;
