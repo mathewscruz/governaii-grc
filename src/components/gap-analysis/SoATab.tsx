@@ -257,7 +257,7 @@ export function SoATab({ frameworkId, frameworkName, frameworkVersion }: SoATabP
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5}/>
           <Input
             placeholder="Buscar por código ou título..."
             value={search}
@@ -292,7 +292,7 @@ export function SoATab({ frameworkId, frameworkName, frameworkVersion }: SoATabP
             {saving ? 'Salvando...' : 'Salvar SoA'}
           </Button>
           <Button onClick={handleExportPDF} disabled={exporting}>
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="h-4 w-4 mr-2" strokeWidth={1.5}/>
             {exporting ? 'Exportando...' : 'Exportar PDF'}
           </Button>
         </div>
@@ -302,7 +302,7 @@ export function SoATab({ frameworkId, frameworkName, frameworkVersion }: SoATabP
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <FileText className="h-5 w-5 text-primary" />
+            <FileText className="h-5 w-5 text-primary" strokeWidth={1.5}/>
             Declaração de Aplicabilidade (SoA)
           </CardTitle>
         </CardHeader>
@@ -342,7 +342,7 @@ export function SoATab({ frameworkId, frameworkName, frameworkVersion }: SoATabP
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={`text-xs ${statusCfg.color}`}>
-                          <StatusIcon className="h-3 w-3 mr-1" />
+                          <StatusIcon className="h-3 w-3 mr-1" strokeWidth={1.5}/>
                           {statusCfg.label}
                         </Badge>
                       </TableCell>

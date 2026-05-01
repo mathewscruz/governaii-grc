@@ -36,7 +36,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('iso') && nome.includes('27001')) {
     return {
       info: {
-        icon: <Shield className="h-8 w-8 text-primary" />,
+        icon: <Shield className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'A ISO/IEC 27001 é o padrão internacional para Sistemas de Gestão de Segurança da Informação (SGSI). Ela define requisitos para estabelecer, implementar, manter e melhorar continuamente a segurança da informação.',
         timeEstimate: '3 a 6 meses para primeira avaliação completa',
         steps: [
@@ -62,7 +62,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('nist')) {
     return {
       info: {
-        icon: <Target className="h-8 w-8 text-primary" />,
+        icon: <Target className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'O NIST Cybersecurity Framework (CSF) organiza práticas de segurança em 6 funções: Governar, Identificar, Proteger, Detectar, Responder e Recuperar. É flexível e baseado em maturidade.',
         timeEstimate: '2 a 4 meses para avaliação inicial',
         steps: [
@@ -88,7 +88,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('lgpd')) {
     return {
       info: {
-        icon: <Scale className="h-8 w-8 text-primary" />,
+        icon: <Scale className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'A LGPD (Lei Geral de Proteção de Dados) regulamenta o tratamento de dados pessoais no Brasil. A conformidade é obrigatória para todas as empresas que tratam dados de pessoas físicas.',
         timeEstimate: '2 a 3 meses para avaliação completa',
         steps: [
@@ -114,7 +114,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('pci')) {
     return {
       info: {
-        icon: <Lock className="h-8 w-8 text-primary" />,
+        icon: <Lock className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'O PCI DSS (Payment Card Industry Data Security Standard) define requisitos de segurança para empresas que processam, armazenam ou transmitem dados de cartões de pagamento.',
         timeEstimate: '3 a 6 meses para avaliação completa',
         steps: [
@@ -140,7 +140,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('soc')) {
     return {
       info: {
-        icon: <FileCheck className="h-8 w-8 text-primary" />,
+        icon: <FileCheck className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'O SOC 2 avalia controles de uma organização de serviços baseado nos Trust Services Criteria: Security, Availability, Processing Integrity, Confidentiality e Privacy.',
         timeEstimate: '3 a 6 meses para primeira avaliação',
         steps: [
@@ -166,7 +166,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('gdpr')) {
     return {
       info: {
-        icon: <Globe className="h-8 w-8 text-primary" />,
+        icon: <Globe className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'O GDPR (General Data Protection Regulation) é a lei europeia de proteção de dados, aplicável a qualquer empresa que trata dados de residentes da UE.',
         timeEstimate: '3 a 5 meses para avaliação completa',
         steps: [
@@ -192,7 +192,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('hipaa')) {
     return {
       info: {
-        icon: <Database className="h-8 w-8 text-primary" />,
+        icon: <Database className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'O HIPAA (Health Insurance Portability and Accountability Act) protege informações de saúde (PHI) nos EUA, exigindo salvaguardas administrativas, físicas e técnicas.',
         timeEstimate: '3 a 6 meses para avaliação completa',
         steps: [
@@ -218,7 +218,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('cis')) {
     return {
       info: {
-        icon: <Shield className="h-8 w-8 text-primary" />,
+        icon: <Shield className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'Os CIS Controls são um conjunto priorizado de ações de cibersegurança que formam um roteiro prático para defesa contra os ataques mais comuns.',
         timeEstimate: '2 a 4 meses para avaliação inicial',
         steps: [
@@ -244,7 +244,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('cobit')) {
     return {
       info: {
-        icon: <Layers className="h-8 w-8 text-primary" />,
+        icon: <Layers className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'O COBIT é um framework de governança e gestão de TI que ajuda organizações a alinhar TI com objetivos de negócio, gerenciar riscos e otimizar recursos.',
         timeEstimate: '3 a 5 meses para avaliação completa',
         steps: [
@@ -270,7 +270,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('sox')) {
     return {
       info: {
-        icon: <Landmark className="h-8 w-8 text-primary" />,
+        icon: <Landmark className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'A SOX (Sarbanes-Oxley Act) estabelece controles internos sobre relatórios financeiros para empresas de capital aberto, focando em transparência e responsabilidade.',
         timeEstimate: '3 a 6 meses para avaliação completa',
         steps: [
@@ -296,7 +296,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('nis2') || lower.includes('nis 2')) {
     return {
       info: {
-        icon: <Globe className="h-8 w-8 text-primary" />,
+        icon: <Globe className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'A Diretiva NIS2 da União Europeia estabelece requisitos de cibersegurança para entidades essenciais e importantes, expandindo significativamente o escopo da NIS original.',
         timeEstimate: '3 a 5 meses para avaliação completa',
         steps: [
@@ -322,7 +322,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('27701')) {
     return {
       info: {
-        icon: <Shield className="h-8 w-8 text-primary" />,
+        icon: <Shield className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'A ISO 27701 é uma extensão da ISO 27001 focada em gestão de privacidade (PIMS). Ela mapeia requisitos da LGPD e GDPR, facilitando a conformidade com múltiplas regulamentações.',
         timeEstimate: '2 a 4 meses (se já tiver ISO 27001)',
         steps: [
@@ -348,7 +348,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('9001')) {
     return {
       info: {
-        icon: <Award className="h-8 w-8 text-primary" />,
+        icon: <Award className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'A ISO 9001 é o padrão internacional para Sistemas de Gestão da Qualidade (SGQ), baseado no ciclo PDCA e foco na satisfação do cliente.',
         timeEstimate: '3 a 6 meses para avaliação completa',
         steps: [
@@ -374,7 +374,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('14001')) {
     return {
       info: {
-        icon: <Settings className="h-8 w-8 text-primary" />,
+        icon: <Settings className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'A ISO 14001 define requisitos para Sistemas de Gestão Ambiental (SGA), ajudando organizações a gerenciar suas responsabilidades ambientais.',
         timeEstimate: '3 a 6 meses para avaliação completa',
         steps: [
@@ -400,7 +400,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('37301')) {
     return {
       info: {
-        icon: <Scale className="h-8 w-8 text-primary" />,
+        icon: <Scale className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'A ISO 37301 especifica requisitos para sistemas de gestão de compliance, ajudando organizações a estabelecer uma cultura de integridade e compliance.',
         timeEstimate: '3 a 5 meses para avaliação completa',
         steps: [
@@ -426,7 +426,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('20000')) {
     return {
       info: {
-        icon: <Server className="h-8 w-8 text-primary" />,
+        icon: <Server className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'A ISO/IEC 20000 define requisitos para Sistemas de Gestão de Serviços de TI (SGSTI), alinhada com as práticas ITIL.',
         timeEstimate: '3 a 6 meses para avaliação completa',
         steps: [
@@ -452,7 +452,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('31000')) {
     return {
       info: {
-        icon: <Target className="h-8 w-8 text-primary" />,
+        icon: <Target className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'A ISO 31000 fornece diretrizes para gestão de riscos, aplicável a qualquer tipo de organização e qualquer tipo de risco.',
         timeEstimate: '1 a 3 meses para avaliação completa',
         steps: [
@@ -478,7 +478,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('itil')) {
     return {
       info: {
-        icon: <Settings className="h-8 w-8 text-primary" />,
+        icon: <Settings className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'O ITIL (Information Technology Infrastructure Library) é o framework mais adotado para gestão de serviços de TI, organizado em práticas de gestão.',
         timeEstimate: '2 a 4 meses para avaliação completa',
         steps: [
@@ -504,7 +504,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('ccpa')) {
     return {
       info: {
-        icon: <Scale className="h-8 w-8 text-primary" />,
+        icon: <Scale className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'O CCPA (California Consumer Privacy Act) protege os direitos de privacidade dos consumidores da Califórnia, similar ao GDPR em escopo.',
         timeEstimate: '2 a 3 meses para avaliação completa',
         steps: [
@@ -530,7 +530,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('coso') && lower.includes('erm')) {
     return {
       info: {
-        icon: <Target className="h-8 w-8 text-primary" />,
+        icon: <Target className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'O COSO ERM (Enterprise Risk Management) é o framework de referência para gestão de riscos corporativos, integrando estratégia e desempenho.',
         timeEstimate: '2 a 4 meses para avaliação completa',
         steps: [
@@ -556,7 +556,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('coso') && (lower.includes('ic') || lower.includes('interno') || lower.includes('internal'))) {
     return {
       info: {
-        icon: <Landmark className="h-8 w-8 text-primary" />,
+        icon: <Landmark className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'O COSO IC (Internal Control) é o framework de referência para controles internos, composto por 5 componentes e 17 princípios.',
         timeEstimate: '2 a 4 meses para avaliação completa',
         steps: [
@@ -582,7 +582,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('800-82') || lower.includes('800.82') || lower.includes('sp 800')) {
     return {
       info: {
-        icon: <Settings className="h-8 w-8 text-primary" />,
+        icon: <Settings className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'O NIST SP 800-82 fornece diretrizes de segurança para Tecnologia Operacional (OT), incluindo Sistemas de Controle Industrial (ICS), SCADA, DCS e PLCs. Foca em proteger ambientes onde disponibilidade e segurança física são críticas.',
         timeEstimate: '3 a 6 meses para avaliação de ambiente OT',
         steps: [
@@ -608,7 +608,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('dora')) {
     return {
       info: {
-        icon: <Landmark className="h-8 w-8 text-primary" />,
+        icon: <Landmark className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'O DORA (Digital Operational Resilience Act) é o regulamento da União Europeia que estabelece requisitos uniformes de resiliência operacional digital para o setor financeiro, incluindo gestão de risco TIC, testes, incidentes e terceiros.',
         timeEstimate: '4 a 8 meses para conformidade completa',
         steps: [
@@ -634,7 +634,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   if (lower.includes('62443')) {
     return {
       info: {
-        icon: <Layers className="h-8 w-8 text-primary" />,
+        icon: <Layers className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
         description: 'A ISO/IEC 62443 é a série de padrões internacionais para cibersegurança em Sistemas de Automação e Controle Industrial (IACS). Define níveis de segurança (SL 1-4), zonas, condutos e 7 requisitos fundamentais (FR).',
         timeEstimate: '4 a 8 meses para implementação por zona',
         steps: [
@@ -659,7 +659,7 @@ function getOnboardingData(nome: string, tipo: string, total: number): Onboardin
   // Generic fallback
   return {
     info: {
-      icon: <BookOpen className="h-8 w-8 text-primary" />,
+      icon: <BookOpen className="h-8 w-8 text-primary" strokeWidth={1.5}/>,
       description: `Este framework contém ${total} requisitos para avaliação de conformidade. Avalie cada requisito conforme a situação atual da sua organização.`,
       timeEstimate: `${Math.ceil(total / 10)} a ${Math.ceil(total / 5)} semanas estimadas`,
       steps: [
@@ -695,10 +695,10 @@ export function FrameworkOnboarding({ frameworkNome, frameworkVersao, frameworkT
           <p className="text-muted-foreground max-w-xl mx-auto">{info.description}</p>
           <div className="flex items-center justify-center gap-4 mt-4">
             <Badge variant="outline" className="gap-1">
-              <BookOpen className="h-3 w-3" /> {totalRequirements} requisitos
+              <BookOpen className="h-3 w-3" strokeWidth={1.5}/> {totalRequirements} requisitos
             </Badge>
             <Badge variant="outline" className="gap-1">
-              <Clock className="h-3 w-3" /> {info.timeEstimate}
+              <Clock className="h-3 w-3" strokeWidth={1.5}/> {info.timeEstimate}
             </Badge>
           </div>
         </CardContent>
@@ -708,7 +708,7 @@ export function FrameworkOnboarding({ frameworkNome, frameworkVersao, frameworkT
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
+              <Users className="h-5 w-5 text-primary" strokeWidth={1.5}/>
               Para quem é este framework?
             </CardTitle>
           </CardHeader>
@@ -719,7 +719,7 @@ export function FrameworkOnboarding({ frameworkNome, frameworkVersao, frameworkT
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Award className="h-5 w-5 text-primary" />
+              <Award className="h-5 w-5 text-primary" strokeWidth={1.5}/>
               O que você ganha?
             </CardTitle>
           </CardHeader>
@@ -739,7 +739,7 @@ export function FrameworkOnboarding({ frameworkNome, frameworkVersao, frameworkT
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
+            <Target className="h-5 w-5 text-primary" strokeWidth={1.5}/>
             Roteiro Recomendado
           </CardTitle>
         </CardHeader>
@@ -760,7 +760,7 @@ export function FrameworkOnboarding({ frameworkNome, frameworkVersao, frameworkT
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-amber-500" />
+            <Lightbulb className="h-5 w-5 text-amber-500" strokeWidth={1.5}/>
             Dicas de Quem Já Passou Por Isso
           </CardTitle>
         </CardHeader>
@@ -778,7 +778,7 @@ export function FrameworkOnboarding({ frameworkNome, frameworkVersao, frameworkT
 
       <div className="text-center pb-4">
         <Button size="lg" onClick={onStart} className="gap-2">
-          Começar Avaliação <ArrowRight className="h-4 w-4" />
+          Começar Avaliação <ArrowRight className="h-4 w-4" strokeWidth={1.5}/>
         </Button>
         <p className="text-xs text-muted-foreground mt-2">
           Você pode usar a IA a qualquer momento para tirar dúvidas sobre cada requisito

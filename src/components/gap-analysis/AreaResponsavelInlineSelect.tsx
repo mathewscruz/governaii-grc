@@ -155,7 +155,7 @@ export const AreaResponsavelInlineSelect: React.FC<AreaResponsavelInlineSelectPr
             variant="outline"
             className="h-8 w-8 p-0 shrink-0"
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-3 w-3" strokeWidth={1.5}/>
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-md">
@@ -174,7 +174,7 @@ export const AreaResponsavelInlineSelect: React.FC<AreaResponsavelInlineSelectPr
                   onKeyPress={(e) => e.key === 'Enter' && handleAddArea()}
                 />
                 <Button onClick={handleAddArea} size="sm">
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4" strokeWidth={1.5}/>
                 </Button>
               </div>
             </div>

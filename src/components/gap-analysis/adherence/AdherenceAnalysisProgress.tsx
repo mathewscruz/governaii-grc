@@ -155,16 +155,16 @@ export function AdherenceAnalysisProgress({
             {/* Ícone de status */}
             <div className="flex-shrink-0 mt-0.5">
               {step.status === 'completed' && (
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <CheckCircle2 className="h-5 w-5 text-green-600" strokeWidth={1.5}/>
               )}
               {step.status === 'active' && (
-                <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                <Loader2 className="h-5 w-5 text-primary animate-spin" strokeWidth={1.5}/>
               )}
               {step.status === 'pending' && (
-                <Circle className="h-5 w-5 text-muted-foreground" />
+                <Circle className="h-5 w-5 text-muted-foreground" strokeWidth={1.5}/>
               )}
               {step.status === 'error' && (
-                <AlertCircle className="h-5 w-5 text-destructive" />
+                <AlertCircle className="h-5 w-5 text-destructive" strokeWidth={1.5}/>
               )}
             </div>
 
@@ -193,7 +193,7 @@ export function AdherenceAnalysisProgress({
       {/* Mensagem de conclusão */}
       {currentProgress >= 100 && !isError && (
         <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-          <CheckCircle2 className="h-8 w-8 text-green-600 mx-auto mb-2" />
+          <CheckCircle2 className="h-8 w-8 text-green-600 mx-auto mb-2" strokeWidth={1.5}/>
           <p className="text-sm font-medium text-green-900 dark:text-green-100">
             Análise concluída com sucesso!
           </p>

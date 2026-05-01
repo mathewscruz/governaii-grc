@@ -195,21 +195,21 @@ export function AdherenceResultView({ assessment, onBack, frameworkId, onApplied
       {/* Header */}
       <div className="flex items-center justify-between">
         <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-2 h-4 w-4" strokeWidth={1.5}/>
           Voltar
         </Button>
         <div className="flex gap-2">
           {frameworkId && details && details.length > 0 && (
             <Button variant="default" onClick={handleApplyToEvaluation} disabled={applying}>
               {applying ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Aplicando...</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" strokeWidth={1.5}/>Aplicando...</>
               ) : (
-                <><RefreshCw className="mr-2 h-4 w-4" />Aplicar na Avaliação Manual</>
+                <><RefreshCw className="mr-2 h-4 w-4" strokeWidth={1.5}/>Aplicar na Avaliação Manual</>
               )}
             </Button>
           )}
           <Button variant="outline" onClick={handleExportPDF}>
-            <Download className="mr-2 h-4 w-4" />
+            <Download className="mr-2 h-4 w-4" strokeWidth={1.5}/>
             Exportar PDF
           </Button>
         </div>
@@ -246,7 +246,7 @@ export function AdherenceResultView({ assessment, onBack, frameworkId, onApplied
       {assessment.pontos_fortes && assessment.pontos_fortes.length > 0 && (
         <Card className="p-6">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-foreground">
-            <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+            <CheckCircle2 className="h-5 w-5 text-muted-foreground" strokeWidth={1.5}/>
             Pontos Fortes ({assessment.pontos_fortes.length})
           </h3>
           <div className="space-y-3">
@@ -264,7 +264,7 @@ export function AdherenceResultView({ assessment, onBack, frameworkId, onApplied
       {assessment.pontos_melhoria && assessment.pontos_melhoria.length > 0 && (
         <Card className="p-6">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-foreground">
-            <AlertTriangle className="h-5 w-5 text-muted-foreground" />
+            <AlertTriangle className="h-5 w-5 text-muted-foreground" strokeWidth={1.5}/>
             Pontos de Melhoria ({assessment.pontos_melhoria.length})
           </h3>
           <div className="space-y-3">
@@ -285,7 +285,7 @@ export function AdherenceResultView({ assessment, onBack, frameworkId, onApplied
       {assessment.recomendacoes && assessment.recomendacoes.length > 0 && (
         <Card className="p-6">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-foreground">
-            <Lightbulb className="h-5 w-5 text-muted-foreground" />
+            <Lightbulb className="h-5 w-5 text-muted-foreground" strokeWidth={1.5}/>
             Recomendações
           </h3>
           <ol className="list-decimal list-inside space-y-2 text-foreground">
@@ -300,7 +300,7 @@ export function AdherenceResultView({ assessment, onBack, frameworkId, onApplied
       {details && details.length > 0 && (
         <Card className="p-6">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+            <FileText className="h-5 w-5" strokeWidth={1.5}/>
             Análise Detalhada por Requisito
           </h3>
           <Accordion type="single" collapsible className="w-full">

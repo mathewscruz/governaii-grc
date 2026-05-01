@@ -131,7 +131,7 @@ export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, fra
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" strokeWidth={1.5}/>
       </div>
     );
   }
@@ -139,16 +139,16 @@ export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, fra
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Pendentes" value={pendentes} icon={<Clock className="h-4 w-4" />} />
-        <StatCard title="Em Andamento" value={emAndamento} icon={<ClipboardList className="h-4 w-4" />} />
-        <StatCard title="Concluídos" value={concluidos} icon={<CheckCircle2 className="h-4 w-4" />} />
-        <StatCard title="Atrasados" value={atrasados} icon={<AlertTriangle className="h-4 w-4" />} />
+        <StatCard title="Pendentes" value={pendentes} icon={<Clock className="h-4 w-4" strokeWidth={1.5}/>} />
+        <StatCard title="Em Andamento" value={emAndamento} icon={<ClipboardList className="h-4 w-4" strokeWidth={1.5}/>} />
+        <StatCard title="Concluídos" value={concluidos} icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5}/>} />
+        <StatCard title="Atrasados" value={atrasados} icon={<AlertTriangle className="h-4 w-4" strokeWidth={1.5}/>} />
       </div>
 
       {planos.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+            <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" strokeWidth={1.5}/>
             <p className="text-lg font-medium text-muted-foreground">Nenhum plano de ação vinculado</p>
             <p className="text-sm text-muted-foreground mt-1">
               Para criar planos de remediação, marque requisitos como "Não Conforme" e crie planos de ação no detalhe do requisito.
@@ -182,7 +182,7 @@ export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, fra
                   </div>
                 </div>
                 <Button size="sm" variant="ghost" onClick={() => navigate('/planos-acao')}>
-                  <ExternalLink className="h-4 w-4" />
+                  <ExternalLink className="h-4 w-4" strokeWidth={1.5}/>
                 </Button>
               </div>
             ))}

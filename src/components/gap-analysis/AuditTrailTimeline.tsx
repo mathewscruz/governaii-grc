@@ -86,7 +86,7 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ requirem
   if (loading) {
     return (
       <div className="flex items-center justify-center py-4">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" strokeWidth={1.5}/>
       </div>
     );
   }
@@ -94,7 +94,7 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ requirem
   if (entries.length === 0) {
     return (
       <div className="text-center py-4">
-        <History className="h-5 w-5 mx-auto text-muted-foreground/40 mb-1" />
+        <History className="h-5 w-5 mx-auto text-muted-foreground/40 mb-1" strokeWidth={1.5}/>
         <p className="text-xs text-muted-foreground">Nenhuma alteração registrada</p>
       </div>
     );

@@ -110,7 +110,7 @@ export const AreaResponsavelManager: React.FC<AreaResponsavelManagerProps> = ({
               variant="outline"
               className="h-6 w-6 p-0"
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-3 w-3" strokeWidth={1.5}/>
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
@@ -129,7 +129,7 @@ export const AreaResponsavelManager: React.FC<AreaResponsavelManagerProps> = ({
                     onKeyPress={(e) => e.key === 'Enter' && handleAddArea()}
                   />
                   <Button onClick={handleAddArea} size="sm">
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4" strokeWidth={1.5}/>
                   </Button>
                 </div>
               </div>
