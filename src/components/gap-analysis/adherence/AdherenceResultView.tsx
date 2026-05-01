@@ -60,11 +60,11 @@ export function AdherenceResultView({ assessment, onBack, frameworkId, onApplied
   const getResultIconColor = (resultado?: string) => {
     switch (resultado) {
       case 'conforme':
-        return { bg: 'bg-green-100 dark:bg-green-900/30', icon: 'text-green-600 dark:text-green-400' };
+        return { bg: 'bg-success/15', icon: 'text-success' };
       case 'nao_conforme':
-        return { bg: 'bg-red-100 dark:bg-red-900/30', icon: 'text-red-600 dark:text-red-400' };
+        return { bg: 'bg-destructive/15', icon: 'text-destructive' };
       case 'parcial':
-        return { bg: 'bg-yellow-100 dark:bg-yellow-900/30', icon: 'text-yellow-600 dark:text-yellow-400' };
+        return { bg: 'bg-warning/15', icon: 'text-warning' };
       default:
         return { bg: 'bg-muted', icon: 'text-muted-foreground' };
     }
@@ -81,9 +81,9 @@ export function AdherenceResultView({ assessment, onBack, frameworkId, onApplied
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'conforme': return 'bg-green-500';
-      case 'nao_conforme': return 'bg-red-500';
-      case 'parcial': return 'bg-yellow-500';
+      case 'conforme': return 'bg-success';
+      case 'nao_conforme': return 'bg-destructive';
+      case 'parcial': return 'bg-warning';
       case 'nao_aplicavel': return 'bg-muted-foreground/40';
       default: return 'bg-muted-foreground/40';
     }
