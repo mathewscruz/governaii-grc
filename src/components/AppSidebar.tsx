@@ -99,7 +99,7 @@ const getMenuSections = (t: (key: string) => string): MenuSection[] => [
         icon: RiscosIcon,
         subItems: [
           { title: t('sidebar.risks'), url: '/riscos', icon: RiscosIcon, moduleName: 'riscos' },
-          { title: t('sidebar.riskAcceptance'), url: '/riscos/aceite', icon: CheckSquare, moduleName: 'riscos' },
+          { title: t('sidebar.riskAcceptance'), url: '/riscos/aceite', icon: ShieldCheck, moduleName: 'riscos' },
         ],
       },
       {
@@ -115,9 +115,9 @@ const getMenuSections = (t: (key: string) => string): MenuSection[] => [
         title: t('sidebar.assetManagement'),
         icon: AtivosIcon,
         subItems: [
-          { title: t('sidebar.assets'), url: '/ativos', icon: AtivosIcon, moduleName: 'ativos' },
+          { title: t('sidebar.assets'), url: '/ativos', icon: HardDrive, moduleName: 'ativos' },
           { title: t('sidebar.licenses'), url: '/ativos/licencas', icon: FileKey, moduleName: 'ativos' },
-          { title: t('sidebar.keys'), url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
+          { title: t('sidebar.keys'), url: '/ativos/chaves', icon: Key, moduleName: 'ativos' },
         ],
       },
     ],
