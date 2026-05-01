@@ -9,10 +9,12 @@ import { FrameworkComparisonRadar } from '@/components/gap-analysis/FrameworkCom
 import { WelcomeHero } from '@/components/gap-analysis/WelcomeHero';
 import { FrameworkCatalog } from '@/components/gap-analysis/FrameworkCatalog';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { useDebounce } from '@/hooks/useDebounce';
-import { Activity, TrendingUp, AlertTriangle, Shield, Target, Search } from 'lucide-react';
+import { Activity, TrendingUp, AlertTriangle, Shield, Target, Search, ChevronDown } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 interface Framework {
@@ -38,8 +40,25 @@ interface StatusCounts {
   nao_avaliado: number;
 }
 
-// Popular frameworks for suggestions
-const SUGGESTED_NAMES = ['ISO 27001', 'LGPD', 'NIST CSF 2.0'];
+// Frameworks recomendados (em ordem de prioridade) usados quando ainda não há nada ativo.
+const SUGGESTED_NAMES = ['ISO 27001', 'ISO/IEC 27001', 'LGPD', 'NIST CSF 2.0', 'NIST CSF'];
+
+// Filtros de categoria — alinhados com FrameworkCatalog
+const CATEGORY_OPTIONS: { id: string; label: string }[] = [
+  { id: 'all', label: 'Todas' },
+  { id: 'seguranca', label: 'Segurança' },
+  { id: 'privacidade', label: 'Privacidade' },
+  { id: 'governanca', label: 'Governança' },
+  { id: 'qualidade', label: 'Qualidade' },
+];
+
+function getCategory(tipo: string): string {
+  const t = tipo?.toLowerCase() || '';
+  if (t.includes('privacidade') || t.includes('privacy') || t.includes('lgpd') || t.includes('gdpr')) return 'privacidade';
+  if (t.includes('governanca') || t.includes('governance') || t.includes('cobit') || t.includes('sox')) return 'governanca';
+  if (t.includes('qualidade') || t.includes('quality') || t.includes('iso 9') || t.includes('itil')) return 'qualidade';
+  return 'seguranca';
+}
 
 export default function GapAnalysisFrameworks() {
   const navigate = useNavigate();
@@ -51,7 +70,9 @@ export default function GapAnalysisFrameworks() {
   const [frameworkStatusCounts, setFrameworkStatusCounts] = useState<Record<string, StatusCounts>>({});
   const [loading, setLoading] = useState(true);
   const [showCatalog, setShowCatalog] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const debouncedSearch = useDebounce(searchTerm, 250);
 
   useEffect(() => {
