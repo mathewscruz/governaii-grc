@@ -637,13 +637,13 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                       {evidenciasText && (
                         <div className="mt-4 pt-4 border-t border-border/50">
                           <div className="flex items-center gap-1.5 mb-3">
-                            <CheckCircle2 className="h-4 w-4 text-chart-2" />
+                            <CheckCircle2 className="h-4 w-4 text-success" strokeWidth={1.5} />
                             <h4 className="text-sm font-bold text-foreground">Exemplos de Evidências Aceitas</h4>
                           </div>
                           <ul className="space-y-2">
                             {evidenciasText.split('\n').filter(l => l.trim()).map((ex, i) => (
                               <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                <CheckCircle2 className="h-3.5 w-3.5 text-chart-2 shrink-0 mt-0.5" />
+                                <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0 mt-0.5" strokeWidth={1.5} />
                                 <span>{ex.replace(/^[-•*]\s*/, '').trim()}</span>
                               </li>
                             ))}
@@ -677,8 +677,8 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                                         size="sm"
                                         variant={answer === opt ? 'default' : 'outline'}
                                         className={`text-xs h-7 px-3 ${
-                                          answer === opt && opt === 'sim' ? 'bg-chart-2 hover:bg-chart-2/90 text-white' :
-                                          answer === opt && opt === 'parcial' ? 'bg-chart-4 hover:bg-chart-4/90 text-white' :
+                                          answer === opt && opt === 'sim' ? 'bg-success hover:bg-success/90 text-success-foreground' :
+                                          answer === opt && opt === 'parcial' ? 'bg-warning hover:bg-warning/90 text-warning-foreground' :
                                           answer === opt && opt === 'nao' ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground' : ''
                                         }`}
                                         onClick={() => setDiagnosticAnswers(prev => ({ ...prev, [idx]: opt }))}
@@ -709,7 +709,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                                 });
                                 const pct = totalWeight > 0 ? (weightedScore / totalWeight) * 100 : 0;
                                 const suggested = pct >= 80 ? 'Conforme' : pct >= 40 ? 'Parcial' : 'Não Conforme';
-                                const color = pct >= 80 ? 'text-chart-2' : pct >= 40 ? 'text-chart-4' : 'text-destructive';
+                                const color = pct >= 80 ? 'text-success' : pct >= 40 ? 'text-warning' : 'text-destructive';
                                 return (
                                   <div className="flex items-center gap-2">
                                     <Badge variant="outline" className={`${color} font-semibold`}>{suggested}</Badge>
@@ -807,7 +807,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                         ) : (
                           <div className="space-y-3">
                             <p className="text-sm text-muted-foreground">
-                              <AlertTriangle className="h-4 w-4 inline mr-1 text-amber-500" />
+                              <AlertTriangle className="h-4 w-4 inline mr-1 text-warning" strokeWidth={1.5} />
                               Requisito não conforme. Crie um plano de ação.
                             </p>
                             <Button size="sm" variant="outline" onClick={() => setPlanoAcaoDialogOpen(true)}>
@@ -935,9 +935,9 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                                 <div key={index} className="rounded bg-muted/50 p-2 space-y-1.5">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                                      {file.type === 'link' ? <ExternalLink className="h-3.5 w-3.5 text-blue-500 shrink-0" /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                                      {file.type === 'link' ? <ExternalLink className="h-3.5 w-3.5 text-info shrink-0" strokeWidth={1.5} /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={1.5} />}
                                       {file.type === 'link' ? (
-                                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline truncate text-xs">{file.name}</a>
+                                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-info hover:underline truncate text-xs">{file.name}</a>
                                       ) : (
                                         <span className="truncate text-xs">{file.name}</span>
                                       )}
