@@ -7,6 +7,8 @@ interface InvokeOptions {
   errorMessages?: Partial<Record<number, string>>;
   /** Whether to show toast on error (default true) */
   showToast?: boolean;
+  /** Marca a chamada como consumidora de créditos de IA — emite eventos para o useAiCredits */
+  isAiCall?: boolean;
 }
 
 interface InvokeResult<T = unknown> {
@@ -15,22 +17,33 @@ interface InvokeResult<T = unknown> {
 }
 
 const DEFAULT_ERROR_MESSAGES: Record<number, string> = {
-  402: 'Créditos de IA esgotados. Atualize seu plano para continuar.',
+  402: 'Créditos de IA esgotados. Entre em contato com o administrador da sua conta.',
   429: 'Muitas requisições. Aguarde um momento e tente novamente.',
   401: 'Sessão expirada. Faça login novamente.',
   403: 'Você não tem permissão para esta ação.',
   500: 'Erro interno no servidor. Tente novamente.',
 };
 
+/** Tenta extrair o status HTTP real da resposta da Edge Function */
+async function extractStatus(error: any): Promise<number> {
+  const direct = (error as any)?.status;
+  if (typeof direct === 'number') return direct;
+  // FunctionsHttpError expõe o response em error.context
+  const ctx = (error as any)?.context;
+  if (ctx?.status && typeof ctx.status === 'number') return ctx.status;
+  if (ctx instanceof Response) return ctx.status;
+  return 500;
+}
+
 /**
  * Centralized wrapper for invoking Supabase Edge Functions
- * with consistent error handling across the application.
+ * with consistent error handling and AI-credit awareness.
  */
 export async function invokeEdgeFunction<T = unknown>(
   functionName: string,
-  options: InvokeOptions = {}
+  options: InvokeOptions = {},
 ): Promise<InvokeResult<T>> {
-  const { body, errorMessages = {}, showToast = true } = options;
+  const { body, errorMessages = {}, showToast = true, isAiCall = false } = options;
 
   try {
     const { data, error } = await supabase.functions.invoke(functionName, {
@@ -38,30 +51,34 @@ export async function invokeEdgeFunction<T = unknown>(
     });
 
     if (error) {
-      const statusCode = (error as any)?.status || 500;
+      const statusCode = await extractStatus(error);
       const messages = { ...DEFAULT_ERROR_MESSAGES, ...errorMessages };
       const message = messages[statusCode] || `Erro ao executar ${functionName}.`;
 
-      if (showToast) {
-        toast.error(message);
+      // Emite evento global de créditos esgotados para o banner / hook
+      if (statusCode === 402 && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ai-credits-exhausted', { detail: { functionName } }));
       }
 
+      if (showToast) toast.error(message);
       return { data: null, error: new Error(message) };
+    }
+
+    // Sucesso: se foi chamada de IA, decrementa o saldo localmente
+    if (isAiCall && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ai-credit-consumed', { detail: { functionName } }));
     }
 
     return { data: data as T, error: null };
   } catch (err) {
-    const isNetworkError = !navigator.onLine || 
-      (err instanceof TypeError && err.message.includes('fetch'));
-    
+    const isNetworkError =
+      !navigator.onLine || (err instanceof TypeError && err.message.includes('fetch'));
+
     const message = isNetworkError
       ? 'Sem conexão com o servidor. Verifique sua internet.'
       : `Erro inesperado ao executar ${functionName}.`;
 
-    if (showToast) {
-      toast.error(message);
-    }
-
+    if (showToast) toast.error(message);
     return { data: null, error: err instanceof Error ? err : new Error(message) };
   }
 }

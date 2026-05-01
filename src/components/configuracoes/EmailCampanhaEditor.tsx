@@ -32,6 +32,7 @@ import { logger } from '@/lib/logger';
 import { EmailPreview } from './EmailPreview';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { AiCostHint } from '@/components/ui/ai-cost-hint';
 export interface CampanhaRow {
   id: string;
   assunto: string;
@@ -273,6 +274,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <AkurisAIIcon className="h-4 w-4 text-primary" />
                   Gerar com IA
+                  <AiCostHint className="ml-auto" action="cada geração" />
                 </div>
                 <Textarea
                   placeholder='Ex.: "Crie um e-mail de marketing falando sobre o módulo de Gestão de Riscos, destacando os diferenciais e o que faz a Akuris ser superior aos concorrentes."'

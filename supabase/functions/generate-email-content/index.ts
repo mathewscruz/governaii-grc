@@ -123,8 +123,26 @@ serve(async (req) => {
     const prompt = String(body.prompt || "").trim();
     const includeImage = Boolean(body.includeImage);
     const includeSubject = Boolean(body.includeSubject);
+    const empresaId: string | null = body.empresa_id || null;
     if (!prompt || prompt.length < 5) {
       return new Response(JSON.stringify({ error: "Descreva melhor o conteúdo do e-mail" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Consome 1 crédito de IA (somente quando há empresa associada — chamadas internas do super-admin sem empresa pulam o débito)
+    if (empresaId && auth.userId) {
+      const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
+      const { data: creditOk, error: creditErr } = await supabase.rpc('consume_ai_credit', {
+        p_empresa_id: empresaId,
+        p_user_id: auth.userId,
+        p_funcionalidade: 'generate_email_content',
+        p_descricao: 'Geração de conteúdo de campanha por IA',
+      });
+      if (creditErr || creditOk === false) {
+        return new Response(
+          JSON.stringify({ error: 'Créditos de IA esgotados. Entre em contato com o administrador da sua conta.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
     }
 
     const html = await generateText(prompt);

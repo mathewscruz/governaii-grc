@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { AiCostHint } from '@/components/ui/ai-cost-hint';
 interface AIRecommendationsDialogProps {
   frameworkId: string;
   frameworkNome: string;
@@ -150,6 +151,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
             <DialogTitle className="flex items-center gap-2">
               <AkurisAIIcon className="h-5 w-5 text-primary"/>
               Consultor IA de Conformidade
+              <AiCostHint className="ml-2" action="cada análise" />
             </DialogTitle>
           </DialogHeader>
 

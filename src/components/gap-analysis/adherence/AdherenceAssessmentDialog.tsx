@@ -16,6 +16,7 @@ import { AdherenceAnalysisProgress } from './AdherenceAnalysisProgress';
 import { logger } from '@/lib/logger';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { AiCostHint } from '@/components/ui/ai-cost-hint';
 interface AdherenceAssessmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -561,7 +562,8 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
             </p>
           </div>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-4">
+              <AiCostHint variant="block" className="w-full mb-1" action="cada análise de aderência" />
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>

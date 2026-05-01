@@ -1,115 +1,82 @@
 ## Objetivo
+Garantir que **toda funcionalidade de IA do Akuris** esteja integrada ao saldo de créditos do plano da empresa, exibir um **banner global** quando os créditos zerarem, e mostrar um **selo informativo "consome 1 crédito"** em todo botão/ação que dispare IA.
 
-Permitir que o usuário **reaproveite uma mesma evidência (documento) em múltiplos requisitos**, dentro do mesmo framework ou entre frameworks diferentes do Gap Analysis. A IA sugere automaticamente onde a evidência também serve, acelerando a adequação a múltiplas normas.
+## Diagnóstico atual
 
-## Diagnóstico do modelo atual
+Backend:
+- 9 das 10 funções com IA já chamam `consume_ai_credit` e respondem **HTTP 402** quando o saldo zera (ai-module-assistant, akuria-chat, analyze-document-adherence, analyze-evidence-against-requirement, calculate-assessment-score, docgen-chat, evidence-cross-match, populate-requirement-guidance, suggest-risk-treatment).
+- **Lacuna**: `generate-email-content` (usada em campanhas de e-mail) chama o gateway e propaga 402, mas **não debita** o crédito da empresa.
+- O wrapper `invokeEdgeFunction` mapeia 402 para um toast genérico; não diferencia "esgotado" de outros erros nem expõe o estado para a UI.
 
-```text
-gap_analysis_evidences (1:N com gap_analysis_evaluations)
-   └─ evaluation_id (UUID, único pai)
-   └─ arquivo_url, arquivo_nome, arquivo_tipo, link_externo
+Frontend:
+- Não existe hook que leia o saldo atual (`empresas.creditos_consumidos` vs `planos.creditos_franquia`).
+- Não há banner global avisando o esgotamento.
+- Botões de IA (gerar orientação, sugerir tratamento de risco, cross-match, AkurIA chat, gerar campanha, DocGen, recomendações IA, score de assessment) não comunicam o custo.
 
-gap_analysis_evaluations
-   └─ requirement_id, framework_id, empresa_id, conformity_status
-   └─ evidence_files (jsonb — duplica metadata)
+## O que será construído
 
-gap_analysis_requirements (do template global)
-   └─ titulo, descricao, categoria, exemplos_evidencias, orientacao_implementacao
-```
+### 1. Backend — fechar a única lacuna
+- Adicionar `consume_ai_credit` em `generate-email-content` antes da chamada ao gateway, devolvendo 402 padronizado quando esgotado (mesmo padrão das outras 9 funções).
 
-**Problemas hoje:**
-1. Cada evidência tem **um único `evaluation_id`** — não dá pra associá-la a vários requisitos sem re-uploadar.
-2. `evidence_files` em `evaluations` é jsonb redundante com `gap_analysis_evidences`.
-3. Não existe biblioteca/repositório central de evidências por empresa.
-4. Já existe a edge function `analyze-evidence-against-requirement` (perfeita para reuso no matching IA).
+### 2. Hook de saldo `useAiCredits`
+- Lê `empresas.creditos_consumidos` e `planos.creditos_franquia` da empresa do usuário.
+- Expõe `{ franquia, consumidos, restantes, percentual, esgotado, loading, refetch }`.
+- Realtime opcional via `supabase.channel` na tabela `empresas` para refletir o débito imediatamente após cada chamada.
+- Fica em `src/hooks/useAiCredits.ts` e usa `empresa_id` síncrono do `useAuth().profile`.
 
-## Solução proposta
+### 3. Banner global de créditos esgotados
+- Componente `AiCreditsExhaustedBanner` montado uma vez no `App.tsx` (logo abaixo do header), só aparece quando `esgotado === true`.
+- Mensagem editorial com ícone proprietário Akuris: "Os créditos de IA do seu plano acabaram. Para continuar usando assistentes inteligentes, entre em contato com o administrador da sua conta." + CTA secundário "Ver meu plano" levando para `Configurações → Assinatura`.
+- Super-admins veem versão alternativa com link para `Configurações → Créditos de IA`.
 
-### 1. Novo modelo de dados (biblioteca + vínculos N:N)
+### 4. Tratamento global do 402 + atualização do wrapper
+- `invokeEdgeFunction` passa a:
+  - Detectar 402 lendo `error.context` da resposta da Edge Function.
+  - Disparar `akurisToast` editorial específico ("Créditos de IA esgotados — fale com o administrador") em vez do toast genérico.
+  - Emitir um evento `window.dispatchEvent('ai-credits-exhausted')` para o `useAiCredits` forçar refetch e o banner aparecer instantaneamente.
+  - Após qualquer chamada bem-sucedida a função IA, disparar `ai-credit-consumed` para o hook decrementar localmente.
 
-```text
-evidence_library                         ← repositório central por empresa
-  id, empresa_id, nome, descricao,
-  arquivo_url, arquivo_nome, arquivo_tipo, arquivo_tamanho,
-  link_externo, hash_arquivo (sha256), tags text[],
-  origem_evaluation_id (origem do upload), created_by, created_at, updated_at
+### 5. Componente `AiCostHint` (selo "consome 1 crédito")
+- Pequeno badge inline reutilizável com tooltip:
+  - Visual: chip discreto `Sparkles` + texto "1 crédito de IA" no tom `info`.
+  - Tooltip: "Esta ação consome 1 crédito do plano. Saldo atual: X de Y."
+- Variante `inline` (ao lado do botão) e `block` (acima de seções inteiras como AkurIA chat).
+- Quando `esgotado`, o chip fica em tom `destructive` com texto "Sem créditos".
 
-evidence_library_links                   ← N:N evidência ↔ requisito avaliado
-  id, empresa_id, evidence_id → evidence_library,
-  evaluation_id → gap_analysis_evaluations,
-  requirement_id, framework_id (denormalizado p/ filtros),
-  vinculo_tipo ('manual' | 'sugestao_ia'),
-  ia_score numeric(3,2),  ← 0.00 – 1.00
-  ia_justificativa text,
-  aceito_em timestamptz, aceito_por uuid,
-  UNIQUE (evidence_id, evaluation_id)
-```
+### 6. Integração do `AiCostHint` em todas as superfícies de IA
+Pontos de aplicação levantados pelo mapeamento:
 
-Migração de dados: importar evidências existentes em `gap_analysis_evidences` para `evidence_library`, criando 1 link por registro (mantém compat). `gap_analysis_evidences` continua existindo (legado) durante a transição; novas evidências passam pela biblioteca.
+| Local | Ação | Onde colocar |
+|---|---|---|
+| `AkurIAChatbot.tsx` | Cada mensagem ao chat | Hint no input + bloqueio do envio se esgotado |
+| `AIRecommendationsCard.tsx` (Gap Analysis) | Botão "Gerar recomendações" | Hint inline no botão |
+| `RequirementDetailDialog.tsx` | "Regenerar orientação" + uploads (cross-match) | Hint perto do botão IA |
+| `EvidenceLibraryHub` / `EvidenceReusePanel` | "Sugerir reaproveitamento" | Hint inline |
+| `AdherenceAssessmentDialog.tsx` | Cálculo de score | Hint no CTA "Calcular" |
+| `Assessment.tsx` | `calculate-assessment-score` | Hint no botão Calcular |
+| `TratamentoForm.tsx` (Riscos) | "Sugerir tratamento com IA" | Hint inline |
+| `DocGenDialog.tsx` | DocGen chat | Hint no header do diálogo |
+| `EmailCampanhaEditor.tsx` | "Gerar conteúdo com IA" | Hint inline |
+| `analyze-document-adherence` (módulo Documentos do GA) | Botão de análise | Hint inline |
 
-RLS: ambas as tabelas com `empresa_id` obrigatório, policies espelhando o padrão multi-tenant do projeto (`auth.uid()` na empresa via `is_user_in_empresa`).
+Critérios para todos: usar `AkurisAIIcon` quando aplicável, manter stroke 1.5, respeitar tons editoriais (sem cores Tailwind cruas).
 
-### 2. Edge function nova: `evidence-cross-match`
+### 7. Bloqueio preventivo opcional (UX)
+- Quando `esgotado === true`, o `AiCostHint` desabilita o botão associado via prop `disabled={esgotado}` e mostra tooltip "Créditos esgotados — fale com o administrador". Isso evita o erro 402 + retrabalho do usuário.
 
-Recebe `{ evidence_id }` e devolve a lista de **requisitos candidatos** (do mesmo framework e de outros frameworks que a empresa tem ativos), ordenados por relevância.
+### 8. Memória do projeto
+- Atualizar `mem://architecture/ai-credit/enforcement-standard` para incluir:
+  - "Toda nova feature com IA deve usar `<AiCostHint />` ao lado do disparador."
+  - "Wrapper `invokeEdgeFunction` é obrigatório — banner global depende dos eventos que ele emite."
+  - "Adicionar `consume_ai_credit` antes do gateway em qualquer Edge Function nova com IA."
 
-Pipeline:
-1. Carrega evidência (nome, descrição, tags, primeiras N páginas via `parse_document` se PDF, ou texto plain).
-2. Busca todos os requisitos da empresa **ainda não vinculados** a essa evidência, agrupados por framework.
-3. Pré-filtro lexical (palavras-chave em `titulo + descricao + categoria + exemplos_evidencias`) para reduzir candidatos a top ~40.
-4. Reusa **`analyze-evidence-against-requirement`** (já existente) em batch — uma chamada IA com prompt comparativo único que retorna JSON `[{ requirement_id, score, justificativa, sugere_status }]`.
-5. Persiste sugestões em `evidence_library_links` com `vinculo_tipo='sugestao_ia'` e `aceito_em=NULL` (rascunho).
-6. Custo controlado via `consume_ai_credit` (padrão Akuris, 402 se sem crédito).
+## Detalhes técnicos
+- Tipos atuais (`integrations/supabase/types.ts`) já expõem `creditos_consumidos`, `plano_id` e `creditos_franquia` — não precisa migration.
+- Realtime: requer publicar `empresas` no Realtime (já está, pois outras telas escutam) — verificar e ativar se faltar.
+- Banner respeita o ThemeProvider (Light/Dark) e o `DensityProvider`.
+- Nenhuma alteração em RLS é necessária; leitura do saldo já é permitida via policies de `empresas` para usuários da própria empresa.
+- Sem novas dependências.
 
-### 3. UI — três pontos de entrada
-
-**a) Hub "Biblioteca de Evidências"** (nova aba dentro do Framework Detail e atalho global no Gap Analysis):
-- Lista as evidências da empresa, com chip "usada em N requisitos" e breakdown por framework.
-- Botão **"Sugerir reaproveitamento (IA)"** por evidência → roda `evidence-cross-match`.
-- Painel lateral mostra requisitos candidatos com **score IA**, framework, justificativa, e botões **"Vincular"** / **"Ignorar"** / **"Vincular e marcar Conforme"**.
-
-**b) `RequirementDetailDialog`** (existente):
-- Acima do upload, novo card **"Reaproveitar evidência existente"**:
-  - Tab 1: **Sugestões da IA** (evidências da biblioteca que a IA acha que servem para este requisito, com score).
-  - Tab 2: **Buscar na biblioteca** (search por nome/tag, com filtro por framework de origem).
-- Selecionar = cria link em `evidence_library_links` em vez de novo upload.
-
-**c) Após upload novo no `RequirementDetailDialog`**:
-- Toast com CTA **"Esta evidência pode servir em outros requisitos. Analisar com IA?"** → dispara `evidence-cross-match` e abre o painel de sugestões.
-
-### 4. Comportamento e regras
-
-- Vincular não altera automaticamente o `conformity_status` do requisito de destino — é decisão humana (botão extra "Vincular e marcar Conforme").
-- Desvincular: remove apenas o link, mantém a evidência na biblioteca.
-- Excluir evidência da biblioteca: bloqueado se houver links ativos; UI mostra os requisitos afetados e exige confirmação em cascata.
-- Auditoria: cada link gera entrada em `gap_analysis_audit_log` (`acao='evidencia_vinculada'` / `'evidencia_sugerida_ia'` / `'evidencia_aceita_ia'`).
-- Multi-tenant: TODA query inclui `.eq('empresa_id', empresaId)` (regra Core).
-
-### 5. Detalhes técnicos
-
-- Frontend: novo hook `useEvidenceLibrary(empresaId)` (CRUD + sugestões), componente `EvidenceLibraryPanel`, sub-componente `CrossMatchSuggestions`.
-- Edge function envolvida em `invokeEdgeFunction` (padrão Akuris, trata 402/429/timeout).
-- IA: Gemini 3 Flash (rotina, comparação textual) — custo baixo. Strategy memo aprovada.
-- `hash_arquivo` permite deduplicar uploads idênticos automaticamente (mesmo arquivo = mesma entrada na biblioteca).
-- Score thresholds (UI): `>= 0.80` "Alta aderência" (verde), `0.60–0.79` "Possível" (amarelo), `< 0.60` não exibido.
-- Loader: `<AkurisPulse/>`. Badges: `<StatusBadge/>` com tons semânticos. Toasts: `akurisToast`.
-
-### 6. Entregáveis
-
-1. Migração SQL: 2 tabelas novas + RLS + índices (`evidence_id`, `requirement_id`, `framework_id`, `empresa_id`).
-2. Backfill: copia `gap_analysis_evidences` → `evidence_library` + 1 link cada.
-3. Edge function `evidence-cross-match` (com `consume_ai_credit`).
-4. Hook + componentes: `useEvidenceLibrary`, `EvidenceLibraryPanel`, `CrossMatchSuggestions`, `EvidencePickerInline`.
-5. Integração no `RequirementDetailDialog` (tab "Reaproveitar") e nova aba "Biblioteca" no Framework Detail.
-6. Memória: `mem://features/gap-analysis/evidence-library-cross-match` documentando o fluxo.
-7. i18n PT/EN das novas strings.
-
-### 7. Fora do escopo (próximas fases)
-
-- Versionamento de evidências (substituir arquivo mantendo links).
-- Reaproveitamento entre módulos (Auditorias, Controles, Incidentes) — modelo já permite, mas requer adapters.
-- OCR/embeddings vetoriais para matching mais profundo (hoje cobrimos com prompt textual).
-
-## Resumo executivo
-
-Criamos uma **biblioteca de evidências por empresa** com vínculos N:N para requisitos, e a IA analisa proativamente onde cada evidência também se aplica — no mesmo framework e entre frameworks diferentes. O usuário ganha um "use uma vez, vincule em vários" com sugestões automáticas, acelerando drasticamente a conformidade multi-norma (ISO 27001 + LGPD + NIST etc.).
+## Fora de escopo
+- Compra de créditos via portal do usuário (continua sendo ação manual do super-admin em `CreditosIAManager`).
+- Cobrança por consumo variável (continua 1 crédito por chamada).

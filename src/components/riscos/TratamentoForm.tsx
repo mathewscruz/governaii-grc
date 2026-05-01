@@ -23,6 +23,7 @@ import { CreditsExhaustedDialog } from '@/components/CreditsExhaustedDialog';
 import { UserSelect } from './UserSelect';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { AiCostHint } from '@/components/ui/ai-cost-hint';
 const tratamentoSchema = z.object({
   tipo_tratamento: z.string().min(1, 'Tipo de tratamento é obrigatório'),
   descricao: z.string().min(1, 'Descrição é obrigatória'),
@@ -238,6 +239,7 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess, riscoData }: Tr
               )}
             </Button>
           )}
+          <AiCostHint className="ml-2" action="cada sugestão de tratamento" />
         </div>
         <Textarea
           {...form.register('descricao')}
