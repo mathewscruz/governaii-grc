@@ -551,7 +551,7 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
         fetcher: async (empresaId) => {
           const { data, error } = await supabase
             .from('riscos')
-            .select('id, titulo, severidade, data_proxima_revisao')
+            .select('id, nome, nivel_risco_residual, nivel_risco_inicial, data_proxima_revisao')
             .eq('empresa_id', empresaId)
             .eq('aceito', true)
             .order('data_proxima_revisao', { ascending: true, nullsFirst: false })
@@ -562,8 +562,8 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
             const overdue = r.data_proxima_revisao && r.data_proxima_revisao < today;
             return {
               id: r.id,
-              title: r.titulo,
-              subtitle: r.severidade,
+              title: r.nome,
+              subtitle: r.nivel_risco_residual || r.nivel_risco_inicial,
               status: overdue ? 'revisão vencida' : 'aceite ativo',
               tone: (overdue ? 'destructive' : 'info') as DrillItem['tone'],
               date: fmtDate(r.data_proxima_revisao),
