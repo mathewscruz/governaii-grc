@@ -7,6 +7,7 @@ import { ExternalLink, ClipboardList, Clock, CheckCircle2, AlertTriangle, Loader
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { useNavigate } from "react-router-dom";
+import { logger } from '@/lib/logger';
 
 interface RemediationTabProps {
   frameworkId: string;
@@ -93,7 +94,7 @@ export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, fra
 
       setPlanos(merged);
     } catch (error) {
-      console.error('Erro ao carregar planos de remediação:', error);
+      logger.error('Erro ao carregar planos de remediação:', error);
     } finally {
       setLoading(false);
     }

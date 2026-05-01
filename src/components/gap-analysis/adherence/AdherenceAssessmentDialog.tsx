@@ -13,6 +13,7 @@ import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import { AdherenceAnalysisProgress } from './AdherenceAnalysisProgress';
+import { logger } from '@/lib/logger';
 
 interface AdherenceAssessmentDialogProps {
   open: boolean;
@@ -215,7 +216,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
           });
         }
       } catch (error: any) {
-        console.error('Error polling assessment status:', error);
+        logger.error('Error polling assessment status:', error);
         clearInterval(pollInterval);
       }
     }, 3000); // Verificar a cada 3 segundos
@@ -278,12 +279,12 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
           throw new Error('O documento não contém texto suficiente para análise. Verifique se o arquivo não está protegido ou corrompido.');
         }
 
-        console.log(`Texto extraído: ${textContent.length} caracteres`);
+        logger.debug(`Texto extraído: ${textContent.length} caracteres`);
         
         // Atualizar progresso: texto extraído (15%)
         setAnalysisState(prev => ({ ...prev, progress: 15, currentStep: 'uploading' }));
       } catch (extractError: any) {
-        console.error('Error extracting text:', extractError);
+        logger.error('Error extracting text:', extractError);
         
         setAnalysisState(prev => ({
           ...prev,
@@ -376,7 +377,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
         }
       }).then(({ error: functionError }) => {
         if (functionError) {
-          console.error('Edge function error:', functionError);
+          logger.error('Edge function error:', functionError);
           // O polling vai detectar o erro no banco
         }
       });
@@ -385,7 +386,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
       // O dialog será fechado automaticamente quando o polling detectar conclusão
 
     } catch (error: any) {
-      console.error('Error creating adherence assessment:', error);
+      logger.error('Error creating adherence assessment:', error);
       
       setAnalysisState(prev => ({
         ...prev,

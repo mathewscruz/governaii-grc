@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, History } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
+import { logger } from '@/lib/logger';
 
 interface AuditEntry {
   id: string;
@@ -68,7 +69,7 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ requirem
         user_nome: e.user_id ? userMap.get(e.user_id) || 'Usuário' : 'Sistema',
       })));
     } catch (error) {
-      console.error('Erro ao carregar histórico:', error);
+      logger.error('Erro ao carregar histórico:', error);
     } finally {
       setLoading(false);
     }

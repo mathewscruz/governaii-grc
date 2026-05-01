@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/components/AuthProvider";
 import { toast } from "sonner";
+import { logger } from '@/lib/logger';
 
 interface AreaResponsavelManagerProps {
   onAreaSelected: (area: string) => void;
@@ -49,7 +50,7 @@ export const AreaResponsavelManager: React.FC<AreaResponsavelManagerProps> = ({
         try {
           setCustomAreas(JSON.parse(savedAreas));
         } catch (error) {
-          console.error("Erro ao carregar áreas customizadas:", error);
+          logger.error("Erro ao carregar áreas customizadas:", error);
         }
       }
     }

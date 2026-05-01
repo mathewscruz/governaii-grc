@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Upload, FileText, X, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 interface EvidenceFile {
   name: string;
@@ -94,7 +95,7 @@ export const EvidenceUpload: React.FC<EvidenceUploadProps> = ({
       });
 
     } catch (error) {
-      console.error('Erro no upload:', error);
+      logger.error('Erro no upload:', error);
       toast({
         variant: "destructive",
         title: "Erro no upload",
@@ -130,7 +131,7 @@ export const EvidenceUpload: React.FC<EvidenceUploadProps> = ({
       });
 
     } catch (error) {
-      console.error('Erro ao deletar arquivo:', error);
+      logger.error('Erro ao deletar arquivo:', error);
       toast({
         variant: "destructive",
         title: "Erro ao remover",

@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import type { AdherenceAssessment, PontoForte, PontoMelhoria } from './types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { logger } from '@/lib/logger';
 
 export async function exportAssessmentToPDF(
   assessment: AdherenceAssessment, 
@@ -70,14 +71,14 @@ export async function exportAssessmentToPDF(
           pdf.addImage(img, 'PNG', logoX, logoY, logoWidth, logoHeight);
           y = logoY + logoHeight + 20;
         } catch (error) {
-          console.error('Erro ao adicionar logo:', error);
+          logger.error('Erro ao adicionar logo:', error);
           y = 50;
         }
         resolve();
       };
       
       img.onerror = () => {
-        console.error('Erro ao carregar logo');
+        logger.error('Erro ao carregar logo');
         y = 50;
         resolve();
       };
