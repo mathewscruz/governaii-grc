@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface ConfiguracaoDenuncia {
   id?: string;
   empresa_id: string;
@@ -244,7 +245,7 @@ export function ConfiguracoesDenuncia() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <AkurisPulse size={32} />
       </div>
     );
   }

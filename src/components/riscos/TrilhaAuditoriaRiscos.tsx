@@ -11,6 +11,7 @@ import { History, User, Calendar, Edit, Plus, Trash, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface TrilhaAuditoriaRiscosProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -133,7 +134,7 @@ export function TrilhaAuditoriaRiscos({ open, onOpenChange, riscoId, riscoNome }
         <div className="flex-1 overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+              <AkurisPulse size={48} />
             </div>
           ) : !auditLogs || auditLogs.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">

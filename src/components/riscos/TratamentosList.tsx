@@ -12,6 +12,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { TratamentoDialog } from './TratamentoDialog';
 import { formatStatus, getTratamentoTipoColor, getTratamentoStatusColor } from '@/lib/text-utils';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface ResponsavelProfile {
   user_id: string;
   nome: string;
@@ -167,7 +168,7 @@ export function TratamentosList({ riscoId, riscoNome, riscoData }: TratamentosLi
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <AkurisPulse size={32} className="mb-2" />
           <p className="text-sm text-muted-foreground">Carregando tratamentos...</p>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { AlertTriangle, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   moduleName: string;
@@ -26,7 +27,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <AkurisPulse size={32} />
       </div>
     );
   }

@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Upload, Eye, EyeOff, Bell } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 const buildPerfilSchema = (t: (k: string) => string) => z.object({
   nome: z.string().min(1, t('userProfilePopover.nameRequired')),
   senha_atual: z.string().optional(),
@@ -235,7 +236,7 @@ export function UserProfilePopover({ onClose }: UserProfilePopoverProps) {
           </Avatar>
           {uploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-full">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <AkurisPulse size={24} />
             </div>
           )}
         </div>

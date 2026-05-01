@@ -72,7 +72,7 @@ const Auth = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[hsl(230,25%,7%)]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+          <AkurisPulse size={48} />
           <p className="mt-4 text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>

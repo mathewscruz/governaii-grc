@@ -18,6 +18,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { UserSelect } from '@/components/riscos/UserSelect';
 import { formatDateOnly } from '@/lib/date-utils';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Manutencao {
   id: string;
   ativo_id: string;
@@ -551,7 +552,7 @@ const ManutencaoDialog: React.FC<ManutencaoDialogProps> = ({ ativoId, ativoNome,
             <CardContent>
               {loading ? (
                 <div className="flex items-center justify-center h-32">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <AkurisPulse size={32} />
                 </div>
               ) : manutencoes.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">

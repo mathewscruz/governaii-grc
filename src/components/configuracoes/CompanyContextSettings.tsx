@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { toast } from 'sonner';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 const SETORES = [
   'Financeiro / Bancário',
   'Saúde',
@@ -88,7 +89,7 @@ export function CompanyContextSettings() {
   if (fetching) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <AkurisPulse size={32} />
       </div>
     );
   }

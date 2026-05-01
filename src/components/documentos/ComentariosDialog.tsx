@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Documento {
   id: string;
   nome: string;
@@ -204,7 +205,7 @@ export function ComentariosDialog({ open, onOpenChange, documento }: Comentarios
           <div className="space-y-4 max-h-96 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center h-32">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <AkurisPulse size={32} />
               </div>
             ) : comentarios.length === 0 ? (
               <Card>
@@ -267,7 +268,7 @@ export function ComentariosDialog({ open, onOpenChange, documento }: Comentarios
               <Button type="submit" disabled={sending || !novoComentario.trim()}>
                 {sending ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <AkurisPulse size={16} className="mr-2" />
                     Enviando...
                   </>
                 ) : (

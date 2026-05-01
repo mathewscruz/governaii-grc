@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Matriz {
   id: string;
   nome: string;
@@ -127,7 +128,7 @@ export function MatrizVisualizacao() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <AkurisPulse size={32} />
           </div>
         </CardContent>
       </Card>

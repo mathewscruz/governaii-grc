@@ -21,6 +21,7 @@ import { DataTable, Column, Filter } from '@/components/ui/data-table';
 import { StatCard } from '@/components/ui/stat-card';
 import { formatDateOnly } from '@/lib/date-utils';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 const usuarioSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   email: z.string().email('Email inválido'),
@@ -639,7 +640,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
               disabled={actionLoading[`reset-${usuario.id}`]}
             >
               {actionLoading[`reset-${usuario.id}`] ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                <AkurisPulse size={16} className="mr-2" />
               ) : (
                 <Key className="h-4 w-4 mr-2" />
               )}
@@ -651,7 +652,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                 disabled={actionLoading[`resend-${usuario.id}`]}
               >
                 {actionLoading[`resend-${usuario.id}`] ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                  <AkurisPulse size={16} className="mr-2" />
                 ) : (
                   <Mail className="h-4 w-4 mr-2" />
                 )}
@@ -756,7 +757,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                 disabled={restoringPermissions}
               >
                 {restoringPermissions ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                  <AkurisPulse size={16} className="mr-2" />
                 ) : (
                   <Shield className="h-4 w-4 mr-2" />
                 )}
@@ -903,7 +904,7 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                   </Button>
                   <Button type="submit" disabled={creating}>
                     {creating ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                      <AkurisPulse size={16} className="mr-2" />
                     ) : null}
                     {editingUsuario ? 'Atualizar' : 'Criar'}
                   </Button>

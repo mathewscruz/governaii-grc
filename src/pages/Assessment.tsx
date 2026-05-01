@@ -18,6 +18,7 @@ import { logger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
 import { getCompanyLogo } from '@/lib/brand-logo';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 const assessmentLogger = {
   info: (message: string, data?: any) => {
     logger.info(`[Assessment] ${message}`, { module: 'Assessment', details: data });
@@ -160,7 +161,7 @@ const TopBar = ({
           <div className="relative h-8 w-8 shrink-0">
             {logoLoading && assessment.empresa.logo_url && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[hsl(250,80%,60%)]"></div>
+                <AkurisPulse size={16} />
               </div>
             )}
             <img
@@ -685,7 +686,7 @@ export default function Assessment() {
       <AssessmentShell>
         <div className="flex items-center justify-center min-h-[80vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(250,80%,55%)] mx-auto mb-4"></div>
+            <AkurisPulse size={48} className="mb-4" />
             <p className="text-slate-600 text-sm">Carregando questionário...</p>
           </div>
         </div>
@@ -1336,7 +1337,7 @@ export default function Assessment() {
                 >
                   {submitting ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <AkurisPulse size={16} className="mr-2" />
                       Enviando...
                     </>
                   ) : (
@@ -1478,7 +1479,7 @@ export default function Assessment() {
               >
                 {submitting ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <AkurisPulse size={16} className="mr-2" />
                     Enviando...
                   </>
                 ) : (
