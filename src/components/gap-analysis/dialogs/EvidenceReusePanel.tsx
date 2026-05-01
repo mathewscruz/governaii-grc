@@ -122,7 +122,7 @@ export function EvidenceReusePanel({ requirementId, frameworkId, evaluationId, o
 
           <TabsContent value="sugestoes" className="mt-3">
             {loadingSug ? (
-              <div className="py-6 flex justify-center"><AkurisPulse size="sm" /></div>
+              <div className="py-6 flex justify-center"><AkurisPulse size={32} /></div>
             ) : suggestions.length === 0 ? (
               <div className="rounded-md border border-dashed border-border/60 bg-background/40 px-4 py-6 text-center text-xs text-muted-foreground">
                 Nenhuma sugestão da IA para este requisito ainda. Faça upload de uma evidência ou rode "Sugerir reaproveitamento" na Biblioteca.
@@ -170,7 +170,7 @@ export function EvidenceReusePanel({ requirementId, frameworkId, evaluationId, o
               />
             </div>
             {lib.loading ? (
-              <div className="py-6 flex justify-center"><AkurisPulse size="sm" /></div>
+              <div className="py-6 flex justify-center"><AkurisPulse size={32} /></div>
             ) : filteredLibrary.length === 0 ? (
               <div className="rounded-md border border-dashed border-border/60 bg-background/40 px-4 py-6 text-center text-xs text-muted-foreground">
                 {lib.items.length === 0
