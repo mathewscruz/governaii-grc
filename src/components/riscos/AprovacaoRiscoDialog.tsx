@@ -336,7 +336,7 @@ export function AprovacaoRiscoDialog({ open, onOpenChange, risco, onSuccess }: P
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs capitalize">{item.acao}</Badge>
+                        <StatusBadge size="sm" tone="neutral" variant="outline" className="capitalize">{item.acao}</StatusBadge>
                         {item.comentario && (
                           <span className="text-muted-foreground flex items-center gap-1">
                             <MessageSquare className="h-3 w-3" />
