@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -66,11 +67,11 @@ interface UrlScannerDialogProps {
 const getSensitivityBadge = (sensitivity: string) => {
   switch (sensitivity) {
     case 'critico':
-      return <Badge variant="destructive" className="text-xs">Crítico</Badge>;
+      return <StatusBadge size="sm" tone="destructive" intensity="high">Crítico</StatusBadge>;
     case 'sensivel':
-      return <Badge className="bg-amber-500/20 text-amber-600 border-amber-500/30 text-xs">Sensível</Badge>;
+      return <StatusBadge size="sm" tone="warning">Sensível</StatusBadge>;
     default:
-      return <Badge variant="secondary" className="text-xs">Comum</Badge>;
+      return <StatusBadge size="sm" tone="neutral">Comum</StatusBadge>;
   }
 };
 

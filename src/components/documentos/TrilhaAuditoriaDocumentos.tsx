@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -95,13 +96,13 @@ export function TrilhaAuditoriaDocumentos({
   const getActionBadge = (action: string) => {
     switch (action) {
       case 'INSERT':
-        return <Badge className="bg-green-100 text-green-800">Criado</Badge>;
+        return <StatusBadge size="sm" tone="success">Criado</StatusBadge>;
       case 'UPDATE':
-        return <Badge className="bg-blue-100 text-blue-800">Atualizado</Badge>;
+        return <StatusBadge size="sm" tone="info">Atualizado</StatusBadge>;
       case 'DELETE':
-        return <Badge className="bg-red-100 text-red-800">Excluído</Badge>;
+        return <StatusBadge size="sm" tone="destructive">Excluído</StatusBadge>;
       default:
-        return <Badge variant="outline">{action}</Badge>;
+        return <StatusBadge size="sm" tone="neutral" variant="outline">{action}</StatusBadge>;
     }
   };
 

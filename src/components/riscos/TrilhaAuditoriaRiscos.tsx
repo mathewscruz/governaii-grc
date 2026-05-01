@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -86,10 +87,10 @@ export function TrilhaAuditoriaRiscos({ open, onOpenChange, riscoId, riscoNome }
 
   const getActionBadge = (action: string) => {
     switch (action) {
-      case 'INSERT': return <Badge className="bg-green-100 text-green-800 border-green-200">Criado</Badge>;
-      case 'UPDATE': return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Atualizado</Badge>;
-      case 'DELETE': return <Badge className="bg-red-100 text-red-800 border-red-200">Excluído</Badge>;
-      default: return <Badge variant="outline">{action}</Badge>;
+      case 'INSERT': return <StatusBadge size="sm" tone="success">Criado</StatusBadge>;
+      case 'UPDATE': return <StatusBadge size="sm" tone="info">Atualizado</StatusBadge>;
+      case 'DELETE': return <StatusBadge size="sm" tone="destructive">Excluído</StatusBadge>;
+      default: return <StatusBadge size="sm" tone="neutral" variant="outline">{action}</StatusBadge>;
     }
   };
 
