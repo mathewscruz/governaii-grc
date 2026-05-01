@@ -204,6 +204,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           empresa_id: userInfo.empresa_id,
           action: 'chat',
           ...(frameworkName && { framework_context: { framework_name: frameworkName, framework_id: frameworkId } }),
+          ...(requirementContext && { requirement_context: requirementContext }),
         }
       });
 
@@ -253,6 +254,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
           action: 'generate_document',
           doc_type_hint: currentDocName || currentDocType,
           ...(frameworkName && { framework_context: { framework_name: frameworkName, framework_id: frameworkId } }),
+          ...(requirementContext && { requirement_context: requirementContext }),
         }
       });
 
