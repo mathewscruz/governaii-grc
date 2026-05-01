@@ -82,6 +82,7 @@ interface Fornecedor {
 
 export default function Contratos() {
   const { t } = useLanguage();
+  useFocusRow();
   const { empresaId } = useEmpresaId();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');

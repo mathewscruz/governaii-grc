@@ -74,6 +74,7 @@ interface Categoria {
 
 export default function Documentos() {
   const { t } = useLanguage();
+  useFocusRow();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useAuth();

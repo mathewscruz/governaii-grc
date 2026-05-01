@@ -86,6 +86,7 @@ function getRouteForModule(modulo: string): string {
 
 export default function PlanosAcao() {
   const { t } = useLanguage();
+  useFocusRow();
   const { user, profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
