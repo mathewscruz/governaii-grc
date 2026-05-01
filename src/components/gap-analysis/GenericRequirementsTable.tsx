@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { FrameworkConfig, NIST_PILLAR_NAMES } from "@/lib/framework-configs";
 import { RequirementDetailDialog } from "./nist/NISTRequirementDetailDialog";
 import { saveScoreHistory } from "@/hooks/useScoreHistory";
@@ -186,11 +187,12 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       // 4. Salvar histórico e notificar pai em background
       saveScoreHistory(frameworkId, empresaId, score, totalReqs, evaluatedReqs).catch(() => {});
       onStatusChange?.();
-      toast.success('Status atualizado com sucesso!');
+      // Sem toast em mudança individual — feedback visual da própria linha já indica sucesso.
+      // Toast permanece apenas para ações em lote e para erros.
     } catch (error: any) {
       // Rollback optimistic update
       setRequirements(previousRequirements);
-      console.error('Erro ao atualizar status:', error);
+      logger.error('Erro ao atualizar status do requisito', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro ao atualizar status');
     }
   };
