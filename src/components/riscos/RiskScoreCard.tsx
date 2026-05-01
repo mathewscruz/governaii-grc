@@ -1,8 +1,8 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+import { AkurisPulse } from "@/components/ui/AkurisPulse";
 import { RiscosStats } from "@/hooks/useRiscosStats";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { TrendingUp, TrendingDown, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RiskScoreCardProps {
@@ -38,16 +38,16 @@ const calcDisplayScore = (stats: RiscosStats): number => {
   return Math.min(100, Math.round((positivos / stats.total) * 100));
 };
 
+/**
+ * RiskScoreCard alinhado à anatomia oficial do StatCard (Onda 5).
+ * Mesma altura mínima (148px), mesmo padding (p-5 pl-6), mesma linha de título.
+ * O gauge SVG ocupa o slot do "valor herói + segments".
+ */
 export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
   if (loading || !stats) {
     return (
-      <Card className="bg-card border border-border shadow-card">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-        </CardHeader>
-        <CardContent className="pt-2 pb-3">
-          <Skeleton className="h-[100px] w-[160px] mx-auto" />
-        </CardContent>
+      <Card variant="elevated" className="h-full min-h-[148px] flex items-center justify-center">
+        <AkurisPulse size={36} />
       </Card>
     );
   }
@@ -66,34 +66,42 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
   const strokeWidth = 10;
 
   return (
-    <Card className="bg-card border border-border shadow-card">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-        <CardTitle className="text-sm font-medium leading-none">
-          Score de Risco
-        </CardTitle>
-        {hasVariation && (
-          <div
-            className={cn(
-              "flex items-center gap-1 text-xs font-medium",
-              isPositiveTrend
-                ? "text-success"
-                : "text-destructive"
-            )}
-          >
-            {isPositiveTrend ? (
-              <ArrowUp className="h-3 w-3" />
-            ) : (
-              <ArrowDown className="h-3 w-3" />
-            )}
-            <span>{Math.abs(stats.variacao7dias!)}%</span>
+    <Card
+      variant="elevated"
+      className="group relative overflow-hidden transition-all duration-300 h-full min-h-[148px]"
+    >
+      <CardContent className="p-5 pl-6 flex flex-col gap-3 h-full">
+        {/* Linha 1: ícone + título | delta — mesma estrutura do StatCard */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-muted-foreground flex-shrink-0 [&_svg]:h-4 [&_svg]:w-4">
+              <ShieldCheck strokeWidth={1.5} />
+            </span>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">
+              Score de Risco
+            </span>
           </div>
-        )}
-      </CardHeader>
-      <CardContent className="pt-0 pb-3">
-        {/* Gauge semicircular */}
-        <div className="flex flex-col items-center">
-          <svg width="160" height="90" viewBox="0 0 160 100">
-            {/* Background arc */}
+
+          {hasVariation && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-0.5 text-[11px] font-medium tabular-nums",
+                isPositiveTrend ? "text-success" : "text-destructive"
+              )}
+            >
+              {isPositiveTrend ? (
+                <TrendingUp className="h-3 w-3" strokeWidth={1.5} />
+              ) : (
+                <TrendingDown className="h-3 w-3" strokeWidth={1.5} />
+              )}
+              {Math.abs(stats.variacao7dias!)}%
+            </span>
+          )}
+        </div>
+
+        {/* Linha 2: gauge + valor herói lado a lado */}
+        <div className="flex items-center gap-3">
+          <svg width="96" height="56" viewBox="0 0 160 100" className="flex-shrink-0">
             <path
               d="M 20 90 A 60 60 0 0 1 140 90"
               fill="none"
@@ -101,7 +109,6 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
               strokeWidth={strokeWidth}
               strokeLinecap="round"
             />
-            {/* Progress arc */}
             <path
               d="M 20 90 A 60 60 0 0 1 140 90"
               fill="none"
@@ -111,24 +118,28 @@ export function RiskScoreCard({ stats, loading }: RiskScoreCardProps) {
               strokeDasharray={`${progress} ${circumference}`}
               className="transition-all duration-1000"
             />
-            {/* Score text */}
-            <text x="80" y="72" textAnchor="middle" className="fill-foreground" fontSize="28" fontWeight="bold">
-              {displayScore}
-            </text>
-            <text x="80" y="92" textAnchor="middle" className="fill-muted-foreground" fontSize="11">
-              {label}
-            </text>
           </svg>
-
-          {/* Legenda de níveis */}
-          <div className="flex items-center gap-3 mt-1">
-            {legendItems.map((item) => (
-              <div key={item.label} className="flex items-center gap-1">
-                <div className={cn("w-2 h-2 rounded-full", item.color)} />
-                <span className="text-[10px] text-muted-foreground">{item.label}</span>
-              </div>
-            ))}
+          <div className="flex flex-col">
+            <span
+              className={cn(
+                "text-4xl font-semibold tracking-tight tabular-nums leading-none",
+                displayScore === 0 ? "text-muted-foreground/70" : "text-foreground"
+              )}
+            >
+              {displayScore}
+            </span>
+            <span className="text-[11px] text-muted-foreground mt-1">{label}</span>
           </div>
+        </div>
+
+        {/* Linha 3: legenda — ocupa o mesmo slot dos segments/description */}
+        <div className="min-h-[44px] flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-muted-foreground">
+          {legendItems.map((item) => (
+            <span key={item.label} className="inline-flex items-center gap-1">
+              <span className={cn("inline-block h-1.5 w-1.5 rounded-full", item.color)} />
+              <span className="text-muted-foreground/80">{item.label}</span>
+            </span>
+          ))}
         </div>
       </CardContent>
     </Card>
