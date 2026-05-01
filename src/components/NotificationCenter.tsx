@@ -51,6 +51,7 @@ const markAutomaticNotificationAsRead = (notificationId: string) => {
 
 const NotificationCenter: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [detail, setDetail] = useState<Notification | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
