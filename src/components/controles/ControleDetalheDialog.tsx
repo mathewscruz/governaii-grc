@@ -388,12 +388,12 @@ export function ControleDetalheDialog({
                 <Shield className="h-3 w-3" />
                 {capitalizeText(controle.tipo)}
               </Badge>
-              <Badge className={`${getCriticidadeColor(controle.criticidade)} border whitespace-nowrap`}>
-                {getCriticidadeLabel(controle.criticidade)}
-              </Badge>
-              <Badge className={`${getStatusColor(controle.status)} border whitespace-nowrap`}>
-                {getStatusLabel(controle.status)}
-              </Badge>
+              <StatusBadge size="md" {...resolveCriticidadeTone(controle.criticidade)}>
+                {formatStatus(controle.criticidade)}
+              </StatusBadge>
+              <StatusBadge size="md" {...resolveControleStatusTone(controle.status)}>
+                {formatStatus(controle.status)}
+              </StatusBadge>
             </div>
             <Button variant="outline" size="sm" onClick={onEdit}>
               <Edit className="h-4 w-4 mr-2" />
