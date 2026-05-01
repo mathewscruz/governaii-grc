@@ -18,7 +18,7 @@ import { RemediationTab } from '@/components/gap-analysis/RemediationTab';
 import { FrameworkOnboarding } from '@/components/gap-analysis/FrameworkOnboarding';
 import { JourneyProgressBar } from '@/components/gap-analysis/JourneyProgressBar';
 import { SoATab } from '@/components/gap-analysis/SoATab';
-import { DocGenDialog } from '@/components/documentos/DocGenDialog';
+import { useDocGen } from '@/contexts/DocGenContext';
 
 import { exportFrameworkPDF } from '@/components/gap-analysis/ExportFrameworkPDF';
 import { exportBoardPDF } from '@/components/gap-analysis/ExportBoardPDF';
@@ -53,7 +53,7 @@ export default function GapAnalysisFrameworkDetail() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [selectedAdherenceAssessment, setSelectedAdherenceAssessment] = useState<any>(null);
   const [adherenceView, setAdherenceView] = useState<'list' | 'result'>('list');
-  const [showDocGen, setShowDocGen] = useState(false);
+  const { openDocGen } = useDocGen();
 
   useEffect(() => {
     if (!frameworkId) return;
@@ -238,9 +238,13 @@ export default function GapAnalysisFrameworkDetail() {
                   onGoToRemediation={() => setActiveTab('remediacao')}
                 />
               )}
-              <Button onClick={() => setShowDocGen(true)} variant="outline" size="sm">
+              <Button
+                onClick={() => openDocGen({ frameworkId, frameworkName: framework.nome })}
+                variant="outline"
+                size="sm"
+              >
                 <Brain className="h-4 w-4 mr-2" />
-                Gerar Política
+                Gerador de Documentos (IA)
               </Button>
               <Button
                 onClick={() => { setActiveTab('avaliacao'); setShowOnboarding(true); }}
