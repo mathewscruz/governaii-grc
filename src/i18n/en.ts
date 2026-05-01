@@ -329,6 +329,10 @@ export const en = {
     newCodeSent: 'New code sent!',
     resendError: 'Error resending code',
     allRightsReserved: 'All rights reserved',
+    eyebrow: 'Two-factor verification',
+    heading: "Confirm it's you",
+    securityFootnote: 'Code valid for 10 minutes · Never share',
+    backToLogin: 'Back to login',
   },
   changelog: {
     title: 'What\'s new',
