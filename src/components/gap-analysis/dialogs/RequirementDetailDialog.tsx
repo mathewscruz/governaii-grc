@@ -744,26 +744,14 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
           {/* STATUS BAR — sempre visível, primeira ação do usuário  */}
           {/* ====================================================== */}
           <div className="px-6 py-3 border-b bg-muted/20">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
-                <StatusSegmentedControl
-                  value={currentStatus}
-                  onChange={handleStatusChange}
-                  disabled={savingStatus || loading}
-                />
-                {savingStatus && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-              </div>
-              <div className="flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap">
-                {requirement.obrigatorio && <Badge variant="destructive" className="text-[10px] h-5">Obrigatório</Badge>}
-                {(requirement.peso || 0) >= 1 && <span>Peso {requirement.peso}</span>}
-                {requirement.categoria && (
-                  <>
-                    <span className="text-border">·</span>
-                    <span>{requirement.categoria}</span>
-                  </>
-                )}
-              </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
+              <StatusSegmentedControl
+                value={currentStatus}
+                onChange={handleStatusChange}
+                disabled={savingStatus || loading}
+              />
+              {savingStatus && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
             </div>
           </div>
 
