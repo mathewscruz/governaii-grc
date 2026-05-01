@@ -521,7 +521,7 @@ export default function RelatoriosContratos() {
                               risco === 'alto' ? 'bg-red-500' : 
                               risco === 'medio' ? 'bg-yellow-500' : 'bg-green-500'
                             }`} />
-                            <span className="capitalize">{risco} Risco</span>
+                            <span>Risco {formatStatus(risco)}</span>
                           </div>
                           <div className="text-right">
                             <div className="font-medium">{fornecedoresRisco.length} fornecedores</div>

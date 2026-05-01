@@ -674,7 +674,7 @@ export const KpiDrillDownDrawer: React.FC<KpiDrillDownDrawerProps> = ({ open, on
                   <div className="mt-1 flex items-center gap-2 flex-wrap">
                     {item.status && (
                       <StatusBadge tone={item.tone ?? 'neutral'} variant="soft">
-                        {item.status}
+                        {formatStatus(item.status)}
                       </StatusBadge>
                     )}
                     {item.date && (

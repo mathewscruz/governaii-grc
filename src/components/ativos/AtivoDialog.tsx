@@ -345,11 +345,11 @@ const AtivoDialog: React.FC<AtivoDialogProps> = ({ open, onOpenChange, formData,
         label="Criticidade"
         value={
           formData.criticidade
-            ? <Badge variant={CRITICIDADE_VARIANT[formData.criticidade]} className="text-[10px] capitalize">{formData.criticidade}</Badge>
+            ? <Badge variant={CRITICIDADE_VARIANT[formData.criticidade]} className="text-[10px]">{formatStatus(formData.criticidade)}</Badge>
             : <span className="text-muted-foreground italic">—</span>
         }
       />
-      <WizardSummaryRow label="Status" value={<span className="capitalize">{formData.status.replace('_', ' ')}</span>} />
+      <WizardSummaryRow label="Status" value={<span>{formatStatus(formData.status)}</span>} />
       <WizardSummaryRow label="Quantidade" value={formData.quantidade} />
     </WizardSummaryCard>
   );

@@ -531,8 +531,8 @@ export function IncidenteDialog({ incidente, onSuccess, trigger, externalOpen, o
       <WizardSummaryRow
         label="Criticidade"
         value={
-          <Badge variant={CRITICIDADE_VARIANT[watched.criticidade]} className="text-[10px] capitalize">
-            {watched.criticidade}
+          <Badge variant={CRITICIDADE_VARIANT[watched.criticidade]} className="text-[10px]">
+            {formatStatus(watched.criticidade)}
           </Badge>
         }
       />

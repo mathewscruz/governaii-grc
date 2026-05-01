@@ -204,7 +204,7 @@ const NotificationCenter: React.FC = () => {
         notificacoes.push({
           id: `incidente-critico-${incidente.id}`,
           title: 'Incidente Crítico Aberto',
-          message: `O incidente \\\"${incidente.titulo}\\\" está ${incidente.status} e requer atenção imediata`,
+          message: `O incidente "${incidente.titulo}" está com status ${formatStatus(incidente.status)} e requer atenção imediata`,
           type: 'error', read: false, link_to: `/incidentes?detalhe=${incidente.id}`,
           created_at: new Date().toISOString(), isAutomatic: true
         });

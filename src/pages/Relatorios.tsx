@@ -126,7 +126,7 @@ export default function Relatorios() {
         doc.text(relatorio.descricao || 'Sem descrição', 20, 45);
         doc.setFontSize(10);
         doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 20, 60);
-        doc.text(`Status: ${relatorio.status}`, 20, 70);
+        doc.text(`Status: ${formatStatus(relatorio.status)}`, 20, 70);
         doc.save(`${relatorio.nome.replace(/\s+/g, '_')}.pdf`);
       }
       toast.success('PDF exportado com sucesso');

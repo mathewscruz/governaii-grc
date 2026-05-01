@@ -136,7 +136,7 @@ function ReminderDialog({ assessment, open, onOpenChange, onSuccess }: ReminderD
               <p><strong>Fornecedor:</strong> {assessment.fornecedor_nome}</p>
               <p><strong>Email:</strong> {assessment.fornecedor_email}</p>
               <p><strong>Template:</strong> {assessment.template.nome}</p>
-              <p><strong>Status:</strong> {assessment.status}</p>
+              <p><strong>Status:</strong> {formatStatus(assessment.status)}</p>
             </div>
             
             <div className="flex justify-end space-x-2">

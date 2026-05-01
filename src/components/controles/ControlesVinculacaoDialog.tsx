@@ -383,7 +383,7 @@ export default function ControlesVinculacaoDialog({
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h4 className="font-medium">{ativo.nome}</h4>
-                        <Badge variant="outline">{ativo.tipo}</Badge>
+                        <Badge variant="outline">{formatStatus(ativo.tipo)}</Badge>
                         {getCriticidadeBadge(ativo.criticidade)}
                       </div>
                       {ativo.descricao && (

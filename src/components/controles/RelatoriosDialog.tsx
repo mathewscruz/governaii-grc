@@ -318,13 +318,13 @@ export function RelatoriosDialog({ open, onOpenChange }: RelatoriosDialogProps) 
                         <Badge 
                           variant={controle.status === 'ativo' ? 'default' : 'secondary'}
                         >
-                          {controle.status}
+                          {formatStatus(controle.status)}
                         </Badge>
                         <Badge 
                           variant={controle.criticidade === 'alto' ? 'destructive' : 
                                   controle.criticidade === 'medio' ? 'secondary' : 'outline'}
                         >
-                          {controle.criticidade}
+                          {formatStatus(controle.criticidade)}
                         </Badge>
                       </div>
                     </div>

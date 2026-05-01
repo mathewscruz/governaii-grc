@@ -373,10 +373,10 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
   const summary = (
     <WizardSummaryCard title="Resumo do Documento">
       <WizardSummaryRow label="Nome" value={formData.nome || <span className="text-muted-foreground italic">Sem nome</span>} highlight />
-      <WizardSummaryRow label="Tipo" value={<span className="capitalize">{formData.tipo}</span>} />
+      <WizardSummaryRow label="Tipo" value={<span>{formatStatus(formData.tipo)}</span>} />
       <WizardSummaryRow
         label="Classificação"
-        value={<Badge variant={CLASSIF_VARIANT[formData.classificacao]} className="text-[10px] capitalize">{formData.classificacao}</Badge>}
+        value={<Badge variant={CLASSIF_VARIANT[formData.classificacao]} className="text-[10px]">{formatStatus(formData.classificacao)}</Badge>}
       />
       <WizardSummaryRow label="Tags" value={formData.tags.length} />
       <WizardSummaryRow

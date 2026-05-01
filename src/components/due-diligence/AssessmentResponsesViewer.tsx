@@ -213,7 +213,7 @@ export function AssessmentResponsesViewer({
                   </div>
                   <div>
                     <span className="text-muted-foreground">Status:</span>
-                    <Badge variant="default">{assessment.status}</Badge>
+                    <Badge variant="default">{formatStatus(assessment.status)}</Badge>
                   </div>
                   {assessment.data_conclusao && (
                     <div className="col-span-2">

@@ -276,7 +276,7 @@ export function ReportsView() {
                   <div className="text-right">
                     <p className="font-bold text-red-600">{fornecedor.score.toFixed(1)}%</p>
                     <Badge variant="destructive" className="text-xs">
-                      {fornecedor.status}
+                      {formatStatus(fornecedor.status)}
                     </Badge>
                   </div>
                 </div>
