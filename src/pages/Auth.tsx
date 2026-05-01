@@ -337,11 +337,9 @@ const Auth = () => {
                 type="submit"
                 variant="gradient"
                 className="w-full h-11 font-semibold text-sm landing-glow-btn"
-                disabled={isLoading || loginSuccess}
+                disabled={isBusy}
               >
-                {loginSuccess ? (
-                  <><CheckCircle2 className="mr-2 h-4 w-4 text-green-400" />{t('auth.success')}</>
-                ) : isLoading ? (
+                {phase === 'authenticating' ? (
                   <><AkurisPulse size={16} className="mr-2" />{t('auth.signingIn')}</>
                 ) : (
                   t('auth.signIn')
