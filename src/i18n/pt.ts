@@ -329,6 +329,10 @@ export const pt = {
     newCodeSent: 'Novo código enviado!',
     resendError: 'Erro ao reenviar código',
     allRightsReserved: 'Todos os direitos reservados',
+    eyebrow: 'Verificação em duas etapas',
+    heading: 'Confirme que é você',
+    securityFootnote: 'Código válido por 10 minutos · Nunca compartilhe',
+    backToLogin: 'Voltar ao login',
   },
   changelog: {
     title: 'Novidades',
