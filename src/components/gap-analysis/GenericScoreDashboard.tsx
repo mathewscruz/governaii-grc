@@ -67,11 +67,12 @@ const ScoreDonut = ({ score, config, size = 120 }: { score: number; config: Fram
   const offset = circumference - (normalizedScore / 100) * circumference;
   const center = size / 2;
 
+  // Tokens semânticos via HSL — alinhados com Akuris design system
   const getColor = (s: number) => {
-    if (s >= 80) return '#22c55e';
-    if (s >= 60) return '#3b82f6';
-    if (s >= 40) return '#f59e0b';
-    return '#ef4444';
+    if (s >= 80) return 'hsl(var(--success))';
+    if (s >= 60) return 'hsl(var(--primary))';
+    if (s >= 40) return 'hsl(var(--warning))';
+    return 'hsl(var(--destructive))';
   };
 
   return (
