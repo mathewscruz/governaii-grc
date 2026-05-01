@@ -61,10 +61,10 @@ const Auth = () => {
     return t('auth.errorGeneric');
   };
 
-  const features = [
-    { icon: Shield, title: t('auth.featureGovernance'), desc: t('auth.featureGovernanceDesc') },
-    { icon: BarChart3, title: t('auth.featureRisks'), desc: t('auth.featureRisksDesc') },
-    { icon: FileCheck, title: t('auth.featureCompliance'), desc: t('auth.featureComplianceDesc') },
+  const pillars = [
+    { Icon: RiscosIcon, title: t('auth.pillarRiscos'), desc: t('auth.pillarRiscosDesc') },
+    { Icon: ControlesIcon, title: t('auth.pillarControles'), desc: t('auth.pillarControlesDesc') },
+    { Icon: GapAnalysisIcon, title: t('auth.pillarGapAnalysis'), desc: t('auth.pillarGapAnalysisDesc') },
   ];
 
   useEffect(() => {
