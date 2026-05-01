@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
+import { logger } from '@/lib/logger';
 
 interface AssessmentDialogProps {
   open: boolean;
@@ -78,7 +79,7 @@ export function AssessmentDialog({
         status: "em_andamento"
       });
     } catch (error) {
-      console.error('Erro ao salvar avaliação:', error);
+      logger.error('Erro ao salvar avaliação:', { error: error instanceof Error ? error.message : String(error) });
       toast({ 
         title: "Erro ao salvar avaliação",
         description: "Tente novamente.",

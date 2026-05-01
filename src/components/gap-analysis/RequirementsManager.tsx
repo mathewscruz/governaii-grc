@@ -9,6 +9,7 @@ import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { RequirementDialog } from './RequirementDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { logger } from '@/lib/logger';
 
 interface Requirement {
   id: string;
@@ -78,7 +79,7 @@ export const RequirementsManager = ({ frameworkId, frameworkName }: Requirements
 
       refetch();
     } catch (error) {
-      console.error('Erro ao excluir requisito:', error);
+      logger.error('Erro ao excluir requisito:', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro ao excluir",
         description: "Ocorreu um erro ao excluir o requisito.",

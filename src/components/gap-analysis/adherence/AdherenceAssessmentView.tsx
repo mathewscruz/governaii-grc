@@ -13,6 +13,7 @@ import { AdherenceAssessmentDialog } from './AdherenceAssessmentDialog';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import type { AdherenceAssessment } from './types';
+import { logger } from '@/lib/logger';
 
 interface AdherenceAssessmentViewProps {
   onViewResult: (assessment: AdherenceAssessment) => void;
@@ -115,7 +116,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
           .remove([assessment.storage_file_name]);
         
         if (storageError) {
-          console.error('Erro ao excluir arquivo do storage:', storageError);
+          logger.error('Erro ao excluir arquivo do storage:', { error: storageError instanceof Error ? storageError.message : String(storageError) });
         }
       }
 
@@ -130,7 +131,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
       toast.success('Avaliação excluída com sucesso');
       refetch();
     } catch (error: any) {
-      console.error('Erro ao excluir avaliação:', error);
+      logger.error('Erro ao excluir avaliação:', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro ao excluir avaliação: ' + error.message);
     } finally {
       setIsDeleting(false);

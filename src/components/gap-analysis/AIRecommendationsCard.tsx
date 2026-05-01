@@ -6,6 +6,7 @@ import { Loader2, Sparkles, Target, Zap, TrendingUp, ArrowRight } from 'lucide-r
 import { supabase } from '@/integrations/supabase/client';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface AIRecommendationsDialogProps {
   frameworkId: string;
@@ -90,7 +91,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
       }
       setRecommendations(data?.data || null);
     } catch (err: any) {
-      console.error('AI recommendations error:', err);
+      logger.error('AI recommendations error:', { error: err instanceof Error ? err.message : String(err) });
       toast.error('Erro ao gerar recomendações');
     } finally {
       setLoading(false);

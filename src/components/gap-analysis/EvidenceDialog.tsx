@@ -9,6 +9,7 @@ import { Upload, FileText, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface EvidenceDialogProps {
   open: boolean;
@@ -43,7 +44,7 @@ export const EvidenceDialog = ({
       if (error) throw error;
       setEvidences(data || []);
     } catch (error) {
-      console.error('Erro ao buscar evidências:', error);
+      logger.error('Erro ao buscar evidências:', { error: error instanceof Error ? error.message : String(error) });
     } finally {
       setLoading(false);
     }
@@ -128,7 +129,7 @@ export const EvidenceDialog = ({
       setDescription('');
       refetch();
     } catch (error) {
-      console.error('Erro ao enviar evidência:', error);
+      logger.error('Erro ao enviar evidência:', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro ao enviar",
         description: "Ocorreu um erro ao enviar a evidência.",
@@ -163,7 +164,7 @@ export const EvidenceDialog = ({
 
       refetch();
     } catch (error) {
-      console.error('Erro ao excluir evidência:', error);
+      logger.error('Erro ao excluir evidência:', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro ao excluir",
         description: "Ocorreu um erro ao excluir a evidência.",

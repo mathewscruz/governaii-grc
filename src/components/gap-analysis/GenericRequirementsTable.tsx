@@ -18,7 +18,7 @@ import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { FrameworkConfig, NIST_PILLAR_NAMES } from "@/lib/framework-configs";
-import { RequirementDetailDialog } from "./nist/NISTRequirementDetailDialog";
+import { RequirementDetailDialog } from "./dialogs/RequirementDetailDialog";
 import { saveScoreHistory } from "@/hooks/useScoreHistory";
 
 interface Requirement {
@@ -594,27 +594,28 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
 
         {/* Floating Bulk Action Bar */}
         {selectedIds.size > 0 && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border shadow-lg rounded-xl px-6 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-4">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border shadow-lg rounded-xl px-4 py-2.5 flex items-center gap-3 animate-in slide-in-from-bottom-4">
             <div className="flex items-center gap-2">
               <CheckSquare className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">{selectedIds.size} selecionados</span>
             </div>
             <div className="h-6 w-px bg-border" />
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={() => handleBulkStatusChange('conforme')} disabled={bulkUpdating} className="text-xs border-green-500/30 text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20">
+            <div className="flex items-center gap-1.5">
+              <Button size="sm" variant="success" onClick={() => handleBulkStatusChange('conforme')} disabled={bulkUpdating} className="text-xs h-7">
                 Conforme
               </Button>
-              <Button size="sm" variant="outline" onClick={() => handleBulkStatusChange('parcial')} disabled={bulkUpdating} className="text-xs border-yellow-500/30 text-yellow-700 hover:bg-yellow-50 dark:text-yellow-400 dark:hover:bg-yellow-900/20">
+              <Button size="sm" variant="warning" onClick={() => handleBulkStatusChange('parcial')} disabled={bulkUpdating} className="text-xs h-7">
                 Parcial
               </Button>
-              <Button size="sm" variant="outline" onClick={() => handleBulkStatusChange('nao_conforme')} disabled={bulkUpdating} className="text-xs border-red-500/30 text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
+              <Button size="sm" variant="destructive" onClick={() => handleBulkStatusChange('nao_conforme')} disabled={bulkUpdating} className="text-xs h-7">
                 Não Conforme
               </Button>
-              <Button size="sm" variant="outline" onClick={() => handleBulkStatusChange('nao_aplicavel')} disabled={bulkUpdating} className="text-xs">
+              <Button size="sm" variant="outline" onClick={() => handleBulkStatusChange('nao_aplicavel')} disabled={bulkUpdating} className="text-xs h-7">
                 N/A
               </Button>
             </div>
-            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="text-xs">
+            <div className="h-6 w-px bg-border" />
+            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="text-xs h-7">
               <X className="h-3.5 w-3.5 mr-1" />Limpar
             </Button>
           </div>

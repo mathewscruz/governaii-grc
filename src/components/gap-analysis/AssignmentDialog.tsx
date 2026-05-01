@@ -12,6 +12,7 @@ import { CalendarIcon, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface AssignmentDialogProps {
   open: boolean;
@@ -108,7 +109,7 @@ export const AssignmentDialog = ({
 
       onOpenChange(false);
     } catch (error) {
-      console.error('Erro ao atribuir requisito:', error);
+      logger.error('Erro ao atribuir requisito:', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro ao atribuir",
         description: "Ocorreu um erro ao atribuir o requisito.",
@@ -137,7 +138,7 @@ export const AssignmentDialog = ({
 
       onOpenChange(false);
     } catch (error) {
-      console.error('Erro ao remover atribuição:', error);
+      logger.error('Erro ao remover atribuição:', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro ao remover",
         description: "Ocorreu um erro ao remover a atribuição.",

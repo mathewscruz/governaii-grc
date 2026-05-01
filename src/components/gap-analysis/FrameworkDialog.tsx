@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
+import { logger } from '@/lib/logger';
 
 interface FrameworkDialogProps {
   open: boolean;
@@ -62,7 +63,7 @@ export function FrameworkDialog({ open, onOpenChange, onSuccess, framework }: Fr
       onOpenChange(false);
       setFormData({ nome: "", descricao: "", versao: "", tipo_framework: "" });
     } catch (error) {
-      console.error('Erro ao salvar framework:', error);
+      logger.error('Erro ao salvar framework:', { error: error instanceof Error ? error.message : String(error) });
       toast({ 
         title: "Erro ao salvar framework",
         description: "Tente novamente.",
