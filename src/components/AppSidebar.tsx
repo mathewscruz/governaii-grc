@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 import { 
   Shield, 
   AlertTriangle, 
@@ -161,6 +162,7 @@ const getMenuSections = (t: (key: string) => string): MenuSection[] => [
 export function AppSidebar() {
   const { state } = useSidebar();
   const { signOut, company, logoUpdateKey } = useAuth();
+  const navigate = useNavigate();
   const { canAccess } = usePermissions();
   const { t } = useLanguage();
   const location = useLocation();
@@ -187,6 +189,7 @@ export function AppSidebar() {
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [showLogoutOverlay, setShowLogoutOverlay] = useState(false);
 
   const isCollapsed = state === 'collapsed';
 
@@ -231,6 +234,10 @@ export function AppSidebar() {
   const confirmSignOut = async () => {
     if (isSigningOut) return;
     setIsSigningOut(true);
+    // Cobre a tela imediatamente — evita flash branco entre o dashboard e o /auth
+    setShowLogoutOverlay(true);
+    // Fecha o diálogo no mesmo frame para não competir com o overlay
+    setShowLogoutConfirm(false);
     try {
       // Limpa preferências locais não-críticas
       try {
@@ -247,13 +254,13 @@ export function AppSidebar() {
         await supabase.auth.signOut({ scope: 'local' });
       }
 
-      setShowLogoutConfirm(false);
-      // Reset completo do estado da app: React Query, contextos, etc.
-      window.location.replace('/auth');
+      // Navegação SPA — sem hard reload, sem flash branco.
+      // O overlay continua por cima até o /auth montar.
+      navigate('/auth', { replace: true });
     } catch (error) {
       logger.error('Erro ao encerrar sessão', error);
       toast.error(t('sidebar.signOutFailed') || 'Não foi possível encerrar a sessão. Tente novamente.');
-      setShowLogoutConfirm(false);
+      setShowLogoutOverlay(false);
     } finally {
       setIsSigningOut(false);
     }
@@ -302,6 +309,18 @@ export function AppSidebar() {
   };
 
   return (
+    <>
+    {showLogoutOverlay && (
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center"
+        style={{ backgroundColor: '#06060e' }}
+        role="status"
+        aria-live="polite"
+        aria-label="Encerrando sessão"
+      >
+        <AkurisPulse size={80} />
+      </div>
+    )}
     <Sidebar
       className="transition-all duration-300 ease-out sidebar-gradient"
       collapsible="icon"
@@ -520,5 +539,6 @@ export function AppSidebar() {
         loading={isSigningOut}
       />
     </Sidebar>
+    </>
   );
 }
