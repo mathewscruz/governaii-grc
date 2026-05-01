@@ -225,7 +225,7 @@ export default function GapAnalysisFrameworkDetail() {
           description={framework.descricao || FRAMEWORK_DESCRIPTIONS[framework.nome] || `Avaliação de conformidade ${framework.tipo_framework}`}
           actions={
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Ação primária — IA estratégica */}
+              {/* Ação primária — Consultor IA (ícone proprietário Akuris) */}
               {empresaId && totalRequirements > 0 && (
                 <AIRecommendationsButton
                   frameworkId={frameworkId!}
@@ -239,29 +239,10 @@ export default function GapAnalysisFrameworkDetail() {
                 />
               )}
 
-              {/* Ação produtiva — gerar documento */}
-              <Button
-                onClick={() => openDocGen({ frameworkId, frameworkName: framework.nome })}
-                variant="outline"
-                size="sm"
-              >
-                <Brain className="h-4 w-4 mr-2" strokeWidth={1.5} />
-                Gerador de Documentos (IA)
-              </Button>
-
-              {/* Ações utilitárias agrupadas em ghost */}
-              <Button
-                onClick={() => { setActiveTab('avaliacao'); setShowOnboarding(true); }}
-                variant="ghost"
-                size="sm"
-                title="Revisitar tour do framework"
-              >
-                <HelpCircle className="h-4 w-4 mr-2" strokeWidth={1.5} />
-                Tour
-              </Button>
+              {/* Exportar — ação utilitária visível */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" disabled={exporting}>
+                  <Button variant="outline" size="sm" disabled={exporting}>
                     <FileDown className="h-4 w-4 mr-2" strokeWidth={1.5} />
                     {exporting ? 'Exportando...' : 'Exportar'}
                   </Button>
@@ -274,6 +255,26 @@ export default function GapAnalysisFrameworkDetail() {
                   <DropdownMenuItem onClick={handleExportBoard} disabled={exporting}>
                     <FileBarChart className="h-4 w-4 mr-2" strokeWidth={1.5} />
                     Relatório Executivo (Board)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Mais ações — agrupa Gerador de Documentos e Tour */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" aria-label="Mais ações">
+                    <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => openDocGen({ frameworkId, frameworkName: framework.nome })}>
+                    <AkurisAIIcon className="h-4 w-4 mr-2" />
+                    Gerador de Documentos
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => { setActiveTab('avaliacao'); setShowOnboarding(true); }}>
+                    <HelpCircle className="h-4 w-4 mr-2" strokeWidth={1.5} />
+                    Revisitar tour
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
