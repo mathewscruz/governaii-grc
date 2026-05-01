@@ -73,9 +73,13 @@ const Auth = () => {
     }
   }, []);
 
-  if (!loading && user && !mfaInProgressRef.current) return <Navigate to="/dashboard" replace />;
+  // Só navega para dashboard quando o fluxo NÃO está aguardando MFA.
+  // Durante 'authenticating', 'verifying_mfa' e 'finalizing' o overlay cobre tudo.
+  if (!loading && user && phase !== 'mfa_required') {
+    return <Navigate to="/dashboard" replace />;
+  }
 
-  if (loginSuccess) {
+  if (showOverlay) {
     return <LoadingOverlay />;
   }
 
@@ -103,12 +107,15 @@ const Auth = () => {
       setErrors(fieldErrors);
       return;
     }
-    setIsLoading(true);
-    mfaInProgressRef.current = true;
+
+    setPhase('authenticating');
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
       if (error) throw error;
-      
+
       const userId = data.user?.id;
 
       if (rememberMe) {
@@ -119,111 +126,100 @@ const Auth = () => {
         localStorage.removeItem('akuris_remember_me');
       }
 
-      if (userId) {
+      if (!userId) {
+        // Caso degenerado — sem userId não há como continuar.
         await supabase.auth.signOut();
-
-        try {
-          const mfaResponse = await supabase.functions.invoke('send-mfa-code', {
-            body: { userId, email: email.trim() },
-          });
-
-          if (mfaResponse.error) {
-            logger.error('Erro ao enviar MFA, login direto', { module: 'Auth', error: String(mfaResponse.error) });
-            mfaInProgressRef.current = false;
-            setMfaPending(false);
-            setMfaPassword('');
-            const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-            if (!reAuthError) {
-              setLoginSuccess(true);
-              toast.success(t('auth.loginSuccess'));
-            } else {
-              toast.error(t('auth.errorAuth'));
-            }
-          } else if (mfaResponse.data?.success && mfaResponse.data?.skipped) {
-            logger.debug('MFA skipped - sessão válida encontrada', { module: 'Auth' });
-            mfaInProgressRef.current = false;
-            setMfaPending(false);
-            setMfaPassword('');
-            const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-            if (!reAuthError) {
-              setLoginSuccess(true);
-              toast.success(t('auth.loginSuccess'));
-            } else {
-              toast.error(t('auth.errorAuth'));
-            }
-          } else if (mfaResponse.data?.success) {
-            setMfaPending(true);
-            setMfaUserId(userId);
-            setMfaEmail(email.trim());
-            setMfaPassword(password);
-          } else {
-            if (mfaResponse.data?.error) {
-              toast.warning(mfaResponse.data.error);
-            }
-            mfaInProgressRef.current = false;
-            setMfaPending(false);
-            setMfaPassword('');
-            const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-            if (!reAuthError) {
-              setLoginSuccess(true);
-            }
-          }
-        } catch (mfaError) {
-          logger.error('Exceção MFA', { module: 'Auth', error: String(mfaError) });
-          mfaInProgressRef.current = false;
-          setMfaPending(false);
-          setMfaPassword('');
-          const { error: reAuthError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-          if (!reAuthError) {
-            setLoginSuccess(true);
-            toast.success(t('auth.loginSuccess'));
-          }
-        }
+        toast.error(t('auth.errorAuth'));
+        setPhase('idle');
+        return;
       }
+
+      // Decide se MFA é necessário SEM derrubar a sessão antes da hora.
+      let requiresMfa = false;
+      try {
+        const mfaResponse = await supabase.functions.invoke('send-mfa-code', {
+          body: { userId, email: email.trim() },
+        });
+
+        if (mfaResponse.error) {
+          logger.error('Erro ao enviar MFA, seguindo com login direto', {
+            module: 'Auth',
+            error: String(mfaResponse.error),
+          });
+        } else if (mfaResponse.data?.success && mfaResponse.data?.skipped) {
+          logger.debug('MFA pulado — sessão MFA recente válida', { module: 'Auth' });
+        } else if (mfaResponse.data?.success) {
+          requiresMfa = true;
+        } else if (mfaResponse.data?.error) {
+          // Falha controlada (ex.: rate-limit do envio): não bloqueia o login,
+          // apenas avisa o usuário e prossegue como login direto.
+          toast.warning(mfaResponse.data.error);
+        }
+      } catch (mfaError) {
+        logger.error('Exceção ao chamar send-mfa-code, prosseguindo sem MFA', {
+          module: 'Auth',
+          error: String(mfaError),
+        });
+      }
+
+      if (requiresMfa) {
+        // Só agora derruba a sessão e exibe a tela de MFA.
+        await supabase.auth.signOut();
+        setMfaUserId(userId);
+        setMfaEmail(email.trim());
+        setMfaPassword(password);
+        setPhase('mfa_required');
+        return;
+      }
+
+      // Fluxo direto (sem MFA): sessão já está ativa, apenas finalizar.
+      // O <Navigate> dispara assim que o AuthProvider propaga `user`.
+      toast.success(t('auth.loginSuccess'));
+      setPhase('finalizing');
     } catch (error: any) {
-      mfaInProgressRef.current = false;
-      logger.warn('Login failed', { module: 'Auth', action: 'login', details: error.message });
+      logger.warn('Login failed', {
+        module: 'Auth',
+        action: 'login',
+        details: error?.message,
+      });
       toast.error(getErrorMessage(error));
-    } finally {
-      setIsLoading(false);
+      setPhase('idle');
     }
   };
 
   const handleMFAVerified = async () => {
+    setPhase('verifying_mfa');
     try {
-      const { error } = await supabase.auth.signInWithPassword({ 
-        email: mfaEmail, 
-        password: mfaPassword 
+      const { error } = await supabase.auth.signInWithPassword({
+        email: mfaEmail,
+        password: mfaPassword,
       });
       setMfaPassword('');
-      mfaInProgressRef.current = false;
-      setMfaPending(false);
-      
+
       if (error) {
         toast.error(t('auth.errorAuthAfterMFA'));
+        setPhase('idle');
         return;
       }
-      
-      setLoginSuccess(true);
+
       toast.success(t('auth.loginSuccess'));
+      setPhase('finalizing');
     } catch (err) {
       setMfaPassword('');
-      mfaInProgressRef.current = false;
-      setMfaPending(false);
       toast.error(t('auth.errorAuth'));
+      setPhase('idle');
     }
   };
 
   const handleMFACancel = () => {
-    mfaInProgressRef.current = false;
-    setMfaPending(false);
     setMfaUserId('');
     setMfaEmail('');
     setMfaPassword('');
+    setPhase('idle');
     toast.info(t('auth.loginCancelled'));
   };
 
-  if (mfaPending) {
+  if (phase === 'mfa_required') {
     return (
       <MFAVerification
         userId={mfaUserId}
