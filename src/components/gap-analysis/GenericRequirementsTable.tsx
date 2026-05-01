@@ -378,6 +378,84 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
     return <Badge variant="secondary" className="text-xs">Baixa</Badge>;
   };
 
+  /** Coluna "Prazo": cor semântica (vermelho atrasado / âmbar em até 7d / neutro) + tooltip. */
+  const renderDueDate = (raw: string | null | undefined) => {
+    if (!raw) return <span className="text-xs text-muted-foreground/40">—</span>;
+    let date: Date;
+    try { date = parseISO(raw); } catch { return <span className="text-xs text-muted-foreground/40">—</span>; }
+    if (isNaN(date.getTime())) return <span className="text-xs text-muted-foreground/40">—</span>;
+
+    const diff = differenceInCalendarDays(date, new Date());
+    let toneClass = "text-foreground";
+    let tooltipText = `Prazo em ${diff} ${diff === 1 ? 'dia' : 'dias'}`;
+    let icon = null as React.ReactNode;
+
+    if (diff < 0) {
+      toneClass = "text-destructive font-medium";
+      tooltipText = `Atrasado há ${Math.abs(diff)} ${Math.abs(diff) === 1 ? 'dia' : 'dias'}`;
+      icon = <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" strokeWidth={1.5} />;
+    } else if (diff === 0) {
+      toneClass = "text-destructive font-medium";
+      tooltipText = "Vence hoje";
+      icon = <CalendarClock className="h-3.5 w-3.5 text-destructive shrink-0" strokeWidth={1.5} />;
+    } else if (diff <= 7) {
+      toneClass = "text-warning font-medium";
+      tooltipText = `Vence em ${diff} ${diff === 1 ? 'dia' : 'dias'}`;
+      icon = <CalendarClock className="h-3.5 w-3.5 text-warning shrink-0" strokeWidth={1.5} />;
+    }
+
+    return (
+      <TooltipProvider delayDuration={150}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className={`flex items-center gap-1.5 text-sm ${toneClass}`}>
+              {icon}
+              <span>{format(date, 'dd/MM/yyyy')}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top">{tooltipText}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
+  /** Coluna "Responsável": avatar com iniciais + nome truncado + tooltip com email. */
+  const renderOwner = (userId: string | null | undefined) => {
+    if (!userId) return <span className="text-xs text-muted-foreground/40">—</span>;
+    const user = usersById.get(userId);
+    if (!user) {
+      // Lookup ainda carregando ou usuário fora da empresa
+      return <span className="text-xs text-muted-foreground/60">•••</span>;
+    }
+    const initials = user.nome
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(p => p.charAt(0).toUpperCase())
+      .join('') || '?';
+
+    return (
+      <TooltipProvider delayDuration={150}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2 min-w-0">
+              <Avatar className="h-6 w-6 shrink-0">
+                <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-medium">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm truncate">{user.nome}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs">
+            <div className="font-medium">{user.nome}</div>
+            {user.email && <div className="text-muted-foreground">{user.email}</div>}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
   // Compute category stats
   const categoryStatsMap = useMemo(() => {
     const map: Record<string, CategoryStats> = {};
