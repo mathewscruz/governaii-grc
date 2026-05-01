@@ -48,16 +48,14 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
     { cacheKey: `adherence-assessments-${frameworkId || 'all'}`, cacheDuration: 0 }
   );
 
-  const getStatusColor = (status: string): string => {
+  type Variant = 'success' | 'warning' | 'destructive' | 'secondary' | 'outline';
+
+  const getStatusVariant = (status: string): Variant => {
     switch (status) {
-      case 'concluido':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'processando':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'erro':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'concluido': return 'success';
+      case 'processando': return 'secondary';
+      case 'erro': return 'destructive';
+      default: return 'outline';
     }
   };
 
@@ -70,17 +68,12 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
     }
   };
 
-  const getResultColor = (resultado?: string): string => {
-    if (!resultado) return '';
+  const getResultVariant = (resultado?: string): Variant => {
     switch (resultado) {
-      case 'conforme':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'nao_conforme':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'parcial':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'conforme': return 'success';
+      case 'nao_conforme': return 'destructive';
+      case 'parcial': return 'warning';
+      default: return 'outline';
     }
   };
 
