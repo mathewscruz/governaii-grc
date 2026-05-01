@@ -339,11 +339,7 @@ const Auth = () => {
                 className="w-full h-11 font-semibold text-sm landing-glow-btn"
                 disabled={isBusy}
               >
-                {phase === 'authenticating' ? (
-                  <><AkurisPulse size={16} className="mr-2" />{t('auth.signingIn')}</>
-                ) : (
-                  t('auth.signIn')
-                )}
+                {t('auth.signIn')}
               </Button>
             </form>
 
