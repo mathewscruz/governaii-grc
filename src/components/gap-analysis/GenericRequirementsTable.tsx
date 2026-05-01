@@ -639,8 +639,18 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
               </TableHead>
               <TableHead className="w-28">Código</TableHead>
               <TableHead>Requisito</TableHead>
-              <TableHead className="w-24">Prioridade</TableHead>
-              <TableHead className="w-40">Área</TableHead>
+              <TableHead className="w-32">
+                <div className="flex items-center gap-1.5">
+                  <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                  Prazo
+                </div>
+              </TableHead>
+              <TableHead className="w-44">
+                <div className="flex items-center gap-1.5">
+                  <UserRound className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                  Responsável
+                </div>
+              </TableHead>
               <TableHead className="w-28">Status</TableHead>
               <TableHead className="w-20">Evidências</TableHead>
               <TableHead className="w-44">Avaliação</TableHead>
@@ -676,8 +686,8 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                       {req.descricao && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{req.descricao}</p>}
                     </div>
                   </TableCell>
-                  <TableCell>{getPriorityBadge(req.peso, req.obrigatorio)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{req.area_responsavel || '-'}</TableCell>
+                  <TableCell>{renderDueDate(req.prazo_implementacao)}</TableCell>
+                  <TableCell>{renderOwner(req.responsavel_avaliacao)}</TableCell>
                   <TableCell>{getStatusBadge(req.conformity_status)}</TableCell>
                   <TableCell>
                     {(req.evidence_files?.length || 0) > 0 ? (
