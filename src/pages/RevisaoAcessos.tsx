@@ -309,22 +309,28 @@ export default function RevisaoAcessos() {
           title="Em Andamento"
           value={stats?.emAndamento || 0}
           loading={statsLoading}
+          drillDown="revisao_acessos"
+          showAccent
+          emptyHint="Crie a primeira revisão de acessos."
         />
         <StatCard
           title="Concluídas"
           value={stats?.concluidas || 0}
           loading={statsLoading}
+          variant="success"
         />
         <StatCard
           title="Vencidas"
           value={stats?.vencidas || 0}
           loading={statsLoading}
           variant="destructive"
+          drillDown="revisao_acessos"
         />
         <StatCard
           title="Contas Revisadas"
           value={stats?.contasRevisadas || 0}
           loading={statsLoading}
+          variant="info"
         />
       </div>
 

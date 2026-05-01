@@ -311,25 +311,37 @@ export default function Incidentes() {
       title: "Total de Incidentes",
       value: statsIncidentes?.total || 0,
       description: `${statsIncidentes?.abertos || 0} abertos`,
-      icon: <AlertTriangle className="h-4 w-4" />,
+      icon: <AlertTriangle />,
+      drillDown: 'incidentes' as const,
+      showAccent: true,
+      segments: [
+        { label: 'críticos', value: statsIncidentes?.criticos || 0, tone: 'destructive' as const },
+        { label: 'altos', value: statsIncidentes?.altos || 0, tone: 'warning' as const },
+        { label: 'demais', value: Math.max(0, (statsIncidentes?.total || 0) - (statsIncidentes?.criticos || 0) - (statsIncidentes?.altos || 0)), tone: 'neutral' as const },
+      ],
+      emptyHint: "Registre o primeiro incidente para começar.",
     },
     {
       title: "Críticos/Altos",
       value: (statsIncidentes?.criticos || 0) + (statsIncidentes?.altos || 0),
       description: "Necessitam atenção imediata",
-      icon: <Shield className="h-4 w-4" />,
+      icon: <Shield />,
+      variant: 'destructive' as const,
+      drillDown: 'incidentes' as const,
     },
     {
       title: "Em Investigação",
       value: statsIncidentes?.investigacao || 0,
       description: "Sendo investigados",
-      icon: <Clock className="h-4 w-4" />,
+      icon: <Clock />,
+      variant: 'info' as const,
+      drillDown: 'incidentes' as const,
     },
     {
       title: "Este Mês",
       value: statsIncidentes?.mes || 0,
       description: "Novos incidentes",
-      icon: <Calendar className="h-4 w-4" />,
+      icon: <Calendar />,
     }
   ];
 
@@ -402,10 +414,7 @@ export default function Incidentes() {
         {statsCards.map((stat, index) => (
           <StatCard
             key={index}
-            title={stat.title}
-            value={stat.value}
-            description={stat.description}
-            icon={stat.icon}
+            {...stat}
             loading={loading}
           />
         ))}

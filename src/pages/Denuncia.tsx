@@ -44,33 +44,38 @@ export default function Denuncia() {
         <StatCard
           title="Total"
           value={stats?.total ?? 0}
-          icon={<Shield className="h-4 w-4" />}
+          icon={<Shield />}
           description="Denúncias registradas"
           loading={statsLoading}
+          drillDown="denuncias"
+          showAccent
+          emptyHint="As denúncias aparecerão conforme forem recebidas."
         />
         
         <StatCard
           title="Novas"
           value={stats?.novas ?? 0}
-          icon={<AlertTriangle className="h-4 w-4" />}
+          icon={<AlertTriangle />}
           description="Aguardando análise"
           loading={statsLoading}
           variant="warning"
+          drillDown="denuncias"
         />
         
         <StatCard
           title="Em Andamento"
           value={stats?.em_andamento ?? 0}
-          icon={<Clock className="h-4 w-4" />}
+          icon={<Clock />}
           description="Sendo investigadas"
           loading={statsLoading}
-          variant="default"
+          variant="info"
+          drillDown="denuncias"
         />
         
         <StatCard
           title="Resolvidas"
           value={stats?.resolvidas ?? 0}
-          icon={<CheckCircle className="h-4 w-4" />}
+          icon={<CheckCircle />}
           description="Concluídas"
           loading={statsLoading}
           variant="success"
