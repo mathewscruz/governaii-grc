@@ -517,34 +517,44 @@ const Ativos = () => {
         <StatCard
           title={t('modules.ativos.total')}
           value={stats?.total || 0}
-          description={`Críticos: ${stats?.criticos || 0} | Altos: ${stats?.altos || 0}`}
-          icon={<Server className="h-4 w-4 text-muted-foreground" />}
+          icon={<Server />}
           variant={stats?.criticos ? "destructive" : "default"}
           loading={statsLoading}
+          drillDown="ativos"
+          showAccent
+          segments={[
+            { label: 'críticos', value: stats?.criticos || 0, tone: 'destructive' },
+            { label: 'altos', value: stats?.altos || 0, tone: 'warning' },
+            { label: 'demais', value: Math.max(0, (stats?.total || 0) - (stats?.criticos || 0) - (stats?.altos || 0)), tone: 'neutral' },
+          ]}
+          emptyHint="Cadastre ativos para mapear o inventário."
         />
         <StatCard
           title="Ativos"
           value={stats?.ativos || 0}
-          description={`${stats?.inativos || 0} inativos | ${stats?.descontinuados || 0} descontinuados`}
-          icon={<Activity className="h-4 w-4 text-muted-foreground" />}
+          description={`${stats?.inativos || 0} inativos · ${stats?.descontinuados || 0} descontinuados`}
+          icon={<Activity />}
           variant="success"
           loading={statsLoading}
+          drillDown="ativos"
         />
         <StatCard
           title="Alto Valor"
           value={stats?.altoValorNegocio || 0}
           description={`${stats?.percentualAltoValor || 0}% do total`}
-          icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
+          icon={<TrendingUp />}
           variant="warning"
           loading={statsLoading}
+          drillDown="ativos"
         />
         <StatCard
           title="Criticidade Alta"
           value={(stats?.criticos || 0) + (stats?.altos || 0)}
           description="Requerem atenção especial"
-          icon={<Shield className="h-4 w-4 text-muted-foreground" />}
+          icon={<Shield />}
           variant="info"
           loading={statsLoading}
+          drillDown="ativos"
         />
       </div>
 

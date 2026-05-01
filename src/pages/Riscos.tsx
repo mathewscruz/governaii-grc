@@ -629,43 +629,37 @@ export function Riscos() {
                 <StatCard
                   title={t('modules.riscos.total')}
                   value={stats?.total || 0}
-                  description={`${stats?.criticos || 0} críticos, ${stats?.altos || 0} altos`}
-                  icon={
-                    <div className="flex flex-col items-center gap-1">
-                      <AlertTriangle className="h-4 w-4" />
-                      <MiniSparkline trend={totalTrend} color="hsl(var(--destructive))" />
-                    </div>
-                  }
+                  icon={<AlertTriangle />}
                   variant={stats?.criticos ? "destructive" : "default"}
                   loading={!stats}
+                  drillDown="riscos"
+                  segments={[
+                    { label: 'críticos', value: stats?.criticos || 0, tone: 'destructive' },
+                    { label: 'altos', value: stats?.altos || 0, tone: 'warning' },
+                    { label: 'demais', value: Math.max(0, (stats?.total || 0) - (stats?.criticos || 0) - (stats?.altos || 0)), tone: 'neutral' },
+                  ]}
                   trend={totalTrend ? { value: totalTrend.value, direction: totalTrend.direction, period: '7d' } : undefined}
+                  showAccent
+                  emptyHint="Cadastre riscos para começar a monitorar."
                 />
                 <StatCard
                   title="Tratamentos Concluídos"
                   value={stats?.tratamentos_concluidos || 0}
                   description={`${stats?.tratamentos_andamento || 0} em andamento`}
-                  icon={
-                    <div className="flex flex-col items-center gap-1">
-                      <TrendingUp className="h-4 w-4" />
-                      <MiniSparkline trend={tratConcTrend} color="hsl(var(--success))" />
-                    </div>
-                  }
+                  icon={<TrendingUp />}
                   variant="success"
                   loading={!stats}
+                  drillDown="planos"
                   trend={tratConcTrend ? { value: tratConcTrend.value, direction: tratConcTrend.direction, period: '7d' } : undefined}
                 />
                 <StatCard
                   title="Riscos Aceitos"
                   value={stats?.aceitos || 0}
                   description="Aceitos formalmente"
-                  icon={
-                    <div className="flex flex-col items-center gap-1">
-                      <CheckCircle className="h-4 w-4" />
-                      <MiniSparkline trend={aceitosTrend} color="hsl(var(--warning))" />
-                    </div>
-                  }
+                  icon={<CheckCircle />}
                   variant="warning"
                   loading={!stats}
+                  drillDown="riscos_aceite"
                   trend={aceitosTrend ? { value: aceitosTrend.value, direction: aceitosTrend.direction, period: '7d' } : undefined}
                 />
                 <RiskScoreCard stats={stats} loading={!stats} />

@@ -398,15 +398,18 @@ export default function AtivosChaves() {
           title="Total de Chaves"
           value={stats?.total ?? 0}
           description="Chaves registradas"
-          icon={<Key className="h-4 w-4" />}
+          icon={<Key />}
           loading={statsLoading}
+          drillDown="ativos_chaves"
+          showAccent
+          emptyHint="Cadastre chaves para gerenciar rotações."
         />
 
         <StatCard
           title="Chaves Ativas"
           value={stats?.ativas ?? 0}
           description="Em uso"
-          icon={<CheckCircle className="h-4 w-4" />}
+          icon={<CheckCircle />}
           loading={statsLoading}
           variant="success"
         />
@@ -415,18 +418,20 @@ export default function AtivosChaves() {
           title="Rotações Pendentes"
           value={stats?.rotacao30dias ?? 0}
           description="Próximos 30 dias"
-          icon={<Clock className="h-4 w-4" />}
+          icon={<Clock />}
           loading={statsLoading}
           variant="warning"
+          drillDown="ativos_chaves"
         />
 
         <StatCard
           title="Críticas"
           value={stats?.criticas ?? 0}
           description="Alta prioridade"
-          icon={<AlertTriangle className="h-4 w-4" />}
+          icon={<AlertTriangle />}
           loading={statsLoading}
           variant="destructive"
+          drillDown="ativos_chaves"
         />
       </div>
 

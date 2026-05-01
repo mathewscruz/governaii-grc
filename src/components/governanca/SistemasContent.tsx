@@ -308,24 +308,31 @@ export default function SistemasContent() {
         <StatCard
           title="Total de Sistemas"
           value={sistemas.length}
-          icon={<Server className="h-5 w-5" />}
+          icon={<Server />}
+          variant="primary"
+          showAccent
+          emptyHint="Cadastre sistemas para mapear o ambiente."
+          segments={[
+            { label: 'ativos', value: sistemasAtivos, tone: 'success' },
+            { label: 'inativos', value: Math.max(0, sistemas.length - sistemasAtivos), tone: 'neutral' },
+          ]}
         />
         <StatCard
           title="Sistemas Ativos"
           value={sistemasAtivos}
-          icon={<Monitor className="h-5 w-5" />}
+          icon={<Monitor />}
           variant="success"
         />
         <StatCard
           title="Criticidade Alta"
           value={sistemasCriticos}
-          icon={<Shield className="h-5 w-5" />}
+          icon={<Shield />}
           variant="warning"
         />
         <StatCard
           title="Sistemas Inativos"
           value={sistemas.length - sistemasAtivos}
-          icon={<Lock className="h-5 w-5" />}
+          icon={<Lock />}
           variant="default"
         />
       </div>

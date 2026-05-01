@@ -569,14 +569,17 @@ export default function ControlesContent() {
           title="Total de Controles"
           value={stats?.total || 0}
           description={`${stats?.ativos || 0} ativos`}
-          icon={<Shield className="h-4 w-4" />}
+          icon={<Shield />}
           loading={isLoading}
+          variant="primary"
+          showAccent
+          emptyHint="Cadastre controles para acompanhar a efetividade."
         />
         <StatCard
           title="Avaliações Vencidas"
           value={stats?.vencidos || 0}
           description="Requerem atenção imediata"
-          icon={<AlertTriangle className="h-4 w-4" />}
+          icon={<AlertTriangle />}
           variant="destructive"
           loading={isLoading}
         />
@@ -584,7 +587,7 @@ export default function ControlesContent() {
           title="Vencendo em 30 Dias"
           value={stats?.vencendoAvaliacao || 0}
           description="Próximas avaliações"
-          icon={<Clock className="h-4 w-4" />}
+          icon={<Clock />}
           variant="warning"
           loading={isLoading}
         />
@@ -592,7 +595,7 @@ export default function ControlesContent() {
           title="Efetividade"
           value={`${stats?.total ? Math.round((stats?.preventivos / stats?.total) * 100) : 0}%`}
           description="Controles preventivos"
-          icon={<TrendingUp className="h-4 w-4" />}
+          icon={<TrendingUp />}
           variant="success"
           loading={isLoading}
         />

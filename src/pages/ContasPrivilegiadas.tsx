@@ -386,23 +386,31 @@ export default function ContasPrivilegiadas() {
           title="Contas Ativas"
           value={contasAtivas}
           loading={isLoading}
+          variant="primary"
+          drillDown="contas_privilegiadas"
+          showAccent
+          emptyHint="Cadastre contas privilegiadas para monitorar."
         />
         <StatCard
           title="Pendentes"
           value={contasPendentes}
           loading={isLoading}
+          variant="info"
+          drillDown="contas_privilegiadas"
         />
         <StatCard
           title="Vencendo em 30 dias"
           value={contasVencendo}
           loading={isLoading}
           variant={contasVencendo > 0 ? 'warning' : 'default'}
+          drillDown="contas_privilegiadas"
         />
         <StatCard
           title="Expiradas"
           value={contasExpiradas}
           loading={isLoading}
           variant={contasExpiradas > 0 ? 'destructive' : 'default'}
+          drillDown="contas_privilegiadas"
         />
       </div>
 

@@ -140,10 +140,10 @@ export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, fra
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Pendentes" value={pendentes} icon={<Clock className="h-4 w-4" strokeWidth={1.5}/>} />
-        <StatCard title="Em Andamento" value={emAndamento} icon={<ClipboardList className="h-4 w-4" strokeWidth={1.5}/>} />
-        <StatCard title="Concluídos" value={concluidos} icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5}/>} />
-        <StatCard title="Atrasados" value={atrasados} icon={<AlertTriangle className="h-4 w-4" strokeWidth={1.5}/>} />
+        <StatCard title="Pendentes" value={pendentes} icon={<Clock />} variant="warning" />
+        <StatCard title="Em Andamento" value={emAndamento} icon={<ClipboardList />} variant="info" />
+        <StatCard title="Concluídos" value={concluidos} icon={<CheckCircle2 />} variant="success" />
+        <StatCard title="Atrasados" value={atrasados} icon={<AlertTriangle />} variant="destructive" />
       </div>
 
       {planos.length === 0 ? (

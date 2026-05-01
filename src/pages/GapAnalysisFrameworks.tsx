@@ -335,26 +335,29 @@ export default function GapAnalysisFrameworks() {
                 <StatCard
                   title="Conformidade Geral"
                   value={`${relevantStats.overallCompliance}%`}
-                  icon={<TrendingUp className="h-4 w-4" />}
+                  icon={<TrendingUp />}
                   description="Média ponderada dos frameworks ativos"
                   variant={
                     relevantStats.overallCompliance >= 70 ? 'success' :
                     relevantStats.overallCompliance >= 40 ? 'warning' : 'destructive'
                   }
+                  showAccent
                 />
                 <StatCard
                   title="Requisitos Críticos"
                   value={relevantStats.criticalCount}
-                  icon={<AlertTriangle className="h-4 w-4" />}
+                  icon={<AlertTriangle />}
                   description="Marcados como Não Conforme"
                   variant="destructive"
+                  drillDown="gap_analysis"
                 />
                 <StatCard
                   title="Total Avaliados"
                   value={relevantStats.totalEvaluated}
-                  icon={<Target className="h-4 w-4" />}
+                  icon={<Target />}
                   description="Requisitos avaliados nos frameworks ativos"
                   variant="info"
+                  drillDown="gap_analysis"
                 />
               </div>
             )}

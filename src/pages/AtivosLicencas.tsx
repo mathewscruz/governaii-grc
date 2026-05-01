@@ -379,15 +379,18 @@ export default function AtivosLicencas() {
           title="Total de Licenças"
           value={stats?.total ?? 0}
           description="Licenças registradas"
-          icon={<FileCheck className="h-4 w-4" />}
+          icon={<FileCheck />}
           loading={statsLoading}
+          drillDown="ativos_licencas"
+          showAccent
+          emptyHint="Cadastre licenças para acompanhar vencimentos."
         />
 
         <StatCard
           title="Licenças Ativas"
           value={stats?.ativas ?? 0}
           description="Em vigor"
-          icon={<CheckCircle className="h-4 w-4" />}
+          icon={<CheckCircle />}
           loading={statsLoading}
           variant="success"
         />
@@ -396,18 +399,20 @@ export default function AtivosLicencas() {
           title="A Vencer"
           value={stats?.vencendo30dias ?? 0}
           description="Próximos 30 dias"
-          icon={<Clock className="h-4 w-4" />}
+          icon={<Clock />}
           loading={statsLoading}
           variant="warning"
+          drillDown="ativos_licencas"
         />
 
         <StatCard
           title="Vencidas"
           value={stats?.vencidas ?? 0}
           description="Expiradas"
-          icon={<AlertTriangle className="h-4 w-4" />}
+          icon={<AlertTriangle />}
           loading={statsLoading}
           variant="destructive"
+          drillDown="ativos_licencas"
         />
       </div>
 

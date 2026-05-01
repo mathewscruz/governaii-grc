@@ -289,10 +289,10 @@ export default function RiscosAceite() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Riscos Aceitos" value={totalAceitos} description="Total aprovados" icon={<CheckCircle className="h-4 w-4" />} variant="default" />
-        <StatCard title="Pendentes de Aprovação" value={totalPendentes} description="Aguardando decisão" icon={<Clock className="h-4 w-4" />} variant={totalPendentes > 0 ? "warning" : "default"} />
-        <StatCard title="Revisões Vencidas" value={revisoesVencidas} description="Precisam de atenção" icon={<CalendarX className="h-4 w-4" />} variant={revisoesVencidas > 0 ? "destructive" : "default"} />
-        <StatCard title="Revisões Próximas" value={revisoesProximas} description="Nos próximos 7 dias" icon={<AlertTriangle className="h-4 w-4" />} variant={revisoesProximas > 0 ? "warning" : "default"} />
+        <StatCard title="Riscos Aceitos" value={totalAceitos} description="Total aprovados" icon={<CheckCircle />} variant="success" drillDown="riscos_aceite" showAccent emptyHint="Riscos aceitos formalmente aparecerão aqui." />
+        <StatCard title="Pendentes de Aprovação" value={totalPendentes} description="Aguardando decisão" icon={<Clock />} variant={totalPendentes > 0 ? "warning" : "default"} drillDown="riscos_aceite" />
+        <StatCard title="Revisões Vencidas" value={revisoesVencidas} description="Precisam de atenção" icon={<CalendarX />} variant={revisoesVencidas > 0 ? "destructive" : "default"} drillDown="riscos_aceite" />
+        <StatCard title="Revisões Próximas" value={revisoesProximas} description="Nos próximos 7 dias" icon={<AlertTriangle />} variant={revisoesProximas > 0 ? "warning" : "default"} />
       </div>
 
       <Tabs defaultValue={totalPendentes > 0 ? "pendentes" : "aceitos"} className="space-y-4">

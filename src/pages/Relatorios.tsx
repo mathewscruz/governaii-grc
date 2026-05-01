@@ -199,9 +199,9 @@ export default function Relatorios() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title="Total de Relatórios" value={stats.total} icon={<FileText className="h-5 w-5" />} variant="primary" />
-        <StatCard title="Publicados" value={stats.publicados} icon={<Eye className="h-5 w-5" />} variant="success" />
-        <StatCard title="Rascunhos" value={stats.rascunhos} icon={<Clock className="h-5 w-5" />} variant="warning" />
+        <StatCard title="Total de Relatórios" value={stats.total} icon={<FileText />} variant="primary" showAccent emptyHint="Crie um relatório para começar." />
+        <StatCard title="Publicados" value={stats.publicados} icon={<Eye />} variant="success" />
+        <StatCard title="Rascunhos" value={stats.rascunhos} icon={<Clock />} variant="warning" />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
