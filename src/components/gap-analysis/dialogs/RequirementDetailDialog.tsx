@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import DOMPurify from 'dompurify';
 import { DialogShell } from "@/components/ui/dialog-shell";
 import { Button } from "@/components/ui/button";
@@ -6,21 +6,23 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
-import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw, HelpCircle, Building2, Settings, FileCheck, CheckSquare, Shield, Target, Sparkles, Brain, ScanSearch, type LucideIcon } from "lucide-react";
+import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw, HelpCircle, Building2, Settings, FileCheck, CheckSquare, Shield, Target, Sparkles, Brain, ScanSearch, Check, type LucideIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { PlanoAcaoDialog } from "@/components/planos-acao/PlanoAcaoDialog";
 import { AuditTrailTimeline } from "@/components/gap-analysis/AuditTrailTimeline";
 import { logger } from '@/lib/logger';
 import { useDocGen } from '@/contexts/DocGenContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import type { ConformityStatus } from "@/lib/gap-analysis-tokens";
 
 interface RequirementDetail {
   id: string;
@@ -43,6 +45,8 @@ interface RequirementDetailDialogProps {
   requirement: RequirementDetail;
   frameworkId: string;
   onClose: () => void;
+  /** Callback opcional disparado quando o status muda inline para a tabela atualizar sem refetch full. */
+  onStatusChange?: (requirementId: string, newStatus: ConformityStatus) => void;
 }
 
 interface User { user_id: string; nome: string; email: string; }
@@ -58,28 +62,110 @@ interface EvaluationData {
   plano_acao_id?: string | null;
 }
 
-const CollapsibleSection = ({ title, icon: Icon, defaultOpen = false, badge, children }: {
-  title: string; icon: any; defaultOpen?: boolean; badge?: React.ReactNode; children: React.ReactNode;
-}) => {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger asChild>
-        <button className="flex items-center justify-between w-full py-2.5 px-3 rounded-lg hover:bg-muted/50 transition-colors text-left group">
-          <div className="flex items-center gap-2">
-            <Icon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{title}</span>
-            {badge}
-          </div>
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+// ---------------------------------------------------------------------------
+// Status Segmented Control — barra inline para mudar conformity_status
+// ---------------------------------------------------------------------------
+const STATUS_OPTIONS: Array<{ value: ConformityStatus; label: string; activeClass: string }> = [
+  { value: 'conforme', label: 'Conforme', activeClass: 'bg-success text-success-foreground hover:bg-success/90 border-success' },
+  { value: 'parcial', label: 'Parcial', activeClass: 'bg-warning text-warning-foreground hover:bg-warning/90 border-warning' },
+  { value: 'nao_conforme', label: 'Não Conforme', activeClass: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-destructive' },
+  { value: 'nao_aplicavel', label: 'N/A', activeClass: 'bg-secondary text-secondary-foreground hover:bg-secondary/90 border-secondary' },
+];
+
+const StatusSegmentedControl: React.FC<{
+  value: string | null | undefined;
+  onChange: (next: ConformityStatus) => void;
+  disabled?: boolean;
+}> = ({ value, onChange, disabled }) => (
+  <div className="inline-flex flex-wrap gap-1.5 rounded-lg bg-muted/40 p-1 border">
+    {STATUS_OPTIONS.map(opt => {
+      const isActive = value === opt.value;
+      return (
+        <button
+          key={opt.value}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(opt.value)}
+          className={cn(
+            'h-8 px-3 text-xs font-medium rounded-md border transition-all',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+            isActive
+              ? opt.activeClass + ' shadow-sm'
+              : 'bg-background text-muted-foreground border-transparent hover:bg-background hover:text-foreground hover:border-border'
+          )}
+        >
+          {opt.label}
         </button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="px-3 pb-3">
-        {children}
-      </CollapsibleContent>
-    </Collapsible>
+      );
+    })}
+  </div>
+);
+
+// ---------------------------------------------------------------------------
+// Journey Step — passo numerado da jornada de avaliação
+// ---------------------------------------------------------------------------
+type StepState = 'complete' | 'active' | 'pending';
+
+const JourneyStep: React.FC<{
+  number: number;
+  title: string;
+  description?: string;
+  state: StepState;
+  badge?: React.ReactNode;
+  defaultOpen?: boolean;
+  collapsible?: boolean;
+  children: React.ReactNode;
+}> = ({ number, title, description, state, badge, defaultOpen = true, collapsible = false, children }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  const numberClass =
+    state === 'complete' ? 'bg-success text-success-foreground border-success' :
+    state === 'active' ? 'bg-primary text-primary-foreground border-primary' :
+    'bg-muted text-muted-foreground border-border';
+
+  const headerContent = (
+    <div className="flex items-start gap-3 w-full">
+      <div className={cn('flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold shrink-0 mt-0.5', numberClass)}>
+        {state === 'complete' ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : number}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h3 className="text-sm font-semibold text-foreground leading-tight">{title}</h3>
+          {badge && <div className="shrink-0">{badge}</div>}
+        </div>
+        {description && <p className="text-[11px] text-muted-foreground mt-0.5">{description}</p>}
+      </div>
+      {collapsible && (
+        <ChevronDown className={cn('h-4 w-4 text-muted-foreground shrink-0 transition-transform mt-1', open ? 'rotate-180' : '')} strokeWidth={1.5} />
+      )}
+    </div>
+  );
+
+  return (
+    <section className="rounded-lg border bg-card overflow-hidden">
+      {collapsible ? (
+        <Collapsible open={open} onOpenChange={setOpen}>
+          <CollapsibleTrigger asChild>
+            <button type="button" className="w-full text-left p-3 hover:bg-muted/30 transition-colors">
+              {headerContent}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-4 pb-4 pt-1 ml-10">{children}</div>
+          </CollapsibleContent>
+        </Collapsible>
+      ) : (
+        <>
+          <div className="p-3">{headerContent}</div>
+          <div className="px-4 pb-4 ml-10">{children}</div>
+        </>
+      )}
+    </section>
   );
 };
+
+// ---------------------------------------------------------------------------
+// Markdown helpers (orientação da IA)
+// ---------------------------------------------------------------------------
 
 /** Icon mapping for section titles based on keywords */
 const getSectionIcon = (title: string): { icon: LucideIcon; color: string } => {
@@ -113,7 +199,7 @@ const renderContentLines = (lines: string[]): React.ReactNode[] => {
       elements.push(
         <ol key={`ol-${elements.length}`} className="list-decimal list-inside space-y-1.5 ml-1">
           {listItems.map((item, i) => (
-            <li key={i} className="text-sm text-muted-foreground leading-relaxed">
+            <li key={i} className="text-[13px] text-muted-foreground leading-7">
               <span dangerouslySetInnerHTML={{ __html: inlineMd(item) }} />
             </li>
           ))}
@@ -123,8 +209,8 @@ const renderContentLines = (lines: string[]): React.ReactNode[] => {
       elements.push(
         <ul key={`ul-${elements.length}`} className="space-y-1.5 ml-1">
           {listItems.map((item, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground leading-relaxed">
-              <span className="text-primary mt-1.5 text-[6px]">●</span>
+            <li key={i} className="flex items-start gap-2 text-[13px] text-muted-foreground leading-7">
+              <span className="text-primary mt-2 text-[6px]">●</span>
               <span dangerouslySetInnerHTML={{ __html: inlineMd(item) }} />
             </li>
           ))}
@@ -166,7 +252,7 @@ const renderContentLines = (lines: string[]): React.ReactNode[] => {
 
     flushList();
     elements.push(
-      <p key={`p-${i}`} className="text-sm text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: inlineMd(trimmed) }} />
+      <p key={`p-${i}`} className="text-[13px] text-muted-foreground leading-7" dangerouslySetInnerHTML={{ __html: inlineMd(trimmed) }} />
     );
   }
   flushList();
@@ -175,27 +261,22 @@ const renderContentLines = (lines: string[]): React.ReactNode[] => {
 
 /** Strips AI preamble lines (e.g. "Com certeza! Aqui está...") before the first ## */
 const sanitizeGuidanceContent = (raw: string): string => {
-  // Find first ## header
   const firstHeaderIdx = raw.indexOf('\n##');
   if (firstHeaderIdx === -1) {
-    // Check if it starts with ##
     if (raw.trimStart().startsWith('##')) return raw;
     return raw;
   }
   const preamble = raw.substring(0, firstHeaderIdx).trim();
-  // If preamble looks like AI chatter (no ## and short), strip it
   if (preamble && !preamble.includes('##') && preamble.length < 300) {
     return raw.substring(firstHeaderIdx + 1);
   }
   return raw;
 };
 
-/** Structured Markdown renderer — groups ## sections into visual cards */
 const MarkdownContent = ({ content }: { content: string }) => {
   const sanitized = sanitizeGuidanceContent(content);
   const lines = sanitized.split('\n');
 
-  // Split into sections: intro (before first ##) and named sections
   const sections: Array<{ title: string | null; lines: string[] }> = [];
   let current: { title: string | null; lines: string[] } = { title: null, lines: [] };
 
@@ -211,26 +292,24 @@ const MarkdownContent = ({ content }: { content: string }) => {
   if (current.lines.length > 0 || current.title) sections.push(current);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {sections.map((section, idx) => {
-        // Intro text (before any ##)
         if (!section.title) {
           const contentElements = renderContentLines(section.lines);
           if (contentElements.length === 0) return null;
           return (
-            <div key={idx} className="text-sm text-foreground/80 italic leading-relaxed space-y-2">
+            <div key={idx} className="text-[13px] text-foreground/80 italic leading-7 space-y-2">
               {contentElements}
             </div>
           );
         }
 
-        // Named section → card
         const { icon: SectionIcon, color } = getSectionIcon(section.title);
         return (
           <div key={idx} className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className={`flex items-center justify-center h-7 w-7 rounded-md bg-background border border-border ${color}`}>
-                <SectionIcon className="h-4 w-4" />
+              <div className={cn('flex items-center justify-center h-7 w-7 rounded-md bg-background border border-border', color)}>
+                <SectionIcon className="h-4 w-4" strokeWidth={1.5} />
               </div>
               <h3 className="text-sm font-bold text-foreground">{section.title}</h3>
             </div>
@@ -244,9 +323,8 @@ const MarkdownContent = ({ content }: { content: string }) => {
   );
 };
 
-/** Skeleton for guidance loading */
 const GuidanceSkeleton = () => (
-  <div className="space-y-4 p-5">
+  <div className="space-y-4">
     <div className="space-y-2">
       <Skeleton className="h-5 w-48" />
       <Skeleton className="h-4 w-full" />
@@ -264,18 +342,14 @@ const GuidanceSkeleton = () => (
       <Skeleton className="h-4 w-[75%]" />
       <Skeleton className="h-4 w-[90%]" />
     </div>
-    <div className="space-y-2">
-      <Skeleton className="h-5 w-52" />
-      <Skeleton className="h-3 w-[80%]" />
-      <Skeleton className="h-3 w-[70%]" />
-      <Skeleton className="h-3 w-[85%]" />
-      <Skeleton className="h-3 w-[65%]" />
-    </div>
   </div>
 );
 
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = ({
-  open, onOpenChange, requirement, frameworkId, onClose
+  open, onOpenChange, requirement, frameworkId, onClose, onStatusChange
 }) => {
   const { empresaId } = useEmpresaId();
   const [loading, setLoading] = useState(true);
@@ -292,7 +366,6 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
   const [diagnosticQuestions, setDiagnosticQuestions] = useState<Array<{pergunta: string; peso: number}>>([]);
   const [diagnosticAnswers, setDiagnosticAnswers] = useState<Record<number, 'sim' | 'parcial' | 'nao' | null>>({});
   const { openDocGen } = useDocGen();
-  // Map fileUrl -> validation result/state
   const [validatingUrl, setValidatingUrl] = useState<string | null>(null);
   const [validationByUrl, setValidationByUrl] = useState<Record<string, {
     verdict: 'conforme' | 'parcial' | 'nao_conforme' | 'indeterminado';
@@ -303,11 +376,17 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkName, setLinkName] = useState('');
+  const [savingStatus, setSavingStatus] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<string | null | undefined>(requirement.conformity_status);
 
   const [formData, setFormData] = useState<EvaluationData>({
     responsavel_avaliacao: '', plano_acao: '', observacoes: '',
     prazo_implementacao: '', riscos_vinculados: [], evidence_files: [], plano_acao_id: null
   });
+
+  useEffect(() => {
+    setCurrentStatus(requirement.conformity_status);
+  }, [requirement.conformity_status, requirement.id]);
 
   useEffect(() => {
     if (open && empresaId) loadData();
@@ -328,7 +407,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
         try {
           const parsed = JSON.parse(data.perguntas_diagnostico);
           if (Array.isArray(parsed)) setDiagnosticQuestions(parsed);
-        } catch { /* ignore parse errors */ }
+        } catch { /* ignore */ }
       }
     } catch (error: any) {
       logger.error('Error generating guidance:', { error: error instanceof Error ? error.message : String(error) });
@@ -359,7 +438,6 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
       setGuidanceText(details.orientacao_implementacao || null);
       setEvidenciasText(details.exemplos_evidencias || null);
 
-      // Parse diagnostic questions
       if (details.perguntas_diagnostico) {
         try {
           const parsed = JSON.parse(details.perguntas_diagnostico);
@@ -370,7 +448,6 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
       }
       setDiagnosticAnswers({});
 
-      // Auto-trigger generation if no guidance exists
       if (!details.orientacao_implementacao) {
         triggerGuidanceGeneration();
       }
@@ -391,7 +468,6 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
           setPlanoAcaoVinculado(null);
         }
 
-        // Load diagnostic answers from evaluation
         if (evalData.diagnostic_answers && typeof evalData.diagnostic_answers === 'object') {
           setDiagnosticAnswers(evalData.diagnostic_answers as Record<number, 'sim' | 'parcial' | 'nao' | null>);
         }
@@ -412,6 +488,51 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
       toast.error('Erro ao carregar dados');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // -------------------------------------------------------------------------
+  // Persistência inline do status (Akuris: sempre filtrar por empresa_id)
+  // -------------------------------------------------------------------------
+  const handleStatusChange = async (newStatus: ConformityStatus) => {
+    if (!empresaId) return;
+    const previous = currentStatus;
+    setCurrentStatus(newStatus);
+    setSavingStatus(true);
+    try {
+      const evaluationId = formData.id || requirement.evaluation_id;
+      if (evaluationId) {
+        const { error } = await supabase
+          .from('gap_analysis_evaluations')
+          .update({ conformity_status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', evaluationId)
+          .eq('empresa_id', empresaId);
+        if (error) throw error;
+      } else {
+        const { data: newEval, error } = await supabase
+          .from('gap_analysis_evaluations')
+          .insert({
+            framework_id: frameworkId,
+            requirement_id: requirement.id,
+            empresa_id: empresaId,
+            conformity_status: newStatus,
+            evidence_status: 'pendente',
+            status: 'em_andamento',
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        setFormData(prev => ({ ...prev, id: newEval.id }));
+      }
+      onStatusChange?.(requirement.id, newStatus);
+      const label = STATUS_OPTIONS.find(o => o.value === newStatus)?.label ?? newStatus;
+      toast.success(`Status atualizado para ${label}`);
+    } catch (error: any) {
+      logger.error('Error updating status:', { error: error instanceof Error ? error.message : String(error) });
+      setCurrentStatus(previous);
+      toast.error('Erro ao atualizar status');
+    } finally {
+      setSavingStatus(false);
     }
   };
 
@@ -501,7 +622,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
           evidence_files: formData.evidence_files, plano_acao_id: formData.plano_acao_id || null,
           diagnostic_answers: Object.keys(diagnosticAnswers).length > 0 ? diagnosticAnswers : null,
           updated_at: new Date().toISOString()
-        }).eq('id', evaluationId);
+        }).eq('id', evaluationId).eq('empresa_id', empresaId);
         if (error) throw error;
       } else {
         const { data: newEval, error } = await supabase.from('gap_analysis_evaluations').insert({
@@ -511,7 +632,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
           prazo_implementacao: formData.prazo_implementacao ? parseDateForDB(formData.prazo_implementacao) : null,
           evidence_files: formData.evidence_files, plano_acao_id: formData.plano_acao_id || null,
           diagnostic_answers: Object.keys(diagnosticAnswers).length > 0 ? diagnosticAnswers : null,
-          conformity_status: requirement.conformity_status || 'pendente',
+          conformity_status: currentStatus || 'pendente',
           evidence_status: 'pendente', status: 'em_andamento'
         }).select().single();
         if (error) throw error;
@@ -524,11 +645,11 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
           .insert(formData.riscos_vinculados.map(riscoId => ({ evaluation_id: evaluationId, risco_id: riscoId })));
         if (error) throw error;
       }
-      toast.success('Detalhes salvos com sucesso');
+      toast.success('Avaliação salva com sucesso');
       onClose();
     } catch (error: any) {
       logger.error('Error saving:', { error: error instanceof Error ? error.message : String(error) });
-      toast.error('Erro ao salvar detalhes');
+      toast.error('Erro ao salvar avaliação');
     } finally {
       setSaving(false);
     }
@@ -554,16 +675,6 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
     }
   };
 
-  const getStatusBadge = (status: string | null | undefined) => {
-    switch (status) {
-      case 'conforme': return <Badge variant="success">Conforme</Badge>;
-      case 'parcial': return <Badge variant="warning">Parcial</Badge>;
-      case 'nao_conforme': return <Badge variant="destructive">Não Conforme</Badge>;
-      case 'nao_aplicavel': return <Badge variant="secondary">N/A</Badge>;
-      default: return <Badge variant="outline">Não Avaliado</Badge>;
-    }
-  };
-
   const getPlanoStatusBadge = (status: string) => {
     const map: Record<string, { label: string; variant: 'success' | 'warning' | 'destructive' | 'outline' }> = {
       concluido: { label: 'Concluído', variant: 'success' },
@@ -575,7 +686,43 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
     return <Badge variant={s.variant}>{s.label}</Badge>;
   };
 
-  const isNonCompliant = requirement.conformity_status === 'nao_conforme' || requirement.conformity_status === 'parcial';
+  // -------------------------------------------------------------------------
+  // Estado da jornada (cada step)
+  // -------------------------------------------------------------------------
+  const isStatusDefined = !!currentStatus && currentStatus !== 'nao_avaliado' && currentStatus !== 'pendente';
+  const isNonCompliant = currentStatus === 'nao_conforme' || currentStatus === 'parcial';
+  const requiresPlanoStep = isNonCompliant;
+  const planoStepDone = !!planoAcaoVinculado;
+  const evidenciasCount = formData.evidence_files.length;
+  const detalhesDone = !!formData.responsavel_avaliacao && !!formData.prazo_implementacao;
+
+  // CTA contextual no footer
+  const footerLabel = useMemo(() => {
+    if (saving) return 'Salvando...';
+    if (!isStatusDefined) return 'Salvar rascunho';
+    const allDone = isStatusDefined && (!requiresPlanoStep || planoStepDone) && detalhesDone;
+    if (allDone) return 'Concluir avaliação';
+    return 'Salvar avaliação';
+  }, [saving, isStatusDefined, requiresPlanoStep, planoStepDone, detalhesDone]);
+
+  // Sugestão automática do diagnóstico
+  const diagnosticSuggestion = useMemo(() => {
+    const answered = Object.entries(diagnosticAnswers).filter(([, v]) => v !== null);
+    if (answered.length === 0) return null;
+    let totalWeight = 0;
+    let weightedScore = 0;
+    answered.forEach(([idx, ans]) => {
+      const w = diagnosticQuestions[Number(idx)]?.peso || 1;
+      totalWeight += w;
+      if (ans === 'sim') weightedScore += w * 1;
+      else if (ans === 'parcial') weightedScore += w * 0.5;
+    });
+    const pct = totalWeight > 0 ? (weightedScore / totalWeight) * 100 : 0;
+    const suggested: ConformityStatus = pct >= 80 ? 'conforme' : pct >= 40 ? 'parcial' : 'nao_conforme';
+    const label = pct >= 80 ? 'Conforme' : pct >= 40 ? 'Parcial' : 'Não Conforme';
+    const color = pct >= 80 ? 'text-success' : pct >= 40 ? 'text-warning' : 'text-destructive';
+    return { pct: Math.round(pct), suggested, label, color };
+  }, [diagnosticAnswers, diagnosticQuestions]);
 
   return (
     <>
@@ -584,20 +731,40 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
         onOpenChange={onOpenChange}
         title={`${requirement.codigo} — ${requirement.titulo}`}
         icon={Shield}
-        size="xl"
+        size="2xl"
         noScroll
         onSubmit={handleSave}
-        submitLabel={saving ? 'Salvando...' : 'Salvar Detalhes'}
+        submitLabel={footerLabel}
         isSubmitting={saving}
         submitDisabled={loading}
       >
         <div className="flex flex-col h-full">
-          {(requirement.obrigatorio || (requirement.peso || 0) >= 3) && (
-            <div className="px-6 py-2 border-b flex items-center gap-2 flex-wrap">
-              {requirement.obrigatorio && <Badge variant="destructive" className="text-xs">Obrigatório</Badge>}
-              {(requirement.peso || 0) >= 3 && <Badge variant="outline" className="text-xs">Peso {requirement.peso}</Badge>}
+          {/* ====================================================== */}
+          {/* STATUS BAR — sempre visível, primeira ação do usuário  */}
+          {/* ====================================================== */}
+          <div className="px-6 py-3 border-b bg-muted/20">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
+                <StatusSegmentedControl
+                  value={currentStatus}
+                  onChange={handleStatusChange}
+                  disabled={savingStatus || loading}
+                />
+                {savingStatus && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              </div>
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap">
+                {requirement.obrigatorio && <Badge variant="destructive" className="text-[10px] h-5">Obrigatório</Badge>}
+                {(requirement.peso || 0) >= 1 && <span>Peso {requirement.peso}</span>}
+                {requirement.categoria && (
+                  <>
+                    <span className="text-border">·</span>
+                    <span>{requirement.categoria}</span>
+                  </>
+                )}
+              </div>
             </div>
-          )}
+          </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-16">
@@ -605,13 +772,14 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
             </div>
           ) : (
             <div className="flex flex-col md:flex-row min-h-0 flex-1">
-              {/* LEFT PANEL — Educational context */}
-              <ScrollArea className="md:w-[40%] border-r bg-muted/30 max-h-[60vh]">
+              {/* ============================================ */}
+              {/* LEFT PANEL — Apenas leitura/educação        */}
+              {/* ============================================ */}
+              <ScrollArea className="md:w-[42%] border-r bg-muted/20">
                 <div className="p-5 space-y-4">
-                  {/* Regenerate button */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <BookOpen className="h-4 w-4 text-primary" />
+                      <BookOpen className="h-4 w-4 text-primary" strokeWidth={1.5} />
                       <h4 className="text-sm font-semibold text-foreground">Orientação do Requisito</h4>
                     </div>
                     <Button
@@ -621,28 +789,26 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                       onClick={() => triggerGuidanceGeneration(true)}
                       disabled={generatingGuidance}
                     >
-                      <RefreshCw className={`h-3 w-3 mr-1 ${generatingGuidance ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={cn('h-3 w-3 mr-1', generatingGuidance && 'animate-spin')} strokeWidth={1.5} />
                       {generatingGuidance ? 'Gerando...' : 'Regenerar'}
                     </Button>
                   </div>
 
-                  {/* Loading state */}
                   {generatingGuidance && !guidanceText ? (
                     <GuidanceSkeleton />
                   ) : guidanceText ? (
                     <>
                       <MarkdownContent content={guidanceText} />
 
-                      {/* Evidence examples - rendered separately if present */}
                       {evidenciasText && (
-                        <div className="mt-4 pt-4 border-t border-border/50">
+                        <div className="mt-5 pt-5 border-t border-border/50">
                           <div className="flex items-center gap-1.5 mb-3">
                             <CheckCircle2 className="h-4 w-4 text-success" strokeWidth={1.5} />
                             <h4 className="text-sm font-bold text-foreground">Exemplos de Evidências Aceitas</h4>
                           </div>
                           <ul className="space-y-2">
                             {evidenciasText.split('\n').filter(l => l.trim()).map((ex, i) => (
-                              <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <li key={i} className="flex items-start gap-2 text-[13px] text-muted-foreground leading-6">
                                 <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0 mt-0.5" strokeWidth={1.5} />
                                 <span>{ex.replace(/^[-•*]\s*/, '').trim()}</span>
                               </li>
@@ -650,86 +816,14 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                           </ul>
                         </div>
                       )}
-
-                      {/* Diagnostic Questions Section */}
-                      {diagnosticQuestions.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-border/50">
-                          <div className="flex items-center gap-1.5 mb-3">
-                            <HelpCircle className="h-4 w-4 text-primary" />
-                            <h4 className="text-sm font-bold text-foreground">Diagnóstico Rápido</h4>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-3">
-                            Responda as perguntas abaixo para uma sugestão automática de status.
-                          </p>
-                          <div className="space-y-3">
-                            {diagnosticQuestions.map((q, idx) => {
-                              const answer = diagnosticAnswers[idx] || null;
-                              return (
-                                <div key={idx} className="p-3 rounded-lg bg-card border space-y-2">
-                                  <p className="text-sm text-foreground leading-relaxed">
-                                    {q.peso >= 2 && <Badge variant="outline" className="text-[10px] mr-1.5">Peso {q.peso}</Badge>}
-                                    {q.pergunta}
-                                  </p>
-                                  <div className="flex gap-2">
-                                    {(['sim', 'parcial', 'nao'] as const).map(opt => (
-                                      <Button
-                                        key={opt}
-                                        size="sm"
-                                        variant={answer === opt ? 'default' : 'outline'}
-                                        className={`text-xs h-7 px-3 ${
-                                          answer === opt && opt === 'sim' ? 'bg-success hover:bg-success/90 text-success-foreground' :
-                                          answer === opt && opt === 'parcial' ? 'bg-warning hover:bg-warning/90 text-warning-foreground' :
-                                          answer === opt && opt === 'nao' ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground' : ''
-                                        }`}
-                                        onClick={() => setDiagnosticAnswers(prev => ({ ...prev, [idx]: opt }))}
-                                      >
-                                        {opt === 'sim' ? 'Sim' : opt === 'parcial' ? 'Parcial' : 'Não'}
-                                      </Button>
-                                    ))}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-
-                          {/* Suggested status based on answers */}
-                          {Object.keys(diagnosticAnswers).length > 0 && (
-                            <div className="mt-3 p-3 rounded-lg bg-muted/50 border">
-                              <p className="text-xs font-medium text-foreground mb-1">Status sugerido:</p>
-                              {(() => {
-                                const answered = Object.entries(diagnosticAnswers).filter(([, v]) => v !== null);
-                                if (answered.length === 0) return <p className="text-xs text-muted-foreground">Responda ao menos uma pergunta.</p>;
-                                let totalWeight = 0;
-                                let weightedScore = 0;
-                                answered.forEach(([idx, ans]) => {
-                                  const w = diagnosticQuestions[Number(idx)]?.peso || 1;
-                                  totalWeight += w;
-                                  if (ans === 'sim') weightedScore += w * 1;
-                                  else if (ans === 'parcial') weightedScore += w * 0.5;
-                                });
-                                const pct = totalWeight > 0 ? (weightedScore / totalWeight) * 100 : 0;
-                                const suggested = pct >= 80 ? 'Conforme' : pct >= 40 ? 'Parcial' : 'Não Conforme';
-                                const color = pct >= 80 ? 'text-success' : pct >= 40 ? 'text-warning' : 'text-destructive';
-                                return (
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className={`${color} font-semibold`}>{suggested}</Badge>
-                                    <span className="text-xs text-muted-foreground">({Math.round(pct)}% de aderência)</span>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </>
                   ) : (
-                    /* Fallback: show basic description if no guidance and not generating */
                     <div className="space-y-3">
                       {requirement.descricao && (
-                        <p className="text-sm text-muted-foreground leading-relaxed">{requirement.descricao}</p>
+                        <p className="text-[13px] text-muted-foreground leading-7">{requirement.descricao}</p>
                       )}
                       <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-dashed">
-                        <Lightbulb className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                        <Lightbulb className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" strokeWidth={1.5} />
                         <p className="text-xs text-muted-foreground">
                           Clique em "Regenerar" para gerar orientações detalhadas para este requisito.
                         </p>
@@ -739,289 +833,405 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                 </div>
               </ScrollArea>
 
-              {/* RIGHT PANEL — Form & actions */}
-              <ScrollArea className="md:w-[60%] max-h-[60vh]">
-                <div className="p-5 space-y-1">
-                  {/* Always visible: Responsável + Prazo + Observações */}
-                  <div className="space-y-4 p-3 rounded-lg border bg-card">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="responsavel" className="text-xs">Responsável</Label>
-                        <Select
-                          value={formData.responsavel_avaliacao}
-                          onValueChange={(value) => setFormData(prev => ({ ...prev, responsavel_avaliacao: value }))}
+              {/* ============================================ */}
+              {/* RIGHT PANEL — Jornada numerada              */}
+              {/* ============================================ */}
+              <ScrollArea className="md:w-[58%]">
+                <div className="p-5 space-y-3">
+
+                  {/* ===== STEP 1: Avaliar Conformidade ===== */}
+                  <JourneyStep
+                    number={1}
+                    title="Avaliar Conformidade"
+                    description="Defina o status acima ou use o diagnóstico rápido"
+                    state={isStatusDefined ? 'complete' : 'active'}
+                    badge={
+                      isStatusDefined
+                        ? <Badge variant="success" className="text-[10px]">Definido</Badge>
+                        : <Badge variant="outline" className="text-[10px]">Pendente</Badge>
+                    }
+                  >
+                    {diagnosticQuestions.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-1.5">
+                          <HelpCircle className="h-3.5 w-3.5 text-primary" strokeWidth={1.5} />
+                          <p className="text-xs font-medium text-foreground">Diagnóstico Rápido</p>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          Responda às perguntas para receber uma sugestão de status.
+                        </p>
+                        <div className="space-y-2.5">
+                          {diagnosticQuestions.map((q, idx) => {
+                            const answer = diagnosticAnswers[idx] || null;
+                            return (
+                              <div key={idx} className="p-3 rounded-md bg-muted/40 border space-y-2">
+                                <p className="text-[13px] text-foreground leading-relaxed">
+                                  {q.peso >= 2 && <Badge variant="outline" className="text-[10px] mr-1.5">Peso {q.peso}</Badge>}
+                                  {q.pergunta}
+                                </p>
+                                <div className="flex gap-1.5">
+                                  {(['sim', 'parcial', 'nao'] as const).map(opt => (
+                                    <Button
+                                      key={opt}
+                                      size="sm"
+                                      variant={answer === opt ? 'default' : 'outline'}
+                                      className={cn(
+                                        'text-xs h-7 px-3',
+                                        answer === opt && opt === 'sim' && 'bg-success hover:bg-success/90 text-success-foreground border-success',
+                                        answer === opt && opt === 'parcial' && 'bg-warning hover:bg-warning/90 text-warning-foreground border-warning',
+                                        answer === opt && opt === 'nao' && 'bg-destructive hover:bg-destructive/90 text-destructive-foreground border-destructive',
+                                      )}
+                                      onClick={() => setDiagnosticAnswers(prev => ({ ...prev, [idx]: opt }))}
+                                    >
+                                      {opt === 'sim' ? 'Sim' : opt === 'parcial' ? 'Parcial' : 'Não'}
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {diagnosticSuggestion && (
+                          <div className="flex items-center justify-between gap-3 p-3 rounded-md bg-primary/5 border border-primary/20">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[11px] text-muted-foreground">Sugestão da IA:</span>
+                              <Badge variant="outline" className={cn('font-semibold', diagnosticSuggestion.color)}>
+                                {diagnosticSuggestion.label}
+                              </Badge>
+                              <span className="text-[11px] text-muted-foreground">({diagnosticSuggestion.pct}% aderência)</span>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="h-7 text-xs shrink-0"
+                              disabled={savingStatus || currentStatus === diagnosticSuggestion.suggested}
+                              onClick={() => handleStatusChange(diagnosticSuggestion.suggested)}
+                            >
+                              <Check className="h-3 w-3 mr-1" strokeWidth={2} />
+                              Aplicar
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2 p-3 rounded-md bg-muted/30 border border-dashed">
+                        <Lightbulb className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" strokeWidth={1.5} />
+                        <p className="text-[11px] text-muted-foreground">
+                          Use os botões de status no topo do diálogo para definir a conformidade deste requisito.
+                        </p>
+                      </div>
+                    )}
+                  </JourneyStep>
+
+                  {/* ===== STEP 2: Evidências ===== */}
+                  <JourneyStep
+                    number={2}
+                    title="Evidências"
+                    description="Anexe documentos ou gere com IA. Valide a aderência ao requisito."
+                    state={evidenciasCount > 0 ? 'complete' : (isStatusDefined ? 'active' : 'pending')}
+                    badge={
+                      evidenciasCount > 0
+                        ? <Badge variant="secondary" className="text-[10px]">{evidenciasCount} {evidenciasCount === 1 ? 'item' : 'itens'}</Badge>
+                        : <Badge variant="outline" className="text-[10px]">Vazio</Badge>
+                    }
+                  >
+                    <div className="space-y-3">
+                      {/* Hub de 3 ações */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="justify-start h-auto py-2"
+                          onClick={() => openDocGen({
+                            frameworkId,
+                            requirementContext: {
+                              requirementId: requirement.id,
+                              requirementCode: requirement.codigo,
+                              requirementTitle: requirement.titulo,
+                            },
+                          })}
                         >
-                          <SelectTrigger id="responsavel"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
-                          <SelectContent>
-                            {users.map(user => (
-                              <SelectItem key={user.user_id} value={user.user_id}>{user.nome}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          <Brain className="h-4 w-4 mr-2 text-primary shrink-0" strokeWidth={1.5} />
+                          <div className="text-left leading-tight">
+                            <div className="text-xs font-semibold">Gerar com IA</div>
+                            <div className="text-[10px] text-muted-foreground">Documento sob medida</div>
+                          </div>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="justify-start h-auto py-2"
+                          onClick={() => document.getElementById('file-upload')?.click()}
+                        >
+                          <Upload className="h-4 w-4 mr-2 shrink-0" strokeWidth={1.5} />
+                          <div className="text-left leading-tight">
+                            <div className="text-xs font-semibold">Anexar arquivo</div>
+                            <div className="text-[10px] text-muted-foreground">PDF, Word, imagem...</div>
+                          </div>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="justify-start h-auto py-2"
+                          onClick={() => { setLinkUrl(''); setLinkName(''); setLinkDialogOpen(true); }}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2 shrink-0" strokeWidth={1.5} />
+                          <div className="text-left leading-tight">
+                            <div className="text-xs font-semibold">Adicionar link</div>
+                            <div className="text-[10px] text-muted-foreground">URL externa</div>
+                          </div>
+                        </Button>
+                      </div>
+
+                      <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+                        <Sparkles className="h-3 w-3 mt-0.5 text-primary shrink-0" strokeWidth={1.5} />
+                        Após anexar, clique em <strong className="mx-0.5 text-foreground">Validar com IA</strong> para confirmar a aderência ao requisito.
+                      </p>
+
+                      {/* Drop zone */}
+                      <div
+                        className="relative border-2 border-dashed border-muted-foreground/25 rounded-md p-2 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                        onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+                        onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
+                          const files = e.dataTransfer.files;
+                          if (files.length > 0) {
+                            const input = document.getElementById('file-upload') as HTMLInputElement;
+                            if (input) { input.files = files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+                          }
+                        }}
+                        onClick={() => document.getElementById('file-upload')?.click()}
+                      >
+                        <p className="text-[11px] text-muted-foreground">{uploading ? 'Enviando...' : 'Ou arraste arquivos aqui'}</p>
+                      </div>
+                      <input id="file-upload" type="file" multiple className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt" />
+
+                      {formData.evidence_files.length > 0 && (
+                        <div className="border rounded-md p-2 space-y-1.5">
+                          {formData.evidence_files.map((file, index) => {
+                            const validation = file.url ? validationByUrl[file.url] : undefined;
+                            const isValidating = validatingUrl === file.url;
+                            const verdictColor =
+                              validation?.verdict === 'conforme' ? 'bg-success/10 text-success border-success/30' :
+                              validation?.verdict === 'parcial' ? 'bg-warning/10 text-warning border-warning/30' :
+                              validation?.verdict === 'nao_conforme' ? 'bg-destructive/10 text-destructive border-destructive/30' :
+                              'bg-muted text-muted-foreground border-border';
+                            const verdictLabel =
+                              validation?.verdict === 'conforme' ? 'Conforme' :
+                              validation?.verdict === 'parcial' ? 'Parcial' :
+                              validation?.verdict === 'nao_conforme' ? 'Não conforme' :
+                              validation?.verdict === 'indeterminado' ? 'Indeterminado' : '';
+                            return (
+                              <div key={index} className="rounded bg-muted/50 p-2 space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    {file.type === 'link' ? <ExternalLink className="h-3.5 w-3.5 text-info shrink-0" strokeWidth={1.5} /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={1.5} />}
+                                    {file.type === 'link' ? (
+                                      <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-info hover:underline truncate text-xs">{file.name}</a>
+                                    ) : (
+                                      <span className="truncate text-xs">{file.name}</span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {file.type !== 'link' && (
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-7 px-2 text-[11px]"
+                                              disabled={isValidating}
+                                              onClick={() => handleValidateEvidence(file)}
+                                            >
+                                              {isValidating ? (
+                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                              ) : (
+                                                <ScanSearch className="h-3 w-3 mr-1 text-primary" strokeWidth={1.5} />
+                                              )}
+                                              {isValidating ? 'Analisando...' : 'Validar com IA'}
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>A IA analisa o arquivo e diz se ele atende ao requisito.</TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    )}
+                                    <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleRemoveFile(index)}>
+                                      <X className="h-3 w-3" strokeWidth={1.5} />
+                                    </Button>
+                                  </div>
+                                </div>
+                                {validation && (
+                                  <div className={cn('rounded border px-2 py-1.5 text-[11px]', verdictColor)}>
+                                    <div className="flex items-center justify-between mb-0.5">
+                                      <span className="font-semibold">IA: {verdictLabel}</span>
+                                      <span className="font-mono">{validation.score}%</span>
+                                    </div>
+                                    <p className="leading-snug opacity-90">{validation.justification}</p>
+                                    {validation.missing && validation.missing.length > 0 && (
+                                      <ul className="mt-1 list-disc list-inside opacity-80">
+                                        {validation.missing.slice(0, 3).map((m, i) => <li key={i}>{m}</li>)}
+                                      </ul>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </JourneyStep>
+
+                  {/* ===== STEP 3: Plano de Ação (condicional) ===== */}
+                  {requiresPlanoStep && (
+                    <JourneyStep
+                      number={3}
+                      title="Plano de Ação"
+                      description="Requisito não conforme — defina como será adequado"
+                      state={planoStepDone ? 'complete' : 'active'}
+                      badge={
+                        planoAcaoVinculado
+                          ? getPlanoStatusBadge(planoAcaoVinculado.status)
+                          : <Badge variant="warning" className="text-[10px]">Sem plano</Badge>
+                      }
+                    >
+                      {planoAcaoVinculado ? (
+                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{planoAcaoVinculado.titulo}</p>
+                            {planoAcaoVinculado.prazo && (
+                              <span className="text-xs text-muted-foreground">Prazo: {new Date(planoAcaoVinculado.prazo).toLocaleDateString('pt-BR')}</span>
+                            )}
+                          </div>
+                          <Button size="sm" variant="ghost" onClick={() => window.open('/planos-acao', '_blank')}>
+                            <ExternalLink className="h-4 w-4" strokeWidth={1.5} />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-2 p-3 rounded-md bg-warning/10 border border-warning/30">
+                            <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" strokeWidth={1.5} />
+                            <p className="text-xs text-foreground">
+                              Como este requisito não está conforme, recomendamos criar um plano de ação para tratá-lo.
+                            </p>
+                          </div>
+                          <Button size="sm" variant="outline" onClick={() => setPlanoAcaoDialogOpen(true)}>
+                            <ClipboardList className="h-4 w-4 mr-1.5" strokeWidth={1.5} />
+                            Criar Plano de Ação
+                          </Button>
+                        </div>
+                      )}
+                      <div className="mt-3 space-y-1.5">
+                        <Label htmlFor="plano" className="text-xs">Notas do Plano (opcional)</Label>
+                        <Textarea
+                          id="plano" placeholder="Ações necessárias, marcos, dependências..."
+                          value={formData.plano_acao}
+                          onChange={(e) => setFormData(prev => ({ ...prev, plano_acao: e.target.value }))}
+                          rows={2}
+                        />
+                      </div>
+                    </JourneyStep>
+                  )}
+
+                  {/* ===== STEP 4: Detalhes da Avaliação ===== */}
+                  <JourneyStep
+                    number={requiresPlanoStep ? 4 : 3}
+                    title="Detalhes da Avaliação"
+                    description="Responsável, prazo e observações"
+                    state={detalhesDone ? 'complete' : 'pending'}
+                    badge={detalhesDone ? <Badge variant="success" className="text-[10px]">Completo</Badge> : <Badge variant="outline" className="text-[10px]">Opcional</Badge>}
+                  >
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="responsavel" className="text-xs">Responsável</Label>
+                          <Select
+                            value={formData.responsavel_avaliacao}
+                            onValueChange={(value) => setFormData(prev => ({ ...prev, responsavel_avaliacao: value }))}
+                          >
+                            <SelectTrigger id="responsavel"><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                            <SelectContent>
+                              {users.map(user => (
+                                <SelectItem key={user.user_id} value={user.user_id}>{user.nome}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="prazo" className="text-xs flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5" strokeWidth={1.5} />Prazo
+                          </Label>
+                          <input
+                            id="prazo" type="date"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            value={formData.prazo_implementacao}
+                            onChange={(e) => setFormData(prev => ({ ...prev, prazo_implementacao: e.target.value }))}
+                          />
+                        </div>
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="prazo" className="text-xs flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5" />Prazo
-                        </Label>
-                        <input
-                          id="prazo" type="date"
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          value={formData.prazo_implementacao}
-                          onChange={(e) => setFormData(prev => ({ ...prev, prazo_implementacao: e.target.value }))}
+                        <Label htmlFor="observacoes" className="text-xs">Observações</Label>
+                        <Textarea
+                          id="observacoes" placeholder="Informações adicionais, contexto, justificativas..."
+                          value={formData.observacoes}
+                          onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
+                          rows={2}
                         />
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="observacoes" className="text-xs">Observações</Label>
-                      <Textarea
-                        id="observacoes" placeholder="Informações adicionais, contexto, justificativas..."
-                        value={formData.observacoes}
-                        onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
-                        rows={2}
-                      />
+                  </JourneyStep>
+
+                  {/* ===== STEP 5: Vínculos & Histórico (colapsado) ===== */}
+                  <JourneyStep
+                    number={requiresPlanoStep ? 5 : 4}
+                    title="Vínculos & Histórico"
+                    description="Riscos relacionados e linha do tempo de alterações"
+                    state="pending"
+                    badge={formData.riscos_vinculados.length > 0 ? <Badge variant="secondary" className="text-[10px]">{formData.riscos_vinculados.length} risco(s)</Badge> : undefined}
+                    defaultOpen={false}
+                    collapsible
+                  >
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <AlertTriangle className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                          <p className="text-xs font-medium text-foreground">Riscos Vinculados</p>
+                        </div>
+                        <div className="max-h-40 overflow-y-auto space-y-1 border rounded-md p-2">
+                          {riscos.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-3">Nenhum risco cadastrado</p>
+                          ) : (
+                            riscos.map(risco => (
+                              <label key={risco.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1.5 rounded text-sm">
+                                <input type="checkbox" checked={formData.riscos_vinculados.includes(risco.id)} onChange={() => handleToggleRisco(risco.id)} className="rounded" />
+                                <span className="font-medium text-xs">{risco.nome}</span>
+                                <Badge variant="outline" className="ml-auto text-[10px]">{risco.nivel_risco_inicial}</Badge>
+                              </label>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <History className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                          <p className="text-xs font-medium text-foreground">Histórico de Alterações</p>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto border rounded-md">
+                          <AuditTrailTimeline requirementId={requirement.id} frameworkId={frameworkId} />
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </JourneyStep>
 
-                  {/* Collapsible sections */}
-                  <div className="divide-y rounded-lg border">
-                    {/* Plano de Ação */}
-                    {isNonCompliant && (
-                      <CollapsibleSection
-                        title="Plano de Ação"
-                        icon={ClipboardList}
-                        defaultOpen={isNonCompliant}
-                        badge={planoAcaoVinculado ? getPlanoStatusBadge(planoAcaoVinculado.status) : <Badge variant="outline" className="text-[10px]">Sem plano</Badge>}
-                      >
-                        {planoAcaoVinculado ? (
-                          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
-                            <div className="flex-1">
-                              <p className="text-sm font-medium">{planoAcaoVinculado.titulo}</p>
-                              {planoAcaoVinculado.prazo && (
-                                <span className="text-xs text-muted-foreground">Prazo: {new Date(planoAcaoVinculado.prazo).toLocaleDateString('pt-BR')}</span>
-                              )}
-                            </div>
-                            <Button size="sm" variant="ghost" onClick={() => window.open('/planos-acao', '_blank')}>
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            <p className="text-sm text-muted-foreground">
-                              <AlertTriangle className="h-4 w-4 inline mr-1 text-warning" strokeWidth={1.5} />
-                              Requisito não conforme. Crie um plano de ação.
-                            </p>
-                            <Button size="sm" variant="outline" onClick={() => setPlanoAcaoDialogOpen(true)}>
-                              <ClipboardList className="h-4 w-4 mr-1" />Criar Plano de Ação
-                            </Button>
-                          </div>
-                        )}
-                        <div className="mt-3 space-y-1.5">
-                          <Label htmlFor="plano" className="text-xs">Notas do Plano</Label>
-                          <Textarea
-                            id="plano" placeholder="Ações necessárias..."
-                            value={formData.plano_acao}
-                            onChange={(e) => setFormData(prev => ({ ...prev, plano_acao: e.target.value }))}
-                            rows={2}
-                          />
-                        </div>
-                      </CollapsibleSection>
-                    )}
-
-                    {/* Evidências — Hub unificado */}
-                    <CollapsibleSection
-                      title="Evidências"
-                      icon={FileText}
-                      defaultOpen
-                      badge={formData.evidence_files.length > 0 ? <Badge variant="secondary" className="text-[10px]">{formData.evidence_files.length}</Badge> : undefined}
-                    >
-                      <div className="space-y-3">
-                        {/* Hub de 3 ações */}
-                        <div className="rounded-lg border bg-muted/20 p-3">
-                          <p className="text-xs text-muted-foreground mb-2">Como você quer trabalhar a evidência deste requisito?</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="justify-start"
-                              onClick={() => openDocGen({
-                                frameworkId,
-                                requirementContext: {
-                                  requirementId: requirement.id,
-                                  requirementCode: requirement.codigo,
-                                  requirementTitle: requirement.titulo,
-                                },
-                              })}
-                            >
-                              <Brain className="h-4 w-4 mr-2 text-primary" />
-                              <div className="text-left leading-tight">
-                                <div className="text-xs font-semibold">Gerar com IA</div>
-                                <div className="text-[10px] text-muted-foreground">Criar documento sob medida</div>
-                              </div>
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="justify-start"
-                              onClick={() => document.getElementById('file-upload')?.click()}
-                            >
-                              <Upload className="h-4 w-4 mr-2" />
-                              <div className="text-left leading-tight">
-                                <div className="text-xs font-semibold">Anexar arquivo</div>
-                                <div className="text-[10px] text-muted-foreground">PDF, Word, imagem...</div>
-                              </div>
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="justify-start"
-                              onClick={() => {
-                                setLinkUrl('');
-                                setLinkName('');
-                                setLinkDialogOpen(true);
-                              }}
-                            >
-                              <ExternalLink className="h-4 w-4 mr-2" strokeWidth={1.5} />
-                              <div className="text-left leading-tight">
-                                <div className="text-xs font-semibold">Adicionar link</div>
-                                <div className="text-[10px] text-muted-foreground">URL externa</div>
-                              </div>
-                            </Button>
-                          </div>
-                          <p className="text-[11px] text-muted-foreground mt-2 flex items-start gap-1.5">
-                            <Sparkles className="h-3 w-3 mt-0.5 text-primary shrink-0" />
-                            Após anexar, clique em <strong className="mx-0.5">Validar com IA</strong> para a IA confirmar se a evidência atende a este requisito.
-                          </p>
-                        </div>
-
-                        {/* Drop zone discreta */}
-                        <div
-                          className="relative border-2 border-dashed border-muted-foreground/25 rounded-lg p-3 text-center hover:border-primary/50 transition-colors cursor-pointer"
-                          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
-                          onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
-                            const files = e.dataTransfer.files;
-                            if (files.length > 0) {
-                              const input = document.getElementById('file-upload') as HTMLInputElement;
-                              if (input) { input.files = files; input.dispatchEvent(new Event('change', { bubbles: true })); }
-                            }
-                          }}
-                          onClick={() => document.getElementById('file-upload')?.click()}
-                        >
-                          <p className="text-xs text-muted-foreground">{uploading ? 'Enviando...' : 'Ou arraste arquivos aqui'}</p>
-                        </div>
-                        <input id="file-upload" type="file" multiple className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt" />
-
-                        {formData.evidence_files.length > 0 && (
-                          <div className="border rounded-md p-2 space-y-1.5">
-                            {formData.evidence_files.map((file, index) => {
-                              const validation = file.url ? validationByUrl[file.url] : undefined;
-                              const isValidating = validatingUrl === file.url;
-                              const verdictColor =
-                                validation?.verdict === 'conforme' ? 'bg-success/10 text-success border-success/30' :
-                                validation?.verdict === 'parcial' ? 'bg-warning/10 text-warning border-warning/30' :
-                                validation?.verdict === 'nao_conforme' ? 'bg-destructive/10 text-destructive border-destructive/30' :
-                                'bg-muted text-muted-foreground border-border';
-                              const verdictLabel =
-                                validation?.verdict === 'conforme' ? 'Conforme' :
-                                validation?.verdict === 'parcial' ? 'Parcial' :
-                                validation?.verdict === 'nao_conforme' ? 'Não conforme' :
-                                validation?.verdict === 'indeterminado' ? 'Indeterminado' : '';
-                              return (
-                                <div key={index} className="rounded bg-muted/50 p-2 space-y-1.5">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                      {file.type === 'link' ? <ExternalLink className="h-3.5 w-3.5 text-info shrink-0" strokeWidth={1.5} /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={1.5} />}
-                                      {file.type === 'link' ? (
-                                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-info hover:underline truncate text-xs">{file.name}</a>
-                                      ) : (
-                                        <span className="truncate text-xs">{file.name}</span>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-1 shrink-0">
-                                      {file.type !== 'link' && (
-                                        <TooltipProvider>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 px-2 text-[11px]"
-                                                disabled={isValidating}
-                                                onClick={() => handleValidateEvidence(file)}
-                                              >
-                                                {isValidating ? (
-                                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                                ) : (
-                                                  <ScanSearch className="h-3 w-3 mr-1 text-primary" />
-                                                )}
-                                                {isValidating ? 'Analisando...' : 'Validar com IA'}
-                                              </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>A IA analisa o arquivo e diz se ele atende ao requisito.</TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                      )}
-                                      <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleRemoveFile(index)}>
-                                        <X className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  {validation && (
-                                    <div className={`rounded border px-2 py-1.5 text-[11px] ${verdictColor}`}>
-                                      <div className="flex items-center justify-between mb-0.5">
-                                        <span className="font-semibold">IA: {verdictLabel}</span>
-                                        <span className="font-mono">{validation.score}%</span>
-                                      </div>
-                                      <p className="leading-snug opacity-90">{validation.justification}</p>
-                                      {validation.missing && validation.missing.length > 0 && (
-                                        <ul className="mt-1 list-disc list-inside opacity-80">
-                                          {validation.missing.slice(0, 3).map((m, i) => <li key={i}>{m}</li>)}
-                                        </ul>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </CollapsibleSection>
-
-                    {/* Riscos Vinculados */}
-                    <CollapsibleSection
-                      title="Riscos Vinculados"
-                      icon={AlertTriangle}
-                      badge={formData.riscos_vinculados.length > 0 ? <Badge variant="secondary" className="text-[10px]">{formData.riscos_vinculados.length}</Badge> : undefined}
-                    >
-                      <div className="max-h-40 overflow-y-auto space-y-1">
-                        {riscos.length === 0 ? (
-                          <p className="text-sm text-muted-foreground text-center py-3">Nenhum risco cadastrado</p>
-                        ) : (
-                          riscos.map(risco => (
-                            <label key={risco.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1.5 rounded text-sm">
-                              <input type="checkbox" checked={formData.riscos_vinculados.includes(risco.id)} onChange={() => handleToggleRisco(risco.id)} className="rounded" />
-                              <span className="font-medium">{risco.nome}</span>
-                              <Badge variant="outline" className="ml-auto text-xs">{risco.nivel_risco_inicial}</Badge>
-                            </label>
-                          ))
-                        )}
-                      </div>
-                    </CollapsibleSection>
-
-                    {/* Histórico */}
-                    <CollapsibleSection title="Histórico de Alterações" icon={History}>
-                      <div className="max-h-48 overflow-y-auto">
-                        <AuditTrailTimeline requirementId={requirement.id} frameworkId={frameworkId} />
-                      </div>
-                    </CollapsibleSection>
-                  </div>
                 </div>
               </ScrollArea>
             </div>
