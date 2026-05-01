@@ -12,6 +12,8 @@ import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { toast } from 'sonner';
 import { exportSoAPDF } from './SoAExportPDF';
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveConformityTone } from '@/lib/status-tone';
 
 interface SoAItem {
   id: string;
@@ -31,12 +33,12 @@ interface SoATabProps {
   frameworkVersion: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-  conforme: { label: 'Conforme', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400', icon: CheckCircle2 },
-  parcial: { label: 'Parcial', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400', icon: MinusCircle },
-  nao_conforme: { label: 'Não Conforme', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', icon: XCircle },
-  nao_aplicavel: { label: 'N/A', color: 'bg-muted text-muted-foreground', icon: MinusCircle },
-  nao_avaliado: { label: 'Não Avaliado', color: 'bg-muted text-muted-foreground', icon: HelpCircle },
+const STATUS_LABELS: Record<string, string> = {
+  conforme: 'Conforme',
+  parcial: 'Parcial',
+  nao_conforme: 'Não Conforme',
+  nao_aplicavel: 'N/A',
+  nao_avaliado: 'Não Avaliado',
 };
 
 export function SoATab({ frameworkId, frameworkName, frameworkVersion }: SoATabProps) {
@@ -323,8 +325,7 @@ export function SoATab({ frameworkId, frameworkName, frameworkVersion }: SoATabP
               </TableHeader>
               <TableBody>
                 {filteredItems.map(item => {
-                  const statusCfg = STATUS_CONFIG[item.conformity_status] || STATUS_CONFIG.nao_avaliado;
-                  const StatusIcon = statusCfg.icon;
+                  const statusKey = item.conformity_status || 'nao_avaliado';
                   return (
                     <TableRow key={item.id} className={!item.aplicavel ? 'opacity-60' : ''}>
                       <TableCell className="font-mono text-xs">{item.codigo}</TableCell>
@@ -342,10 +343,9 @@ export function SoATab({ frameworkId, frameworkName, frameworkVersion }: SoATabP
                         </Button>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={`text-xs ${statusCfg.color}`}>
-                          <StatusIcon className="h-3 w-3 mr-1" strokeWidth={1.5}/>
-                          {statusCfg.label}
-                        </Badge>
+                        <StatusBadge size="sm" {...resolveConformityTone(statusKey)}>
+                          {STATUS_LABELS[statusKey] || statusKey}
+                        </StatusBadge>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {item.responsavel || '—'}
