@@ -49,7 +49,9 @@ const TONE_TEXT: Record<Tone, string> = {
 }
 
 const statCardVariants = cva(
-  "group relative overflow-hidden transition-all duration-300",
+  // self-start evita que o CSS Grid estique este card até a altura do mais alto da linha,
+  // garantindo que cada card colapse para a altura real do seu conteúdo (sem espaço vazio).
+  "group relative overflow-hidden transition-all duration-300 self-start",
   {
     variants: {
       variant: {
