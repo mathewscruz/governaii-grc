@@ -220,44 +220,71 @@ export function FrameworkHeroSummary({
               </div>
             </div>
 
-            <div className="h-[110px] -mx-1">
+            <div className="relative h-[110px] -mx-1">
               {historyLoading ? (
                 <Skeleton className="h-full w-full" />
               ) : history.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
-                  Sem histórico ainda — avalie requisitos para ver a evolução.
+                <div className="h-full flex flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-muted/20">
+                  <div className="flex items-center justify-center h-7 w-7 rounded-full bg-muted">
+                    <LineChartIcon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground text-center px-3 max-w-[260px] leading-snug">
+                    Sem histórico ainda — avalie requisitos para registrar a evolução.
+                  </p>
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={history} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="heroSpark" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <ReTooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--popover))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: 8,
-                        fontSize: 12,
-                        padding: '4px 8px',
-                      }}
-                      formatter={(v: number) => [
-                        config.scoreType === 'percentage' ? `${v.toFixed(0)}%` : v.toFixed(1),
-                        'Score',
-                      ]}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="score"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                      fill="url(#heroSpark)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={sparkData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="heroSpark" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <YAxis hide domain={yDomain} />
+                      <ReferenceLine
+                        y={goalY}
+                        stroke="hsl(var(--success))"
+                        strokeDasharray="3 3"
+                        strokeOpacity={0.4}
+                      />
+                      <ReTooltip
+                        cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }}
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--popover))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: 8,
+                          fontSize: 12,
+                          padding: '4px 8px',
+                          boxShadow: '0 4px 12px hsl(var(--foreground) / 0.08)',
+                        }}
+                        formatter={(v: number) => [
+                          isPercentage ? `${v.toFixed(0)}%` : v.toFixed(1),
+                          'Score',
+                        ]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="score"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={2.5}
+                        fill="url(#heroSpark)"
+                        dot={
+                          history.length <= 2
+                            ? { fill: 'hsl(var(--primary))', stroke: 'hsl(var(--background))', strokeWidth: 2, r: 4 }
+                            : false
+                        }
+                        activeDot={{ r: 5, fill: 'hsl(var(--primary))', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                  {history.length === 1 && (
+                    <div className="absolute top-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-muted/80 backdrop-blur-sm border border-border text-[10px] text-muted-foreground pointer-events-none whitespace-nowrap">
+                      Primeiro registro — avalie mais para ver tendência
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
