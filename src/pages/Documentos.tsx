@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
+import { useFocusRow } from '@/hooks/useFocusRow';
 import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, Clock, History, Activity, Shield, TrendingUp, RefreshCw, MoreHorizontal } from 'lucide-react';
 import { AkurisAIIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
@@ -74,6 +75,7 @@ interface Categoria {
 
 export default function Documentos() {
   const { t } = useLanguage();
+  useFocusRow();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useAuth();
@@ -665,7 +667,7 @@ export default function Documentos() {
                   </TableRow>
                 ) : (
                   paginatedDocumentos.map((documento) => (
-                    <TableRow key={documento.id}>
+                    <TableRow key={documento.id} data-focus-id={documento.id}>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium">{documento.nome}</div>

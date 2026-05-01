@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useFocusRow } from '@/hooks/useFocusRow';
 import { exportCSV } from '@/lib/csv-utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
@@ -86,6 +87,7 @@ function getRouteForModule(modulo: string): string {
 
 export default function PlanosAcao() {
   const { t } = useLanguage();
+  useFocusRow();
   const { user, profile } = useAuth();
   const empresaId = profile?.empresa_id;
   const queryClient = useQueryClient();
@@ -576,6 +578,7 @@ export default function PlanosAcao() {
                       {items.map((item: any) => (
                         <Card
                           key={`${item.modulo_origem || 'plano'}-${item.id}`}
+                          data-focus-id={item.id}
                           className="p-3 cursor-pointer hover:shadow-md transition-shadow"
                           onClick={() => {
                             if (item._isExternal) {

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useFocusRow } from '@/hooks/useFocusRow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -82,6 +83,7 @@ interface Fornecedor {
 
 export default function Contratos() {
   const { t } = useLanguage();
+  useFocusRow();
   const { empresaId } = useEmpresaId();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -497,7 +499,7 @@ export default function Contratos() {
                       </TableRow>
                     ) : (
                       paginatedContratos.map((contrato) => (
-                        <TableRow key={contrato.id}>
+                        <TableRow key={contrato.id} data-focus-id={contrato.id}>
                           <TableCell>
                             <div>
                               <div className="font-medium">{contrato.nome}</div>
