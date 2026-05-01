@@ -1,147 +1,74 @@
-
-# Refatoração do Popup de Detalhes do Requisito (Gap Analysis)
-
-## Problema atual
-
-O popup mistura informações de leitura (orientação) com formulário de avaliação sem hierarquia visual. O status de conformidade — informação central — não é editável dentro do popup, o "Diagnóstico Rápido" fica enterrado no painel esquerdo, e os blocos do painel direito têm peso visual igual, deixando o usuário sem saber por onde começar.
-
 ## Objetivo
 
-Transformar o popup em uma **jornada de avaliação numerada** onde o usuário: (1) entende o requisito, (2) responde diagnóstico ou define status manualmente, (3) anexa evidência (com IA), (4) cria plano de ação se não-conforme, (5) preenche detalhes administrativos. Status editável inline, sem precisar fechar e voltar à tabela.
+Resolver três problemas no popup `RequirementDetailDialog`:
+1. **Scroll quebrado** no painel direito (Avaliar Conformidade / Evidências / Plano de Ação) — usuário não consegue rolar até as evidências e plano.
+2. **Ícones genéricos de IA** (`Brain`, `Sparkles`, `ScanSearch`, `Lightbulb`) — substituir pelo nosso ícone proprietário com identidade Akuris.
+3. **Metadados redundantes** no header (`Obrigatório`, `Peso 2`, `Contexto`) — já aparecem na tabela e no badge "Peso N" interno do diagnóstico.
 
-## Mudanças no arquivo `RequirementDetailDialog.tsx`
+---
 
-### 1. Header reformulado (Status Bar no topo)
+## 1. Correção do scroll (crítico)
 
-Logo abaixo do título do dialog, adicionar uma **barra de status persistente** que substitui a tira atual de badges "Obrigatório / Peso 3":
+**Causa raiz:** dentro de `DialogShell` com `noScroll`, o conteúdo está em `<div className="flex flex-col h-full">`. Os dois `ScrollArea` filhos usam `md:w-[42%]` / `md:w-[58%]` mas o pai `flex flex-col md:flex-row min-h-0 flex-1` falta `overflow-hidden` consistente e os `ScrollArea` não declaram `h-full` — o Radix `ScrollArea` precisa de altura explícita para ativar a viewport interna.
 
-```text
-┌───────────────────────────────────────────────────────────────┐
-│ [Shield] 4.1 — Entendendo a organização e seu contexto    [X] │
-├───────────────────────────────────────────────────────────────┤
-│ Status:  [Conforme] [Parcial] [Não Conforme] [N/A]           │
-│           ↑ ativo (verde)                                     │
-│ Obrigatório · Peso 3 · Categoria: Contexto da Organização    │
-└───────────────────────────────────────────────────────────────┘
+**Correção:**
+- Adicionar `h-full` aos dois `<ScrollArea>` (esquerdo e direito).
+- Garantir que o wrapper `flex flex-col md:flex-row` tenha `overflow-hidden` para que o flex calcule a altura corretamente.
+- Em mobile (`flex-col`), ajustar para que cada painel tenha altura própria via `flex-1 min-h-0`.
+
+Resultado: barra de rolagem funcional no painel direito, permitindo acessar Steps 2 (Evidências), 3 (Plano de Ação), 4 (Detalhes) e 5 (Vínculos).
+
+---
+
+## 2. Ícone proprietário de IA Akuris
+
+**Estado atual:** ícones Lucide genéricos espalhados (`Brain` em "Gerar com IA", `Sparkles` em validação, `Lightbulb` em dicas, `ScanSearch` em validar).
+
+**Solução:** criar novo ícone proprietário `AkurisAIIcon` em `src/components/icons/modules/AkurisAIIcon.tsx`, seguindo o padrão dos demais módulos (`stroke 1.5`, viewBox 24x24, baseado em `_BaseModuleIcon`). Conceito visual: gema/diamante estilizado + nó central (referência sutil ao "A" de Akuris e ao spark de IA), sem clichês de robô/cérebro.
+
+**Aplicação no `RequirementDetailDialog.tsx`:**
+- Botão "Gerar com IA" (Step 2): `Brain` → `AkurisAIIcon`.
+- Linha de dica "Validar com IA": `Sparkles` → `AkurisAIIcon`.
+- Card de sugestão do diagnóstico (`Sugestão da IA`): adicionar `AkurisAIIcon` à esquerda do badge.
+- Botão "Validar com IA" (em cada evidência anexada): `ScanSearch` → `AkurisAIIcon`.
+- Manter `Lightbulb` apenas como ícone de "dica/empty state" não-IA (ou trocar por `IconInfo` da paleta semântica).
+
+Exportar no `src/components/icons/index.ts` para reuso futuro nos demais módulos com IA (DocGen, AkurIA, Riscos, Due Diligence).
+
+---
+
+## 3. Remoção de metadados redundantes do header
+
+**Estado atual no header do popup:**
+```
+STATUS [Conforme | Parcial | Não Conforme | N/A]    Obrigatório · Peso 2 · Contexto
 ```
 
-- 4 botões segmentados (success / warning / destructive / secondary) — clique muda o status imediatamente, salva no banco em background, atualiza a tabela ao fechar.
-- Linha secundária com Obrigatório, Peso, Categoria em texto pequeno.
-- Toast ao mudar: "Status atualizado para Conforme".
+**Análise:**
+- `Obrigatório` já aparece na coluna "Prioridade" da tabela (`getPriorityBadge`) — duplicado.
+- `Peso N` já aparece em cada pergunta do diagnóstico quando relevante (`{q.peso >= 2 && <Badge>Peso {q.peso}</Badge>}`) e na tabela.
+- `Contexto` (categoria do requisito) já está visível no filtro/agrupamento da tabela e no breadcrumb da página de detalhes do framework.
 
-### 2. Painel esquerdo — apenas leitura/educação
+**Decisão:** remover totalmente o bloco lateral de metadados do header do popup. O header fica focado no que importa: **título do requisito + barra de status**.
 
-Remover o "Diagnóstico Rápido" daqui (vai para o painel direito). Deixa só:
-- Orientação do Requisito (markdown da IA)
-- Exemplos de Evidências Aceitas
-- Botão Regenerar
-- Tipografia mais respirada: `text-[13px] leading-7` em parágrafos, espaçamento maior entre seções.
+Justificativa UX: o popup é a "tela de trabalho" do requisito — o usuário já chegou nele sabendo a categoria e a prioridade. Repetir essas informações polui o header e compete visualmente com a barra de status (que é a ação principal).
 
-Largura passa de `w-[40%]` para `w-[42%]` e dialog vai para `size="2xl"` (max-w-7xl) — dá ~1280px em telas grandes, espaço real para os dois painéis.
+---
 
-### 3. Painel direito — jornada numerada em 5 passos
+## Arquivos modificados
 
-Substituir a estrutura atual ("bloco fixo + divisor de colapsáveis") por **steps visualmente numerados**, cada um com indicador de completude:
+| Arquivo | Mudança |
+|---|---|
+| `src/components/icons/modules/AkurisAIIcon.tsx` | **Criar** — novo ícone proprietário de IA |
+| `src/components/icons/index.ts` | Exportar `AkurisAIIcon` |
+| `src/components/gap-analysis/dialogs/RequirementDetailDialog.tsx` | Corrigir scroll (`h-full` nos `ScrollArea` + `overflow-hidden` no wrapper); substituir `Brain`/`Sparkles`/`ScanSearch` por `AkurisAIIcon`; remover bloco de metadados (`Obrigatório`, `Peso N`, `Categoria`) do header |
 
-```text
-┌─ PAINEL DIREITO (w-[58%]) ──────────────────────────────────┐
-│                                                              │
-│ ① Avaliar Conformidade                          [✓ definido]│
-│   ▸ Diagnóstico Rápido (perguntas → status sugerido)        │
-│   ▸ Botão "Aplicar sugestão" preenche o status do header    │
-│                                                              │
-│ ② Evidências                                       [2 itens]│
-│   ▸ Hub: Gerar com IA · Anexar arquivo · Adicionar link     │
-│   ▸ Lista de evidências com Validar com IA                  │
-│                                                              │
-│ ③ Plano de Ação                  [condicional: se ≠ Conforme]│
-│   ▸ Card do plano vinculado OU botão Criar Plano            │
-│   ▸ Notas do Plano (textarea)                               │
-│                                                              │
-│ ④ Detalhes da Avaliação                                     │
-│   ▸ Responsável (UserSelect) · Prazo (date)                 │
-│   ▸ Observações (textarea)                                  │
-│                                                              │
-│ ⑤ Vínculos & Histórico                              [colap.]│
-│   ▸ Riscos vinculados                                        │
-│   ▸ Histórico de alterações                                  │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-```
+Nenhuma mudança em banco, edge functions ou RLS.
 
-Cada step é um `<section>` com:
-- Número em círculo colorido (success se completo, primary se atual, muted se vazio)
-- Título em `font-semibold`
-- Badge à direita indicando estado ("✓ definido", "2 itens", "Sem plano", "Pendente")
-- Conteúdo expandido por padrão nos steps 1-4; step 5 colapsado.
-
-Lógica de estado:
-- Step 1 ✓ quando `conformity_status` ≠ `nao_avaliado`
-- Step 2 ✓ quando `evidence_files.length > 0`
-- Step 3 ✓ quando há plano vinculado OU status = Conforme/N-A (não obrigatório)
-- Step 4 ✓ quando responsável + prazo preenchidos
-
-### 4. Reposicionamento do Diagnóstico Rápido
-
-Move-se do painel esquerdo para dentro do **Step 1 (Avaliar Conformidade)** no painel direito. Quando o usuário responde as perguntas:
-- O card "Status sugerido" mostra a sugestão
-- Botão **"Aplicar como status"** faz set do status na barra do topo automaticamente
-- Mantém-se a lógica atual de cálculo ponderado
-
-### 5. Plano de Ação — só aparece quando faz sentido
-
-Hoje o `Plano de Ação` aparece como collapsible dentro do divisor. Novo comportamento:
-- Step 3 fica oculto se status = `conforme` ou `nao_aplicavel`
-- Aparece com badge `warning` se status = `parcial` ou `nao_conforme` e ainda não há plano
-- Textarea "Notas do Plano" vira sub-campo do step (não compete com Observações)
-
-### 6. Footer contextual
-
-CTA do footer muda de label conforme situação:
-- Status vazio → "Salvar rascunho" (variant outline)
-- Status definido + step 4 incompleto → "Salvar avaliação"
-- Tudo preenchido → "Concluir avaliação" (variant default, success-tinted)
-
-Botão Cancelar permanece como ghost à esquerda.
-
-### 7. Persistência do status inline
-
-Adicionar handler `handleStatusChange(newStatus)` que faz upsert imediato em `gap_analysis_evaluations` com `.eq('empresa_id', empresaId)` (regra Akuris). Reutiliza a lógica que já existe na `GenericRequirementsTable` (`handleStatusChange` em linha ~189). Após sucesso:
-- Atualiza `requirement.conformity_status` local
-- Dispara `onClose`-like callback opcional `onStatusChange(newStatus)` para a tabela atualizar sem refetch full
-- Toast Sonner com a mudança
-
-## Detalhes técnicos
-
-**Componentes novos (inline no arquivo, não criar arquivos novos)**:
-- `<StatusSegmentedControl value, onChange, disabled>` — 4 botões com tokens success/warning/destructive/secondary
-- `<JourneyStep number, title, status, badge, defaultOpen, children>` — wrapper visual numerado
-
-**Tokens usados** (do `gap-analysis-tokens.ts` já existente):
-- `STATUS_BADGE_VARIANT`, `STATUS_LABEL`, `STATUS_TEXT_CLASS`
-- Stroke 1.5 mantido em todos os ícones (assinatura Akuris)
-
-**Mudanças de tamanho**:
-- `size="xl"` → `size="2xl"` no `DialogShell`
-- Painel esquerdo: `md:w-[42%]`, painel direito: `md:w-[58%]`
-- `max-h-[60vh]` removido das ScrollAreas (DialogShell já gerencia altura via `max-h-[92vh]`)
-
-**Não muda**:
-- Edge function `analyze-evidence-against-requirement`
-- Edge function `populate-requirement-guidance`
-- Schema do banco
-- Lógica de scoring
-- DocGen unificado (`useDocGen`)
-
-**Compatibilidade**:
-- Props do componente permanecem as mesmas (`open`, `onOpenChange`, `requirement`, `frameworkId`, `onClose`)
-- Caller (`GenericRequirementsTable`) não precisa de mudanças, exceto adicionar prop opcional `onStatusChange` para refletir mudanças inline sem refetch
+---
 
 ## Resultado esperado
 
-- Status visível e editável em 1 clique no topo
-- Fluxo natural top-down: ler → avaliar → evidenciar → planejar → detalhar
-- Diagnóstico Rápido posicionado onde gera valor (decisão de status)
-- Plano de Ação só ocupa espaço quando relevante
-- 30% mais espaço útil com dialog 2xl
-- CTA do footer comunica o que vai acontecer
+- Painel direito do popup rola até o final, expondo Evidências e Plano de Ação.
+- Ações de IA passam a ter um ícone único e proprietário (Akuris), reforçando a identidade visual em todo o sistema.
+- Header do popup fica mais limpo, focado em **título + status**, sem redundância com a tabela.

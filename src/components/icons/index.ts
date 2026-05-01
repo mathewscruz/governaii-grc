@@ -27,6 +27,9 @@ export { DueDiligenceIcon } from './modules/DueDiligenceIcon';
 export { DocumentosIcon } from './modules/DocumentosIcon';
 export { DenunciasIcon } from './modules/DenunciasIcon';
 
+// === Marca proprietária para ações de IA (substitui Brain/Sparkles/Wand2/ScanSearch) ===
+export { AkurisAIIcon } from './modules/AkurisAIIcon';
+
 // === Catálogo semântico — ações genéricas (re-export Lucide unificado) ===
 // Uma escolha por metáfora. Use estes nomes em vez das variantes Lucide.
 export {

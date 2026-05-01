@@ -11,7 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
-import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw, HelpCircle, Building2, Settings, FileCheck, CheckSquare, Shield, Target, Sparkles, Brain, ScanSearch, Check, type LucideIcon } from "lucide-react";
+import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw, HelpCircle, Building2, Settings, FileCheck, CheckSquare, Shield, Target, Check, type LucideIcon } from "lucide-react";
+import { AkurisAIIcon } from "@/components/icons";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -743,26 +744,14 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
           {/* STATUS BAR — sempre visível, primeira ação do usuário  */}
           {/* ====================================================== */}
           <div className="px-6 py-3 border-b bg-muted/20">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
-                <StatusSegmentedControl
-                  value={currentStatus}
-                  onChange={handleStatusChange}
-                  disabled={savingStatus || loading}
-                />
-                {savingStatus && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-              </div>
-              <div className="flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap">
-                {requirement.obrigatorio && <Badge variant="destructive" className="text-[10px] h-5">Obrigatório</Badge>}
-                {(requirement.peso || 0) >= 1 && <span>Peso {requirement.peso}</span>}
-                {requirement.categoria && (
-                  <>
-                    <span className="text-border">·</span>
-                    <span>{requirement.categoria}</span>
-                  </>
-                )}
-              </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
+              <StatusSegmentedControl
+                value={currentStatus}
+                onChange={handleStatusChange}
+                disabled={savingStatus || loading}
+              />
+              {savingStatus && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
             </div>
           </div>
 
@@ -771,11 +760,11 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="flex flex-col md:flex-row min-h-0 flex-1">
+            <div className="flex flex-col md:flex-row min-h-0 flex-1 overflow-hidden">
               {/* ============================================ */}
               {/* LEFT PANEL — Apenas leitura/educação        */}
               {/* ============================================ */}
-              <ScrollArea className="md:w-[42%] border-r bg-muted/20">
+              <ScrollArea className="h-full md:w-[42%] border-r bg-muted/20 flex-1 md:flex-none min-h-0">
                 <div className="p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
@@ -836,7 +825,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
               {/* ============================================ */}
               {/* RIGHT PANEL — Jornada numerada              */}
               {/* ============================================ */}
-              <ScrollArea className="md:w-[58%]">
+              <ScrollArea className="h-full md:w-[58%] flex-1 md:flex-none min-h-0">
                 <div className="p-5 space-y-3">
 
                   {/* ===== STEP 1: Avaliar Conformidade ===== */}
@@ -953,7 +942,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                             },
                           })}
                         >
-                          <Brain className="h-4 w-4 mr-2 text-primary shrink-0" strokeWidth={1.5} />
+                          <AkurisAIIcon size={16} className="mr-2 text-primary shrink-0" />
                           <div className="text-left leading-tight">
                             <div className="text-xs font-semibold">Gerar com IA</div>
                             <div className="text-[10px] text-muted-foreground">Documento sob medida</div>
@@ -988,7 +977,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                       </div>
 
                       <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
-                        <Sparkles className="h-3 w-3 mt-0.5 text-primary shrink-0" strokeWidth={1.5} />
+                        <AkurisAIIcon size={12} className="mt-0.5 text-primary shrink-0" />
                         Após anexar, clique em <strong className="mx-0.5 text-foreground">Validar com IA</strong> para confirmar a aderência ao requisito.
                       </p>
 
@@ -1054,7 +1043,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                                               {isValidating ? (
                                                 <Loader2 className="h-3 w-3 animate-spin" />
                                               ) : (
-                                                <ScanSearch className="h-3 w-3 mr-1 text-primary" strokeWidth={1.5} />
+                                                <AkurisAIIcon size={12} className="mr-1 text-primary" />
                                               )}
                                               {isValidating ? 'Analisando...' : 'Validar com IA'}
                                             </Button>
