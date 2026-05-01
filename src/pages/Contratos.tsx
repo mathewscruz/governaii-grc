@@ -341,8 +341,11 @@ export default function Contratos() {
             title="Total de Contratos"
             value={statsContratos?.total || 0}
             description={`${statsContratos?.ativos || 0} ativos`}
-            icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+            icon={<FileText />}
             loading={!statsContratos}
+            drillDown="contratos"
+            showAccent
+            emptyHint="Cadastre contratos para acompanhar vencimentos."
           />
 
           <StatCard
@@ -353,7 +356,7 @@ export default function Contratos() {
               notation: 'compact'
             }).format(statsContratos?.valorTotal || 0)}
             description="Valor em contratos ativos"
-            icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
+            icon={<DollarSign />}
             variant="success"
             loading={!statsContratos}
           />
@@ -362,16 +365,17 @@ export default function Contratos() {
             title="Vencimentos"
             value={statsContratos?.vencendo30Dias || 0}
             description="Próximos 30 dias"
-            icon={<AlertCircle className="h-4 w-4 text-muted-foreground" />}
+            icon={<AlertCircle />}
             variant={statsContratos?.vencendo30Dias ? "warning" : "default"}
             loading={!statsContratos}
+            drillDown="contratos"
           />
 
           <StatCard
             title="Renovação Automática"
             value={`${statsContratos?.total ? Math.round((statsContratos?.renovacaoAutomatica / statsContratos?.total) * 100) : 0}%`}
             description={`${statsContratos?.renovacaoAutomatica || 0} de ${statsContratos?.total || 0}`}
-            icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
+            icon={<TrendingUp />}
             variant="info"
             loading={!statsContratos}
           />

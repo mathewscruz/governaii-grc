@@ -434,35 +434,41 @@ export default function Documentos() {
             title="Total de Documentos"
             value={statsDocumentos?.total || 0}
             description={`${statsDocumentos?.ativos || 0} ativos`}
-            icon={<FileText className="h-4 w-4" />}
+            icon={<FileText />}
             loading={!statsDocumentos}
+            drillDown="documentos"
+            showAccent
+            emptyHint="Cadastre políticas e procedimentos para começar."
           />
 
           <StatCard
             title="Aprovados"
             value={statsDocumentos?.aprovados || 0}
             description={`${statsDocumentos?.pendentesAprovacao || 0} pendentes`}
-            icon={<CheckCircle className="h-4 w-4" />}
+            icon={<CheckCircle />}
             variant="success"
             loading={!statsDocumentos}
+            drillDown="documentos"
           />
 
           <StatCard
             title="Vencendo em 30 dias"
             value={statsDocumentos?.vencendo30Dias || 0}
             description={`${statsDocumentos?.vencidos || 0} já vencidos`}
-            icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+            icon={<Clock />}
             variant={statsDocumentos?.vencendo30Dias ? "warning" : "default"}
             loading={!statsDocumentos}
+            drillDown="documentos"
           />
 
           <StatCard
             title="Confidenciais"
             value={statsDocumentos?.confidenciais || 0}
             description="Acesso restrito"
-            icon={<Shield className="h-4 w-4 text-muted-foreground" />}
+            icon={<Shield />}
             variant="info"
             loading={!statsDocumentos}
+            drillDown="documentos"
           />
         </div>
 

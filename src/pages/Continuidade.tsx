@@ -189,11 +189,11 @@ export default function Continuidade() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <StatCard title="Total de Planos" value={stats?.total ?? 0} icon={<Shield className="h-5 w-5" />} variant="primary" loading={statsLoading} />
-        <StatCard title="Planos Ativos" value={stats?.ativos ?? 0} icon={<FileCheck className="h-5 w-5" />} variant="success" loading={statsLoading} />
-        <StatCard title="Em Revisão" value={stats?.emRevisao ?? 0} icon={<Clock className="h-5 w-5" />} variant="warning" loading={statsLoading} />
-        <StatCard title="Testes Realizados" value={stats?.testesRealizados ?? 0} icon={<TestTube className="h-5 w-5" />} variant="info" loading={statsLoading} />
-        <StatCard title="Tarefas Pendentes" value={stats?.tarefasPendentes ?? 0} icon={<ListTodo className="h-5 w-5" />} variant="destructive" loading={statsLoading} />
+        <StatCard title="Total de Planos" value={stats?.total ?? 0} icon={<Shield />} variant="primary" loading={statsLoading} drillDown="continuidade" showAccent emptyHint="Cadastre o primeiro plano de continuidade." />
+        <StatCard title="Planos Ativos" value={stats?.ativos ?? 0} icon={<FileCheck />} variant="success" loading={statsLoading} drillDown="continuidade" />
+        <StatCard title="Em Revisão" value={stats?.emRevisao ?? 0} icon={<Clock />} variant="warning" loading={statsLoading} drillDown="continuidade" />
+        <StatCard title="Testes Realizados" value={stats?.testesRealizados ?? 0} icon={<TestTube />} variant="info" loading={statsLoading} />
+        <StatCard title="Tarefas Pendentes" value={stats?.tarefasPendentes ?? 0} icon={<ListTodo />} variant="destructive" loading={statsLoading} drillDown="planos" />
       </div>
 
       {/* Insights Executivos */}

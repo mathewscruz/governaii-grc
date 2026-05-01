@@ -480,11 +480,24 @@ export default function PlanosAcao() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <StatCard title="Total" value={stats.total} icon={<ListTodo className="h-5 w-5" />} variant="primary" />
-        <StatCard title="Pendentes" value={stats.pendentes} icon={<Clock className="h-5 w-5" />} variant="warning" />
-        <StatCard title="Em Andamento" value={stats.emAndamento} icon={<Target className="h-5 w-5" />} variant="info" />
-        <StatCard title="Concluídos" value={stats.concluidos} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" />
-        <StatCard title="Atrasados" value={stats.atrasados} icon={<AlertTriangle className="h-5 w-5" />} variant="destructive" />
+        <StatCard
+          title="Total"
+          value={stats.total}
+          icon={<ListTodo />}
+          variant="primary"
+          drillDown="planos"
+          showAccent
+          segments={[
+            { label: 'pendentes', value: stats.pendentes, tone: 'warning' },
+            { label: 'em andamento', value: stats.emAndamento, tone: 'info' },
+            { label: 'concluídos', value: stats.concluidos, tone: 'success' },
+          ]}
+          emptyHint="Crie planos de ação a partir de riscos ou auditorias."
+        />
+        <StatCard title="Pendentes" value={stats.pendentes} icon={<Clock />} variant="warning" drillDown="planos" />
+        <StatCard title="Em Andamento" value={stats.emAndamento} icon={<Target />} variant="info" drillDown="planos" />
+        <StatCard title="Concluídos" value={stats.concluidos} icon={<CheckCircle2 />} variant="success" />
+        <StatCard title="Atrasados" value={stats.atrasados} icon={<AlertTriangle />} variant="destructive" drillDown="planos" />
       </div>
 
       {/* Tabs */}

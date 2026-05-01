@@ -522,39 +522,43 @@ export default function Privacidade() {
           title="Total de Dados"
           value={stats.totalDados}
           description="Tipos catalogados"
-          icon={<Database className="h-4 w-4" />}
+          icon={<Database />}
+          showAccent
+          emptyHint="Cadastre o catálogo de dados pessoais."
         />
         <StatCard
           title="Dados Sensíveis"
           value={stats.dadosSensiveis}
           description="Requerem proteção especial"
-          icon={<AlertTriangle className="h-4 w-4" />}
+          icon={<AlertTriangle />}
           variant="warning"
         />
         <StatCard
           title="Mapeamentos"
           value={stats.mapeamentos}
           description="Dados x Ativos"
-          icon={<Database className="h-4 w-4" />}
+          icon={<Database />}
         />
         <StatCard
           title="Solicitações Pendentes"
           value={stats.solicitacoesPendentes}
           description="De titulares"
-          icon={<Users className="h-4 w-4" />}
+          icon={<Users />}
+          drillDown="privacidade"
         />
         <StatCard
           title="Fora do Prazo LGPD"
           value={solicitacoesForaPrazo}
           description="Excederam 15 dias"
-          icon={<Clock className="h-4 w-4" />}
+          icon={<Clock />}
           variant={solicitacoesForaPrazo > 0 ? "destructive" : "default"}
+          drillDown="privacidade"
         />
         <StatCard
           title="Incidentes Privacidade"
           value={incidentesPrivacidade}
           description={incidentesPrivacidade > 0 ? "Em aberto" : "Nenhum ativo"}
-          icon={<ShieldAlert className="h-4 w-4" />}
+          icon={<ShieldAlert />}
           variant={incidentesPrivacidade > 0 ? "warning" : "default"}
           onClick={() => navigate('/incidentes')}
         />
