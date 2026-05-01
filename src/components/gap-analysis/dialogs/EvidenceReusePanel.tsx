@@ -33,9 +33,9 @@ interface SuggestionRow {
 
 function scoreBadge(score: number | null | undefined) {
   if (score == null) return null;
-  if (score >= 0.8) return <StatusBadge tone="success" size="sm">Alta aderência · {Math.round(score * 100)}%</StatusBadge>;
-  if (score >= 0.6) return <StatusBadge tone="warning" size="sm">Possível · {Math.round(score * 100)}%</StatusBadge>;
-  return <StatusBadge tone="neutral" size="sm">{Math.round(score * 100)}%</StatusBadge>;
+  if (score >= 0.8) return <StatusBadge tone="success" size={32}>Alta aderência · {Math.round(score * 100)}%</StatusBadge>;
+  if (score >= 0.6) return <StatusBadge tone="warning" size={32}>Possível · {Math.round(score * 100)}%</StatusBadge>;
+  return <StatusBadge tone="neutral" size={32}>{Math.round(score * 100)}%</StatusBadge>;
 }
 
 export function EvidenceReusePanel({ requirementId, frameworkId, evaluationId, onLinked }: Props) {
@@ -122,7 +122,7 @@ export function EvidenceReusePanel({ requirementId, frameworkId, evaluationId, o
 
           <TabsContent value="sugestoes" className="mt-3">
             {loadingSug ? (
-              <div className="py-6 flex justify-center"><AkurisPulse size="sm" /></div>
+              <div className="py-6 flex justify-center"><AkurisPulse size={32} /></div>
             ) : suggestions.length === 0 ? (
               <div className="rounded-md border border-dashed border-border/60 bg-background/40 px-4 py-6 text-center text-xs text-muted-foreground">
                 Nenhuma sugestão da IA para este requisito ainda. Faça upload de uma evidência ou rode "Sugerir reaproveitamento" na Biblioteca.
@@ -145,10 +145,10 @@ export function EvidenceReusePanel({ requirementId, frameworkId, evaluationId, o
                         {scoreBadge(s.ia_score)}
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button size="sm" variant="default" onClick={() => handleAcceptSuggestion(s.id)} className="gap-1">
+                        <Button size={32} variant="default" onClick={() => handleAcceptSuggestion(s.id)} className="gap-1">
                           <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={1.5} /> Vincular
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleDismiss(s.id)} className="gap-1 text-muted-foreground">
+                        <Button size={32} variant="ghost" onClick={() => handleDismiss(s.id)} className="gap-1 text-muted-foreground">
                           <X className="h-3.5 w-3.5" strokeWidth={1.5} /> Ignorar
                         </Button>
                       </div>
@@ -170,7 +170,7 @@ export function EvidenceReusePanel({ requirementId, frameworkId, evaluationId, o
               />
             </div>
             {lib.loading ? (
-              <div className="py-6 flex justify-center"><AkurisPulse size="sm" /></div>
+              <div className="py-6 flex justify-center"><AkurisPulse size={32} /></div>
             ) : filteredLibrary.length === 0 ? (
               <div className="rounded-md border border-dashed border-border/60 bg-background/40 px-4 py-6 text-center text-xs text-muted-foreground">
                 {lib.items.length === 0
@@ -203,7 +203,7 @@ export function EvidenceReusePanel({ requirementId, frameworkId, evaluationId, o
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button size="sm" variant="outline" className="gap-1" onClick={() => handleManualLink(ev)}>
+                            <Button size={32} variant="outline" className="gap-1" onClick={() => handleManualLink(ev)}>
                               <Link2 className="h-3.5 w-3.5" strokeWidth={1.5} /> Vincular
                             </Button>
                           </TooltipTrigger>
