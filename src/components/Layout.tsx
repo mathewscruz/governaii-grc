@@ -25,7 +25,7 @@ import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import { prefetchAllRoutes } from '@/lib/route-prefetch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { differenceInDays, parseISO } from 'date-fns';
-import { AlertTriangle, Lock, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, Lock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import akurisLogo from '@/assets/akuris-logo.png';
@@ -176,29 +176,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <SidebarTrigger />
               )}
 
-              {/* Back button - visible when not on dashboard */}
-              {location.pathname !== '/dashboard' && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 flex-shrink-0" 
-                      onClick={() => {
-                        if (window.history.length > 2) {
-                          navigate(-1);
-                        } else {
-                          navigate('/dashboard');
-                        }
-                      }}
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t('layout.backTooltip')}</TooltipContent>
-                </Tooltip>
-              )}
-              
               <Breadcrumb className="hidden sm:block">
                 <BreadcrumbList>
                   {breadcrumbs.map((breadcrumb, index) => (

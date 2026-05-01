@@ -5,14 +5,12 @@ import {
   AlertTriangle, 
   FileCheck, 
   Lock, 
-  CheckSquare, 
   Settings,
   ChevronDown,
   Database,
   FileText,
   Handshake,
   BookOpen,
-  Users,
   AlertCircle,
   HardDrive,
   MessageSquare,
@@ -23,10 +21,15 @@ import {
   Server,
   FileKey,
   KeyRound,
+  Key,
   ListTodo,
   FileBarChart,
   GraduationCap,
-  ShieldAlert
+  ShieldCheck,
+  UserCheck,
+  UserCog,
+  BadgeCheck,
+  LifeBuoy
 } from 'lucide-react';
 import {
   RiscosIcon,
@@ -96,7 +99,7 @@ const getMenuSections = (t: (key: string) => string): MenuSection[] => [
         icon: RiscosIcon,
         subItems: [
           { title: t('sidebar.risks'), url: '/riscos', icon: RiscosIcon, moduleName: 'riscos' },
-          { title: t('sidebar.riskAcceptance'), url: '/riscos/aceite', icon: CheckSquare, moduleName: 'riscos' },
+          { title: t('sidebar.riskAcceptance'), url: '/riscos/aceite', icon: ShieldCheck, moduleName: 'riscos' },
         ],
       },
       {
@@ -112,9 +115,9 @@ const getMenuSections = (t: (key: string) => string): MenuSection[] => [
         title: t('sidebar.assetManagement'),
         icon: AtivosIcon,
         subItems: [
-          { title: t('sidebar.assets'), url: '/ativos', icon: AtivosIcon, moduleName: 'ativos' },
+          { title: t('sidebar.assets'), url: '/ativos', icon: HardDrive, moduleName: 'ativos' },
           { title: t('sidebar.licenses'), url: '/ativos/licencas', icon: FileKey, moduleName: 'ativos' },
-          { title: t('sidebar.keys'), url: '/ativos/chaves', icon: KeyRound, moduleName: 'ativos' },
+          { title: t('sidebar.keys'), url: '/ativos/chaves', icon: Key, moduleName: 'ativos' },
         ],
       },
     ],
@@ -130,20 +133,20 @@ const getMenuSections = (t: (key: string) => string): MenuSection[] => [
         title: t('sidebar.security'),
         icon: Lock,
         subItems: [
-          { title: t('sidebar.privilegedAccounts'), url: '/contas-privilegiadas', icon: Users, moduleName: 'contas-privilegiadas' },
-          { title: t('sidebar.accessReview'), url: '/revisao-acessos', icon: CheckSquare, moduleName: 'contas-privilegiadas' },
+          { title: t('sidebar.privilegedAccounts'), url: '/contas-privilegiadas', icon: UserCog, moduleName: 'contas-privilegiadas' },
+          { title: t('sidebar.accessReview'), url: '/revisao-acessos', icon: UserCheck, moduleName: 'contas-privilegiadas' },
           { title: t('sidebar.incidents'), url: '/incidentes', icon: IncidentesIcon, moduleName: 'incidentes' },
         ],
       },
       {
         title: t('sidebar.compliance'),
-        icon: CheckSquare,
+        icon: BadgeCheck,
         subItems: [
           { title: t('sidebar.dueDiligence'), url: '/due-diligence', icon: DueDiligenceIcon, moduleName: 'due-diligence' },
           { title: t('sidebar.whistleblowing'), url: '/denuncia', icon: DenunciasIcon, moduleName: 'denuncia' },
         ],
       },
-      { title: t('sidebar.businessContinuity'), url: '/continuidade', icon: ShieldAlert, moduleName: 'continuidade' },
+      { title: t('sidebar.businessContinuity'), url: '/continuidade', icon: LifeBuoy, moduleName: 'continuidade' },
     ],
   },
   {

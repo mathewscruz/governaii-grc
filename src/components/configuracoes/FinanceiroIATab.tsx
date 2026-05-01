@@ -9,7 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { DollarSign, TrendingUp, TrendingDown, BarChart3, Sparkles, Building2, AlertTriangle, Loader2, Cpu } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, BarChart3, Building2, AlertTriangle, Loader2, Cpu } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 // --- Constants: AI models, pricing, and function mapping ---
@@ -388,7 +389,7 @@ export function FinanceiroIATab() {
           title="Custo Estimado IA"
           value={`R$ ${totals.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           description={`${totals.totalReqs} req · média R$ ${avgCostPerReq.toFixed(3)}/req`}
-          icon={<Sparkles className="h-4 w-4" />}
+          icon={<AkurisAIIcon className="h-4 w-4" />}
         />
         <StatCard
           title="Margem Bruta"
@@ -473,13 +474,13 @@ export function FinanceiroIATab() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
+            <AkurisAIIcon className="h-5 w-5" />
             Análise de Precificação com IA
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button onClick={handleAIAnalysis} disabled={aiLoading || loading}>
-            {aiLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+            {aiLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <AkurisAIIcon className="h-4 w-4 mr-2" />}
             {aiLoading ? 'Analisando...' : 'Gerar Análise de Rentabilidade'}
           </Button>
 

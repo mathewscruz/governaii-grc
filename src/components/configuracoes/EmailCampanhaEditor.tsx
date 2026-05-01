@@ -25,7 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Sparkles, Send, Save, ImageIcon, Upload, X, Eye, MailCheck } from 'lucide-react';
+import { Loader2, Send, Save, ImageIcon, Upload, X, Eye, MailCheck } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { EmailPreview } from './EmailPreview';
@@ -269,7 +270,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
             <div className="space-y-5">
               <div className="rounded-lg border border-border bg-card/50 p-4 space-y-3">
                 <div className="flex items-center gap-2 text-sm font-semibold">
-                  <Sparkles className="h-4 w-4 text-primary" />
+                  <AkurisAIIcon className="h-4 w-4 text-primary" />
                   Gerar com IA
                 </div>
                 <Textarea
@@ -288,7 +289,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
                     Sugerir assunto
                   </label>
                   <Button onClick={handleGenerate} disabled={generating} size="sm" className="ml-auto">
-                    {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <AkurisAIIcon className="h-4 w-4" />}
                     Gerar
                   </Button>
                 </div>

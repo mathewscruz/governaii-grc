@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { CheckCircle, FileText, ArrowRight, ArrowLeft, AlertCircle, Upload, Building2, Check, Clock, Calendar, ListChecks, ShieldCheck, Save, Sparkles, ChevronRight, FileQuestion, AlertTriangle } from 'lucide-react';
+import { CheckCircle, FileText, ArrowRight, ArrowLeft, AlertCircle, Upload, Building2, Check, Clock, Calendar, ListChecks, ShieldCheck, Save, ChevronRight, FileQuestion, AlertTriangle } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
@@ -209,7 +210,7 @@ const WelcomeScreen = ({
         <Card className="bg-white border-slate-200 shadow-xl overflow-hidden">
           <div className="bg-gradient-to-br from-[hsl(250,80%,60%)]/10 via-transparent to-[hsl(250,80%,60%)]/5 p-8 sm:p-10">
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="h-4 w-4 text-[hsl(250,80%,55%)]" />
+              <AkurisAIIcon className="h-4 w-4 text-[hsl(250,80%,55%)]" />
               <span className="text-xs font-medium uppercase tracking-wider text-[hsl(250,80%,55%)]">
                 Questionário de Due Diligence
               </span>
