@@ -429,8 +429,8 @@ export function MarcosDialog({ contrato, open, onOpenChange }: MarcosDialogProps
                       <p className="text-sm text-muted-foreground">{marco.descricao}</p>
                     </div>
                     <div className="flex gap-2">
-                      <Badge className={`${getTipoColor(marco.tipo)} border whitespace-nowrap`}>{getTipoLabel(marco.tipo)}</Badge>
-                      <Badge className={`${getStatusColor(marco.status)} border whitespace-nowrap`}>{getStatusLabel(marco.status)}</Badge>
+                      <StatusBadge size="sm" {...resolveMarcoTipoTone(marco.tipo)}>{formatStatus(marco.tipo)}</StatusBadge>
+                      <StatusBadge size="sm" {...resolveMarcoStatusTone(marco.status)}>{formatStatus(marco.status)}</StatusBadge>
                     </div>
                   </div>
 
