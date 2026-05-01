@@ -123,7 +123,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
 
       setRequirements(merged);
     } catch (error: any) {
-      console.error('Erro ao carregar requisitos:', error);
+      logger.error('Erro ao carregar requisitos', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro ao carregar requisitos');
     } finally {
       setLoading(false);
@@ -263,7 +263,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       onStatusChange?.();
       toast.success(`${ids.length} requisitos atualizados para "${newStatus === 'conforme' ? 'Conforme' : newStatus === 'parcial' ? 'Parcial' : newStatus === 'nao_conforme' ? 'Não Conforme' : 'N/A'}"`);
     } catch (error: any) {
-      console.error('Erro na atualização em lote:', error);
+      logger.error('Erro na atualização em lote de requisitos', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro na atualização em lote');
     } finally {
       setBulkUpdating(false);
