@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
-import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, Clock, History, Activity, Shield, Brain, TrendingUp, RefreshCw, MoreHorizontal } from 'lucide-react';
+import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, Clock, History, Activity, Shield, TrendingUp, RefreshCw, MoreHorizontal } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -528,7 +529,7 @@ export default function Documentos() {
                     onClick={() => openDocGen({ onDone: invalidateDocumentos })} 
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   >
-                    <Brain className="h-4 w-4 mr-2" />
+                    <AkurisAIIcon className="h-4 w-4 mr-2" />
                     Gerador de Documentos (IA)
                   </Button>
                   <Button 

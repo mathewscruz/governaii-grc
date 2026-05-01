@@ -15,7 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Pencil, Plus, ShieldAlert, Sparkles, Trash2 } from 'lucide-react';
+import { Pencil, Plus, ShieldAlert, Trash2 } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDate } from '@/lib/i18n-format';
@@ -108,7 +109,7 @@ export default function GerenciamentoChangelog() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
+            <AkurisAIIcon className="h-4 w-4 text-primary" />
             Novidades da Plataforma
           </h3>
           <p className="text-sm text-muted-foreground">

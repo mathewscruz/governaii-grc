@@ -2,7 +2,8 @@ import { useAuth } from '@/components/AuthProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
-import { Users, Building2, Plug, MessageSquare, CreditCard, Sparkles, Landmark, DollarSign, Package, Newspaper } from 'lucide-react';
+import { Users, Building2, Plug, MessageSquare, CreditCard, Landmark, DollarSign, Package, Newspaper } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import { useSearchParams } from 'react-router-dom';
 import GerenciamentoEmpresas from '@/components/configuracoes/GerenciamentoEmpresas';
 import { IntegrationHub } from '@/components/configuracoes/IntegrationHub';
@@ -94,7 +95,7 @@ const Configuracoes = () => {
           )}
           {isSuperAdmin && (
             <TabsTrigger value="novidades" className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
+              <AkurisAIIcon className="h-4 w-4" />
               <span className="hidden min-[1800px]:inline">Novidades</span>
             </TabsTrigger>
           )}
@@ -184,7 +185,7 @@ const Configuracoes = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5" />
+                    <AkurisAIIcon className="h-5 w-5" />
                     Gestão de Créditos IA
                   </CardTitle>
                 </CardHeader>
@@ -205,7 +206,7 @@ const Configuracoes = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5" />
+                  <AkurisAIIcon className="h-5 w-5" />
                   Novidades
                 </CardTitle>
               </CardHeader>

@@ -20,7 +20,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, Send, FileText, Download, Save, Loader2, Plus, History } from 'lucide-react';
+import { Send, FileText, Download, Save, Loader2, Plus, History } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import DocLayoutBuilder from './DocLayoutBuilder';
 import { DocumentoDialog } from '@/components/documentos/DocumentoDialog';
 import jsPDF from 'jspdf';
@@ -761,7 +762,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
       open={open}
       onOpenChange={handleDialogClose}
       title={`Gerador de Documentos (IA)${currentDocType ? ` · ${currentDocType}` : ''}${requirementContext ? ` — ${requirementContext.requirementCode}` : ''}`}
-      icon={Brain}
+      icon={AkurisAIIcon}
       size="xl"
       noScroll
       hideFooter
@@ -965,7 +966,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
               {!generatedDocument && isGeneratingDoc ? (
                 <div className="flex-1 min-h-0 overflow-y-auto pr-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                    <Brain className="h-4 w-4 animate-pulse text-primary" />
+                    <AkurisAIIcon className="h-4 w-4 animate-pulse text-primary" />
                     <span>Compondo seu documento. Isso pode levar até 40 segundos…</span>
                   </div>
                   <div className="space-y-5 animate-pulse">

@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { DataTable } from '@/components/ui/data-table';
 import { toast } from 'sonner';
-import { Sparkles, Building2, RotateCcw, TrendingUp, History, MoreHorizontal } from 'lucide-react';
+import { Building2, RotateCcw, TrendingUp, History, MoreHorizontal } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { formatDateOnly } from '@/lib/date-utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -234,7 +235,7 @@ export function CreditosIAManager() {
           title="Créditos Consumidos"
           value={totalConsumo}
           description="Todas as empresas"
-          icon={<Sparkles className="h-4 w-4" />}
+          icon={<AkurisAIIcon className="h-4 w-4" />}
         />
         <StatCard
           title="Maior Consumo"
@@ -247,7 +248,7 @@ export function CreditosIAManager() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
+            <AkurisAIIcon className="h-5 w-5" />
             Consumo por Empresa
           </CardTitle>
         </CardHeader>
@@ -259,7 +260,7 @@ export function CreditosIAManager() {
             searchPlaceholder="Buscar empresa..."
             paginated
             emptyState={{
-              icon: <Sparkles className="h-8 w-8" />,
+              icon: <AkurisAIIcon className="h-8 w-8" />,
               title: "Nenhuma empresa encontrada",
               description: "Não há empresas cadastradas no sistema."
             }}

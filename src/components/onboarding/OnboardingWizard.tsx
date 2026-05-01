@@ -7,10 +7,8 @@ import { Card } from '@/components/ui/card';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Rocket, CheckCircle2, Circle, AlertTriangle, Database, Shield, 
-  FileCheck, Lock, BarChart3, ArrowRight, ArrowLeft, X, Sparkles
-} from 'lucide-react';
+import { Rocket, CheckCircle2, Circle, AlertTriangle, Database, Shield, FileCheck, Lock, BarChart3, ArrowRight, ArrowLeft, X } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 
 interface OnboardingStep {
   id: string;
@@ -152,7 +150,7 @@ export function OnboardingWizard() {
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-primary/10">
-                <Sparkles className="h-6 w-6 text-primary" />
+                <AkurisAIIcon className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <DialogTitle className="text-xl">Configure sua plataforma</DialogTitle>

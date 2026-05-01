@@ -11,7 +11,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarIcon, Bot, Sparkles, Copy } from 'lucide-react';
+import { CalendarIcon, Copy } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -229,8 +230,8 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess, riscoData }: Tr
                 </>
               ) : (
                 <>
-                  <Bot className="mr-2 h-3 w-3" />
-                  <Sparkles className="mr-1 h-3 w-3" />
+                  <AkurisAIIcon className="mr-2 h-3 w-3" />
+                  <AkurisAIIcon className="mr-1 h-3 w-3" />
                   Sugerir Tratamento
                 </>
               )}
@@ -358,8 +359,8 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess, riscoData }: Tr
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
-              <Sparkles className="h-4 w-4" />
+              <AkurisAIIcon className="h-5 w-5" />
+              <AkurisAIIcon className="h-4 w-4" />
               Sugestões Inteligentes de Tratamento
             </DialogTitle>
             <DialogDescription>

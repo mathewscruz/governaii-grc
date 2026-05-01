@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles } from 'lucide-react';
+import {  } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -79,7 +80,7 @@ export function ChangelogPopover() {
     <Popover onOpenChange={handleOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative h-9 w-9">
-          <Sparkles className="h-4 w-4" />
+          <AkurisAIIcon className="h-4 w-4" />
           {hasNew && (
             <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
           )}

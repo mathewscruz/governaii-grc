@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Edit, Copy, Trash2, FileText, Settings as SettingsIcon, Star, Filter, X, Sparkles, Shield, Scale, Leaf } from 'lucide-react';
+import { Plus, Edit, Copy, Trash2, FileText, Settings as SettingsIcon, Star, Filter, X, Shield, Scale, Leaf } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -423,7 +424,7 @@ export function TemplatesManager() {
           <Card className="mb-6 border-dashed border-2 border-primary/20 bg-primary/5">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
+                <AkurisAIIcon className="h-5 w-5 text-primary" />
                 Templates Sugeridos
               </CardTitle>
               <CardDescription>
