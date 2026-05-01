@@ -514,6 +514,7 @@ export const pt = {
     pillarGapAnalysisDesc: 'Frameworks, scoring e planos de ação',
     backToSite: 'Voltar ao site',
   },
+  register: {
     createAccount: 'Criar sua conta',
     selectedPlan: 'Plano selecionado',
     fullName: 'Nome completo *',
