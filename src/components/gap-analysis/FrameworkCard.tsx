@@ -7,7 +7,6 @@ import {
   CATEGORY_BADGE_CLASS,
   CATEGORY_LABEL,
   getEffortLevel,
-  getScoreTextClass,
   type FrameworkCategory,
 } from "@/lib/gap-analysis-tokens";
 
