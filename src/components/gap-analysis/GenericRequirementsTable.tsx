@@ -758,11 +758,9 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   if (loading) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-1/3"></div>
-            <div className="h-64 bg-muted rounded"></div>
-          </div>
+        <CardContent className="p-6 min-h-[280px] flex flex-col items-center justify-center gap-3">
+          <AkurisPulse size={56} />
+          <p className="text-sm text-muted-foreground">Carregando requisitos...</p>
         </CardContent>
       </Card>
     );

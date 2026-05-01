@@ -28,6 +28,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { FRAMEWORK_DESCRIPTIONS } from '@/lib/framework-descriptions';
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 
 interface Framework {
   id: string;
@@ -203,9 +204,9 @@ export default function GapAnalysisFrameworkDetail() {
   if (loading || !framework || !config) {
     return (
       <ErrorBoundary>
-        <div className="space-y-6 animate-pulse">
-          <div className="h-24 bg-muted rounded-lg" />
-          <div className="h-64 bg-muted rounded-lg" />
+        <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
+          <AkurisPulse size={64} />
+          <p className="text-sm text-muted-foreground">Carregando framework...</p>
         </div>
       </ErrorBoundary>
     );
