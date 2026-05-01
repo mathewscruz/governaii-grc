@@ -439,6 +439,42 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
     setFormData(prev => ({ ...prev, evidence_files: prev.evidence_files.filter((_, i) => i !== index) }));
   };
 
+  const handleValidateEvidence = async (file: any) => {
+    if (!empresaId || !file?.url) return;
+    setValidatingUrl(file.url);
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-evidence-against-requirement', {
+        body: {
+          requirementId: requirement.id,
+          fileUrl: file.url,
+          fileName: file.name,
+          empresaId,
+        },
+      });
+      if (error) {
+        const status = (error as any)?.status;
+        if (status === 402 || (data as any)?.creditsExhausted) {
+          toast.error('Créditos de IA esgotados. Entre em contato com a Akuris.');
+          return;
+        }
+        throw error;
+      }
+      if ((data as any)?.error) {
+        toast.error((data as any).error);
+        return;
+      }
+      setValidationByUrl(prev => ({ ...prev, [file.url]: data as any }));
+      const v = (data as any).verdict;
+      const label = v === 'conforme' ? 'Conforme' : v === 'parcial' ? 'Parcialmente conforme' : v === 'nao_conforme' ? 'Não conforme' : 'Indeterminado';
+      toast.success(`IA: ${label} (${(data as any).score ?? 0}%)`);
+    } catch (e) {
+      logger.error('Validation error', { error: e instanceof Error ? e.message : String(e) });
+      toast.error('Não foi possível validar a evidência.');
+    } finally {
+      setValidatingUrl(null);
+    }
+  };
+
   const handleToggleRisco = (riscoId: string) => {
     setFormData(prev => ({
       ...prev,
