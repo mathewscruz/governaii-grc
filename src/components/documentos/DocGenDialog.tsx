@@ -40,6 +40,14 @@ interface DocGenDialogProps {
   onDocumentSaved?: () => void;
   frameworkName?: string;
   frameworkId?: string;
+  /** 'generate' (default) opens chat. 'validate' shows validator entry hint. */
+  mode?: 'generate' | 'validate';
+  /** When opened from inside a requirement, gives the AI extra context. */
+  requirementContext?: {
+    requirementId: string;
+    requirementCode: string;
+    requirementTitle: string;
+  };
 }
 
 interface TooltipTerm {
@@ -64,6 +72,8 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
   onDocumentSaved,
   frameworkName,
   frameworkId,
+  mode = 'generate',
+  requirementContext,
 }) => {
   const { toast } = useToast();
   const { company } = useAuth();
