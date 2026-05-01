@@ -1,74 +1,51 @@
-## Objetivo
+## Plano para corrigir o scroll do popup
 
-Resolver três problemas no popup `RequirementDetailDialog`:
-1. **Scroll quebrado** no painel direito (Avaliar Conformidade / Evidências / Plano de Ação) — usuário não consegue rolar até as evidências e plano.
-2. **Ícones genéricos de IA** (`Brain`, `Sparkles`, `ScanSearch`, `Lightbulb`) — substituir pelo nosso ícone proprietário com identidade Akuris.
-3. **Metadados redundantes** no header (`Obrigatório`, `Peso 2`, `Contexto`) — já aparecem na tabela e no badge "Peso N" interno do diagnóstico.
+Vou ajustar a estrutura de altura do modal, porque o problema não está mais apenas nos `ScrollArea` internos: o `DialogShell` está usando apenas `max-height`, então o conteúdo não recebe uma altura fixa para calcular a rolagem dos painéis esquerdo e direito.
 
----
+### 1. Dar altura real ao popup de detalhe
+No `RequirementDetailDialog.tsx`, vou passar uma classe explícita para o `DialogShell`:
 
-## 1. Correção do scroll (crítico)
-
-**Causa raiz:** dentro de `DialogShell` com `noScroll`, o conteúdo está em `<div className="flex flex-col h-full">`. Os dois `ScrollArea` filhos usam `md:w-[42%]` / `md:w-[58%]` mas o pai `flex flex-col md:flex-row min-h-0 flex-1` falta `overflow-hidden` consistente e os `ScrollArea` não declaram `h-full` — o Radix `ScrollArea` precisa de altura explícita para ativar a viewport interna.
-
-**Correção:**
-- Adicionar `h-full` aos dois `<ScrollArea>` (esquerdo e direito).
-- Garantir que o wrapper `flex flex-col md:flex-row` tenha `overflow-hidden` para que o flex calcule a altura corretamente.
-- Em mobile (`flex-col`), ajustar para que cada painel tenha altura própria via `flex-1 min-h-0`.
-
-Resultado: barra de rolagem funcional no painel direito, permitindo acessar Steps 2 (Evidências), 3 (Plano de Ação), 4 (Detalhes) e 5 (Vínculos).
-
----
-
-## 2. Ícone proprietário de IA Akuris
-
-**Estado atual:** ícones Lucide genéricos espalhados (`Brain` em "Gerar com IA", `Sparkles` em validação, `Lightbulb` em dicas, `ScanSearch` em validar).
-
-**Solução:** criar novo ícone proprietário `AkurisAIIcon` em `src/components/icons/modules/AkurisAIIcon.tsx`, seguindo o padrão dos demais módulos (`stroke 1.5`, viewBox 24x24, baseado em `_BaseModuleIcon`). Conceito visual: gema/diamante estilizado + nó central (referência sutil ao "A" de Akuris e ao spark de IA), sem clichês de robô/cérebro.
-
-**Aplicação no `RequirementDetailDialog.tsx`:**
-- Botão "Gerar com IA" (Step 2): `Brain` → `AkurisAIIcon`.
-- Linha de dica "Validar com IA": `Sparkles` → `AkurisAIIcon`.
-- Card de sugestão do diagnóstico (`Sugestão da IA`): adicionar `AkurisAIIcon` à esquerda do badge.
-- Botão "Validar com IA" (em cada evidência anexada): `ScanSearch` → `AkurisAIIcon`.
-- Manter `Lightbulb` apenas como ícone de "dica/empty state" não-IA (ou trocar por `IconInfo` da paleta semântica).
-
-Exportar no `src/components/icons/index.ts` para reuso futuro nos demais módulos com IA (DocGen, AkurIA, Riscos, Due Diligence).
-
----
-
-## 3. Remoção de metadados redundantes do header
-
-**Estado atual no header do popup:**
-```
-STATUS [Conforme | Parcial | Não Conforme | N/A]    Obrigatório · Peso 2 · Contexto
+```tsx
+className="h-[100dvh] sm:h-[92vh]"
 ```
 
-**Análise:**
-- `Obrigatório` já aparece na coluna "Prioridade" da tabela (`getPriorityBadge`) — duplicado.
-- `Peso N` já aparece em cada pergunta do diagnóstico quando relevante (`{q.peso >= 2 && <Badge>Peso {q.peso}</Badge>}`) e na tabela.
-- `Contexto` (categoria do requisito) já está visível no filtro/agrupamento da tabela e no breadcrumb da página de detalhes do framework.
+Isso faz o modal ocupar uma altura controlada, igual ao padrão já usado em outro diálogo grande do sistema (`DocGenDialog`), permitindo que os filhos com `h-full` e `flex-1` calculem corretamente a área disponível.
 
-**Decisão:** remover totalmente o bloco lateral de metadados do header do popup. O header fica focado no que importa: **título do requisito + barra de status**.
+### 2. Reforçar a área de conteúdo com `min-h-0`
+Vou manter e, se necessário, reforçar a cadeia de containers com:
 
-Justificativa UX: o popup é a "tela de trabalho" do requisito — o usuário já chegou nele sabendo a categoria e a prioridade. Repetir essas informações polui o header e compete visualmente com a barra de status (que é a ação principal).
+- `h-full`
+- `min-h-0`
+- `overflow-hidden`
+- `flex-1`
 
----
+A sequência esperada será:
 
-## Arquivos modificados
+```text
+DialogShell com altura fixa
+└── body flex-1 min-h-0 overflow-hidden
+    └── wrapper h-full flex flex-col min-h-0 overflow-hidden
+        ├── status bar fixa
+        └── área dos painéis flex-1 min-h-0 overflow-hidden
+            ├── painel esquerdo scrollável
+            └── painel direito scrollável
+```
 
-| Arquivo | Mudança |
-|---|---|
-| `src/components/icons/modules/AkurisAIIcon.tsx` | **Criar** — novo ícone proprietário de IA |
-| `src/components/icons/index.ts` | Exportar `AkurisAIIcon` |
-| `src/components/gap-analysis/dialogs/RequirementDetailDialog.tsx` | Corrigir scroll (`h-full` nos `ScrollArea` + `overflow-hidden` no wrapper); substituir `Brain`/`Sparkles`/`ScanSearch` por `AkurisAIIcon`; remover bloco de metadados (`Obrigatório`, `Peso N`, `Categoria`) do header |
+### 3. Ajustar os dois painéis para rolagem independente
+Nos dois painéis (`Orientação do Requisito` e jornada da avaliação), vou ajustar o `ScrollArea` para ter altura calculável e impedir expansão do conteúdo:
 
-Nenhuma mudança em banco, edge functions ou RLS.
+- painel esquerdo: `h-full min-h-0 overflow-hidden`
+- painel direito: `h-full min-h-0 overflow-hidden`
 
----
+Se o Radix `ScrollArea` continuar não renderizando barra visível nesse layout específico, vou substituir somente esses dois painéis por `div` nativo com `overflow-y-auto`, que é mais simples e mais confiável para esse caso.
 
-## Resultado esperado
+### 4. Preservar footer e status fixos
+O rodapé com “Cancelar / Salvar avaliação” continuará fixo no final do popup, e a barra de status continuará fixa no topo do conteúdo. Apenas o conteúdo interno de cada coluna será rolável.
 
-- Painel direito do popup rola até o final, expondo Evidências e Plano de Ação.
-- Ações de IA passam a ter um ícone único e proprietário (Akuris), reforçando a identidade visual em todo o sistema.
-- Header do popup fica mais limpo, focado em **título + status**, sem redundância com a tabela.
+### Resultado esperado
+Com o ajuste, o usuário conseguirá rolar separadamente:
+
+- lado esquerdo: textos longos de orientação e exemplos de evidências;
+- lado direito: evidências, plano de ação, detalhes da avaliação, vínculos e histórico.
+
+O popup não deve mais cortar os campos abaixo nem impedir preenchimento/salvamento.
