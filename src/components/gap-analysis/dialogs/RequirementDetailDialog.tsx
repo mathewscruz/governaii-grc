@@ -822,15 +822,80 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                       </CollapsibleSection>
                     )}
 
-                    {/* Evidências */}
+                    {/* Evidências — Hub unificado */}
                     <CollapsibleSection
                       title="Evidências"
                       icon={FileText}
+                      defaultOpen
                       badge={formData.evidence_files.length > 0 ? <Badge variant="secondary" className="text-[10px]">{formData.evidence_files.length}</Badge> : undefined}
                     >
                       <div className="space-y-3">
+                        {/* Hub de 3 ações */}
+                        <div className="rounded-lg border bg-muted/20 p-3">
+                          <p className="text-xs text-muted-foreground mb-2">Como você quer trabalhar a evidência deste requisito?</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="justify-start"
+                              onClick={() => openDocGen({
+                                frameworkId,
+                                requirementContext: {
+                                  requirementId: requirement.id,
+                                  requirementCode: requirement.codigo,
+                                  requirementTitle: requirement.titulo,
+                                },
+                              })}
+                            >
+                              <Brain className="h-4 w-4 mr-2 text-primary" />
+                              <div className="text-left leading-tight">
+                                <div className="text-xs font-semibold">Gerar com IA</div>
+                                <div className="text-[10px] text-muted-foreground">Criar documento sob medida</div>
+                              </div>
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="justify-start"
+                              onClick={() => document.getElementById('file-upload')?.click()}
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              <div className="text-left leading-tight">
+                                <div className="text-xs font-semibold">Anexar arquivo</div>
+                                <div className="text-[10px] text-muted-foreground">PDF, Word, imagem...</div>
+                              </div>
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="justify-start"
+                              onClick={() => {
+                                const url = prompt('URL da evidência:');
+                                if (url?.trim()) {
+                                  const name = prompt('Nome do link:') || new URL(url).hostname;
+                                  setFormData(prev => ({ ...prev, evidence_files: [...prev.evidence_files, { type: 'link', name, url: url.trim() }] }));
+                                }
+                              }}
+                            >
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              <div className="text-left leading-tight">
+                                <div className="text-xs font-semibold">Adicionar link</div>
+                                <div className="text-[10px] text-muted-foreground">URL externa</div>
+                              </div>
+                            </Button>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-2 flex items-start gap-1.5">
+                            <Sparkles className="h-3 w-3 mt-0.5 text-primary shrink-0" />
+                            Após anexar, clique em <strong className="mx-0.5">Validar com IA</strong> para a IA confirmar se a evidência atende a este requisito.
+                          </p>
+                        </div>
+
+                        {/* Drop zone discreta */}
                         <div
-                          className="relative border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                          className="relative border-2 border-dashed border-muted-foreground/25 rounded-lg p-3 text-center hover:border-primary/50 transition-colors cursor-pointer"
                           onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
                           onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
                           onDrop={(e) => {
@@ -844,37 +909,83 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                           }}
                           onClick={() => document.getElementById('file-upload')?.click()}
                         >
-                          <Upload className="h-6 w-6 mx-auto text-muted-foreground/50 mb-1" />
-                          <p className="text-sm text-muted-foreground">{uploading ? 'Enviando...' : 'Arraste arquivos ou clique para buscar'}</p>
+                          <p className="text-xs text-muted-foreground">{uploading ? 'Enviando...' : 'Ou arraste arquivos aqui'}</p>
                         </div>
-                        <input id="file-upload" type="file" multiple className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" />
-                        <Button type="button" variant="outline" size="sm" onClick={() => {
-                          const url = prompt('URL da evidência:');
-                          if (url?.trim()) {
-                            const name = prompt('Nome do link:') || new URL(url).hostname;
-                            setFormData(prev => ({ ...prev, evidence_files: [...prev.evidence_files, { type: 'link', name, url: url.trim() }] }));
-                          }
-                        }}>
-                          <ExternalLink className="h-4 w-4 mr-1" />Adicionar Link
-                        </Button>
+                        <input id="file-upload" type="file" multiple className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt" />
 
                         {formData.evidence_files.length > 0 && (
-                          <div className="border rounded-md p-2 space-y-1">
-                            {formData.evidence_files.map((file, index) => (
-                              <div key={index} className="flex items-center justify-between p-1.5 bg-muted/50 rounded text-sm">
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  {file.type === 'link' ? <ExternalLink className="h-3.5 w-3.5 text-blue-500 shrink-0" /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-                                  {file.type === 'link' ? (
-                                    <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline truncate text-xs" onClick={(e) => e.stopPropagation()}>{file.name}</a>
-                                  ) : (
-                                    <span className="truncate text-xs">{file.name}</span>
+                          <div className="border rounded-md p-2 space-y-1.5">
+                            {formData.evidence_files.map((file, index) => {
+                              const validation = file.url ? validationByUrl[file.url] : undefined;
+                              const isValidating = validatingUrl === file.url;
+                              const verdictColor =
+                                validation?.verdict === 'conforme' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-200 dark:text-emerald-400' :
+                                validation?.verdict === 'parcial' ? 'bg-amber-500/10 text-amber-700 border-amber-200 dark:text-amber-400' :
+                                validation?.verdict === 'nao_conforme' ? 'bg-red-500/10 text-red-700 border-red-200 dark:text-red-400' :
+                                'bg-muted text-muted-foreground';
+                              const verdictLabel =
+                                validation?.verdict === 'conforme' ? 'Conforme' :
+                                validation?.verdict === 'parcial' ? 'Parcial' :
+                                validation?.verdict === 'nao_conforme' ? 'Não conforme' :
+                                validation?.verdict === 'indeterminado' ? 'Indeterminado' : '';
+                              return (
+                                <div key={index} className="rounded bg-muted/50 p-2 space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                      {file.type === 'link' ? <ExternalLink className="h-3.5 w-3.5 text-blue-500 shrink-0" /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                                      {file.type === 'link' ? (
+                                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline truncate text-xs">{file.name}</a>
+                                      ) : (
+                                        <span className="truncate text-xs">{file.name}</span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      {file.type !== 'link' && (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 px-2 text-[11px]"
+                                                disabled={isValidating}
+                                                onClick={() => handleValidateEvidence(file)}
+                                              >
+                                                {isValidating ? (
+                                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                                ) : (
+                                                  <ScanSearch className="h-3 w-3 mr-1 text-primary" />
+                                                )}
+                                                {isValidating ? 'Analisando...' : 'Validar com IA'}
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>A IA analisa o arquivo e diz se ele atende ao requisito.</TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      )}
+                                      <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleRemoveFile(index)}>
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  {validation && (
+                                    <div className={`rounded border px-2 py-1.5 text-[11px] ${verdictColor}`}>
+                                      <div className="flex items-center justify-between mb-0.5">
+                                        <span className="font-semibold">IA: {verdictLabel}</span>
+                                        <span className="font-mono">{validation.score}%</span>
+                                      </div>
+                                      <p className="leading-snug opacity-90">{validation.justification}</p>
+                                      {validation.missing && validation.missing.length > 0 && (
+                                        <ul className="mt-1 list-disc list-inside opacity-80">
+                                          {validation.missing.slice(0, 3).map((m, i) => <li key={i}>{m}</li>)}
+                                        </ul>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
-                                <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleRemoveFile(index)}>
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
