@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
+import { useFocusRow } from '@/hooks/useFocusRow';
 import { Plus, Search, Filter, Upload, FileText, FolderOpen, Eye, Download, Edit, Trash2, MessageSquare, CheckCircle, Clock, History, Activity, Shield, TrendingUp, RefreshCw, MoreHorizontal } from 'lucide-react';
 import { AkurisAIIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
