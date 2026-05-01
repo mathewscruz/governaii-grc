@@ -124,7 +124,7 @@ export function EvidenceLibraryHub() {
                           <Badge variant="secondary" className="text-[10px]">{ev.total_links} usos</Badge>
                         )}
                         {(ev.total_sugestoes || 0) > 0 && (
-                          <StatusBadge tone="warning" size={32}>{ev.total_sugestoes} sugestões pendentes</StatusBadge>
+                          <StatusBadge tone="warning" size="sm">{ev.total_sugestoes} sugestões pendentes</StatusBadge>
                         )}
                         {(ev.tags || []).slice(0, 3).map((t) => (
                           <Badge key={t} variant="outline" className="text-[10px]">{t}</Badge>
@@ -135,7 +135,7 @@ export function EvidenceLibraryHub() {
                       )}
                     </div>
                     <Button
-                      size={32}
+                      size="sm"
                       variant="outline"
                       className="gap-1 shrink-0"
                       onClick={() => runMatch(ev)}
@@ -198,7 +198,7 @@ export function EvidenceLibraryHub() {
                       </div>
                       <StatusBadge
                         tone={s.score >= 0.8 ? 'success' : s.score >= 0.6 ? 'warning' : 'neutral'}
-                        size={32}
+                        size="sm"
                       >
                         {Math.round(s.score * 100)}%
                       </StatusBadge>
