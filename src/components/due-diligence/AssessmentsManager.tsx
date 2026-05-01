@@ -116,14 +116,10 @@ export function AssessmentsManager() {
     }
 
     setFilteredAssessments(filtered);
-
-
-
-
+  };
 
   const getStatusBadge = (status: string) => {
     return <StatusBadge size="sm" {...resolveDueDiligenceStatusTone(status)}>{formatStatus(status)}</StatusBadge>;
-  };
   };
 
   const getScoreColor = (score: number) => {
