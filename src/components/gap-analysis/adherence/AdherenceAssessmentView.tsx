@@ -217,12 +217,9 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
         <h3 className="text-lg font-semibold mb-4">Avaliações Recentes</h3>
         
         {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="animate-pulse">
-                <div className="h-20 bg-muted rounded" />
-              </div>
-            ))}
+          <div className="min-h-[180px] flex flex-col items-center justify-center gap-2">
+            <AkurisPulse size={48} />
+            <p className="text-xs text-muted-foreground">Carregando avaliações...</p>
           </div>
         ) : assessments && assessments.length > 0 ? (
           <div className="space-y-4">
