@@ -27,6 +27,8 @@ import { SistemaUsuarioDialog } from "./SistemaUsuarioDialog";
 import { formatDateOnly } from "@/lib/date-utils";
 import { formatStatus } from "@/lib/text-utils";
 import { EmptyState } from "@/components/ui/empty-state";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { resolveTipoAcessoTone, resolveAtivoTone } from "@/lib/status-tone";
 
 interface Sistema {
   id: string;
@@ -132,15 +134,7 @@ export function SistemaUsuariosList() {
     }
   };
 
-  const getTipoAcessoBadge = (tipo: string) => {
-    const colors: Record<string, string> = {
-      leitura: "bg-blue-100 text-blue-800 border-blue-200",
-      escrita: "bg-green-100 text-green-800 border-green-200",
-      admin: "bg-amber-100 text-amber-800 border-amber-200",
-      completo: "bg-red-100 text-red-800 border-red-200",
-    };
-    return colors[tipo] || "bg-gray-100 text-gray-800 border-gray-200";
-  };
+  // tipo de acesso e status agora resolvidos via StatusBadge + resolvers
 
   const columns: Column<SistemaUsuario>[] = [
     {
