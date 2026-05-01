@@ -765,7 +765,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
               {/* ============================================ */}
               {/* LEFT PANEL — Apenas leitura/educação        */}
               {/* ============================================ */}
-              <ScrollArea className="h-full md:w-[42%] border-r bg-muted/20 flex-1 md:flex-none min-h-0">
+              <div className="h-full md:w-[42%] border-r bg-muted/20 flex-1 md:flex-none min-h-0 overflow-y-auto">
                 <div className="p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
