@@ -21,21 +21,27 @@ import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 const Auth = () => {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
-  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [forgotPasswordDialogOpen, setForgotPasswordDialogOpen] = useState(false);
-  const [loginSuccess, setLoginSuccess] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  
-  // MFA state
-  const mfaInProgressRef = useRef(false);
-  const [mfaPending, setMfaPending] = useState(false);
+
+  // Máquina de estados única do fluxo de login.
+  // - idle: form normal
+  // - authenticating: validando credenciais e decidindo MFA → overlay
+  // - mfa_required: precisa código MFA → tela MFA
+  // - verifying_mfa: validando OTP + restabelecendo sessão → overlay
+  // - finalizing: sessão pronta, aguardando AuthProvider propagar user → overlay
+  type AuthPhase = 'idle' | 'authenticating' | 'mfa_required' | 'verifying_mfa' | 'finalizing';
+  const [phase, setPhase] = useState<AuthPhase>('idle');
   const [mfaUserId, setMfaUserId] = useState('');
   const [mfaEmail, setMfaEmail] = useState('');
   const [mfaPassword, setMfaPassword] = useState('');
+
+  const isBusy = phase !== 'idle';
+  const showOverlay = phase === 'authenticating' || phase === 'verifying_mfa' || phase === 'finalizing';
 
   const loginSchema = z.object({
     email: z.string().min(1, t('auth.validationEmailRequired')).email(t('auth.validationEmailInvalid')),
