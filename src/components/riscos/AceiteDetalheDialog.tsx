@@ -152,7 +152,7 @@ export function AceiteDetalheDialog({ open, onOpenChange, risco }: Props) {
                   {risco.data_proxima_revisao ? formatDateOnly(risco.data_proxima_revisao) : 'Não agendada'}
                 </p>
                 {revisaoStatus && (
-                  <Badge className={`${revisaoStatus.color} text-xs`}>{revisaoStatus.label}</Badge>
+                  <StatusBadge size="sm" tone={revisaoStatus.tone}>{revisaoStatus.label}</StatusBadge>
                 )}
               </div>
             </div>
