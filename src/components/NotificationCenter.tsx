@@ -562,111 +562,197 @@ const NotificationCenter: React.FC = () => {
     );
   };
 
+  // Detalhe da notificação
+  const detailModule = detail ? resolveNotificationModule(detail) : null;
+  const detailToneKey: StatusTone = detail
+    ? (getTypeTone(detail.type) === 'destructive' ? 'destructive' : (getTypeTone(detail.type) as StatusTone))
+    : 'neutral';
+  const detailToneCls = detail ? TONE_CLS[getTypeTone(detail.type)] : null;
+  const DetailIcon = detailModule?.Icon;
+  const detailGroupLabel = detail
+    ? (detail.type === 'error'
+        ? t('notifications.groupUrgent')
+        : detail.type === 'warning'
+        ? t('notifications.groupAttention')
+        : t('notifications.groupInfo'))
+    : '';
+
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label={t('notifications.title')}
-          className={cn(
-            'relative h-9 w-9 p-0 rounded-lg transition-all',
-            unreadCount > 0 && 'ring-1 ring-primary/25 bg-primary/[0.04]'
-          )}
-        >
-          <Bell className="h-[18px] w-[18px]" strokeWidth={1.5} />
-          {unreadCount > 0 && (
-            <span
-              className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground tabular-nums shadow-[0_2px_6px_-1px_hsl(var(--destructive)/0.5)]"
-              aria-label={`${unreadCount} ${t('notifications.unread')}`}
-            >
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent
-        className="w-[384px] max-w-[calc(100vw-2rem)] p-0 overflow-hidden border-border/60 shadow-[0_16px_40px_-10px_hsl(var(--primary)/0.18)]"
-        align="end"
-        sideOffset={8}
-      >
-        {/* Header editorial */}
-        <div className="px-4 pt-4 pb-3 border-b border-border/60 bg-gradient-to-b from-surface-1 to-surface-2">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary/70 leading-none">
-                {t('notifications.eyebrow')}
-              </p>
-              <p className="mt-1.5 text-sm font-semibold text-foreground tracking-tight tabular-nums">
-                {unreadCount > 0
-                  ? `${unreadCount} ${unreadCount === 1 ? t('notifications.unreadOne') : t('notifications.unread')}`
-                  : t('notifications.allCaughtUp')}
-              </p>
-            </div>
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={handleMarkAllAsRead}
-                className="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
-              >
-                {t('notifications.markAllRead')}
-                <ArrowRight className="h-3 w-3" strokeWidth={1.5} />
-              </button>
+    <>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={t('notifications.title')}
+            className={cn(
+              'relative h-9 w-9 p-0 rounded-lg transition-all',
+              unreadCount > 0 && 'ring-1 ring-primary/25 bg-primary/[0.04]'
             )}
-          </div>
-        </div>
+          >
+            <Bell className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            {unreadCount > 0 && (
+              <span
+                className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground tabular-nums shadow-[0_2px_6px_-1px_hsl(var(--destructive)/0.5)]"
+                aria-label={`${unreadCount} ${t('notifications.unread')}`}
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Button>
+        </PopoverTrigger>
 
-        <ScrollArea className="max-h-[460px]">
-          {!user ? (
-            <div className="px-4 py-10 text-center text-sm text-muted-foreground">
-              {t('notifications.loginToView')}
-            </div>
-          ) : isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <AkurisPulse size={48} />
-              <p className="text-xs text-muted-foreground">{t('common.loading')}</p>
-            </div>
-          ) : allNotifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-success/10 ring-1 ring-success/20 text-success mb-3">
-                <CheckCircle2 className="h-6 w-6" strokeWidth={1.5} />
+        <PopoverContent
+          className="w-[384px] max-w-[calc(100vw-2rem)] p-0 overflow-hidden border-border/60 shadow-[0_16px_40px_-10px_hsl(var(--primary)/0.18)]"
+          align="end"
+          sideOffset={8}
+        >
+          {/* Header editorial */}
+          <div className="px-4 pt-4 pb-3 border-b border-border/60 bg-gradient-to-b from-surface-1 to-surface-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary/70 leading-none">
+                  {t('notifications.eyebrow')}
+                </p>
+                <p className="mt-1.5 text-sm font-semibold text-foreground tracking-tight tabular-nums">
+                  {unreadCount > 0
+                    ? `${unreadCount} ${unreadCount === 1 ? t('notifications.unreadOne') : t('notifications.unread')}`
+                    : t('notifications.allCaughtUp')}
+                </p>
               </div>
-              <p className="text-sm font-semibold text-foreground tracking-tight">
-                {t('notifications.allCaughtUp')}
-              </p>
-              <p className="text-xs text-muted-foreground leading-relaxed mt-1 max-w-[260px]">
-                {t('notifications.allCaughtUpDesc')}
-              </p>
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllAsRead}
+                  className="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
+                >
+                  {t('notifications.markAllRead')}
+                  <ArrowRight className="h-3 w-3" strokeWidth={1.5} />
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="divide-y divide-border/40">
-              {groupMeta.map(({ key, label, tone }) => {
-                const items = groups[key];
-                if (items.length === 0) return null;
-                return (
-                  <section key={key} aria-label={label}>
-                    <header className="flex items-center justify-between px-4 pt-3 pb-1.5">
-                      <div className="flex items-center gap-2">
-                        <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', TONE_CLS[tone].accent)} />
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
-                          {label}
-                        </p>
-                      </div>
-                      <span className="text-[10px] font-semibold text-muted-foreground/60 tabular-nums">
-                        {items.length}
+          </div>
+
+          <ScrollArea className="max-h-[460px]">
+            {!user ? (
+              <div className="px-4 py-10 text-center text-sm text-muted-foreground">
+                {t('notifications.loginToView')}
+              </div>
+            ) : isLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <AkurisPulse size={48} />
+                <p className="text-xs text-muted-foreground">{t('common.loading')}</p>
+              </div>
+            ) : allNotifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-success/10 ring-1 ring-success/20 text-success mb-3">
+                  <CheckCircle2 className="h-6 w-6" strokeWidth={1.5} />
+                </div>
+                <p className="text-sm font-semibold text-foreground tracking-tight">
+                  {t('notifications.allCaughtUp')}
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-1 max-w-[260px]">
+                  {t('notifications.allCaughtUpDesc')}
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border/40">
+                {groupMeta.map(({ key, label, tone }) => {
+                  const items = groups[key];
+                  if (items.length === 0) return null;
+                  return (
+                    <section key={key} aria-label={label}>
+                      <header className="flex items-center justify-between px-4 pt-3 pb-1.5">
+                        <div className="flex items-center gap-2">
+                          <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', TONE_CLS[tone].accent)} />
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+                            {label}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-semibold text-muted-foreground/60 tabular-nums">
+                          {items.length}
+                        </span>
+                      </header>
+                      <div>{items.map(renderItem)}</div>
+                    </section>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+        </PopoverContent>
+      </Popover>
+
+      {/* Detalhe completo da notificação */}
+      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent className="sm:max-w-lg">
+          {detail && detailModule && DetailIcon && detailToneCls && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start gap-3">
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1',
+                      detailToneCls.chipBg,
+                      detailToneCls.chipRing,
+                      detailToneCls.iconText
+                    )}
+                  >
+                    <DetailIcon className="h-5 w-5" strokeWidth={1.5} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary/70 leading-none">
+                      {t(detailModule.i18nKey)}
+                    </p>
+                    <DialogTitle className="mt-1.5 text-base font-semibold leading-tight tracking-tight break-words">
+                      {detail.title}
+                    </DialogTitle>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <StatusBadge size="sm" tone={detailToneKey}>
+                        {detailGroupLabel}
+                      </StatusBadge>
+                      <span className="text-[11px] text-muted-foreground tabular-nums">
+                        {format(new Date(detail.created_at), 'PPp', { locale: dateFnsLocale })}
                       </span>
-                    </header>
-                    <div>{items.map(renderItem)}</div>
-                  </section>
-                );
-              })}
-            </div>
+                      <span className="text-[11px] text-muted-foreground/70">
+                        · {formatRelative(detail.created_at)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="mt-2 max-h-[50vh] overflow-y-auto">
+                {detail.message ? (
+                  <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap break-words">
+                    {detail.message}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    {t('notifications.noNotifications')}
+                  </p>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDetail(null)}>
+                  {t('common.close') || 'Fechar'}
+                </Button>
+                {detail.link_to && (
+                  <Button onClick={handleNavigateFromDetail} className="gap-1">
+                    {t('notifications.viewAll') !== 'notifications.viewAll' ? 'Abrir módulo' : 'Abrir módulo'}
+                    <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  </Button>
+                )}
+              </DialogFooter>
+            </>
           )}
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
 export default NotificationCenter;
+
