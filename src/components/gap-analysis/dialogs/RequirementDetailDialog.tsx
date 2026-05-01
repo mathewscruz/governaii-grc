@@ -977,7 +977,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                       </div>
 
                       <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
-                        <Sparkles className="h-3 w-3 mt-0.5 text-primary shrink-0" strokeWidth={1.5} />
+                        <AkurisAIIcon size={12} className="mt-0.5 text-primary shrink-0" />
                         Após anexar, clique em <strong className="mx-0.5 text-foreground">Validar com IA</strong> para confirmar a aderência ao requisito.
                       </p>
 
