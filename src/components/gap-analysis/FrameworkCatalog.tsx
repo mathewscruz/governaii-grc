@@ -74,7 +74,7 @@ export function FrameworkCatalog({ frameworks, requirementCounts, onFrameworkCli
                 >
                   <div className="flex items-center gap-3">
                     <div className={`p-1.5 rounded-md border ${cfg.color}`}>
-                      <Icon className="h-4 w-4" />
+                      <Icon className="h-4 w-4" strokeWidth={1.5}/>
                     </div>
                     <span className="font-semibold text-sm">{cfg.label}</span>
                     <Badge variant="secondary" className="text-xs">{fws.length}</Badge>

@@ -131,9 +131,9 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
                 className="h-9 w-9 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground p-0 disabled:opacity-50 disabled:cursor-not-allowed shadow-elegant"
               >
                 {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5}/>
                 ) : (
-                  <Sparkles className="h-4 w-4" />
+                  <Sparkles className="h-4 w-4" strokeWidth={1.5}/>
                 )}
               </Button>
             </span>
@@ -146,14 +146,14 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
         <DialogContent className="w-[95vw] max-w-3xl lg:max-w-4xl max-h-[88vh] overflow-y-auto p-5 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <Sparkles className="h-5 w-5 text-primary" strokeWidth={1.5}/>
               Consultor IA de Conformidade
             </DialogTitle>
           </DialogHeader>
 
           {loading && !recommendations ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" strokeWidth={1.5}/>
               <p className="text-sm text-muted-foreground">Analisando sua conformidade...</p>
             </div>
           ) : recommendations ? (
@@ -163,7 +163,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
               </div>
 
               <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
-                <TrendingUp className="h-5 w-5 text-primary shrink-0" />
+                <TrendingUp className="h-5 w-5 text-primary shrink-0" strokeWidth={1.5}/>
                 <div>
                   <p className="text-sm font-medium">
                     Score projetado: <span className="text-primary font-bold">
@@ -178,7 +178,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
               {recommendations.top_5_prioridades?.length > 0 && (
                 <div>
                   <h4 className="text-sm font-semibold flex items-center gap-1.5 mb-2">
-                    <Target className="h-4 w-4 text-destructive" />
+                    <Target className="h-4 w-4 text-destructive" strokeWidth={1.5}/>
                     Requisitos Prioritários
                   </h4>
                   <div className="space-y-2">
@@ -199,7 +199,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
               {recommendations.quick_wins?.length > 0 && (
                 <div>
                   <h4 className="text-sm font-semibold flex items-center gap-1.5 mb-2">
-                    <Zap className="h-4 w-4 text-warning" />
+                    <Zap className="h-4 w-4 text-warning" strokeWidth={1.5}/>
                     Quick Wins (Vitórias Rápidas)
                   </h4>
                   <div className="space-y-2">
@@ -219,7 +219,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
 
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button variant="outline" size="sm" onClick={handleAnalyze} disabled={loading} className="flex-1">
-                  {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                  {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" strokeWidth={1.5}/> : <Sparkles className="h-4 w-4 mr-2" strokeWidth={1.5}/>}
                   Atualizar Análise
                 </Button>
                 {props.onGoToRemediation && (
@@ -229,7 +229,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
                     className="flex-1"
                   >
                     Ir para Remediação
-                    <ArrowRight className="h-4 w-4 ml-2" />
+                    <ArrowRight className="h-4 w-4 ml-2" strokeWidth={1.5}/>
                   </Button>
                 )}
               </div>
@@ -238,7 +238,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
             <div className="text-center py-8">
               <p className="text-sm text-muted-foreground">Erro ao carregar recomendações. Tente novamente.</p>
               <Button onClick={handleAnalyze} className="mt-3">
-                <Sparkles className="h-4 w-4 mr-2" />Tentar Novamente
+                <Sparkles className="h-4 w-4 mr-2" strokeWidth={1.5}/>Tentar Novamente
               </Button>
             </div>
           )}

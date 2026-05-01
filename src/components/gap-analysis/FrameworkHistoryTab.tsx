@@ -121,9 +121,9 @@ export function FrameworkHistoryTab({
             <p className="text-3xl font-bold text-primary">{formatScore(currentScore)}</p>
             {stats && (
               <div className="flex items-center justify-center gap-1 mt-1">
-                {trend === 'up' && <TrendingUp className="h-4 w-4 text-emerald-500" />}
-                {trend === 'down' && <TrendingDown className="h-4 w-4 text-destructive" />}
-                {trend === 'neutral' && <Minus className="h-4 w-4 text-muted-foreground" />}
+                {trend === 'up' && <TrendingUp className="h-4 w-4 text-emerald-500" strokeWidth={1.5}/>}
+                {trend === 'down' && <TrendingDown className="h-4 w-4 text-destructive" strokeWidth={1.5}/>}
+                {trend === 'neutral' && <Minus className="h-4 w-4 text-muted-foreground" strokeWidth={1.5}/>}
                 <span className={`text-sm font-medium ${
                   trend === 'up' ? 'text-emerald-500' : trend === 'down' ? 'text-destructive' : 'text-muted-foreground'
                 }`}>
@@ -150,7 +150,7 @@ export function FrameworkHistoryTab({
       {/* Export button */}
       <div className="flex justify-end">
         <Button variant="outline" onClick={handleExportEvolution}>
-          <Download className="h-4 w-4 mr-2" />
+          <Download className="h-4 w-4 mr-2" strokeWidth={1.5}/>
           Exportar Relatório de Evolução
         </Button>
       </div>
@@ -166,7 +166,7 @@ export function FrameworkHistoryTab({
               {history.slice(-10).reverse().map((point, i) => (
                 <div key={i} className="flex items-center gap-3 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground w-24 shrink-0">
-                    <Calendar className="h-3.5 w-3.5" />
+                    <Calendar className="h-3.5 w-3.5" strokeWidth={1.5}/>
                     <span>{point.date}</span>
                   </div>
                   <div className="h-2 w-2 rounded-full bg-primary shrink-0" />

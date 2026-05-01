@@ -501,7 +501,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
                   frameworks.map((framework: any) => (
                     <SelectItem key={framework.id} value={framework.id}>
                       <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
+                        <Shield className="h-4 w-4" strokeWidth={1.5}/>
                         {framework.nome} {framework.versao && `(${framework.versao})`}
                       </div>
                     </SelectItem>
@@ -526,7 +526,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
                     className="hidden"
                   />
                   <label htmlFor="documento" className="cursor-pointer">
-                    <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                    <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-2" strokeWidth={1.5}/>
                     <p className="text-sm font-medium">Clique para fazer upload</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       PDF, DOCX, DOC ou TXT (máx. 10MB)
@@ -536,7 +536,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
               ) : (
                 <div className="border rounded-lg p-4 flex items-center justify-between bg-muted/50">
                   <div className="flex items-center gap-3">
-                    <FileText className="h-8 w-8 text-primary" />
+                    <FileText className="h-8 w-8 text-primary" strokeWidth={1.5}/>
                     <div>
                       <p className="text-sm font-medium">{uploadedFile.name}</p>
                       <p className="text-xs text-muted-foreground">
@@ -565,7 +565,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting || isExtracting || loadingFrameworks || !uploadedFile}>
-                {(isSubmitting || isExtracting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {(isSubmitting || isExtracting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" strokeWidth={1.5}/>}
                 {isExtracting ? 'Extraindo texto...' : 'Iniciar Análise'}
               </Button>
             </div>

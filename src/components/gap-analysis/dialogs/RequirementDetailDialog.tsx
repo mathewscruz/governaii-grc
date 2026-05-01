@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw, HelpCircle, Building2, Settings, FileCheck, CheckSquare, Shield, Target, Sparkles, Brain, ScanSearch, type LucideIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { PlanoAcaoDialog } from "@/components/planos-acao/PlanoAcaoDialog";
 import { AuditTrailTimeline } from "@/components/gap-analysis/AuditTrailTimeline";
@@ -83,12 +85,12 @@ const CollapsibleSection = ({ title, icon: Icon, defaultOpen = false, badge, chi
 const getSectionIcon = (title: string): { icon: LucideIcon; color: string } => {
   const t = title.toLowerCase();
   if (t.includes('significa') || t.includes('conceito') || t.includes('what')) return { icon: Target, color: 'text-primary' };
-  if (t.includes('importa') || t.includes('relevância') || t.includes('why') || t.includes('negócio')) return { icon: Building2, color: 'text-amber-500' };
-  if (t.includes('implementar') || t.includes('como') || t.includes('how') || t.includes('passo')) return { icon: Settings, color: 'text-blue-500' };
-  if (t.includes('resumo') || t.includes('conclus') || t.includes('prático') || t.includes('summary')) return { icon: CheckSquare, color: 'text-emerald-500' };
-  if (t.includes('evidência') || t.includes('comprova') || t.includes('evidence') || t.includes('documento')) return { icon: FileCheck, color: 'text-violet-500' };
+  if (t.includes('importa') || t.includes('relevância') || t.includes('why') || t.includes('negócio')) return { icon: Building2, color: 'text-warning' };
+  if (t.includes('implementar') || t.includes('como') || t.includes('how') || t.includes('passo')) return { icon: Settings, color: 'text-info' };
+  if (t.includes('resumo') || t.includes('conclus') || t.includes('prático') || t.includes('summary')) return { icon: CheckSquare, color: 'text-success' };
+  if (t.includes('evidência') || t.includes('comprova') || t.includes('evidence') || t.includes('documento')) return { icon: FileCheck, color: 'text-primary' };
   if (t.includes('risco') || t.includes('atenção') || t.includes('risk') || t.includes('cuidado')) return { icon: AlertTriangle, color: 'text-destructive' };
-  if (t.includes('controle') || t.includes('medida') || t.includes('proteção')) return { icon: Shield, color: 'text-cyan-500' };
+  if (t.includes('controle') || t.includes('medida') || t.includes('proteção')) return { icon: Shield, color: 'text-info' };
   return { icon: BookOpen, color: 'text-muted-foreground' };
 };
 
@@ -298,6 +300,9 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
     justification: string;
     missing?: string[];
   }>>({});
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkName, setLinkName] = useState('');
 
   const [formData, setFormData] = useState<EvaluationData>({
     responsavel_avaliacao: '', plano_acao: '', observacoes: '',
@@ -632,13 +637,13 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                       {evidenciasText && (
                         <div className="mt-4 pt-4 border-t border-border/50">
                           <div className="flex items-center gap-1.5 mb-3">
-                            <CheckCircle2 className="h-4 w-4 text-chart-2" />
+                            <CheckCircle2 className="h-4 w-4 text-success" strokeWidth={1.5} />
                             <h4 className="text-sm font-bold text-foreground">Exemplos de Evidências Aceitas</h4>
                           </div>
                           <ul className="space-y-2">
                             {evidenciasText.split('\n').filter(l => l.trim()).map((ex, i) => (
                               <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                <CheckCircle2 className="h-3.5 w-3.5 text-chart-2 shrink-0 mt-0.5" />
+                                <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0 mt-0.5" strokeWidth={1.5} />
                                 <span>{ex.replace(/^[-•*]\s*/, '').trim()}</span>
                               </li>
                             ))}
@@ -672,8 +677,8 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                                         size="sm"
                                         variant={answer === opt ? 'default' : 'outline'}
                                         className={`text-xs h-7 px-3 ${
-                                          answer === opt && opt === 'sim' ? 'bg-chart-2 hover:bg-chart-2/90 text-white' :
-                                          answer === opt && opt === 'parcial' ? 'bg-chart-4 hover:bg-chart-4/90 text-white' :
+                                          answer === opt && opt === 'sim' ? 'bg-success hover:bg-success/90 text-success-foreground' :
+                                          answer === opt && opt === 'parcial' ? 'bg-warning hover:bg-warning/90 text-warning-foreground' :
                                           answer === opt && opt === 'nao' ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground' : ''
                                         }`}
                                         onClick={() => setDiagnosticAnswers(prev => ({ ...prev, [idx]: opt }))}
@@ -704,7 +709,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                                 });
                                 const pct = totalWeight > 0 ? (weightedScore / totalWeight) * 100 : 0;
                                 const suggested = pct >= 80 ? 'Conforme' : pct >= 40 ? 'Parcial' : 'Não Conforme';
-                                const color = pct >= 80 ? 'text-chart-2' : pct >= 40 ? 'text-chart-4' : 'text-destructive';
+                                const color = pct >= 80 ? 'text-success' : pct >= 40 ? 'text-warning' : 'text-destructive';
                                 return (
                                   <div className="flex items-center gap-2">
                                     <Badge variant="outline" className={`${color} font-semibold`}>{suggested}</Badge>
@@ -802,7 +807,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                         ) : (
                           <div className="space-y-3">
                             <p className="text-sm text-muted-foreground">
-                              <AlertTriangle className="h-4 w-4 inline mr-1 text-amber-500" />
+                              <AlertTriangle className="h-4 w-4 inline mr-1 text-warning" strokeWidth={1.5} />
                               Requisito não conforme. Crie um plano de ação.
                             </p>
                             <Button size="sm" variant="outline" onClick={() => setPlanoAcaoDialogOpen(true)}>
@@ -873,14 +878,12 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                               size="sm"
                               className="justify-start"
                               onClick={() => {
-                                const url = prompt('URL da evidência:');
-                                if (url?.trim()) {
-                                  const name = prompt('Nome do link:') || new URL(url).hostname;
-                                  setFormData(prev => ({ ...prev, evidence_files: [...prev.evidence_files, { type: 'link', name, url: url.trim() }] }));
-                                }
+                                setLinkUrl('');
+                                setLinkName('');
+                                setLinkDialogOpen(true);
                               }}
                             >
-                              <ExternalLink className="h-4 w-4 mr-2" />
+                              <ExternalLink className="h-4 w-4 mr-2" strokeWidth={1.5} />
                               <div className="text-left leading-tight">
                                 <div className="text-xs font-semibold">Adicionar link</div>
                                 <div className="text-[10px] text-muted-foreground">URL externa</div>
@@ -919,10 +922,10 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                               const validation = file.url ? validationByUrl[file.url] : undefined;
                               const isValidating = validatingUrl === file.url;
                               const verdictColor =
-                                validation?.verdict === 'conforme' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-200 dark:text-emerald-400' :
-                                validation?.verdict === 'parcial' ? 'bg-amber-500/10 text-amber-700 border-amber-200 dark:text-amber-400' :
-                                validation?.verdict === 'nao_conforme' ? 'bg-red-500/10 text-red-700 border-red-200 dark:text-red-400' :
-                                'bg-muted text-muted-foreground';
+                                validation?.verdict === 'conforme' ? 'bg-success/10 text-success border-success/30' :
+                                validation?.verdict === 'parcial' ? 'bg-warning/10 text-warning border-warning/30' :
+                                validation?.verdict === 'nao_conforme' ? 'bg-destructive/10 text-destructive border-destructive/30' :
+                                'bg-muted text-muted-foreground border-border';
                               const verdictLabel =
                                 validation?.verdict === 'conforme' ? 'Conforme' :
                                 validation?.verdict === 'parcial' ? 'Parcial' :
@@ -932,9 +935,9 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                                 <div key={index} className="rounded bg-muted/50 p-2 space-y-1.5">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                                      {file.type === 'link' ? <ExternalLink className="h-3.5 w-3.5 text-blue-500 shrink-0" /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                                      {file.type === 'link' ? <ExternalLink className="h-3.5 w-3.5 text-info shrink-0" strokeWidth={1.5} /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={1.5} />}
                                       {file.type === 'link' ? (
-                                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline truncate text-xs">{file.name}</a>
+                                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-info hover:underline truncate text-xs">{file.name}</a>
                                       ) : (
                                         <span className="truncate text-xs">{file.name}</span>
                                       )}
@@ -1039,6 +1042,61 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
           registro_origem_titulo: `${requirement.codigo} - ${requirement.titulo}`,
         }}
       />
+
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ExternalLink className="h-4 w-4 text-primary" strokeWidth={1.5} />
+              Adicionar link como evidência
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="link-url" className="text-xs">URL <span className="text-destructive">*</span></Label>
+              <Input
+                id="link-url"
+                type="url"
+                placeholder="https://..."
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="link-name" className="text-xs">Nome do link (opcional)</Label>
+              <Input
+                id="link-name"
+                placeholder="Ex.: Política de Segurança no Confluence"
+                value={linkName}
+                onChange={(e) => setLinkName(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground">Se vazio, usaremos o domínio da URL.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                const url = linkUrl.trim();
+                if (!url) { toast.error('Informe a URL'); return; }
+                let safeName = linkName.trim();
+                if (!safeName) {
+                  try { safeName = new URL(url).hostname; } catch { safeName = url; }
+                }
+                setFormData(prev => ({
+                  ...prev,
+                  evidence_files: [...prev.evidence_files, { type: 'link', name: safeName, url }],
+                }));
+                setLinkDialogOpen(false);
+                toast.success('Link adicionado como evidência');
+              }}
+            >
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

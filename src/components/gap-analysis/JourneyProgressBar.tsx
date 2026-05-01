@@ -98,7 +98,7 @@ export function JourneyProgressBar({
           disabled={!onActionClick}
           className="text-xs font-medium text-primary flex items-center gap-1 shrink-0 hover:underline disabled:cursor-default disabled:no-underline"
         >
-          {state.action.label} <ArrowRight className="h-3 w-3" />
+          {state.action.label} <ArrowRight className="h-3 w-3" strokeWidth={1.5}/>
         </button>
       )}
     </div>

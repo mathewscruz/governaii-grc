@@ -398,7 +398,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   const SearchAndFilterBar = () => (
     <div className="flex flex-wrap items-center gap-3 mb-4">
       <div className="relative flex-1 min-w-[200px] max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5}/>
         <Input placeholder="Buscar por código, título ou descrição..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 pr-9" />
         {searchTerm && (
           <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setSearchTerm('')}>
@@ -424,7 +424,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Ver legenda">
-            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+            <HelpCircle className="h-4 w-4 text-muted-foreground" strokeWidth={1.5}/>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80 text-xs space-y-3">
@@ -437,8 +437,8 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
           </div>
           <div className="space-y-1.5 border-t pt-2">
             <p className="font-medium text-foreground">Ícones e prioridade</p>
-            <div className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-destructive" /><span className="text-muted-foreground">Requisito de alta prioridade não conforme</span></div>
-            <div className="flex items-center gap-1.5"><Paperclip className="h-3.5 w-3.5" /><span className="text-muted-foreground">Há evidências anexadas</span></div>
+            <div className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-destructive" strokeWidth={1.5}/><span className="text-muted-foreground">Requisito de alta prioridade não conforme</span></div>
+            <div className="flex items-center gap-1.5"><Paperclip className="h-3.5 w-3.5" strokeWidth={1.5}/><span className="text-muted-foreground">Há evidências anexadas</span></div>
             <div className="flex items-center gap-1.5"><Badge variant="destructive" className="text-[10px] px-1.5 py-0">Obrigatório</Badge><span className="text-muted-foreground">Marcado pelo framework</span></div>
             <div className="flex items-center gap-1.5"><Badge variant="warning" className="text-[10px] px-1.5 py-0">Alta</Badge><span className="text-muted-foreground">Peso ≥ 3 — alto impacto</span></div>
           </div>
@@ -473,10 +473,10 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
           <span className="text-sm text-muted-foreground">Página {currentPage} de {pages || 1} ({filtered} itens)</span>
           <div className="flex gap-1">
             <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" strokeWidth={1.5}/>
             </Button>
             <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(pages || 1, p + 1))} disabled={currentPage === (pages || 1)}>
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" strokeWidth={1.5}/>
             </Button>
           </div>
         </div>
@@ -544,7 +544,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                   <TableCell className="font-mono text-sm">
                     <div className="flex items-center gap-1">
                       {(req.peso || 0) >= 3 && req.conformity_status === 'nao_conforme' && (
-                        <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                        <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" strokeWidth={1.5}/>
                       )}
                       {req.codigo}
                     </div>
@@ -561,7 +561,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                   <TableCell>
                     {(req.evidence_files?.length || 0) > 0 ? (
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Paperclip className="h-3.5 w-3.5" />
+                        <Paperclip className="h-3.5 w-3.5" strokeWidth={1.5}/>
                         <span>{req.evidence_files!.length}</span>
                       </div>
                     ) : (
@@ -596,7 +596,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
         {selectedIds.size > 0 && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border shadow-lg rounded-xl px-4 py-2.5 flex items-center gap-3 animate-in slide-in-from-bottom-4">
             <div className="flex items-center gap-2">
-              <CheckSquare className="h-4 w-4 text-primary" />
+              <CheckSquare className="h-4 w-4 text-primary" strokeWidth={1.5}/>
               <span className="text-sm font-medium">{selectedIds.size} selecionados</span>
             </div>
             <div className="h-6 w-px bg-border" />

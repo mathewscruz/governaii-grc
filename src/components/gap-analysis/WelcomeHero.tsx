@@ -53,7 +53,7 @@ export function WelcomeHero({ onFrameworkClick, onShowCatalog, suggestedFramewor
     <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
       <div className="p-8">
         <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="h-5 w-5 text-primary" />
+          <Sparkles className="h-5 w-5 text-primary" strokeWidth={1.5}/>
           <Badge variant="secondary" className="text-xs">Novo</Badge>
         </div>
         <h2 className="text-2xl font-bold mb-2">
@@ -89,7 +89,7 @@ export function WelcomeHero({ onFrameworkClick, onShowCatalog, suggestedFramewor
               onClick={() => onFrameworkClick(fw.id)}
             >
               <div className="flex items-start gap-3">
-                <FrameworkLogo nome={fw.nome} className="h-10 w-10 shrink-0 mt-0.5" />
+                <FrameworkLogo nome={fw.nome} className="h-10 w-10 shrink-0 mt-0.5" strokeWidth={1.5}/>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
                     {fw.nome}
@@ -99,7 +99,7 @@ export function WelcomeHero({ onFrameworkClick, onShowCatalog, suggestedFramewor
                     {FRAMEWORK_AUDIENCES[fw.nome] || fw.descricao || 'Framework de conformidade organizacional'}
                   </p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" strokeWidth={1.5}/>
               </div>
             </Card>
           ))}
@@ -107,7 +107,7 @@ export function WelcomeHero({ onFrameworkClick, onShowCatalog, suggestedFramewor
 
         <Button variant="outline" size="sm" onClick={onShowCatalog}>
           Ver todos os frameworks disponíveis
-          <ArrowRight className="h-4 w-4 ml-1" />
+          <ArrowRight className="h-4 w-4 ml-1" strokeWidth={1.5}/>
         </Button>
       </div>
     </Card>

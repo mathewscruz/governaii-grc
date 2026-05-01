@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getScoreBgClass, normalizeScore } from "@/lib/gap-analysis-tokens";
 
 interface CategoryScore {
   category: string;
@@ -18,15 +19,6 @@ interface CategoryBarChartProps {
 export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScores, config }) => {
   const maxValue = config.scoreType === 'percentage' ? 100 : 5;
 
-  const getScoreColor = (score: number) => {
-    const ratio = score / maxValue;
-    if (ratio >= 0.8) return "bg-blue-600";
-    if (ratio >= 0.6) return "bg-blue-500";
-    if (ratio >= 0.4) return "bg-blue-400";
-    if (ratio >= 0.2) return "bg-blue-300";
-    return "bg-blue-200";
-  };
-
   const formatScore = (score: number) =>
     config.scoreType === 'percentage' ? `${score.toFixed(1)}%` : score.toFixed(1);
 
@@ -40,6 +32,7 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
           <TooltipProvider>
             {categoryScores.map((cat, i) => {
               const pct = (cat.score / maxValue) * 100;
+              const normalized = normalizeScore(cat.score, config.scoreType);
               return (
                 <Tooltip key={i}>
                   <TooltipTrigger asChild>
@@ -52,7 +45,7 @@ export const CategoryBarChart: React.FC<CategoryBarChartProps> = ({ categoryScor
                       </div>
                       <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
                         <div
-                          className={`h-full rounded-full transition-all ${getScoreColor(cat.score)}`}
+                          className={`h-full rounded-full transition-all ${getScoreBgClass(normalized)}`}
                           style={{ width: `${pct}%` }}
                         />
                       </div>

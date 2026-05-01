@@ -62,7 +62,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'concluido': return 'Concluído';
-      case 'processando': return <><Loader2 className="h-3 w-3 mr-1 animate-spin inline" />Processando</>;
+      case 'processando': return <><Loader2 className="h-3 w-3 mr-1 animate-spin inline" strokeWidth={1.5}/>Processando</>;
       case 'erro': return 'Erro';
       default: return status;
     }
@@ -136,25 +136,25 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
     {
       title: 'Total de Avaliações',
       value: stats?.totalAvaliacoes || 0,
-      icon: <Target className="h-4 w-4" />,
+      icon: <Target className="h-4 w-4" strokeWidth={1.5}/>,
       description: 'Avaliações realizadas'
     },
     {
       title: 'Avaliações Conformes',
       value: stats?.avaliacoesConformes || 0,
-      icon: <FileCheck className="h-4 w-4" />,
+      icon: <FileCheck className="h-4 w-4" strokeWidth={1.5}/>,
       description: 'Documentos em conformidade'
     },
     {
       title: 'Não Conformes',
       value: stats?.avaliacoesNaoConformes || 0,
-      icon: <AlertTriangle className="h-4 w-4" />,
+      icon: <AlertTriangle className="h-4 w-4" strokeWidth={1.5}/>,
       description: 'Requerem atenção'
     },
     {
       title: 'Conformidade Média',
       value: `${stats?.mediaConformidade || 0}%`,
-      icon: <TrendingUp className="h-4 w-4" />,
+      icon: <TrendingUp className="h-4 w-4" strokeWidth={1.5}/>,
       description: 'Média geral de conformidade'
     }
   ];
@@ -179,7 +179,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
       {/* Guidance Card */}
       <Card className="p-4 border-primary/20 bg-primary/5">
         <div className="flex items-start gap-3">
-          <FileCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <FileCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" strokeWidth={1.5}/>
           <div>
             <p className="text-sm font-medium mb-1">Como funciona a Análise de Documentos?</p>
             <p className="text-xs text-muted-foreground mb-2">
@@ -199,7 +199,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
       {/* Botão Nova Avaliação */}
       <div className="flex justify-end">
         <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="mr-2 h-4 w-4" strokeWidth={1.5}/>
           Nova Avaliação
         </Button>
       </div>
@@ -246,7 +246,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
 
                     {assessment.status === 'processando' && (
                       <div className="flex items-center gap-2 text-info text-sm">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5}/>
                         <span>Identificando requisitos relevantes e analisando... (1-2 minutos)</span>
                       </div>
                     )}
@@ -275,7 +275,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
                       onClick={() => onViewResult(assessment)}
                       disabled={assessment.status !== 'concluido'}
                     >
-                      <Eye className="mr-2 h-4 w-4" />
+                      <Eye className="mr-2 h-4 w-4" strokeWidth={1.5}/>
                       Ver Detalhes
                     </Button>
                     <Button
@@ -284,7 +284,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
                       onClick={() => setAssessmentToDelete(assessment.id)}
                       className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" strokeWidth={1.5}/>
                     </Button>
                   </div>
                 </div>
@@ -293,10 +293,10 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
           </div>
         ) : (
           <div className="text-center py-12">
-            <FileCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <FileCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" strokeWidth={1.5}/>
             <p className="text-muted-foreground mb-4">Nenhuma avaliação realizada ainda</p>
             <Button onClick={() => setIsDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 h-4 w-4" strokeWidth={1.5}/>
               Criar Primeira Avaliação
             </Button>
           </div>

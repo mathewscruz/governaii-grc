@@ -51,7 +51,7 @@ export const PrivacyTreemap: React.FC<PrivacyTreemapProps> = ({
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-            <FileText className="h-12 w-12 mb-4 opacity-50" />
+            <FileText className="h-12 w-12 mb-4 opacity-50" strokeWidth={1.5}/>
             <p className="text-sm">Nenhum requisito avaliado ainda</p>
             <p className="text-xs mt-1">Avalie os requisitos para ver o mapa de conformidade</p>
           </div>
