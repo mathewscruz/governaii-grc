@@ -329,12 +329,12 @@ export function ItemAuditoriaDetalheDialog({
               <Badge variant="outline" className="font-mono">
                 {item.codigo}
               </Badge>
-              <Badge className={`${getPrioridadeColor(item.prioridade)} border whitespace-nowrap`}>
-                {getPrioridadeLabel(item.prioridade)}
-              </Badge>
-              <Badge className={`${getStatusColor(item.status)} border whitespace-nowrap`}>
-                {getStatusLabel(item.status)}
-              </Badge>
+              <StatusBadge size="md" {...resolvePrioridadeTone(item.prioridade)}>
+                {formatStatus(item.prioridade)}
+              </StatusBadge>
+              <StatusBadge size="md" {...resolveItemAuditoriaStatusTone(item.status)}>
+                {formatStatus(item.status)}
+              </StatusBadge>
             </div>
             <Button variant="outline" size="sm" onClick={onEdit}>
               <Edit className="h-4 w-4 mr-2" />
