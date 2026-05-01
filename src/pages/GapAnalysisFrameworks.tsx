@@ -9,10 +9,12 @@ import { FrameworkComparisonRadar } from '@/components/gap-analysis/FrameworkCom
 import { WelcomeHero } from '@/components/gap-analysis/WelcomeHero';
 import { FrameworkCatalog } from '@/components/gap-analysis/FrameworkCatalog';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { useDebounce } from '@/hooks/useDebounce';
-import { Activity, TrendingUp, AlertTriangle, Shield, Target, Search } from 'lucide-react';
+import { Activity, TrendingUp, AlertTriangle, Shield, Target, Search, ChevronDown } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 interface Framework {
@@ -38,8 +40,25 @@ interface StatusCounts {
   nao_avaliado: number;
 }
 
-// Popular frameworks for suggestions
-const SUGGESTED_NAMES = ['ISO 27001', 'LGPD', 'NIST CSF 2.0'];
+// Frameworks recomendados (em ordem de prioridade) usados quando ainda não há nada ativo.
+const SUGGESTED_NAMES = ['ISO 27001', 'ISO/IEC 27001', 'LGPD', 'NIST CSF 2.0', 'NIST CSF'];
+
+// Filtros de categoria — alinhados com FrameworkCatalog
+const CATEGORY_OPTIONS: { id: string; label: string }[] = [
+  { id: 'all', label: 'Todas' },
+  { id: 'seguranca', label: 'Segurança' },
+  { id: 'privacidade', label: 'Privacidade' },
+  { id: 'governanca', label: 'Governança' },
+  { id: 'qualidade', label: 'Qualidade' },
+];
+
+function getCategory(tipo: string): string {
+  const t = tipo?.toLowerCase() || '';
+  if (t.includes('privacidade') || t.includes('privacy') || t.includes('lgpd') || t.includes('gdpr')) return 'privacidade';
+  if (t.includes('governanca') || t.includes('governance') || t.includes('cobit') || t.includes('sox')) return 'governanca';
+  if (t.includes('qualidade') || t.includes('quality') || t.includes('iso 9') || t.includes('itil')) return 'qualidade';
+  return 'seguranca';
+}
 
 export default function GapAnalysisFrameworks() {
   const navigate = useNavigate();
@@ -51,7 +70,9 @@ export default function GapAnalysisFrameworks() {
   const [frameworkStatusCounts, setFrameworkStatusCounts] = useState<Record<string, StatusCounts>>({});
   const [loading, setLoading] = useState(true);
   const [showCatalog, setShowCatalog] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const debouncedSearch = useDebounce(searchTerm, 250);
 
   useEffect(() => {
@@ -166,17 +187,30 @@ export default function GapAnalysisFrameworks() {
     return { activeFrameworks: active, availableFrameworks: available };
   }, [frameworks, frameworkProgress]);
 
-  const filteredAvailableFrameworks = useMemo(() => {
-    if (!debouncedSearch.trim()) return availableFrameworks;
-    const term = debouncedSearch.toLowerCase();
-    return availableFrameworks.filter(fw =>
+  // Helper genérico de filtragem (busca + categoria)
+  const matchesFilters = (fw: Framework) => {
+    if (categoryFilter !== 'all' && getCategory(fw.tipo_framework) !== categoryFilter) return false;
+    const term = debouncedSearch.trim().toLowerCase();
+    if (!term) return true;
+    return (
       fw.nome.toLowerCase().includes(term) ||
       fw.tipo_framework?.toLowerCase().includes(term) ||
       fw.descricao?.toLowerCase().includes(term)
     );
-  }, [availableFrameworks, debouncedSearch]);
+  };
+
+  const filteredActiveFrameworks = useMemo(
+    () => activeFrameworks.filter(matchesFilters),
+    [activeFrameworks, debouncedSearch, categoryFilter]
+  );
+
+  const filteredAvailableFrameworks = useMemo(
+    () => availableFrameworks.filter(matchesFilters),
+    [availableFrameworks, debouncedSearch, categoryFilter]
+  );
 
   const hasActiveFrameworks = activeFrameworks.length > 0;
+  const hasFilters = debouncedSearch.trim() !== '' || categoryFilter !== 'all';
 
   // Stats relevantes
   const relevantStats = useMemo(() => {
@@ -201,7 +235,6 @@ export default function GapAnalysisFrameworks() {
       if (sc) criticalCount += sc.nao_conforme;
     });
 
-    // Total avaliados este mês (simplificado)
     let totalEvaluated = 0;
     activeFrameworks.forEach(fw => {
       const p = frameworkProgress[fw.id];
@@ -209,7 +242,7 @@ export default function GapAnalysisFrameworks() {
     });
 
     return { overallCompliance, criticalCount, totalEvaluated };
-  }, [activeFrameworks, frameworkProgress, frameworkStatusCounts]);
+  }, [activeFrameworks, frameworkProgress, frameworkStatusCounts, hasActiveFrameworks]);
 
   // Radar data
   const comparisonData = useMemo(() => {
@@ -219,11 +252,20 @@ export default function GapAnalysisFrameworks() {
     }));
   }, [activeFrameworks, frameworkProgress]);
 
-  // Suggested frameworks for welcome hero
+  // Frameworks recomendados (busca dinâmica por priority list + fallback de tipo)
   const suggestedFrameworks = useMemo(() => {
-    return SUGGESTED_NAMES
+    const found = SUGGESTED_NAMES
       .map(name => frameworks.find(fw => fw.nome === name))
       .filter(Boolean) as Framework[];
+    // Deduplicar por id
+    const seen = new Set<string>();
+    const unique = found.filter(fw => (seen.has(fw.id) ? false : seen.add(fw.id)));
+    if (unique.length >= 3) return unique.slice(0, 3);
+    // Fallback: completar com primeiros frameworks de cada categoria principal
+    const fallbacks = ['seguranca', 'privacidade', 'governanca']
+      .map(cat => frameworks.find(fw => getCategory(fw.tipo_framework) === cat && !seen.has(fw.id)))
+      .filter(Boolean) as Framework[];
+    return [...unique, ...fallbacks].slice(0, 3);
   }, [frameworks]);
 
   const handleFrameworkClick = (framework: Framework) => {
@@ -242,6 +284,36 @@ export default function GapAnalysisFrameworks() {
       </ErrorBoundary>
     );
   }
+
+  // Barra unificada de busca + filtros (usada quando há frameworks)
+  const FilterBar = (
+    <div className="flex items-center gap-3 flex-wrap">
+      <div className="relative flex-1 min-w-[220px] max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar framework por nome, tipo ou descrição..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9 h-9"
+        />
+      </div>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {CATEGORY_OPTIONS.map(opt => {
+          const active = categoryFilter === opt.id;
+          return (
+            <Badge
+              key={opt.id}
+              variant={active ? 'default' : 'outline'}
+              className="cursor-pointer text-xs"
+              onClick={() => setCategoryFilter(opt.id)}
+            >
+              {opt.label}
+            </Badge>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <ErrorBoundary>
@@ -292,59 +364,84 @@ export default function GapAnalysisFrameworks() {
               <FrameworkComparisonRadar data={comparisonData} />
             )}
 
+            {/* Barra de busca unificada */}
+            {FilterBar}
+
             {/* Active frameworks */}
             <div className="space-y-3">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Activity className="h-5 w-5 text-primary" />
                 Frameworks Ativos
-                <span className="text-sm font-normal text-muted-foreground">({activeFrameworks.length})</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({hasFilters ? `${filteredActiveFrameworks.length} de ${activeFrameworks.length}` : activeFrameworks.length})
+                </span>
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {activeFrameworks.map((framework) => (
-                  <FrameworkCard
-                    key={framework.id}
-                    id={framework.id}
-                    nome={framework.nome}
-                    versao={framework.versao}
-                    tipo_framework={framework.tipo_framework}
-                    descricao={framework.descricao}
-                    requirementCount={requirementCounts[framework.id] || 0}
-                    progress={frameworkProgress[framework.id]}
-                    statusCounts={frameworkStatusCounts[framework.id]}
-                    variant="active"
-                    onClick={() => handleFrameworkClick(framework)}
-                  />
-                ))}
-              </div>
+              {filteredActiveFrameworks.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredActiveFrameworks.map((framework) => (
+                    <FrameworkCard
+                      key={framework.id}
+                      id={framework.id}
+                      nome={framework.nome}
+                      versao={framework.versao}
+                      tipo_framework={framework.tipo_framework}
+                      descricao={framework.descricao}
+                      requirementCount={requirementCounts[framework.id] || 0}
+                      progress={frameworkProgress[framework.id]}
+                      statusCounts={frameworkStatusCounts[framework.id]}
+                      variant="active"
+                      onClick={() => handleFrameworkClick(framework)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Nenhum framework ativo corresponde aos filtros.</p>
+              )}
             </div>
           </>
         )}
 
-        {/* Available frameworks - catalog by category */}
-        {(hasActiveFrameworks || showCatalog) && filteredAvailableFrameworks.length >= 0 && availableFrameworks.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
+        {/* Available frameworks - colapsável quando há ativos */}
+        {(hasActiveFrameworks || showCatalog) && availableFrameworks.length > 0 && (
+          hasActiveFrameworks ? (
+            <Collapsible open={catalogOpen} onOpenChange={setCatalogOpen}>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <CollapsibleTrigger asChild>
+                  <button type="button" className="flex items-center gap-2 group">
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${catalogOpen ? 'rotate-0' : '-rotate-90'}`} />
+                    <h2 className="text-lg font-semibold flex items-center gap-2 group-hover:text-primary transition-colors">
+                      <Shield className="h-5 w-5 text-muted-foreground" />
+                      Frameworks Disponíveis
+                      <span className="text-sm font-normal text-muted-foreground">
+                        ({hasFilters && catalogOpen ? `${filteredAvailableFrameworks.length} de ${availableFrameworks.length}` : availableFrameworks.length})
+                      </span>
+                    </h2>
+                  </button>
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent className="mt-3">
+                <FrameworkCatalog
+                  frameworks={filteredAvailableFrameworks}
+                  requirementCounts={requirementCounts}
+                  onFrameworkClick={handleFrameworkClick}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          ) : (
+            <div className="space-y-3">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Shield className="h-5 w-5 text-muted-foreground" />
                 Frameworks Disponíveis
                 <span className="text-sm font-normal text-muted-foreground">({availableFrameworks.length})</span>
               </h2>
-              <div className="relative w-full max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar framework..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 h-9"
-                />
-              </div>
+              {FilterBar}
+              <FrameworkCatalog
+                frameworks={filteredAvailableFrameworks}
+                requirementCounts={requirementCounts}
+                onFrameworkClick={handleFrameworkClick}
+              />
             </div>
-            <FrameworkCatalog
-              frameworks={filteredAvailableFrameworks}
-              requirementCounts={requirementCounts}
-              onFrameworkClick={handleFrameworkClick}
-            />
-          </div>
+          )
         )}
 
         {frameworks.length === 0 && (

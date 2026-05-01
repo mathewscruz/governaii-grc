@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { FrameworkConfig, NIST_PILLAR_NAMES } from "@/lib/framework-configs";
 import { RequirementDetailDialog } from "./nist/NISTRequirementDetailDialog";
 import { saveScoreHistory } from "@/hooks/useScoreHistory";
@@ -122,7 +123,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
 
       setRequirements(merged);
     } catch (error: any) {
-      console.error('Erro ao carregar requisitos:', error);
+      logger.error('Erro ao carregar requisitos', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro ao carregar requisitos');
     } finally {
       setLoading(false);
@@ -186,11 +187,12 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       // 4. Salvar histórico e notificar pai em background
       saveScoreHistory(frameworkId, empresaId, score, totalReqs, evaluatedReqs).catch(() => {});
       onStatusChange?.();
-      toast.success('Status atualizado com sucesso!');
+      // Sem toast em mudança individual — feedback visual da própria linha já indica sucesso.
+      // Toast permanece apenas para ações em lote e para erros.
     } catch (error: any) {
       // Rollback optimistic update
       setRequirements(previousRequirements);
-      console.error('Erro ao atualizar status:', error);
+      logger.error('Erro ao atualizar status do requisito', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro ao atualizar status');
     }
   };
@@ -261,7 +263,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       onStatusChange?.();
       toast.success(`${ids.length} requisitos atualizados para "${newStatus === 'conforme' ? 'Conforme' : newStatus === 'parcial' ? 'Parcial' : newStatus === 'nao_conforme' ? 'Não Conforme' : 'N/A'}"`);
     } catch (error: any) {
-      console.error('Erro na atualização em lote:', error);
+      logger.error('Erro na atualização em lote de requisitos', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro na atualização em lote');
     } finally {
       setBulkUpdating(false);
@@ -365,18 +367,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   const clearFilters = () => { setSearchTerm(''); setStatusFilter('all'); setOnlyMandatory(false); };
   const hasActiveFilters = searchTerm.trim() !== '' || statusFilter !== 'all' || onlyMandatory;
 
-  const IconLegend = () => (
-    <div className="flex items-center gap-4 mb-3 px-1 text-xs text-muted-foreground">
-      <div className="flex items-center gap-1.5">
-        <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
-        <span>Requisito de alta prioridade em não conformidade</span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <Paperclip className="h-3.5 w-3.5" />
-        <span>Evidências anexadas</span>
-      </div>
-    </div>
-  );
+  // Legenda de ícones agora unificada dentro do popover "?" da SearchAndFilterBar.
 
   const SearchAndFilterBar = () => (
     <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -406,17 +397,24 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       </div>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Ver legenda">
             <HelpCircle className="h-4 w-4 text-muted-foreground" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-72 text-xs space-y-2">
-          <p className="font-medium text-foreground">Legenda de Status</p>
+        <PopoverContent className="w-80 text-xs space-y-3">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5"><Badge variant="success" className="text-[10px] px-1.5 py-0">Conforme</Badge><span className="text-muted-foreground">Atende 100%</span></div>
+            <p className="font-medium text-foreground">Status de conformidade</p>
+            <div className="flex items-center gap-1.5"><Badge variant="success" className="text-[10px] px-1.5 py-0">Conforme</Badge><span className="text-muted-foreground">Atende 100% ao requisito</span></div>
             <div className="flex items-center gap-1.5"><Badge variant="warning" className="text-[10px] px-1.5 py-0">Parcial</Badge><span className="text-muted-foreground">Atende parcialmente</span></div>
             <div className="flex items-center gap-1.5"><Badge variant="destructive" className="text-[10px] px-1.5 py-0">Não Conforme</Badge><span className="text-muted-foreground">Não atende</span></div>
-            <div className="flex items-center gap-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0">N/A</Badge><span className="text-muted-foreground">Não aplicável</span></div>
+            <div className="flex items-center gap-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0">N/A</Badge><span className="text-muted-foreground">Não aplicável ao escopo</span></div>
+          </div>
+          <div className="space-y-1.5 border-t pt-2">
+            <p className="font-medium text-foreground">Ícones e prioridade</p>
+            <div className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-destructive" /><span className="text-muted-foreground">Requisito de alta prioridade não conforme</span></div>
+            <div className="flex items-center gap-1.5"><Paperclip className="h-3.5 w-3.5" /><span className="text-muted-foreground">Há evidências anexadas</span></div>
+            <div className="flex items-center gap-1.5"><Badge variant="destructive" className="text-[10px] px-1.5 py-0">Obrigatório</Badge><span className="text-muted-foreground">Marcado pelo framework</span></div>
+            <div className="flex items-center gap-1.5"><Badge variant="warning" className="text-[10px] px-1.5 py-0">Alta</Badge><span className="text-muted-foreground">Peso ≥ 3 — alto impacto</span></div>
           </div>
         </PopoverContent>
       </Popover>
@@ -619,7 +617,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
         <CardHeader><CardTitle>Requisitos do {frameworkName}</CardTitle></CardHeader>
         <CardContent>
           <SearchAndFilterBar />
-          <IconLegend />
+
           <Tabs value={activeSection} onValueChange={(v) => { setActiveSection(v); setActiveTab('all'); setCurrentPage(1); }}>
             <TabsList className="mb-4">
               {config.sections.map(section => (
@@ -669,8 +667,8 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       <CardHeader><CardTitle>Requisitos do {frameworkName}</CardTitle></CardHeader>
       <CardContent>
         <SearchAndFilterBar />
-        <IconLegend />
-        
+
+
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setCurrentPage(1); }}>
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
             <TabsTrigger value="all">Todos ({requirements.length})</TabsTrigger>
