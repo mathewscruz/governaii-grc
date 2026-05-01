@@ -739,7 +739,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
         isSubmitting={saving}
         submitDisabled={loading}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full min-h-0 overflow-hidden">
           {/* ====================================================== */}
           {/* STATUS BAR — sempre visível, primeira ação do usuário  */}
           {/* ====================================================== */}
