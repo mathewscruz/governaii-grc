@@ -70,19 +70,38 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   initialCategoryFilter,
 }) => {
   const { empresaId, loading: loadingEmpresa } = useEmpresaId();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>('all');
-  const [activeSection, setActiveSection] = useState<string>(config.sections?.[0]?.id || '');
+  const [activeTab, setActiveTab] = useState<string>(searchParams.get('cat') || 'all');
+  const [activeSection, setActiveSection] = useState<string>(searchParams.get('sec') || config.sections?.[0]?.id || '');
   const [selectedRequirement, setSelectedRequirement] = useState<Requirement | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [onlyMandatory, setOnlyMandatory] = useState(false);
+  const [itemsPerPage, setItemsPerPage] = useState(Number(searchParams.get('size')) || 10);
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>((searchParams.get('status') as StatusFilter) || 'all');
+  const [onlyMandatory, setOnlyMandatory] = useState(searchParams.get('prio') === '1');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
+
+  // Sync filters → URL (replace, no history pollution)
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    const setOrDelete = (key: string, value: string, defaultValue: string) => {
+      if (value && value !== defaultValue) params.set(key, value);
+      else params.delete(key);
+    };
+    setOrDelete('q', searchTerm, '');
+    setOrDelete('status', statusFilter, 'all');
+    setOrDelete('prio', onlyMandatory ? '1' : '', '');
+    setOrDelete('cat', activeTab, 'all');
+    setOrDelete('sec', activeSection, config.sections?.[0]?.id || '');
+    setOrDelete('size', String(itemsPerPage), '10');
+    setOrDelete('page', String(currentPage), '1');
+    setSearchParams(params, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, statusFilter, onlyMandatory, activeTab, activeSection, itemsPerPage, currentPage]);
 
   const loadRequirements = async () => {
     if (!empresaId) return;
