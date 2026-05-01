@@ -85,12 +85,12 @@ const CollapsibleSection = ({ title, icon: Icon, defaultOpen = false, badge, chi
 const getSectionIcon = (title: string): { icon: LucideIcon; color: string } => {
   const t = title.toLowerCase();
   if (t.includes('significa') || t.includes('conceito') || t.includes('what')) return { icon: Target, color: 'text-primary' };
-  if (t.includes('importa') || t.includes('relevância') || t.includes('why') || t.includes('negócio')) return { icon: Building2, color: 'text-amber-500' };
-  if (t.includes('implementar') || t.includes('como') || t.includes('how') || t.includes('passo')) return { icon: Settings, color: 'text-blue-500' };
-  if (t.includes('resumo') || t.includes('conclus') || t.includes('prático') || t.includes('summary')) return { icon: CheckSquare, color: 'text-emerald-500' };
-  if (t.includes('evidência') || t.includes('comprova') || t.includes('evidence') || t.includes('documento')) return { icon: FileCheck, color: 'text-violet-500' };
+  if (t.includes('importa') || t.includes('relevância') || t.includes('why') || t.includes('negócio')) return { icon: Building2, color: 'text-warning' };
+  if (t.includes('implementar') || t.includes('como') || t.includes('how') || t.includes('passo')) return { icon: Settings, color: 'text-info' };
+  if (t.includes('resumo') || t.includes('conclus') || t.includes('prático') || t.includes('summary')) return { icon: CheckSquare, color: 'text-success' };
+  if (t.includes('evidência') || t.includes('comprova') || t.includes('evidence') || t.includes('documento')) return { icon: FileCheck, color: 'text-primary' };
   if (t.includes('risco') || t.includes('atenção') || t.includes('risk') || t.includes('cuidado')) return { icon: AlertTriangle, color: 'text-destructive' };
-  if (t.includes('controle') || t.includes('medida') || t.includes('proteção')) return { icon: Shield, color: 'text-cyan-500' };
+  if (t.includes('controle') || t.includes('medida') || t.includes('proteção')) return { icon: Shield, color: 'text-info' };
   return { icon: BookOpen, color: 'text-muted-foreground' };
 };
 
