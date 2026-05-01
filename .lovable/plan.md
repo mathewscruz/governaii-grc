@@ -1,149 +1,147 @@
 
-# Refatoração Visual — Módulo Gap Analysis
+# Refatoração do Popup de Detalhes do Requisito (Gap Analysis)
 
-## Diagnóstico (o que encontrei revisando 30+ arquivos)
+## Problema atual
 
-### 1. Cores fora da identidade Akuris
-O design system é **Violet (#7552FF) + Navy + neutros**, com tokens semânticos `success/warning/destructive/info` e charts via `chart-1..5`. O módulo usa **cores cruas Tailwind** em dezenas de pontos:
-- `FrameworkCard.tsx`: `bg-blue-100`, `bg-emerald-100`, `bg-amber-100`, `bg-purple-100`, `bg-red-100`, `text-emerald-600` etc. (categorias e esforço)
-- `CategoryBarChart.tsx`: barras em `bg-blue-200..600` (azul fora da paleta)
-- `AreaBarChart.tsx`: 5 tons de verde hardcoded (`#059669`, `#10b981`…)
-- `ScoreEvolutionChart.tsx`: linha em `#8b5cf6` hardcoded
-- `GenericScoreDashboard.tsx` (donut): `#22c55e/#3b82f6/#f59e0b/#ef4444` hardcoded
-- `StatusBlocks.tsx`: `bg-emerald-500 / bg-amber-400 / bg-red-500 / bg-blue-400`
-- `FrameworkCard` (status pills): `bg-emerald-100 dark:bg-emerald-900/30…`
-- `AdherenceAssessmentView.tsx`: `bg-green-100 / bg-blue-100 / bg-yellow-100 / bg-red-100` para badges (deveria usar `<Badge variant>`)
-- `AIRecommendationsCard.tsx`: botão `bg-purple-600` hardcoded em vez de `bg-primary`
-- `RequirementDetailDialog`: `text-amber-500`, `bg-emerald-500/10`, `text-blue-500`, `bg-chart-2/chart-4` (mistura tokens novos com cores cruas)
-- `AdherenceAssessmentView`: `text-blue-600` para "Processando…"
+O popup mistura informações de leitura (orientação) com formulário de avaliação sem hierarquia visual. O status de conformidade — informação central — não é editável dentro do popup, o "Diagnóstico Rápido" fica enterrado no painel esquerdo, e os blocos do painel direito têm peso visual igual, deixando o usuário sem saber por onde começar.
 
-**Resultado**: o módulo "destoa" do resto do sistema — ele tem cara de "AI default" (azul/verde Tailwind crus), não de Akuris (violet/navy).
+## Objetivo
 
-### 2. Ícones — não seguem o sistema Akuris
-A regra do projeto (memo `Akuris Icon System`) exige:
-- **Stroke 1.5** (assinatura visual) — `FrameworkLogos.tsx` segue, mas o resto usa default 2.
-- **Catálogo `@/components/icons`** para conceitos (IconEdit, IconSuccess, etc.).
-- **Ícones proprietários para módulos GRC** — existe `GapAnalysisIcon` em `@/components/icons/modules`, mas o módulo continua usando `Activity`, `Shield` (Lucide) no header e em vários cards.
+Transformar o popup em uma **jornada de avaliação numerada** onde o usuário: (1) entende o requisito, (2) responde diagnóstico ou define status manualmente, (3) anexa evidência (com IA), (4) cria plano de ação se não-conforme, (5) preenche detalhes administrativos. Status editável inline, sem precisar fechar e voltar à tabela.
 
-Inconsistências de ícones detectadas:
-- Header da listagem usa `Activity` (Lucide), deveria usar `GapAnalysisIcon`.
-- `WelcomeHero` mistura `Sparkles, Search, Brain, BarChart3` (todos Lucide crus).
-- `RequirementDetailDialog` importa **27 ícones Lucide diferentes** numa só linha (CheckSquare, FileCheck, ScanSearch, Brain, Sparkles, Shield…) — sem usar o catálogo.
-- `FrameworkOnboarding` importa 16 ícones Lucide para "ilustrar" cada framework — duplica o que já está em `FrameworkLogos.tsx`.
-- `Brain` (cérebro) é usado para "Gerador de Documentos IA" — visual genérico de IA, fora da identidade.
+## Mudanças no arquivo `RequirementDetailDialog.tsx`
 
-### 3. Componentes duplicados / órfãos (código morto)
-Confirmado por busca de imports: **7 componentes não são importados em lugar nenhum**:
-- `AssessmentDialog.tsx` (187 linhas)
-- `AssignmentDialog.tsx` (253 linhas)
-- `EvidenceDialog.tsx` (271 linhas)
-- `EvidenceUpload.tsx` (211 linhas)
-- `RequirementDialog.tsx` (378 linhas)
-- `RequirementsManager.tsx` (224 linhas)
-- `FrameworkDialog.tsx` (157 linhas)
+### 1. Header reformulado (Status Bar no topo)
 
-**Total: ~1.700 linhas de código morto** — vestígios de versões antigas que foram substituídas pelo `RequirementDetailDialog` unificado e pelos templates globais. Manter aumenta confusão e risco.
+Logo abaixo do título do dialog, adicionar uma **barra de status persistente** que substitui a tira atual de badges "Obrigatório / Peso 3":
 
-### 4. Popup principal (RequirementDetailDialog) — campos OK, mas estrutura confusa
-**Estrutura atual**: split 40/60, painel esquerdo com orientação IA, painel direito com formulário em `CollapsibleSection`s.
+```text
+┌───────────────────────────────────────────────────────────────┐
+│ [Shield] 4.1 — Entendendo a organização e seu contexto    [X] │
+├───────────────────────────────────────────────────────────────┤
+│ Status:  [Conforme] [Parcial] [Não Conforme] [N/A]           │
+│           ↑ ativo (verde)                                     │
+│ Obrigatório · Peso 3 · Categoria: Contexto da Organização    │
+└───────────────────────────────────────────────────────────────┘
+```
 
-Problemas identificados:
-- **Mistura de tokens**: usa `text-chart-2` / `text-chart-4` (tokens) lado a lado com `text-amber-500` / `bg-emerald-500/10` (crus).
-- **27 ícones Lucide importados** — sem padrão semântico.
-- Hub de evidências (3 ações) usa `Brain`, `Upload`, `ExternalLink` — ok funcionalmente, mas ícones deveriam vir do catálogo.
-- `ScanSearch` (Lucide) para "Validar com IA" — substituível por `IconSuccess` ou ícone proprietário.
-- Hint "Sparkles" no rodapé — usar ícone Akuris.
-- Verdict da validação (`bg-emerald-500/10 text-emerald-700 border-emerald-200`) deveria virar `Badge variant="success/warning/destructive"`.
-- `prompt()` nativo do browser para "Adicionar link" — quebra UX. Substituir por mini-dialog Akuris.
-- Plano de Ação: alerta usa `text-amber-500` cru.
+- 4 botões segmentados (success / warning / destructive / secondary) — clique muda o status imediatamente, salva no banco em background, atualiza a tabela ao fechar.
+- Linha secundária com Obrigatório, Peso, Categoria em texto pequeno.
+- Toast ao mudar: "Status atualizado para Conforme".
 
-### 5. Gráficos com tokens errados
-- `CategoryBarChart`: usa só azul, sem distinção semântica de score (igual a heatmap monocromático).
-- `AreaBarChart`: 5 tons de verde — sem indicação visual de "ruim" (vermelho).
-- `FrameworkComparisonRadar`: `fillOpacity={0.5}` muito chapado, falta gradient sutil da identidade.
-- `ScoreEvolutionChart`: linha `#8b5cf6` hardcoded em vez de `hsl(var(--primary))`.
-- `GenericScoreDashboard` Donut: cores cruas (`#22c55e/#3b82f6/#f59e0b/#ef4444`).
+### 2. Painel esquerdo — apenas leitura/educação
 
-### 6. Outras inconsistências visuais
-- `AIRecommendationsButton`: pílula roxa flutuante (`bg-purple-600`) — destoa do resto. Header tem 4 botões diferentes (`AI`, `DocGen`, `Tour`, `Exportar`) sem hierarquia clara.
-- `WelcomeHero` usa `bg-gradient-to-br from-primary/5 via-background to-accent/5` (ok) mas badges/ícones internos não seguem.
-- `JourneyProgressBar`: usa tokens `chart-2/chart-4` (ok) — bom exemplo a manter.
-- `CategoryStatusCards`: `text-emerald-600 / text-amber-600 / text-red-600` cru.
-- `RemediationTab`: uso correto de `Badge variant="success/warning/destructive"` — bom padrão a replicar.
+Remover o "Diagnóstico Rápido" daqui (vai para o painel direito). Deixa só:
+- Orientação do Requisito (markdown da IA)
+- Exemplos de Evidências Aceitas
+- Botão Regenerar
+- Tipografia mais respirada: `text-[13px] leading-7` em parágrafos, espaçamento maior entre seções.
 
----
+Largura passa de `w-[40%]` para `w-[42%]` e dialog vai para `size="2xl"` (max-w-7xl) — dá ~1280px em telas grandes, espaço real para os dois painéis.
 
-## Plano de Refatoração
+### 3. Painel direito — jornada numerada em 5 passos
 
-### Sprint 1 — Padronização de Cores (alta prioridade visual)
-1. **Centralizar paleta de status** em um helper `src/lib/gap-analysis-tokens.ts`:
-   - `STATUS_COLORS_TOKEN` mapeia `conforme/parcial/nao_conforme/nao_aplicavel/nao_avaliado` → tokens semânticos (`success/warning/destructive/info/muted`).
-   - `getScoreColor(score, max)` retorna `hsl(var(--success))` / `--warning` / `--destructive` / `--primary`.
-   - `getScoreVariant(score, max)` retorna `'success' | 'warning' | 'destructive' | 'info'` para Badges.
-2. **Substituir cores cruas** em todos os componentes do módulo:
-   - `FrameworkCard`, `CategoryStatusCards`, `StatusBlocks`, `AdherenceAssessmentView`, `RequirementDetailDialog` (verdicts), `AIRecommendationsCard` (botão `bg-primary`), `JourneyProgressBar` (já está ok, manter).
-3. **Categorias** (Segurança/Privacidade/Governança/Qualidade) → mover para tokens neutros + `--primary` (sem azul/verde/amarelo/roxo cru). Manter ícones diferenciando.
+Substituir a estrutura atual ("bloco fixo + divisor de colapsáveis") por **steps visualmente numerados**, cada um com indicador de completude:
 
-### Sprint 2 — Sistema de Ícones Akuris
-1. **Header do módulo** usa `GapAnalysisIcon` proprietário (em `PageHeader` icon prop ou ao lado do título).
-2. **Migrar ícones Lucide para catálogo** (`@/components/icons`) onde aplicável:
-   - `Search → IconSearch`, `X → IconClose`, `Trash2 → IconDelete`, `Plus → IconAdd`, `RefreshCw → IconRefresh`, `Upload → IconUpload`, `ExternalLink → IconExternal`, `FileText → IconFile`, `User → IconUser`, `Calendar → IconCalendar`, `CheckCircle2 → IconSuccess`, `AlertTriangle → IconWarning`.
-3. **Stroke 1.5** em todos os Lucide remanescentes do módulo (props `strokeWidth={1.5}` ou usar wrapper `<Icon as={...} />`).
-4. **`FrameworkLogos.tsx`**: revisar paleta de cores para usar `text-primary / text-chart-1..5` em vez de `text-blue-700 / text-green-700` etc.
-5. **`FrameworkOnboarding`**: descartar import de 16 ícones Lucide e reutilizar `FrameworkLogo` (já existe).
+```text
+┌─ PAINEL DIREITO (w-[58%]) ──────────────────────────────────┐
+│                                                              │
+│ ① Avaliar Conformidade                          [✓ definido]│
+│   ▸ Diagnóstico Rápido (perguntas → status sugerido)        │
+│   ▸ Botão "Aplicar sugestão" preenche o status do header    │
+│                                                              │
+│ ② Evidências                                       [2 itens]│
+│   ▸ Hub: Gerar com IA · Anexar arquivo · Adicionar link     │
+│   ▸ Lista de evidências com Validar com IA                  │
+│                                                              │
+│ ③ Plano de Ação                  [condicional: se ≠ Conforme]│
+│   ▸ Card do plano vinculado OU botão Criar Plano            │
+│   ▸ Notas do Plano (textarea)                               │
+│                                                              │
+│ ④ Detalhes da Avaliação                                     │
+│   ▸ Responsável (UserSelect) · Prazo (date)                 │
+│   ▸ Observações (textarea)                                  │
+│                                                              │
+│ ⑤ Vínculos & Histórico                              [colap.]│
+│   ▸ Riscos vinculados                                        │
+│   ▸ Histórico de alterações                                  │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
 
-### Sprint 3 — Limpeza de Código Morto
-Remover (após confirmar via grep que nada importa):
-- `AssessmentDialog.tsx`
-- `AssignmentDialog.tsx`
-- `EvidenceDialog.tsx`
-- `EvidenceUpload.tsx`
-- `RequirementDialog.tsx`
-- `RequirementsManager.tsx`
-- `FrameworkDialog.tsx`
+Cada step é um `<section>` com:
+- Número em círculo colorido (success se completo, primary se atual, muted se vazio)
+- Título em `font-semibold`
+- Badge à direita indicando estado ("✓ definido", "2 itens", "Sem plano", "Pendente")
+- Conteúdo expandido por padrão nos steps 1-4; step 5 colapsado.
 
-**Ganho**: -1.700 linhas, redução de superfície de manutenção.
+Lógica de estado:
+- Step 1 ✓ quando `conformity_status` ≠ `nao_avaliado`
+- Step 2 ✓ quando `evidence_files.length > 0`
+- Step 3 ✓ quando há plano vinculado OU status = Conforme/N-A (não obrigatório)
+- Step 4 ✓ quando responsável + prazo preenchidos
 
-### Sprint 4 — Refinamento de Gráficos
-1. **Donut do Score Geral** (`GenericScoreDashboard`): cores via tokens (`hsl(var(--success/warning/destructive/primary))`), animação de "fill" suave.
-2. **`CategoryBarChart`**: gradiente semântico (vermelho→amarelo→verde) em vez de mono-azul. Cor por score.
-3. **`AreaBarChart`**: usar paleta semântica (não só verde). `--destructive` quando score < 40, `--warning` 40-60, `--success` > 60.
-4. **`ScoreEvolutionChart`**: linha em `hsl(var(--primary))`, dots em `hsl(var(--primary-glow))`.
-5. **`FrameworkComparisonRadar`**: usar `--gradient-primary` (variável CSS Akuris) com `fillOpacity` 0.3, stroke `hsl(var(--primary))`.
-6. **`StatusBlocks`** (heatmap de quadradinhos): cores via tokens.
+### 4. Reposicionamento do Diagnóstico Rápido
 
-### Sprint 5 — Refinamento do Popup do Requisito
-1. **Substituir `prompt()` nativo** por mini-dialog Akuris para "Adicionar link" (campo URL + nome).
-2. **Verdict de validação IA** vira `<Badge variant="success/warning/destructive" />` + ícone semântico do catálogo, sem cores cruas.
-3. **Hub de 3 ações**: ícones `IconUpload / IconExternal` do catálogo; botão "Gerar com IA" mantém ícone `Brain` mas com cor `--primary`.
-4. **Header do dialog**: ícone `GapAnalysisIcon` proprietário em vez de `Shield`.
-5. **Hint "Sparkles" no rodapé**: substituir por `IconInfo` do catálogo.
-6. **Diagnóstico Rápido**: botões "Sim/Parcial/Não" usam `Badge variant` em vez de cores cruas (`bg-chart-2`, `bg-chart-4`).
-7. **Alerta "Requisito não conforme"** no Plano de Ação: trocar `text-amber-500` cru por `IconWarning` do catálogo.
+Move-se do painel esquerdo para dentro do **Step 1 (Avaliar Conformidade)** no painel direito. Quando o usuário responde as perguntas:
+- O card "Status sugerido" mostra a sugestão
+- Botão **"Aplicar como status"** faz set do status na barra do topo automaticamente
+- Mantém-se a lógica atual de cálculo ponderado
 
-### Sprint 6 — Ajustes Finos
-1. **Header da página de detalhe**: agrupar 4 botões (`AI`, `DocGen`, `Tour`, `Exportar`) com hierarquia — botão primário `Avaliar com IA` (atual round purple), secundários em outline.
-2. **`AIRecommendationsButton`**: trocar `bg-purple-600` por `bg-primary` (já é violet).
-3. **Pílulas de status** no `FrameworkCard`: usar `Badge variant` consistente.
-4. **`AdherenceAssessmentView`**: badges de status/resultado viram `<Badge variant>`.
-5. **`WelcomeHero`**: ícone `Sparkles` → `IconInfo` ou ícone Akuris; passos numerados com `--primary`.
-6. **`CategoryStatusCards`** (% no canto): cor via `getScoreColor` token.
+### 5. Plano de Ação — só aparece quando faz sentido
 
----
+Hoje o `Plano de Ação` aparece como collapsible dentro do divisor. Novo comportamento:
+- Step 3 fica oculto se status = `conforme` ou `nao_aplicavel`
+- Aparece com badge `warning` se status = `parcial` ou `nao_conforme` e ainda não há plano
+- Textarea "Notas do Plano" vira sub-campo do step (não compete com Observações)
 
-## Resumo do Impacto
+### 6. Footer contextual
 
-| Métrica | Antes | Depois |
-|---|---|---|
-| Cores cruas Tailwind | ~80 ocorrências | 0 |
-| Lucide direto p/ conceitos | 30+ pontos | catálogo Akuris |
-| Componentes órfãos | 7 (~1.700 linhas) | removidos |
-| Stroke 1.5 (assinatura) | só `FrameworkLogos` | módulo todo |
-| Ícone proprietário do módulo | não usado | usado em header + dialog |
-| Campos do popup | OK | OK + UX refinada (sem prompt nativo) |
-| Cores de gráfico | mono/cruas | gradiente semântico via tokens |
+CTA do footer muda de label conforme situação:
+- Status vazio → "Salvar rascunho" (variant outline)
+- Status definido + step 4 incompleto → "Salvar avaliação"
+- Tudo preenchido → "Concluir avaliação" (variant default, success-tinted)
 
-## Ordem sugerida de execução
-Sprint 1 (cores) → Sprint 3 (limpeza, rápido) → Sprint 2 (ícones) → Sprint 4 (gráficos) → Sprint 5 (popup) → Sprint 6 (refinos).
+Botão Cancelar permanece como ghost à esquerda.
 
-Aprovando, executo todos os sprints em sequência ou posso pausar para feedback após cada um — me diga sua preferência.
+### 7. Persistência do status inline
+
+Adicionar handler `handleStatusChange(newStatus)` que faz upsert imediato em `gap_analysis_evaluations` com `.eq('empresa_id', empresaId)` (regra Akuris). Reutiliza a lógica que já existe na `GenericRequirementsTable` (`handleStatusChange` em linha ~189). Após sucesso:
+- Atualiza `requirement.conformity_status` local
+- Dispara `onClose`-like callback opcional `onStatusChange(newStatus)` para a tabela atualizar sem refetch full
+- Toast Sonner com a mudança
+
+## Detalhes técnicos
+
+**Componentes novos (inline no arquivo, não criar arquivos novos)**:
+- `<StatusSegmentedControl value, onChange, disabled>` — 4 botões com tokens success/warning/destructive/secondary
+- `<JourneyStep number, title, status, badge, defaultOpen, children>` — wrapper visual numerado
+
+**Tokens usados** (do `gap-analysis-tokens.ts` já existente):
+- `STATUS_BADGE_VARIANT`, `STATUS_LABEL`, `STATUS_TEXT_CLASS`
+- Stroke 1.5 mantido em todos os ícones (assinatura Akuris)
+
+**Mudanças de tamanho**:
+- `size="xl"` → `size="2xl"` no `DialogShell`
+- Painel esquerdo: `md:w-[42%]`, painel direito: `md:w-[58%]`
+- `max-h-[60vh]` removido das ScrollAreas (DialogShell já gerencia altura via `max-h-[92vh]`)
+
+**Não muda**:
+- Edge function `analyze-evidence-against-requirement`
+- Edge function `populate-requirement-guidance`
+- Schema do banco
+- Lógica de scoring
+- DocGen unificado (`useDocGen`)
+
+**Compatibilidade**:
+- Props do componente permanecem as mesmas (`open`, `onOpenChange`, `requirement`, `frameworkId`, `onClose`)
+- Caller (`GenericRequirementsTable`) não precisa de mudanças, exceto adicionar prop opcional `onStatusChange` para refletir mudanças inline sem refetch
+
+## Resultado esperado
+
+- Status visível e editável em 1 clique no topo
+- Fluxo natural top-down: ler → avaliar → evidenciar → planejar → detalhar
+- Diagnóstico Rápido posicionado onde gera valor (decisão de status)
+- Plano de Ação só ocupa espaço quando relevante
+- 30% mais espaço útil com dialog 2xl
+- CTA do footer comunica o que vai acontecer
