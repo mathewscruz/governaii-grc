@@ -11,7 +11,10 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronRight, Search, X, AlertTriangle, Paperclip, CheckSquare, HelpCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X, AlertTriangle, Paperclip, CheckSquare, HelpCircle, CalendarClock, UserRound } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { format, differenceInCalendarDays, parseISO } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
@@ -40,6 +43,11 @@ interface Requirement {
   orientacao_implementacao?: string | null;
   exemplos_evidencias?: string | null;
   plano_acao_id?: string | null;
+}
+
+interface UserLite {
+  nome: string;
+  email: string;
 }
 
 interface GenericRequirementsTableProps {
