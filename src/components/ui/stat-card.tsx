@@ -49,9 +49,9 @@ const TONE_TEXT: Record<Tone, string> = {
 }
 
 const statCardVariants = cva(
-  // self-start evita que o CSS Grid estique este card até a altura do mais alto da linha,
-  // garantindo que cada card colapse para a altura real do seu conteúdo (sem espaço vazio).
-  "group relative overflow-hidden transition-all duration-300 self-start",
+  // h-full + min-h padronizam a altura de TODOS os StatCards no grid,
+  // independente de o conteúdo ser segments, description ou nenhum.
+  "group relative overflow-hidden transition-all duration-300 h-full min-h-[148px]",
   {
     variants: {
       variant: {
@@ -224,7 +224,7 @@ export function StatCard({
     >
       {showAccent && <CornerAccent position="top-right" size={12} className="opacity-60" />}
 
-      <CardContent className="p-5 pl-6 space-y-3">
+      <CardContent className="p-5 pl-6 flex flex-col gap-3 h-full">
         {/* Linha 1: ícone + título + badge | delta */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
@@ -274,20 +274,22 @@ export function StatCard({
           {actions && <div className="ml-auto">{actions}</div>}
         </div>
 
-        {/* Linha 3: segments OU description */}
-        {segments && segments.length > 0 && segmentTotal > 0 ? (
-          renderSegments()
-        ) : description ? (
-          <p className="text-xs text-muted-foreground leading-snug">{description}</p>
-        ) : null}
+        {/* Linha 3: segments OU description — slot reservado para padronizar altura */}
+        <div className="min-h-[44px] flex flex-col justify-start gap-2">
+          {segments && segments.length > 0 && segmentTotal > 0 ? (
+            renderSegments()
+          ) : description ? (
+            <p className="text-xs text-muted-foreground leading-snug">{description}</p>
+          ) : null}
 
-        {/* Empty hint */}
-        {showEmptyHint && (
-          <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground/80">
-            <Sparkles className="h-3 w-3 mt-0.5 flex-shrink-0 text-primary/60" strokeWidth={1.5} />
-            <span>{emptyHint}</span>
-          </div>
-        )}
+          {/* Empty hint */}
+          {showEmptyHint && (
+            <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground/80">
+              <Sparkles className="h-3 w-3 mt-0.5 flex-shrink-0 text-primary/60" strokeWidth={1.5} />
+              <span>{emptyHint}</span>
+            </div>
+          )}
+        </div>
 
         {/* CTA discreta (só se interativo) — absolute, não reserva espaço */}
         {showCTA && (

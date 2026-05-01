@@ -1,66 +1,94 @@
-# Fix — Espaço vazio reservado pelo CTA "Ver detalhes" no StatCard
+## Diagnóstico
 
-## Problema
+Os cards de KPI ficam com alturas diferentes por **três razões** que se somam (visíveis em `/riscos`):
 
-Hoje, o CTA "Ver detalhes →" ocupa lugar no fluxo do `CardContent` mesmo quando está com `opacity-0` em repouso. Resultado: ~21px de altura reservada em todo card interativo, criando uma faixa vazia entre a última linha de conteúdo (segments / description / empty hint) e a borda inferior do card.
+1. **Conteúdo da Linha 3 varia entre cards na mesma linha**:
+   - "Total de riscos" usa `segments` → renderiza barra de 6px + legenda que **quebra em 2 linhas** quando os 3 itens (críticos, altos, demais) não cabem.
+   - "Tratamentos Concluídos" e "Riscos Aceitos" usam `description` → 1 linha de texto.
+   - Resultado: card 1 fica ~30px mais alto que os cards 2 e 3.
 
-## Causa
+2. **Cards customizados fora do `StatCard` quebram o padrão**:
+   - O 4º card de Riscos é o `RiskScoreCard` (componente próprio com gauge SVG 90px + legenda), com paddings, header e tipografia totalmente diferentes do `StatCard`. Ele também não respeita `self-start` nem a anatomia editorial.
 
-Em `src/components/ui/stat-card.tsx` o bloco do CTA é um `div` normal dentro do `space-y-3` do `CardContent`. Apenas os filhos (`span` e `ArrowRight`) ficam invisíveis com `opacity-0`, mas o `div` pai segue ocupando linha + `pt-1`.
+3. **`self-start` (aplicado na correção anterior) deixou os cards "soltos" no grid**: cada card colapsa para sua altura natural, expondo as diferenças de conteúdo. O resultado é "três tamanhos diferentes na mesma linha".
+
+Outros módulos (Documentos, Privacidade, Continuidade etc.) sofrem do mesmo problema #1 sempre que misturam `segments` com `description`.
 
 ## Solução
 
-Tirar o CTA do fluxo: posicioná-lo de forma **absoluta** no canto inferior direito do card, com `pointer-events-none`. Em repouso o card colapsa naturalmente para a altura do conteúdo real; no hover o CTA faz fade + slide-in por cima do padding inferior.
+Padronizar a altura mínima do `StatCard` para que todos os cards da linha tenham o mesmo tamanho visual, **independentemente de o conteúdo ser segments, description, ambos ou nenhum**. E refazer o `RiskScoreCard` reutilizando o `StatCard` para herdar a mesma anatomia.
 
-Como o `Card` raiz já é `relative overflow-hidden`, basta usar `absolute bottom-2 right-3`. Não interfere com o `CornerAccent` (top-right) nem com o accent-bar lateral.
+### 1. `src/components/ui/stat-card.tsx` — altura mínima padronizada
 
-### Código (substituição em `src/components/ui/stat-card.tsx`, linhas 290–298)
+- Remover `self-start` da base (estava forçando colapso individual).
+- Adicionar `min-h-[148px]` ao card e `h-full` ao `Card` raiz, garantindo que todos os cards do grid tenham a **mesma altura mínima** e que o grid os estique uniformemente quando algum tiver mais conteúdo.
+- Reservar a Linha 3 com `min-h-[44px]` (cabe 2 linhas de legenda de segments OU 2 linhas de description, sem saltos).
+- Manter o CTA "Ver detalhes" em `absolute` (já está) — não conta para altura.
 
-```tsx
-{/* CTA discreta (só se interativo) — absolute, não reserva espaço */}
-{showCTA && (
-  <div
-    aria-hidden="true"
-    className="pointer-events-none absolute bottom-2 right-3 inline-flex items-center gap-1 text-[11px] font-medium text-primary opacity-0 translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0"
-  >
-    <span>{drillDown ? "Ver detalhes" : "Abrir"}</span>
-    <ArrowRight className="h-3 w-3" strokeWidth={1.5} />
-  </div>
-)}
-```
+Resultado: cards com `segments`, `description` ou nenhum dos dois ficam **idênticos em altura** dentro de uma mesma linha do grid.
 
-### Anatomia visual após a correção
+### 2. `src/components/riscos/RiskScoreCard.tsx` — alinhar à anatomia do StatCard
 
-```text
-Antes (hover desligado)                 Depois (hover desligado)
-┌──────────────────────────┐            ┌──────────────────────────┐
-│ ◇ Riscos ativos    ↗ +12%│            │ ◇ Riscos ativos    ↗ +12%│
-│                          │            │                          │
-│ 42                       │            │ 42                       │
-│                          │            │ ████░░  3 críticos       │
-│ ████░░  3 críticos       │            └──────────────────────────┘
-│                          │             ↑ card encolhe ~24px
-│  (espaço vazio aqui)     │
-└──────────────────────────┘
-```
+Reescrever para envolver o `StatCard` (ou imitar sua estrutura externa) usando o mesmo `Card variant="elevated"`, mesmo padding (`p-5 pl-6`), mesma `min-h-[148px]` e mesma linha de título (ícone + label uppercase). O gauge SVG passa a ser o "valor herói" — reduzir para 120×68 e mover a legenda de níveis para o rodapé compacto, ocupando o mesmo slot que `segments`/`description` ocupam nos demais cards.
 
-No hover o CTA aparece sobreposto no canto inferior direito, sem afetar a altura.
+Manter a lógica de cálculo (`calcDisplayScore`, cores, tendência 7d). Apenas a **embalagem visual** muda.
+
+### 3. Auditoria rápida nos outros módulos
+
+Após o ajuste no `StatCard`, fazer uma varredura visual nos módulos críticos (Documentos, Privacidade, Continuidade, Contratos, Incidentes, Planos de Ação, Ativos*, Due Diligence, Gap Analysis) para confirmar que **nenhum** ainda usa um Card customizado fora do padrão na mesma linha de KPIs. Se encontrar algum, aplicar o mesmo tratamento do RiskScoreCard (envolver em `StatCard` ou alinhar a estrutura externa).
 
 ## Detalhes técnicos
 
-- `pointer-events-none`: o clique continua sendo capturado pelo `Card` inteiro (que já é o `role="button"`), o CTA é puramente visual.
-- `aria-hidden="true"`: o aria-label do card já anuncia título + valor; o CTA é decorativo.
-- `bottom-2 right-3`: alinhado com o `p-5 pl-6` do `CardContent` sem encostar na borda.
-- Mantém a transição suave (opacity + translate) que já existia.
-- Nenhuma mudança de API; nenhum dos 16 módulos migrados precisa ser tocado.
+```tsx
+// stat-card.tsx — base variants
+const statCardVariants = cva(
+  "group relative overflow-hidden transition-all duration-300 h-full min-h-[148px]",
+  { /* mantém variants atuais, sem self-start */ }
+)
 
-## Arquivo afetado
+// CardContent: reservar slot da linha 3 para evitar saltos de altura
+<CardContent className="p-5 pl-6 flex flex-col gap-3 h-full">
+  {/* linha 1: título + delta */}
+  {/* linha 2: valor herói */}
+  <div className="min-h-[44px]">
+    {/* segments OU description OU vazio */}
+  </div>
+</CardContent>
+```
 
-- `src/components/ui/stat-card.tsx` — apenas o bloco do CTA (linhas 290–298).
+```tsx
+// RiskScoreCard.tsx — nova embalagem
+<Card variant="elevated" className="h-full min-h-[148px] relative overflow-hidden">
+  <CardContent className="p-5 pl-6 flex flex-col gap-3 h-full">
+    <div className="flex items-center justify-between">
+      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        Score de Risco
+      </span>
+      {hasVariation && <TrendBadge .../>}
+    </div>
+    <div className="flex items-center gap-4">
+      <GaugeSVG width={120} height={68} score={displayScore} color={scoreColor} />
+      <div>
+        <div className="text-3xl font-semibold tabular-nums leading-none">{displayScore}</div>
+        <div className="text-xs text-muted-foreground mt-1">{label}</div>
+      </div>
+    </div>
+    <div className="min-h-[20px] flex items-center gap-3 text-[10px] text-muted-foreground">
+      {legendItems.map(...)}
+    </div>
+  </CardContent>
+</Card>
+```
 
-## Não muda
+## Arquivos afetados
 
-- Anatomia herói (ícone inline, valor, segments, trend, accent).
-- Comportamento de drill-down e `onClick`.
-- Loading via `AkurisPulse`, empty hint, badges.
-- Cards não-interativos (sem `drillDown`/`onClick`) já não renderizavam o CTA — continuam idênticos.
+- `src/components/ui/stat-card.tsx` — altura mínima padronizada, slot reservado.
+- `src/components/riscos/RiskScoreCard.tsx` — reescrito para herdar a anatomia.
+- Possíveis ajustes pontuais em módulos cujo grid de KPIs misture `StatCard` com cards customizados (verificação em tempo de execução).
+
+## Critério de aceite
+
+- Em `/riscos`, os 4 cards da primeira linha têm exatamente a mesma altura.
+- Em qualquer módulo, cards de KPI na mesma linha do grid têm altura idêntica, mesmo quando uns usam `segments` e outros `description`.
+- Hover/CTA continuam não causando deslocamento.
+- Nenhuma regressão em mobile (breakpoints `md`/`lg` continuam empilhando 1 ou 2 colunas).
