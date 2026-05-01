@@ -282,27 +282,16 @@ export default function GapAnalysisFrameworkDetail() {
           }
         />
 
-        {!showOnboarding && totalRequirements > 0 && (
-          <JourneyProgressBar
-            evaluatedRequirements={evaluatedRequirements}
-            totalRequirements={totalRequirements}
-            conformeCount={categoryData.reduce((sum, c) => sum + c.conforme, 0)}
-            hasActionPlans={evaluatedRequirements > 0}
-            naoConformeCount={categoryData.reduce((sum, c) => sum + c.nao_conforme, 0)}
-            onActionClick={(target) => setActiveTab(target)}
-          />
-        )}
-
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="avaliacao">Avaliação</TabsTrigger>
-            <TabsTrigger value="documentos">Análise de Documentos (IA)</TabsTrigger>
+            <TabsTrigger value="documentos">Análise de Documentos</TabsTrigger>
             <TabsTrigger value="remediacao">Remediação</TabsTrigger>
             {supportsSoA && <TabsTrigger value="soa">SoA</TabsTrigger>}
             <TabsTrigger value="historico">Histórico</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="avaliacao" className="space-y-6">
+          <TabsContent value="avaliacao" className="space-y-5">
             {showOnboarding ? (
               <FrameworkOnboarding
                 frameworkNome={framework.nome}
@@ -313,31 +302,45 @@ export default function GapAnalysisFrameworkDetail() {
               />
             ) : (
               <>
-                <GenericScoreDashboard
+                {/* Hero consolidado: donut + sparkline + delta + chips de domínio/seção */}
+                <FrameworkHeroSummary
                   overallScore={overallScore}
-                  pillarScores={pillarScores}
-                  domainScores={domainScores}
-                  areaScores={areaScores}
-                  sectionScores={sectionScores}
-                  categoryScores={categoryScores}
                   totalRequirements={totalRequirements}
                   evaluatedRequirements={evaluatedRequirements}
+                  domainScores={domainScores}
+                  sectionScores={sectionScores}
                   config={config}
-                  loading={scoreLoading}
                   frameworkId={frameworkId!}
+                  loading={scoreLoading}
+                  contextMessage={(() => {
+                    if (totalRequirements === 0) return undefined;
+                    if (evaluatedRequirements === 0)
+                      return 'Comece avaliando os requisitos — clique em qualquer linha da tabela ou use a Análise de Documentos.';
+                    const naoConforme = categoryData.reduce((s, c) => s + c.nao_conforme, 0);
+                    if (naoConforme > 0)
+                      return `${naoConforme} requisito(s) não conforme(s) identificado(s). Crie planos de ação para tratar os gaps.`;
+                    if (evaluatedRequirements < totalRequirements)
+                      return `Continue avaliando — ${evaluatedRequirements} de ${totalRequirements} concluídos.`;
+                    return `Todos os ${totalRequirements} requisitos foram avaliados.`;
+                  })()}
+                  contextAction={
+                    evaluatedRequirements > 0 && categoryData.reduce((s, c) => s + c.nao_conforme, 0) > 0
+                      ? { label: 'Ver remediação', onClick: () => setActiveTab('remediacao') }
+                      : evaluatedRequirements === 0 && totalRequirements > 0
+                      ? { label: 'Analisar documentos', onClick: () => setActiveTab('documentos') }
+                      : undefined
+                  }
                 />
 
-
-                {/* Single chart + interactive category cards */}
+                {/* Aderência por categoria — agora clicável (filtra a tabela abaixo) */}
                 {categoryScores.length > 0 && (
-                  <CategoryBarChart categoryScores={categoryScores} config={config} />
-                )}
-
-                {categoryData.length > 0 && (
-                  <CategoryStatusCards
-                    categories={categoryData}
-                    onCategoryClick={(cat) => setActiveCategoryFilter(prev => prev === cat ? undefined : cat)}
+                  <CategoryBarChart
+                    categoryScores={categoryScores}
+                    config={config}
                     activeCategory={activeCategoryFilter}
+                    onCategoryClick={(cat) =>
+                      setActiveCategoryFilter(prev => prev === cat ? undefined : cat)
+                    }
                   />
                 )}
 
