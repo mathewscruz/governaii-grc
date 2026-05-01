@@ -11,7 +11,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { useScoreHistory, ScoreHistoryPeriod } from '@/hooks/useScoreHistory';
-import { Skeleton } from '@/components/ui/skeleton';
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 import { ScoreType } from '@/lib/framework-configs';
 import { TrendingUp, TrendingDown, Minus, LineChart as LineChartIcon } from 'lucide-react';
 
@@ -73,8 +73,9 @@ export const ScoreEvolutionChart = ({ frameworkId, scoreType = 'scale_0_5' }: Sc
         <CardHeader>
           <CardTitle className="text-base">Evolução do Score</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Skeleton className="h-[260px] w-full" />
+        <CardContent className="min-h-[260px] flex flex-col items-center justify-center gap-2">
+          <AkurisPulse size={56} />
+          <p className="text-xs text-muted-foreground">Carregando histórico...</p>
         </CardContent>
       </Card>
     );
