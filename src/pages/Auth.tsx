@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Eye, EyeOff, CheckCircle2, Shield, BarChart3, FileCheck, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Shield, BarChart3, FileCheck, Mail, Lock } from 'lucide-react';
 import logoImage from '@/assets/akuris-logo.png';
 import { ForgotPasswordDialog } from '@/components/ForgotPasswordDialog';
 import { LanguageSelector } from '@/components/LanguageSelector';
