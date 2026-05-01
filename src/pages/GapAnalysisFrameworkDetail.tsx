@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Download, FileBarChart, Brain } from 'lucide-react';
+import { ChevronLeft, Download, FileBarChart, Brain, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GenericScoreDashboard } from '@/components/gap-analysis/GenericScoreDashboard';
 import { GenericRequirementsTable } from '@/components/gap-analysis/GenericRequirementsTable';
@@ -255,18 +256,28 @@ export default function GapAnalysisFrameworkDetail() {
                   scoreType={config.scoreType}
                 />
               )}
-              <Button onClick={() => setShowDocGen(true)} variant="outline">
+              <Button onClick={() => setShowDocGen(true)} variant="outline" size="sm">
                 <Brain className="h-4 w-4 mr-2" />
                 Gerar Política
               </Button>
-              <Button onClick={handleExportBoard} variant="outline" disabled={exporting}>
-                <FileBarChart className="h-4 w-4 mr-2" />
-                Board
-              </Button>
-              <Button onClick={handleExportPDF} variant="outline" disabled={exporting}>
-                <Download className="h-4 w-4 mr-2" />
-                {exporting ? 'Exportando...' : 'PDF Técnico'}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={exporting}>
+                    <FileDown className="h-4 w-4 mr-2" />
+                    {exporting ? 'Exportando...' : 'Exportar'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExportPDF} disabled={exporting}>
+                    <Download className="h-4 w-4 mr-2" />
+                    PDF Técnico (detalhado)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportBoard} disabled={exporting}>
+                    <FileBarChart className="h-4 w-4 mr-2" />
+                    Relatório Executivo (Board)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           }
         />
@@ -278,16 +289,17 @@ export default function GapAnalysisFrameworkDetail() {
             conformeCount={categoryData.reduce((sum, c) => sum + c.conforme, 0)}
             hasActionPlans={evaluatedRequirements > 0}
             naoConformeCount={categoryData.reduce((sum, c) => sum + c.nao_conforme, 0)}
+            onActionClick={(target) => setActiveTab(target)}
           />
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="avaliacao">Avaliação Manual</TabsTrigger>
-            <TabsTrigger value="documentos">Análise de Documentos</TabsTrigger>
-            <TabsTrigger value="soa">SoA</TabsTrigger>
+            <TabsTrigger value="avaliacao">Avaliação</TabsTrigger>
+            <TabsTrigger value="documentos">Análise de Documentos (IA)</TabsTrigger>
             <TabsTrigger value="remediacao">Remediação</TabsTrigger>
-            <TabsTrigger value="historico">Histórico e Evolução</TabsTrigger>
+            {supportsSoA && <TabsTrigger value="soa">SoA</TabsTrigger>}
+            <TabsTrigger value="historico">Histórico</TabsTrigger>
           </TabsList>
 
           <TabsContent value="avaliacao" className="space-y-6">
