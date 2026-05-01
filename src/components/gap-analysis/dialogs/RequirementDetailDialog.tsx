@@ -942,7 +942,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                             },
                           })}
                         >
-                          <Brain className="h-4 w-4 mr-2 text-primary shrink-0" strokeWidth={1.5} />
+                          <AkurisAIIcon size={16} className="mr-2 text-primary shrink-0" />
                           <div className="text-left leading-tight">
                             <div className="text-xs font-semibold">Gerar com IA</div>
                             <div className="text-[10px] text-muted-foreground">Documento sob medida</div>
