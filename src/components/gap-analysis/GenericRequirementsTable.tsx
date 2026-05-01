@@ -367,18 +367,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   const clearFilters = () => { setSearchTerm(''); setStatusFilter('all'); setOnlyMandatory(false); };
   const hasActiveFilters = searchTerm.trim() !== '' || statusFilter !== 'all' || onlyMandatory;
 
-  const IconLegend = () => (
-    <div className="flex items-center gap-4 mb-3 px-1 text-xs text-muted-foreground">
-      <div className="flex items-center gap-1.5">
-        <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
-        <span>Requisito de alta prioridade em não conformidade</span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <Paperclip className="h-3.5 w-3.5" />
-        <span>Evidências anexadas</span>
-      </div>
-    </div>
-  );
+  // Legenda de ícones agora unificada dentro do popover "?" da SearchAndFilterBar.
 
   const SearchAndFilterBar = () => (
     <div className="flex flex-wrap items-center gap-3 mb-4">
