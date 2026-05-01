@@ -29,10 +29,13 @@ export type NotificationModuleKey =
   | 'denuncias'
   | 'sistema';
 
+// Tipo amplo: aceita tanto ícones proprietários (forwardRef) quanto Lucide.
+type AnyIconComponent = ComponentType<any>;
+
 export interface NotificationModuleMeta {
   key: NotificationModuleKey;
   /** Componente de ícone (proprietário Akuris ou Lucide stroke 1.5 fallback). */
-  Icon: ComponentType<{ className?: string; size?: number; strokeWidth?: number }>;
+  Icon: AnyIconComponent;
   /** Chave i18n: notifications.modules[key]. */
   i18nKey: string;
 }
