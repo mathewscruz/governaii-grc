@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { toast } from 'sonner';
 import { exportSoAPDF } from './SoAExportPDF';
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 
 interface SoAItem {
   id: string;
