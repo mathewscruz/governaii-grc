@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { AiCostHint } from '@/components/ui/ai-cost-hint';
 interface AIRecommendationsDialogProps {
   frameworkId: string;
   frameworkNome: string;
