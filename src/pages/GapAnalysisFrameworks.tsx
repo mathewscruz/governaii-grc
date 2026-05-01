@@ -285,6 +285,36 @@ export default function GapAnalysisFrameworks() {
     );
   }
 
+  // Barra unificada de busca + filtros (usada quando há frameworks)
+  const FilterBar = (
+    <div className="flex items-center gap-3 flex-wrap">
+      <div className="relative flex-1 min-w-[220px] max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar framework por nome, tipo ou descrição..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9 h-9"
+        />
+      </div>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {CATEGORY_OPTIONS.map(opt => {
+          const active = categoryFilter === opt.id;
+          return (
+            <Badge
+              key={opt.id}
+              variant={active ? 'default' : 'outline'}
+              className="cursor-pointer text-xs"
+              onClick={() => setCategoryFilter(opt.id)}
+            >
+              {opt.label}
+            </Badge>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
     <ErrorBoundary>
       <div className="space-y-6">
@@ -334,59 +364,84 @@ export default function GapAnalysisFrameworks() {
               <FrameworkComparisonRadar data={comparisonData} />
             )}
 
+            {/* Barra de busca unificada */}
+            {FilterBar}
+
             {/* Active frameworks */}
             <div className="space-y-3">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Activity className="h-5 w-5 text-primary" />
                 Frameworks Ativos
-                <span className="text-sm font-normal text-muted-foreground">({activeFrameworks.length})</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({hasFilters ? `${filteredActiveFrameworks.length} de ${activeFrameworks.length}` : activeFrameworks.length})
+                </span>
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {activeFrameworks.map((framework) => (
-                  <FrameworkCard
-                    key={framework.id}
-                    id={framework.id}
-                    nome={framework.nome}
-                    versao={framework.versao}
-                    tipo_framework={framework.tipo_framework}
-                    descricao={framework.descricao}
-                    requirementCount={requirementCounts[framework.id] || 0}
-                    progress={frameworkProgress[framework.id]}
-                    statusCounts={frameworkStatusCounts[framework.id]}
-                    variant="active"
-                    onClick={() => handleFrameworkClick(framework)}
-                  />
-                ))}
-              </div>
+              {filteredActiveFrameworks.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredActiveFrameworks.map((framework) => (
+                    <FrameworkCard
+                      key={framework.id}
+                      id={framework.id}
+                      nome={framework.nome}
+                      versao={framework.versao}
+                      tipo_framework={framework.tipo_framework}
+                      descricao={framework.descricao}
+                      requirementCount={requirementCounts[framework.id] || 0}
+                      progress={frameworkProgress[framework.id]}
+                      statusCounts={frameworkStatusCounts[framework.id]}
+                      variant="active"
+                      onClick={() => handleFrameworkClick(framework)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Nenhum framework ativo corresponde aos filtros.</p>
+              )}
             </div>
           </>
         )}
 
-        {/* Available frameworks - catalog by category */}
-        {(hasActiveFrameworks || showCatalog) && filteredAvailableFrameworks.length >= 0 && availableFrameworks.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
+        {/* Available frameworks - colapsável quando há ativos */}
+        {(hasActiveFrameworks || showCatalog) && availableFrameworks.length > 0 && (
+          hasActiveFrameworks ? (
+            <Collapsible open={catalogOpen} onOpenChange={setCatalogOpen}>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <CollapsibleTrigger asChild>
+                  <button type="button" className="flex items-center gap-2 group">
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${catalogOpen ? 'rotate-0' : '-rotate-90'}`} />
+                    <h2 className="text-lg font-semibold flex items-center gap-2 group-hover:text-primary transition-colors">
+                      <Shield className="h-5 w-5 text-muted-foreground" />
+                      Frameworks Disponíveis
+                      <span className="text-sm font-normal text-muted-foreground">
+                        ({hasFilters && catalogOpen ? `${filteredAvailableFrameworks.length} de ${availableFrameworks.length}` : availableFrameworks.length})
+                      </span>
+                    </h2>
+                  </button>
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent className="mt-3">
+                <FrameworkCatalog
+                  frameworks={filteredAvailableFrameworks}
+                  requirementCounts={requirementCounts}
+                  onFrameworkClick={handleFrameworkClick}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          ) : (
+            <div className="space-y-3">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Shield className="h-5 w-5 text-muted-foreground" />
                 Frameworks Disponíveis
                 <span className="text-sm font-normal text-muted-foreground">({availableFrameworks.length})</span>
               </h2>
-              <div className="relative w-full max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar framework..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 h-9"
-                />
-              </div>
+              {FilterBar}
+              <FrameworkCatalog
+                frameworks={filteredAvailableFrameworks}
+                requirementCounts={requirementCounts}
+                onFrameworkClick={handleFrameworkClick}
+              />
             </div>
-            <FrameworkCatalog
-              frameworks={filteredAvailableFrameworks}
-              requirementCounts={requirementCounts}
-              onFrameworkClick={handleFrameworkClick}
-            />
-          </div>
+          )
         )}
 
         {frameworks.length === 0 && (
