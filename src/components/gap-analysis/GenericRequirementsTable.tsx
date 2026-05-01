@@ -11,7 +11,10 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronRight, Search, X, AlertTriangle, Paperclip, CheckSquare, HelpCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X, AlertTriangle, Paperclip, CheckSquare, HelpCircle, CalendarClock, UserRound } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { format, differenceInCalendarDays, parseISO } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
@@ -40,6 +43,11 @@ interface Requirement {
   orientacao_implementacao?: string | null;
   exemplos_evidencias?: string | null;
   plano_acao_id?: string | null;
+}
+
+interface UserLite {
+  nome: string;
+  email: string;
 }
 
 interface GenericRequirementsTableProps {
@@ -84,6 +92,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   const [onlyMandatory, setOnlyMandatory] = useState(searchParams.get('prio') === '1');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [usersById, setUsersById] = useState<Map<string, UserLite>>(new Map());
 
   // Sync filters → URL (replace, no history pollution)
   useEffect(() => {
@@ -117,14 +126,21 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
 
       const { data: evals, error: evalError } = await supabase
         .from('gap_analysis_evaluations')
-        .select('id, requirement_id, conformity_status, plano_acao_id, evidence_files')
+        .select('id, requirement_id, conformity_status, plano_acao_id, evidence_files, prazo_implementacao, responsavel_avaliacao')
         .eq('framework_id', frameworkId)
         .eq('empresa_id', empresaId);
 
       if (evalError) throw evalError;
 
       const evalMap = new Map(
-        evals?.map(e => [e.requirement_id, { id: e.id, conformity_status: e.conformity_status, plano_acao_id: e.plano_acao_id, evidence_files: e.evidence_files }]) || []
+        evals?.map(e => [e.requirement_id, {
+          id: e.id,
+          conformity_status: e.conformity_status,
+          plano_acao_id: e.plano_acao_id,
+          evidence_files: e.evidence_files,
+          prazo_implementacao: e.prazo_implementacao,
+          responsavel_avaliacao: e.responsavel_avaliacao,
+        }]) || []
       );
 
       const merged = (reqs || []).map(req => {
@@ -138,6 +154,8 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
           evaluation_id: evaluation?.id || null,
           plano_acao_id: evaluation?.plano_acao_id || null,
           evidence_files: Array.isArray(evaluation?.evidence_files) ? evaluation.evidence_files : [],
+          prazo_implementacao: evaluation?.prazo_implementacao || null,
+          responsavel_avaliacao: evaluation?.responsavel_avaliacao || null,
         };
       });
 
@@ -153,6 +171,31 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   useEffect(() => {
     loadRequirements();
   }, [frameworkId, empresaId]);
+
+  // Carrega usuários da empresa para resolver UUID → nome na coluna "Responsável".
+  // Multi-tenant: filtro obrigatório por empresa_id.
+  useEffect(() => {
+    if (!empresaId) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, nome, email')
+        .eq('empresa_id', empresaId)
+        .eq('ativo', true);
+      if (cancelled) return;
+      if (error) {
+        logger.error('Erro ao carregar usuários da empresa', { error: error.message });
+        return;
+      }
+      const map = new Map<string, UserLite>();
+      (data || []).forEach(u => {
+        if (u.user_id) map.set(u.user_id, { nome: u.nome || u.email || '—', email: u.email || '' });
+      });
+      setUsersById(map);
+    })();
+    return () => { cancelled = true; };
+  }, [empresaId]);
 
   // Sync with external category filter from CategoryStatusCards
   useEffect(() => {
@@ -335,6 +378,84 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
     return <Badge variant="secondary" className="text-xs">Baixa</Badge>;
   };
 
+  /** Coluna "Prazo": cor semântica (vermelho atrasado / âmbar em até 7d / neutro) + tooltip. */
+  const renderDueDate = (raw: string | null | undefined) => {
+    if (!raw) return <span className="text-xs text-muted-foreground/40">—</span>;
+    let date: Date;
+    try { date = parseISO(raw); } catch { return <span className="text-xs text-muted-foreground/40">—</span>; }
+    if (isNaN(date.getTime())) return <span className="text-xs text-muted-foreground/40">—</span>;
+
+    const diff = differenceInCalendarDays(date, new Date());
+    let toneClass = "text-foreground";
+    let tooltipText = `Prazo em ${diff} ${diff === 1 ? 'dia' : 'dias'}`;
+    let icon = null as React.ReactNode;
+
+    if (diff < 0) {
+      toneClass = "text-destructive font-medium";
+      tooltipText = `Atrasado há ${Math.abs(diff)} ${Math.abs(diff) === 1 ? 'dia' : 'dias'}`;
+      icon = <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" strokeWidth={1.5} />;
+    } else if (diff === 0) {
+      toneClass = "text-destructive font-medium";
+      tooltipText = "Vence hoje";
+      icon = <CalendarClock className="h-3.5 w-3.5 text-destructive shrink-0" strokeWidth={1.5} />;
+    } else if (diff <= 7) {
+      toneClass = "text-warning font-medium";
+      tooltipText = `Vence em ${diff} ${diff === 1 ? 'dia' : 'dias'}`;
+      icon = <CalendarClock className="h-3.5 w-3.5 text-warning shrink-0" strokeWidth={1.5} />;
+    }
+
+    return (
+      <TooltipProvider delayDuration={150}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className={`flex items-center gap-1.5 text-sm ${toneClass}`}>
+              {icon}
+              <span>{format(date, 'dd/MM/yyyy')}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top">{tooltipText}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
+  /** Coluna "Responsável": avatar com iniciais + nome truncado + tooltip com email. */
+  const renderOwner = (userId: string | null | undefined) => {
+    if (!userId) return <span className="text-xs text-muted-foreground/40">—</span>;
+    const user = usersById.get(userId);
+    if (!user) {
+      // Lookup ainda carregando ou usuário fora da empresa
+      return <span className="text-xs text-muted-foreground/60">•••</span>;
+    }
+    const initials = user.nome
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(p => p.charAt(0).toUpperCase())
+      .join('') || '?';
+
+    return (
+      <TooltipProvider delayDuration={150}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2 min-w-0">
+              <Avatar className="h-6 w-6 shrink-0">
+                <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-medium">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm truncate">{user.nome}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs">
+            <div className="font-medium">{user.nome}</div>
+            {user.email && <div className="text-muted-foreground">{user.email}</div>}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
   // Compute category stats
   const categoryStatsMap = useMemo(() => {
     const map: Record<string, CategoryStats> = {};
@@ -436,11 +557,11 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
             <div className="flex items-center gap-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0">N/A</Badge><span className="text-muted-foreground">Não aplicável ao escopo</span></div>
           </div>
           <div className="space-y-1.5 border-t pt-2">
-            <p className="font-medium text-foreground">Ícones e prioridade</p>
+            <p className="font-medium text-foreground">Ícones e sinalizações</p>
             <div className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-destructive" strokeWidth={1.5}/><span className="text-muted-foreground">Requisito de alta prioridade não conforme</span></div>
             <div className="flex items-center gap-1.5"><Paperclip className="h-3.5 w-3.5" strokeWidth={1.5}/><span className="text-muted-foreground">Há evidências anexadas</span></div>
-            <div className="flex items-center gap-1.5"><Badge variant="destructive" className="text-[10px] px-1.5 py-0">Obrigatório</Badge><span className="text-muted-foreground">Marcado pelo framework</span></div>
-            <div className="flex items-center gap-1.5"><Badge variant="warning" className="text-[10px] px-1.5 py-0">Alta</Badge><span className="text-muted-foreground">Peso ≥ 3 — alto impacto</span></div>
+            <div className="flex items-center gap-1.5"><CalendarClock className="h-3.5 w-3.5 text-destructive" strokeWidth={1.5}/><span className="text-muted-foreground">Prazo vencido ou vence hoje</span></div>
+            <div className="flex items-center gap-1.5"><CalendarClock className="h-3.5 w-3.5 text-warning" strokeWidth={1.5}/><span className="text-muted-foreground">Prazo nos próximos 7 dias</span></div>
           </div>
         </PopoverContent>
       </Popover>
@@ -518,8 +639,18 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
               </TableHead>
               <TableHead className="w-28">Código</TableHead>
               <TableHead>Requisito</TableHead>
-              <TableHead className="w-24">Prioridade</TableHead>
-              <TableHead className="w-40">Área</TableHead>
+              <TableHead className="w-32">
+                <div className="flex items-center gap-1.5">
+                  <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                  Prazo
+                </div>
+              </TableHead>
+              <TableHead className="w-44">
+                <div className="flex items-center gap-1.5">
+                  <UserRound className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+                  Responsável
+                </div>
+              </TableHead>
               <TableHead className="w-28">Status</TableHead>
               <TableHead className="w-20">Evidências</TableHead>
               <TableHead className="w-44">Avaliação</TableHead>
@@ -555,8 +686,8 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                       {req.descricao && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{req.descricao}</p>}
                     </div>
                   </TableCell>
-                  <TableCell>{getPriorityBadge(req.peso, req.obrigatorio)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{req.area_responsavel || '-'}</TableCell>
+                  <TableCell>{renderDueDate(req.prazo_implementacao)}</TableCell>
+                  <TableCell>{renderOwner(req.responsavel_avaliacao)}</TableCell>
                   <TableCell>{getStatusBadge(req.conformity_status)}</TableCell>
                   <TableCell>
                     {(req.evidence_files?.length || 0) > 0 ? (
