@@ -92,6 +92,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   const [onlyMandatory, setOnlyMandatory] = useState(searchParams.get('prio') === '1');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [usersById, setUsersById] = useState<Map<string, UserLite>>(new Map());
 
   // Sync filters → URL (replace, no history pollution)
   useEffect(() => {
@@ -125,14 +126,21 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
 
       const { data: evals, error: evalError } = await supabase
         .from('gap_analysis_evaluations')
-        .select('id, requirement_id, conformity_status, plano_acao_id, evidence_files')
+        .select('id, requirement_id, conformity_status, plano_acao_id, evidence_files, prazo_implementacao, responsavel_avaliacao')
         .eq('framework_id', frameworkId)
         .eq('empresa_id', empresaId);
 
       if (evalError) throw evalError;
 
       const evalMap = new Map(
-        evals?.map(e => [e.requirement_id, { id: e.id, conformity_status: e.conformity_status, plano_acao_id: e.plano_acao_id, evidence_files: e.evidence_files }]) || []
+        evals?.map(e => [e.requirement_id, {
+          id: e.id,
+          conformity_status: e.conformity_status,
+          plano_acao_id: e.plano_acao_id,
+          evidence_files: e.evidence_files,
+          prazo_implementacao: e.prazo_implementacao,
+          responsavel_avaliacao: e.responsavel_avaliacao,
+        }]) || []
       );
 
       const merged = (reqs || []).map(req => {
@@ -146,6 +154,8 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
           evaluation_id: evaluation?.id || null,
           plano_acao_id: evaluation?.plano_acao_id || null,
           evidence_files: Array.isArray(evaluation?.evidence_files) ? evaluation.evidence_files : [],
+          prazo_implementacao: evaluation?.prazo_implementacao || null,
+          responsavel_avaliacao: evaluation?.responsavel_avaliacao || null,
         };
       });
 
