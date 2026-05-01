@@ -92,13 +92,25 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
     const naoConformePercent = Math.round((statusCounts.nao_conforme / totalApplicable) * 100);
     const pendenteCount = statusCounts.nao_avaliado;
 
+    // Mini donut inline para variante ativa
+    const normalized = progress?.averageScore ?? 0;
+    const donutSize = 56;
+    const donutR = donutSize / 2 - 5;
+    const donutC = 2 * Math.PI * donutR;
+    const donutOffset = donutC - (normalized / 100) * donutC;
+    const donutStroke =
+      normalized >= 80 ? 'hsl(var(--success))' :
+      normalized >= 60 ? 'hsl(var(--primary))' :
+      normalized >= 40 ? 'hsl(var(--warning))' :
+      'hsl(var(--destructive))';
+
     return (
       <Card
-        className="group hover:shadow-elegant transition-all duration-300 cursor-pointer h-full flex flex-col border-l-4 border-l-primary/60"
+        className="group hover:shadow-elegant transition-all duration-300 cursor-pointer h-full flex flex-col"
         onClick={onClick}
       >
         <div className="flex items-start gap-4 p-4 pb-3">
-          <FrameworkLogo nome={nome} className="h-10 w-10 shrink-0 mt-1" />
+          <FrameworkLogo nome={nome} className="h-9 w-9 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-sm group-hover:text-primary transition-colors truncate">
               {nome} <span className="text-xs font-normal text-muted-foreground">{versao}</span>
@@ -107,24 +119,34 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
               {progress ? `${progress.evaluatedRequirements} de ${progress.totalRequirements} requisitos avaliados` : `${requirementCount} requisitos`}
             </p>
           </div>
+          {progress && (
+            <svg width={donutSize} height={donutSize} viewBox={`0 0 ${donutSize} ${donutSize}`} className="shrink-0">
+              <circle cx={donutSize/2} cy={donutSize/2} r={donutR} fill="none" stroke="hsl(var(--muted))" strokeWidth="5" />
+              <circle
+                cx={donutSize/2} cy={donutSize/2} r={donutR}
+                fill="none"
+                stroke={donutStroke}
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeDasharray={donutC}
+                strokeDashoffset={donutOffset}
+                transform={`rotate(-90 ${donutSize/2} ${donutSize/2})`}
+                className="transition-all duration-700"
+              />
+              <text x={donutSize/2} y={donutSize/2 + 4} textAnchor="middle" className="fill-foreground font-bold" fontSize="13">
+                {progress.averageScore}%
+              </text>
+            </svg>
+          )}
         </div>
 
-        {/* Score & Progress section */}
-        <div className="px-4 pb-3 space-y-3">
-          {progress && (
-            <div className="flex items-baseline gap-2">
-              <span className={`text-2xl font-bold ${getScoreTextClass(progress.averageScore)}`}>
-                {progress.averageScore}%
-              </span>
-              <span className="text-xs text-muted-foreground">de conformidade geral</span>
-            </div>
-          )}
-
+        {/* Progress section */}
+        <div className="px-4 pb-3 space-y-2.5">
           {/* Segmented progress bar */}
           {progress && (
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden flex">
+                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden flex">
                   {conformePercent > 0 && (
                     <div className="h-full bg-success transition-all" style={{ width: `${conformePercent}%` }} />
                   )}
@@ -142,35 +164,35 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
             </div>
           )}
 
-          {/* Status summary - compact pills */}
-          <div className="flex flex-wrap gap-1.5">
+          {/* Status summary — pílulas sóbrias (sem fundo) */}
+          <div className="flex flex-wrap gap-x-3 gap-y-1">
             {statusCounts.conforme > 0 && (
-              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-success/10 text-success border border-success/20">
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                {statusCounts.conforme} Conforme
+                <span className="text-foreground font-medium">{statusCounts.conforme}</span> Conforme
               </span>
             )}
             {statusCounts.parcial > 0 && (
-              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-warning/10 text-warning border border-warning/20">
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className="w-1.5 h-1.5 rounded-full bg-warning" />
-                {statusCounts.parcial} Parcial
+                <span className="text-foreground font-medium">{statusCounts.parcial}</span> Parcial
               </span>
             )}
             {statusCounts.nao_conforme > 0 && (
-              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive border border-destructive/20">
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                {statusCounts.nao_conforme} Não Conforme
+                <span className="text-foreground font-medium">{statusCounts.nao_conforme}</span> Não Conforme
               </span>
             )}
             {pendenteCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                {pendenteCount} Pendente{pendenteCount > 1 ? 's' : ''}
+                <span className="text-foreground font-medium">{pendenteCount}</span> Pendente{pendenteCount > 1 ? 's' : ''}
               </span>
             )}
             {statusCounts.nao_aplicavel > 0 && (
-              <span className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">
-                {statusCounts.nao_aplicavel} N/A
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="text-foreground font-medium">{statusCounts.nao_aplicavel}</span> N/A
               </span>
             )}
           </div>
@@ -179,11 +201,12 @@ export const FrameworkCard: React.FC<FrameworkCardProps> = ({
         <div className="flex justify-end p-3 pt-0 mt-auto">
           <Button
             variant="ghost"
-            size="icon"
-            className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+            size="sm"
+            className="text-xs group-hover:text-primary"
             onClick={(e) => { e.stopPropagation(); onClick(); }}
           >
-            <ArrowRight className="h-5 w-5" strokeWidth={1.5} />
+            Abrir framework
+            <ArrowRight className="h-3.5 w-3.5 ml-1" strokeWidth={1.5} />
           </Button>
         </div>
       </Card>
