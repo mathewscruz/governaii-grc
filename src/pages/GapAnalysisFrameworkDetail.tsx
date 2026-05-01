@@ -1,22 +1,21 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Download, FileBarChart, Brain, FileDown, HelpCircle } from 'lucide-react';
+import { ChevronLeft, Download, FileBarChart, FileDown, HelpCircle, MoreHorizontal, FileText } from 'lucide-react';
+import { AkurisAIIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { GenericScoreDashboard } from '@/components/gap-analysis/GenericScoreDashboard';
 import { GenericRequirementsTable } from '@/components/gap-analysis/GenericRequirementsTable';
 import { CategoryBarChart } from '@/components/gap-analysis/CategoryBarChart';
-import { CategoryStatusCards } from '@/components/gap-analysis/CategoryStatusCards';
+import { FrameworkHeroSummary } from '@/components/gap-analysis/FrameworkHeroSummary';
 import { FrameworkHistoryTab } from '@/components/gap-analysis/FrameworkHistoryTab';
 import { AdherenceAssessmentView } from '@/components/gap-analysis/adherence/AdherenceAssessmentView';
 import { AdherenceResultView } from '@/components/gap-analysis/adherence/AdherenceResultView';
 import { AIRecommendationsButton } from '@/components/gap-analysis/AIRecommendationsCard';
 import { RemediationTab } from '@/components/gap-analysis/RemediationTab';
 import { FrameworkOnboarding } from '@/components/gap-analysis/FrameworkOnboarding';
-import { JourneyProgressBar } from '@/components/gap-analysis/JourneyProgressBar';
 import { SoATab } from '@/components/gap-analysis/SoATab';
 import { useDocGen } from '@/contexts/DocGenContext';
 
@@ -226,7 +225,7 @@ export default function GapAnalysisFrameworkDetail() {
           description={framework.descricao || FRAMEWORK_DESCRIPTIONS[framework.nome] || `Avaliação de conformidade ${framework.tipo_framework}`}
           actions={
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Ação primária — IA estratégica */}
+              {/* Ação primária — Consultor IA (ícone proprietário Akuris) */}
               {empresaId && totalRequirements > 0 && (
                 <AIRecommendationsButton
                   frameworkId={frameworkId!}
@@ -240,29 +239,10 @@ export default function GapAnalysisFrameworkDetail() {
                 />
               )}
 
-              {/* Ação produtiva — gerar documento */}
-              <Button
-                onClick={() => openDocGen({ frameworkId, frameworkName: framework.nome })}
-                variant="outline"
-                size="sm"
-              >
-                <Brain className="h-4 w-4 mr-2" strokeWidth={1.5} />
-                Gerador de Documentos (IA)
-              </Button>
-
-              {/* Ações utilitárias agrupadas em ghost */}
-              <Button
-                onClick={() => { setActiveTab('avaliacao'); setShowOnboarding(true); }}
-                variant="ghost"
-                size="sm"
-                title="Revisitar tour do framework"
-              >
-                <HelpCircle className="h-4 w-4 mr-2" strokeWidth={1.5} />
-                Tour
-              </Button>
+              {/* Exportar — ação utilitária visível */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" disabled={exporting}>
+                  <Button variant="outline" size="sm" disabled={exporting}>
                     <FileDown className="h-4 w-4 mr-2" strokeWidth={1.5} />
                     {exporting ? 'Exportando...' : 'Exportar'}
                   </Button>
@@ -278,31 +258,40 @@ export default function GapAnalysisFrameworkDetail() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {/* Mais ações — agrupa Gerador de Documentos e Tour */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" aria-label="Mais ações">
+                    <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => openDocGen({ frameworkId, frameworkName: framework.nome })}>
+                    <AkurisAIIcon className="h-4 w-4 mr-2" />
+                    Gerador de Documentos
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => { setActiveTab('avaliacao'); setShowOnboarding(true); }}>
+                    <HelpCircle className="h-4 w-4 mr-2" strokeWidth={1.5} />
+                    Revisitar tour
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           }
         />
 
-        {!showOnboarding && totalRequirements > 0 && (
-          <JourneyProgressBar
-            evaluatedRequirements={evaluatedRequirements}
-            totalRequirements={totalRequirements}
-            conformeCount={categoryData.reduce((sum, c) => sum + c.conforme, 0)}
-            hasActionPlans={evaluatedRequirements > 0}
-            naoConformeCount={categoryData.reduce((sum, c) => sum + c.nao_conforme, 0)}
-            onActionClick={(target) => setActiveTab(target)}
-          />
-        )}
-
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="avaliacao">Avaliação</TabsTrigger>
-            <TabsTrigger value="documentos">Análise de Documentos (IA)</TabsTrigger>
+            <TabsTrigger value="documentos">Análise de Documentos</TabsTrigger>
             <TabsTrigger value="remediacao">Remediação</TabsTrigger>
             {supportsSoA && <TabsTrigger value="soa">SoA</TabsTrigger>}
             <TabsTrigger value="historico">Histórico</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="avaliacao" className="space-y-6">
+          <TabsContent value="avaliacao" className="space-y-5">
             {showOnboarding ? (
               <FrameworkOnboarding
                 frameworkNome={framework.nome}
@@ -313,31 +302,45 @@ export default function GapAnalysisFrameworkDetail() {
               />
             ) : (
               <>
-                <GenericScoreDashboard
+                {/* Hero consolidado: donut + sparkline + delta + chips de domínio/seção */}
+                <FrameworkHeroSummary
                   overallScore={overallScore}
-                  pillarScores={pillarScores}
-                  domainScores={domainScores}
-                  areaScores={areaScores}
-                  sectionScores={sectionScores}
-                  categoryScores={categoryScores}
                   totalRequirements={totalRequirements}
                   evaluatedRequirements={evaluatedRequirements}
+                  domainScores={domainScores}
+                  sectionScores={sectionScores}
                   config={config}
-                  loading={scoreLoading}
                   frameworkId={frameworkId!}
+                  loading={scoreLoading}
+                  contextMessage={(() => {
+                    if (totalRequirements === 0) return undefined;
+                    if (evaluatedRequirements === 0)
+                      return 'Comece avaliando os requisitos — clique em qualquer linha da tabela ou use a Análise de Documentos.';
+                    const naoConforme = categoryData.reduce((s, c) => s + c.nao_conforme, 0);
+                    if (naoConforme > 0)
+                      return `${naoConforme} requisito(s) não conforme(s) identificado(s). Crie planos de ação para tratar os gaps.`;
+                    if (evaluatedRequirements < totalRequirements)
+                      return `Continue avaliando — ${evaluatedRequirements} de ${totalRequirements} concluídos.`;
+                    return `Todos os ${totalRequirements} requisitos foram avaliados.`;
+                  })()}
+                  contextAction={
+                    evaluatedRequirements > 0 && categoryData.reduce((s, c) => s + c.nao_conforme, 0) > 0
+                      ? { label: 'Ver remediação', onClick: () => setActiveTab('remediacao') }
+                      : evaluatedRequirements === 0 && totalRequirements > 0
+                      ? { label: 'Analisar documentos', onClick: () => setActiveTab('documentos') }
+                      : undefined
+                  }
                 />
 
-
-                {/* Single chart + interactive category cards */}
+                {/* Aderência por categoria — agora clicável (filtra a tabela abaixo) */}
                 {categoryScores.length > 0 && (
-                  <CategoryBarChart categoryScores={categoryScores} config={config} />
-                )}
-
-                {categoryData.length > 0 && (
-                  <CategoryStatusCards
-                    categories={categoryData}
-                    onCategoryClick={(cat) => setActiveCategoryFilter(prev => prev === cat ? undefined : cat)}
+                  <CategoryBarChart
+                    categoryScores={categoryScores}
+                    config={config}
                     activeCategory={activeCategoryFilter}
+                    onCategoryClick={(cat) =>
+                      setActiveCategoryFilter(prev => prev === cat ? undefined : cat)
+                    }
                   />
                 )}
 

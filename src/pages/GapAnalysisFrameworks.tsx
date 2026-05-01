@@ -359,9 +359,19 @@ export default function GapAnalysisFrameworks() {
               </div>
             )}
 
-            {/* Radar comparativo */}
-            {comparisonData.length >= 2 && (
-              <FrameworkComparisonRadar data={comparisonData} />
+            {/* Radar comparativo — só faz sentido com 3+ frameworks ativos */}
+            {comparisonData.length >= 3 && (
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <button type="button" className="flex items-center gap-2 group text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <ChevronDown className="h-4 w-4 transition-transform group-data-[state=closed]:-rotate-90" />
+                    <span>Ver maturidade comparativa entre frameworks</span>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  <FrameworkComparisonRadar data={comparisonData} />
+                </CollapsibleContent>
+              </Collapsible>
             )}
 
             {/* Barra de busca unificada */}
