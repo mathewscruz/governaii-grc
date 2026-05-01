@@ -134,7 +134,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5}/>
                 ) : (
-                  <Sparkles className="h-4 w-4" strokeWidth={1.5}/>
+                  <AkurisAIIcon className="h-4 w-4"/>
                 )}
               </Button>
             </span>
@@ -147,7 +147,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
         <DialogContent className="w-[95vw] max-w-3xl lg:max-w-4xl max-h-[88vh] overflow-y-auto p-5 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" strokeWidth={1.5}/>
+              <AkurisAIIcon className="h-5 w-5 text-primary"/>
               Consultor IA de Conformidade
             </DialogTitle>
           </DialogHeader>
@@ -220,7 +220,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
 
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button variant="outline" size="sm" onClick={handleAnalyze} disabled={loading} className="flex-1">
-                  {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" strokeWidth={1.5}/> : <Sparkles className="h-4 w-4 mr-2" strokeWidth={1.5}/>}
+                  {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" strokeWidth={1.5}/> : <AkurisAIIcon className="h-4 w-4 mr-2"/>}
                   Atualizar Análise
                 </Button>
                 {props.onGoToRemediation && (
@@ -239,7 +239,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
             <div className="text-center py-8">
               <p className="text-sm text-muted-foreground">Erro ao carregar recomendações. Tente novamente.</p>
               <Button onClick={handleAnalyze} className="mt-3">
-                <Sparkles className="h-4 w-4 mr-2" strokeWidth={1.5}/>Tentar Novamente
+                <AkurisAIIcon className="h-4 w-4 mr-2"/>Tentar Novamente
               </Button>
             </div>
           )}
