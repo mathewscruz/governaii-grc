@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import akurisLogo from '@/assets/akuris-logo.png';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AkurisMarkPattern } from '@/components/identity/AkurisMarkPattern';
+import { KpiDrillDownProvider } from '@/components/dashboard/KpiDrillDownProvider';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -146,6 +147,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }
 
   return (
+    <KpiDrillDownProvider>
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-[hsl(var(--layout-shell))]">
         <AppSidebar />
@@ -237,6 +239,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <AkurIAActionListener />
       </div>
     </SidebarProvider>
+    </KpiDrillDownProvider>
   );
 };
 

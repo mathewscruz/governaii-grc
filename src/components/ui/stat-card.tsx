@@ -1,36 +1,85 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { TrendingUp, TrendingDown, Minus, ArrowRight, Sparkles } from "lucide-react"
+import { AkurisPulse } from "@/components/ui/AkurisPulse"
+import { CornerAccent } from "@/components/identity/CornerAccent"
+import { useKpiDrillDown } from "@/components/dashboard/KpiDrillDownProvider"
+import type { DrillDownKey } from "@/components/dashboard/KpiDrillDownDrawer"
+
+/**
+ * StatCard editorial (Onda 5).
+ *
+ * Anatomia oficial:
+ *  ┌──────────────────────────────────────────┐
+ *  │ ◇ Riscos ativos                  ↗ +12%  │  ← ícone INLINE + delta no topo
+ *  │                                          │
+ *  │ 42                                       │  ← valor herói (4xl, semibold)
+ *  │                                          │
+ *  │ ████████░░░░  3 críticos · 5 altos       │  ← micro-segmentação visual
+ *  │                                          │
+ *  │ Ver detalhes                          →  │  ← CTA discreta (só se drillDown)
+ *  └──────────────────────────────────────────┘
+ *
+ *  Sem pílula colorida no ícone, sem background colorido por variant
+ *  (apenas accent-bar lateral 2px). Loading via AkurisPulse.
+ */
+
+type Tone = "destructive" | "warning" | "success" | "info" | "primary" | "neutral"
+
+const TONE_BG: Record<Tone, string> = {
+  destructive: "bg-destructive",
+  warning: "bg-warning",
+  success: "bg-success",
+  info: "bg-info",
+  primary: "bg-primary",
+  neutral: "bg-muted-foreground/40",
+}
+
+const TONE_TEXT: Record<Tone, string> = {
+  destructive: "text-destructive",
+  warning: "text-warning",
+  success: "text-success",
+  info: "text-info",
+  primary: "text-primary",
+  neutral: "text-muted-foreground",
+}
 
 const statCardVariants = cva(
-  "relative overflow-hidden transition-all duration-300",
+  "group relative overflow-hidden transition-all duration-300",
   {
     variants: {
       variant: {
         default: "",
-        success: "governaii-accent-bar before:!bg-gradient-to-b before:!from-success before:!to-success/70",
-        warning: "governaii-accent-bar before:!bg-gradient-to-b before:!from-warning before:!to-warning/70",
-        destructive: "governaii-accent-bar before:!bg-gradient-to-b before:!from-destructive before:!to-destructive/70",
-        info: "governaii-accent-bar before:!bg-gradient-to-b before:!from-info before:!to-info/70",
-        primary: "governaii-accent-bar",
+        success: "governaii-accent-bar before:!bg-success/70",
+        warning: "governaii-accent-bar before:!bg-warning/70",
+        destructive: "governaii-accent-bar before:!bg-destructive/70",
+        info: "governaii-accent-bar before:!bg-info/70",
+        primary: "governaii-accent-bar before:!bg-primary/70",
       },
       interactive: {
-        true: "cursor-pointer governaii-card-hover",
+        true: "cursor-pointer hover:border-primary/40 hover:shadow-elegant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         false: "",
       },
     },
     defaultVariants: {
-      variant: "primary",
+      variant: "default",
       interactive: false,
     },
   }
 )
 
+export interface StatCardSegment {
+  label: string
+  value: number
+  tone?: Tone
+}
+
 interface StatCardProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "title">,
     VariantProps<typeof statCardVariants> {
   title: string
   value: string | number
@@ -40,15 +89,21 @@ interface StatCardProps
     value: number
     label?: string
     period?: string
-    direction?: 'up' | 'down' | 'neutral'
+    direction?: "up" | "down" | "neutral"
   }
   badge?: {
     label: string
     variant?: "default" | "secondary" | "destructive" | "success" | "warning" | "info" | "soft"
   }
+  /** Composição do total — renderiza barra segmentada + legenda compacta. */
+  segments?: StatCardSegment[]
+  /** Conecta o card ao KpiDrillDownDrawer global. Torna o card clicável. */
+  drillDown?: DrillDownKey
+  /** Assinatura Akuris no canto (use no KPI herói da tela). */
+  showAccent?: boolean
   actions?: React.ReactNode
   loading?: boolean
-  /** Hint text shown when value is 0, to guide new users */
+  /** Hint exibido quando o valor é 0, para guiar usuários novos. */
   emptyHint?: string
 }
 
@@ -62,106 +117,183 @@ export function StatCard({
   icon,
   trend,
   badge,
+  segments,
+  drillDown,
+  showAccent,
   actions,
   loading = false,
   emptyHint,
   onClick,
   ...props
 }: StatCardProps) {
-  const getTrendIcon = () => {
-    if (!trend) return null
-    const dir = trend.direction ?? (trend.value > 0 ? 'up' : trend.value < 0 ? 'down' : 'neutral')
-    if (dir === 'up') return <TrendingUp className="h-3.5 w-3.5" />
-    if (dir === 'down') return <TrendingDown className="h-3.5 w-3.5" />
-    return <Minus className="h-3.5 w-3.5" />
+  const drill = useKpiDrillDown()
+  const isInteractive = interactive || !!onClick || !!drillDown
+
+  const handleActivate = React.useCallback(() => {
+    if (onClick) {
+      onClick({} as any)
+      return
+    }
+    if (drillDown) drill.open(drillDown)
+  }, [onClick, drillDown, drill])
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isInteractive) return
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault()
+      handleActivate()
+    }
   }
 
-  const getTrendColor = () => {
-    if (!trend) return ""
-    const dir = trend.direction ?? (trend.value > 0 ? 'up' : trend.value < 0 ? 'down' : 'neutral')
-    if (dir === 'up') return "text-success"
-    if (dir === 'down') return "text-destructive"
-    return "text-muted-foreground"
-  }
-
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <Card className={cn("p-5", className)}>
-        <div className="flex items-start justify-between">
-          <div className="space-y-3 flex-1">
-            <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-            <div className="h-8 w-20 bg-muted animate-pulse rounded" />
-            <div className="h-3 w-32 bg-muted animate-pulse rounded" />
-          </div>
-          <div className="h-10 w-10 bg-muted animate-pulse rounded-lg" />
-        </div>
+      <Card variant="elevated" className={cn("min-h-[160px] flex items-center justify-center", className)}>
+        <AkurisPulse size={36} />
       </Card>
     )
   }
 
+  const isZero = value === 0 || value === "0"
+  const showEmptyHint = !!emptyHint && isZero
+  const showCTA = isInteractive
+
+  // ── Trend ─────────────────────────────────────────────────────────────────
+  const trendDir = trend
+    ? trend.direction ?? (trend.value > 0 ? "up" : trend.value < 0 ? "down" : "neutral")
+    : null
+  const trendIcon =
+    trendDir === "up" ? <TrendingUp className="h-3 w-3" strokeWidth={1.5} /> :
+    trendDir === "down" ? <TrendingDown className="h-3 w-3" strokeWidth={1.5} /> :
+    trendDir === "neutral" ? <Minus className="h-3 w-3" strokeWidth={1.5} /> : null
+  const trendColor =
+    trendDir === "up" ? "text-success" :
+    trendDir === "down" ? "text-destructive" :
+    "text-muted-foreground"
+
+  // ── Segments ──────────────────────────────────────────────────────────────
+  const segmentTotal = segments?.reduce((s, x) => s + Math.max(0, x.value), 0) ?? 0
+  const renderSegments = () => {
+    if (!segments || segments.length === 0 || segmentTotal === 0) return null
+    return (
+      <div className="space-y-1.5">
+        {/* Barra segmentada */}
+        <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          {segments.map((seg, i) => {
+            const pct = (Math.max(0, seg.value) / segmentTotal) * 100
+            if (pct <= 0) return null
+            return (
+              <div
+                key={`${seg.label}-${i}`}
+                className={cn("h-full transition-all", TONE_BG[seg.tone ?? "neutral"])}
+                style={{ width: `${pct}%` }}
+                aria-label={`${seg.label}: ${seg.value}`}
+              />
+            )
+          })}
+        </div>
+        {/* Legenda compacta */}
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-muted-foreground">
+          {segments.map((seg, i) => (
+            seg.value > 0 && (
+              <span key={`${seg.label}-leg-${i}`} className="inline-flex items-center gap-1">
+                <span className={cn("inline-block h-1.5 w-1.5 rounded-full", TONE_BG[seg.tone ?? "neutral"])} />
+                <span className={cn("tabular-nums font-medium", TONE_TEXT[seg.tone ?? "neutral"])}>{seg.value}</span>
+                <span className="text-muted-foreground/80">{seg.label}</span>
+              </span>
+            )
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <Card 
+    <Card
       variant="elevated"
-      interactive={interactive || !!onClick}
-      className={cn(statCardVariants({ variant, interactive: interactive || !!onClick }), className)} 
-      onClick={onClick}
+      interactive={isInteractive}
+      role={isInteractive ? "button" : undefined}
+      tabIndex={isInteractive ? 0 : undefined}
+      aria-label={isInteractive ? `${title}: ${value}` : undefined}
+      onClick={isInteractive ? handleActivate : undefined}
+      onKeyDown={handleKeyDown}
+      className={cn(statCardVariants({ variant, interactive: isInteractive }), className)}
       {...props}
     >
-      <CardHeader className="flex flex-row items-start justify-between pb-2">
-        <div className="space-y-1 flex-1 min-w-0 pl-2">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground truncate">
+      {showAccent && <CornerAccent position="top-right" size={12} className="opacity-60" />}
+
+      <CardContent className="p-5 pl-6 space-y-3">
+        {/* Linha 1: ícone + título + badge | delta */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            {icon && (
+              <span className="text-muted-foreground flex-shrink-0 [&_svg]:h-4 [&_svg]:w-4">
+                {icon}
+              </span>
+            )}
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">
               {title}
-            </CardTitle>
+            </span>
             {badge && (
-              <Badge variant={badge.variant || 'soft'} size="sm">
+              <Badge variant={badge.variant || "soft"} size="sm" className="ml-1">
                 {badge.label}
               </Badge>
             )}
           </div>
+
+          {trend && trendDir && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className={cn("inline-flex items-center gap-0.5 text-[11px] font-medium tabular-nums", trendColor)}>
+                    {trendIcon}
+                    {trend.value > 0 ? "+" : ""}{trend.value}
+                    {typeof trend.value === "number" ? "%" : ""}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {trend.label || "Variação"}{trend.period ? ` vs ${trend.period}` : ""}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
-        
-        {icon && (
-          <div className="flex-shrink-0 p-2.5 rounded-lg bg-primary/10 text-primary">
-            {icon}
-          </div>
-        )}
-      </CardHeader>
-      
-      <CardContent className="pl-7">
+
+        {/* Linha 2: valor herói */}
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+          <span
+            className={cn(
+              "text-4xl font-semibold tracking-tight tabular-nums leading-none",
+              isZero ? "text-muted-foreground/70" : "text-foreground"
+            )}
+          >
             {value}
           </span>
           {actions && <div className="ml-auto">{actions}</div>}
         </div>
 
-        {/* Empty hint for new users when value is 0 */}
-        {emptyHint && (value === 0 || value === '0') && (
-          <p className="mt-1.5 text-xs text-muted-foreground/70 italic">
-            {emptyHint}
-          </p>
+        {/* Linha 3: segments OU description */}
+        {segments && segments.length > 0 && segmentTotal > 0 ? (
+          renderSegments()
+        ) : description ? (
+          <p className="text-xs text-muted-foreground leading-snug">{description}</p>
+        ) : null}
+
+        {/* Empty hint */}
+        {showEmptyHint && (
+          <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground/80">
+            <Sparkles className="h-3 w-3 mt-0.5 flex-shrink-0 text-primary/60" strokeWidth={1.5} />
+            <span>{emptyHint}</span>
+          </div>
         )}
 
-        {(description || trend) && (
-          <div className="mt-2 flex items-center gap-3 text-sm">
-            {description && (
-              <span className="text-muted-foreground">{description}</span>
-            )}
-            {trend && (
-              <div className={cn("flex items-center gap-1 font-medium", getTrendColor())}>
-                {getTrendIcon()}
-                <span>
-                  {trend.value > 0 ? '+' : ''}{trend.value}%
-                  {trend.label && ` ${trend.label}`}
-                </span>
-                {trend.period && (
-                  <span className="text-muted-foreground font-normal ml-1">
-                    vs {trend.period}
-                  </span>
-                )}
-              </div>
-            )}
+        {/* CTA discreta (só se interativo) */}
+        {showCTA && (
+          <div className="pt-1 flex items-center justify-between text-[11px] font-medium text-muted-foreground/70 group-hover:text-primary transition-colors">
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+              {drillDown ? "Ver detalhes" : "Abrir"}
+            </span>
+            <ArrowRight className="h-3 w-3 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all" strokeWidth={1.5} />
           </div>
         )}
       </CardContent>
