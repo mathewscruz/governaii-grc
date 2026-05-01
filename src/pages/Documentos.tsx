@@ -665,7 +665,7 @@ export default function Documentos() {
                   </TableRow>
                 ) : (
                   paginatedDocumentos.map((documento) => (
-                    <TableRow key={documento.id}>
+                    <TableRow key={documento.id} data-focus-id={documento.id}>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium">{documento.nome}</div>

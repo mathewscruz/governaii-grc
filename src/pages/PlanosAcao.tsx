@@ -576,6 +576,7 @@ export default function PlanosAcao() {
                       {items.map((item: any) => (
                         <Card
                           key={`${item.modulo_origem || 'plano'}-${item.id}`}
+                          data-focus-id={item.id}
                           className="p-3 cursor-pointer hover:shadow-md transition-shadow"
                           onClick={() => {
                             if (item._isExternal) {

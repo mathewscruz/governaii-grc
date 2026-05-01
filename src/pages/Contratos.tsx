@@ -497,7 +497,7 @@ export default function Contratos() {
                       </TableRow>
                     ) : (
                       paginatedContratos.map((contrato) => (
-                        <TableRow key={contrato.id}>
+                        <TableRow key={contrato.id} data-focus-id={contrato.id}>
                           <TableCell>
                             <div>
                               <div className="font-medium">{contrato.nome}</div>
