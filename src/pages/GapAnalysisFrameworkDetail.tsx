@@ -17,6 +17,7 @@ import { AIRecommendationsButton } from '@/components/gap-analysis/AIRecommendat
 import { RemediationTab } from '@/components/gap-analysis/RemediationTab';
 import { FrameworkOnboarding } from '@/components/gap-analysis/FrameworkOnboarding';
 import { SoATab } from '@/components/gap-analysis/SoATab';
+import { EvidenceLibraryHub } from '@/components/gap-analysis/EvidenceLibraryHub';
 import { useDocGen } from '@/contexts/DocGenContext';
 
 import { exportFrameworkPDF } from '@/components/gap-analysis/ExportFrameworkPDF';
@@ -289,6 +290,7 @@ export default function GapAnalysisFrameworkDetail() {
             <TabsTrigger value="documentos">Análise de Documentos</TabsTrigger>
             <TabsTrigger value="remediacao">Remediação</TabsTrigger>
             {supportsSoA && <TabsTrigger value="soa">SoA</TabsTrigger>}
+            <TabsTrigger value="biblioteca">Biblioteca de Evidências</TabsTrigger>
             <TabsTrigger value="historico">Histórico</TabsTrigger>
           </TabsList>
 
@@ -395,6 +397,9 @@ export default function GapAnalysisFrameworkDetail() {
               frameworkName={framework.nome}
               frameworkVersion={framework.versao}
             />
+          </TabsContent>
+          <TabsContent value="biblioteca">
+            <EvidenceLibraryHub />
           </TabsContent>
         </Tabs>
       </div>
