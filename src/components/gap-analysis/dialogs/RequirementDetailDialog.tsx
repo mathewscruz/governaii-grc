@@ -922,10 +922,10 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                               const validation = file.url ? validationByUrl[file.url] : undefined;
                               const isValidating = validatingUrl === file.url;
                               const verdictColor =
-                                validation?.verdict === 'conforme' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-200 dark:text-emerald-400' :
-                                validation?.verdict === 'parcial' ? 'bg-amber-500/10 text-amber-700 border-amber-200 dark:text-amber-400' :
-                                validation?.verdict === 'nao_conforme' ? 'bg-red-500/10 text-red-700 border-red-200 dark:text-red-400' :
-                                'bg-muted text-muted-foreground';
+                                validation?.verdict === 'conforme' ? 'bg-success/10 text-success border-success/30' :
+                                validation?.verdict === 'parcial' ? 'bg-warning/10 text-warning border-warning/30' :
+                                validation?.verdict === 'nao_conforme' ? 'bg-destructive/10 text-destructive border-destructive/30' :
+                                'bg-muted text-muted-foreground border-border';
                               const verdictLabel =
                                 validation?.verdict === 'conforme' ? 'Conforme' :
                                 validation?.verdict === 'parcial' ? 'Parcial' :
