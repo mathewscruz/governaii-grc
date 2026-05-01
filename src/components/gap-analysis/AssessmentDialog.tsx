@@ -79,7 +79,7 @@ export function AssessmentDialog({
         status: "em_andamento"
       });
     } catch (error) {
-      logger.error('Erro ao salvar avaliação:', error);
+      logger.error('Erro ao salvar avaliação:', { error: error instanceof Error ? error.message : String(error) });
       toast({ 
         title: "Erro ao salvar avaliação",
         description: "Tente novamente.",

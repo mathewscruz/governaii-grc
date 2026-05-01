@@ -69,7 +69,7 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ requirem
         user_nome: e.user_id ? userMap.get(e.user_id) || 'Usuário' : 'Sistema',
       })));
     } catch (error) {
-      logger.error('Erro ao carregar histórico:', error);
+      logger.error('Erro ao carregar histórico:', { error: error instanceof Error ? error.message : String(error) });
     } finally {
       setLoading(false);
     }

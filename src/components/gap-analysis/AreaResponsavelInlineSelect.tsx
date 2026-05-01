@@ -57,7 +57,7 @@ export const AreaResponsavelInlineSelect: React.FC<AreaResponsavelInlineSelectPr
         try {
           setCustomAreas(JSON.parse(savedAreas));
         } catch (error) {
-          logger.error("Erro ao carregar áreas customizadas:", error);
+          logger.error("Erro ao carregar áreas customizadas:", { error: error instanceof Error ? error.message : String(error) });
         }
       }
     }
@@ -87,7 +87,7 @@ export const AreaResponsavelInlineSelect: React.FC<AreaResponsavelInlineSelectPr
 
       onAreaChange?.(area === "sem_area" ? "" : area);
     } catch (error) {
-      logger.error('Erro ao salvar área responsável:', error);
+      logger.error('Erro ao salvar área responsável:', { error: error instanceof Error ? error.message : String(error) });
       toast.error("Erro ao salvar área responsável");
       // Reverter para valor anterior em caso de erro
       setSelectedArea(currentArea || "sem_area");

@@ -116,7 +116,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
           .remove([assessment.storage_file_name]);
         
         if (storageError) {
-          logger.error('Erro ao excluir arquivo do storage:', storageError);
+          logger.error('Erro ao excluir arquivo do storage:', { error: storageError instanceof Error ? storageError.message : String(storageError) });
         }
       }
 
@@ -131,7 +131,7 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
       toast.success('Avaliação excluída com sucesso');
       refetch();
     } catch (error: any) {
-      logger.error('Erro ao excluir avaliação:', error);
+      logger.error('Erro ao excluir avaliação:', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro ao excluir avaliação: ' + error.message);
     } finally {
       setIsDeleting(false);

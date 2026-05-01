@@ -95,7 +95,7 @@ export const EvidenceUpload: React.FC<EvidenceUploadProps> = ({
       });
 
     } catch (error) {
-      logger.error('Erro no upload:', error);
+      logger.error('Erro no upload:', { error: error instanceof Error ? error.message : String(error) });
       toast({
         variant: "destructive",
         title: "Erro no upload",
@@ -131,7 +131,7 @@ export const EvidenceUpload: React.FC<EvidenceUploadProps> = ({
       });
 
     } catch (error) {
-      logger.error('Erro ao deletar arquivo:', error);
+      logger.error('Erro ao deletar arquivo:', { error: error instanceof Error ? error.message : String(error) });
       toast({
         variant: "destructive",
         title: "Erro ao remover",

@@ -315,7 +315,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
         } catch { /* ignore parse errors */ }
       }
     } catch (error: any) {
-      logger.error('Error generating guidance:', error);
+      logger.error('Error generating guidance:', { error: error instanceof Error ? error.message : String(error) });
       if (error?.message?.includes('402') || error?.status === 402) {
         toast.error('Créditos de IA esgotados. Entre em contato com a Akuris para adquirir mais créditos.');
       } else if (forceRegenerate) {
@@ -392,7 +392,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
         setPlanoAcaoVinculado(null);
       }
     } catch (error: any) {
-      logger.error('Error loading data:', error);
+      logger.error('Error loading data:', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro ao carregar dados');
     } finally {
       setLoading(false);
@@ -417,7 +417,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
       setFormData(prev => ({ ...prev, evidence_files: [...prev.evidence_files, ...uploadedFiles] }));
       toast.success(`${uploadedFiles.length} arquivo(s) anexado(s)`);
     } catch (error: any) {
-      logger.error('Error uploading files:', error);
+      logger.error('Error uploading files:', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro ao fazer upload');
     } finally {
       setUploading(false);
@@ -475,7 +475,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
       toast.success('Detalhes salvos com sucesso');
       onClose();
     } catch (error: any) {
-      logger.error('Error saving:', error);
+      logger.error('Error saving:', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro ao salvar detalhes');
     } finally {
       setSaving(false);
@@ -495,7 +495,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
       setPlanoAcaoDialogOpen(false);
       toast.success('Plano de ação criado e vinculado');
     } catch (error: any) {
-      logger.error('Error creating plano:', error);
+      logger.error('Error creating plano:', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro ao criar plano de ação');
     } finally {
       setSavingPlano(false);

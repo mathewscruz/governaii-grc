@@ -216,7 +216,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
           });
         }
       } catch (error: any) {
-        logger.error('Error polling assessment status:', error);
+        logger.error('Error polling assessment status:', { error: error instanceof Error ? error.message : String(error) });
         clearInterval(pollInterval);
       }
     }, 3000); // Verificar a cada 3 segundos
@@ -284,7 +284,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
         // Atualizar progresso: texto extraído (15%)
         setAnalysisState(prev => ({ ...prev, progress: 15, currentStep: 'uploading' }));
       } catch (extractError: any) {
-        logger.error('Error extracting text:', extractError);
+        logger.error('Error extracting text:', { error: extractError instanceof Error ? extractError.message : String(extractError) });
         
         setAnalysisState(prev => ({
           ...prev,
@@ -377,7 +377,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
         }
       }).then(({ error: functionError }) => {
         if (functionError) {
-          logger.error('Edge function error:', functionError);
+          logger.error('Edge function error:', { error: functionError instanceof Error ? functionError.message : String(functionError) });
           // O polling vai detectar o erro no banco
         }
       });
@@ -386,7 +386,7 @@ export function AdherenceAssessmentDialog({ open, onOpenChange, onSuccess, preSe
       // O dialog será fechado automaticamente quando o polling detectar conclusão
 
     } catch (error: any) {
-      logger.error('Error creating adherence assessment:', error);
+      logger.error('Error creating adherence assessment:', { error: error instanceof Error ? error.message : String(error) });
       
       setAnalysisState(prev => ({
         ...prev,

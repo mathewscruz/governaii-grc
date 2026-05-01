@@ -79,7 +79,7 @@ export const RequirementsManager = ({ frameworkId, frameworkName }: Requirements
 
       refetch();
     } catch (error) {
-      logger.error('Erro ao excluir requisito:', error);
+      logger.error('Erro ao excluir requisito:', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: "Erro ao excluir",
         description: "Ocorreu um erro ao excluir o requisito.",

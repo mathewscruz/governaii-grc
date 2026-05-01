@@ -50,7 +50,7 @@ export const AreaResponsavelManager: React.FC<AreaResponsavelManagerProps> = ({
         try {
           setCustomAreas(JSON.parse(savedAreas));
         } catch (error) {
-          logger.error("Erro ao carregar áreas customizadas:", error);
+          logger.error("Erro ao carregar áreas customizadas:", { error: error instanceof Error ? error.message : String(error) });
         }
       }
     }

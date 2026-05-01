@@ -112,7 +112,7 @@ export function AdherenceResultView({ assessment, onBack, frameworkId, onApplied
       await exportAssessmentToPDF(assessment, details, getCompanyLogoUrl(empresa?.logo_url));
       toast({ title: "PDF exportado", description: "O relatório foi exportado com sucesso." });
     } catch (error) {
-      logger.error('Error exporting PDF:', error);
+      logger.error('Error exporting PDF:', { error: error instanceof Error ? error.message : String(error) });
       toast({ title: "Erro ao exportar", description: "Ocorreu um erro ao exportar o PDF.", variant: "destructive" });
     }
   };
@@ -183,7 +183,7 @@ export function AdherenceResultView({ assessment, onBack, frameworkId, onApplied
       });
       onApplied?.();
     } catch (err: any) {
-      logger.error('Error applying results:', err);
+      logger.error('Error applying results:', { error: err instanceof Error ? err.message : String(err) });
       toast({ title: "Erro ao aplicar", description: "Ocorreu um erro ao sincronizar os resultados.", variant: "destructive" });
     } finally {
       setApplying(false);

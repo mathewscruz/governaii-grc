@@ -63,7 +63,7 @@ export function FrameworkDialog({ open, onOpenChange, onSuccess, framework }: Fr
       onOpenChange(false);
       setFormData({ nome: "", descricao: "", versao: "", tipo_framework: "" });
     } catch (error) {
-      logger.error('Erro ao salvar framework:', error);
+      logger.error('Erro ao salvar framework:', { error: error instanceof Error ? error.message : String(error) });
       toast({ 
         title: "Erro ao salvar framework",
         description: "Tente novamente.",

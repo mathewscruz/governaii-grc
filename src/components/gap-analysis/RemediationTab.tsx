@@ -94,7 +94,7 @@ export const RemediationTab: React.FC<RemediationTabProps> = ({ frameworkId, fra
 
       setPlanos(merged);
     } catch (error) {
-      logger.error('Erro ao carregar planos de remediação:', error);
+      logger.error('Erro ao carregar planos de remediação:', { error: error instanceof Error ? error.message : String(error) });
     } finally {
       setLoading(false);
     }

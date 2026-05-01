@@ -91,7 +91,7 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
       }
       setRecommendations(data?.data || null);
     } catch (err: any) {
-      logger.error('AI recommendations error:', err);
+      logger.error('AI recommendations error:', { error: err instanceof Error ? err.message : String(err) });
       toast.error('Erro ao gerar recomendações');
     } finally {
       setLoading(false);

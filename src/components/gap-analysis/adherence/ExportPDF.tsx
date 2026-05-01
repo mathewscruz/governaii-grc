@@ -71,7 +71,7 @@ export async function exportAssessmentToPDF(
           pdf.addImage(img, 'PNG', logoX, logoY, logoWidth, logoHeight);
           y = logoY + logoHeight + 20;
         } catch (error) {
-          logger.error('Erro ao adicionar logo:', error);
+          logger.error('Erro ao adicionar logo:', { error: error instanceof Error ? error.message : String(error) });
           y = 50;
         }
         resolve();
