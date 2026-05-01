@@ -821,12 +821,12 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                     </div>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
 
               {/* ============================================ */}
               {/* RIGHT PANEL — Jornada numerada              */}
               {/* ============================================ */}
-              <ScrollArea className="h-full md:w-[58%] flex-1 md:flex-none min-h-0">
+              <div className="h-full md:w-[58%] flex-1 md:flex-none min-h-0 overflow-y-auto">
                 <div className="p-5 space-y-3">
 
                   {/* ===== STEP 1: Avaliar Conformidade ===== */}
@@ -1223,7 +1223,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                   </JourneyStep>
 
                 </div>
-              </ScrollArea>
+              </div>
             </div>
           )}
         </div>
