@@ -26,52 +26,9 @@ interface ItemAuditoriaDetalheDialogProps {
   onEdit: () => void;
 }
 
-const getStatusColor = (status: string): string => {
-  switch (status) {
-    case 'pendente':
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-    case 'em_andamento':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'concluido':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'nao_aplicavel':
-      return 'bg-slate-100 text-slate-600 border-slate-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
-
-const getStatusLabel = (status: string): string => {
-  switch (status) {
-    case 'pendente': return 'Pendente';
-    case 'em_andamento': return 'Em Andamento';
-    case 'concluido': return 'Concluído';
-    case 'nao_aplicavel': return 'Não Aplicável';
-    default: return status;
-  }
-};
-
-const getPrioridadeColor = (prioridade: string): string => {
-  switch (prioridade) {
-    case 'alta':
-      return 'bg-red-100 text-red-800 border-red-200';
-    case 'media':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'baixa':
-      return 'bg-green-100 text-green-800 border-green-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
-
-const getPrioridadeLabel = (prioridade: string): string => {
-  switch (prioridade) {
-    case 'alta': return 'Alta';
-    case 'media': return 'Média';
-    case 'baixa': return 'Baixa';
-    default: return prioridade;
-  }
-};
+import { StatusBadge } from "@/components/ui/status-badge";
+import { resolveItemAuditoriaStatusTone, resolvePrioridadeTone } from "@/lib/status-tone";
+import { formatStatus } from "@/lib/text-utils";
 
 export function ItemAuditoriaDetalheDialog({
   open,
