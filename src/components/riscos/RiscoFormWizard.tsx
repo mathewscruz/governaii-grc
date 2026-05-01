@@ -546,9 +546,9 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
   const nivelCorClass = (nivel: string) => {
     const n = nivel?.toLowerCase() || '';
     if (n.includes('crít') || n.includes('crit')) return 'bg-destructive text-destructive-foreground border-destructive';
-    if (n.includes('alto')) return 'bg-orange-500 text-white border-orange-500';
-    if (n.includes('médio') || n.includes('medio')) return 'bg-yellow-500 text-white border-yellow-500';
-    if (n.includes('baixo')) return 'bg-emerald-500 text-white border-emerald-500';
+    if (n.includes('alto')) return 'bg-destructive/85 text-destructive-foreground border-destructive/85';
+    if (n.includes('médio') || n.includes('medio')) return 'bg-warning text-warning-foreground border-warning';
+    if (n.includes('baixo')) return 'bg-success text-success-foreground border-success';
     return 'bg-muted text-foreground border-border';
   };
 
@@ -1114,8 +1114,8 @@ export function RiscoFormWizard({ risco, onSuccess }: Props) {
               {risco?.status_aceite && (
                 <div className={cn(
                   "p-3 rounded-lg text-sm flex items-center gap-2 border",
-                  risco.status_aceite === 'pendente' && "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
-                  risco.status_aceite === 'aprovado' && "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+                  risco.status_aceite === 'pendente' && "bg-warning/10 text-warning border-warning/30",
+                  risco.status_aceite === 'aprovado' && "bg-success/10 text-success border-success/30",
                   risco.status_aceite === 'rejeitado' && "bg-destructive/10 text-destructive border-destructive/30"
                 )}>
                   {risco.status_aceite === 'pendente' && '⏳ Aceite pendente de aprovação'}
