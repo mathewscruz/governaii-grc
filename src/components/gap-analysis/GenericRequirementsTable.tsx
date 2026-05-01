@@ -172,6 +172,31 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
     loadRequirements();
   }, [frameworkId, empresaId]);
 
+  // Carrega usuários da empresa para resolver UUID → nome na coluna "Responsável".
+  // Multi-tenant: filtro obrigatório por empresa_id.
+  useEffect(() => {
+    if (!empresaId) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, nome, email')
+        .eq('empresa_id', empresaId)
+        .eq('ativo', true);
+      if (cancelled) return;
+      if (error) {
+        logger.error('Erro ao carregar usuários da empresa', { error: error.message });
+        return;
+      }
+      const map = new Map<string, UserLite>();
+      (data || []).forEach(u => {
+        if (u.user_id) map.set(u.user_id, { nome: u.nome || u.email || '—', email: u.email || '' });
+      });
+      setUsersById(map);
+    })();
+    return () => { cancelled = true; };
+  }, [empresaId]);
+
   // Sync with external category filter from CategoryStatusCards
   useEffect(() => {
     if (initialCategoryFilter) {
