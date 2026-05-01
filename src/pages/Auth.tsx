@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Shield, BarChart3, FileCheck, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ArrowRight, ArrowLeft } from 'lucide-react';
 import logoImage from '@/assets/akuris-logo.png';
 import { ForgotPasswordDialog } from '@/components/ForgotPasswordDialog';
 import { LanguageSelector } from '@/components/LanguageSelector';
@@ -18,6 +18,9 @@ import { logger } from '@/lib/logger';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
+import { AkurisMarkPattern } from '@/components/identity/AkurisMarkPattern';
+import { CornerAccent } from '@/components/identity/CornerAccent';
+import { RiscosIcon, ControlesIcon, GapAnalysisIcon } from '@/components/icons';
 const Auth = () => {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
