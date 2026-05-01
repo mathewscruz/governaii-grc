@@ -266,7 +266,7 @@ const Auth = () => {
             {pillars.map((p, i) => (
               <li key={i} className="flex items-start gap-4">
                 <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 text-primary shrink-0">
-                  <p.Icon className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                  <p.Icon size={18} />
                 </span>
                 <div className="pt-1">
                   <p className="text-sm font-semibold text-white tracking-tight">{p.title}</p>
