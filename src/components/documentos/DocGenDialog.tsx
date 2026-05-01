@@ -760,7 +760,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
     <DialogShell
       open={open}
       onOpenChange={handleDialogClose}
-      title={`DocGen — Gerador Inteligente de Documentos${currentDocType ? ` · ${currentDocType}` : ''}`}
+      title={`Gerador de Documentos (IA)${currentDocType ? ` · ${currentDocType}` : ''}${requirementContext ? ` — ${requirementContext.requirementCode}` : ''}`}
       icon={Brain}
       size="xl"
       noScroll
