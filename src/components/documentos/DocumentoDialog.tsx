@@ -103,11 +103,22 @@ export function DocumentoDialog({ open, onOpenChange, documento, onSuccess, init
   const handleRemoveTag = (t: string) => update({ tags: formData.tags.filter((x) => x !== t) });
 
   const uploadFile = async (file: File): Promise<string> => {
+    // Scope file path by empresa_id to satisfy storage RLS policy
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) throw new Error('Usuário não autenticado');
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('empresa_id')
+      .eq('user_id', userData.user.id)
+      .single();
+    if (!profileData?.empresa_id) throw new Error('Empresa não encontrada');
+
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const { error: uploadError } = await supabase.storage.from('documentos').upload(fileName, file);
+    const filePath = `${profileData.empresa_id}/${fileName}`;
+    const { error: uploadError } = await supabase.storage.from('documentos').upload(filePath, file);
     if (uploadError) throw uploadError;
-    return fileName;
+    return filePath;
   };
 
   const handleSubmit = async () => {
