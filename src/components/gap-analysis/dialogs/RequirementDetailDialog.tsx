@@ -289,6 +289,15 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
   const [generatingGuidance, setGeneratingGuidance] = useState(false);
   const [diagnosticQuestions, setDiagnosticQuestions] = useState<Array<{pergunta: string; peso: number}>>([]);
   const [diagnosticAnswers, setDiagnosticAnswers] = useState<Record<number, 'sim' | 'parcial' | 'nao' | null>>({});
+  const { openDocGen } = useDocGen();
+  // Map fileUrl -> validation result/state
+  const [validatingUrl, setValidatingUrl] = useState<string | null>(null);
+  const [validationByUrl, setValidationByUrl] = useState<Record<string, {
+    verdict: 'conforme' | 'parcial' | 'nao_conforme' | 'indeterminado';
+    score: number;
+    justification: string;
+    missing?: string[];
+  }>>({});
 
   const [formData, setFormData] = useState<EvaluationData>({
     responsavel_avaliacao: '', plano_acao: '', observacoes: '',
