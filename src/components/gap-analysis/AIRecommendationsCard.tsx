@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Sparkles, Target, Zap, TrendingUp } from 'lucide-react';
+import { Loader2, Sparkles, Target, Zap, TrendingUp, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
@@ -15,6 +15,7 @@ interface AIRecommendationsDialogProps {
   totalRequirements: number;
   evaluatedRequirements: number;
   scoreType: string;
+  onGoToRemediation?: () => void;
 }
 
 interface Recommendations {
@@ -112,26 +113,31 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
     }
   };
 
-  if (!canAnalyze) return null;
+  const tooltipText = canAnalyze
+    ? 'Consultor IA de Conformidade — análise priorizada e quick wins'
+    : `Avalie pelo menos ${minEvaluated} requisito${minEvaluated > 1 ? 's' : ''} (${props.evaluatedRequirements}/${minEvaluated}) para liberar o Consultor IA`;
 
   return (
     <>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              onClick={handleOpen}
-              disabled={loading}
-              className="h-9 w-9 rounded-full bg-purple-600 hover:bg-purple-700 text-white p-0"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-            </Button>
+            <span tabIndex={canAnalyze ? -1 : 0} className="inline-flex">
+              <Button
+                onClick={canAnalyze ? handleOpen : undefined}
+                disabled={loading || !canAnalyze}
+                aria-disabled={!canAnalyze}
+                className="h-9 w-9 rounded-full bg-purple-600 hover:bg-purple-700 text-white p-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+              </Button>
+            </span>
           </TooltipTrigger>
-          <TooltipContent>Consultor IA de Conformidade</TooltipContent>
+          <TooltipContent className="max-w-xs">{tooltipText}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
@@ -210,10 +216,22 @@ export function AIRecommendationsButton(props: AIRecommendationsDialogProps) {
                 <p className="text-sm text-foreground">{recommendations.recomendacao_geral}</p>
               </div>
 
-              <Button variant="outline" size="sm" onClick={handleAnalyze} disabled={loading} className="w-full">
-                {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                Atualizar Análise
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" size="sm" onClick={handleAnalyze} disabled={loading} className="flex-1">
+                  {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                  Atualizar Análise
+                </Button>
+                {props.onGoToRemediation && (
+                  <Button
+                    size="sm"
+                    onClick={() => { setOpen(false); props.onGoToRemediation?.(); }}
+                    className="flex-1"
+                  >
+                    Ir para Remediação
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="text-center py-8">
