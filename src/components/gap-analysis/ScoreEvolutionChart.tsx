@@ -98,13 +98,13 @@ export const ScoreEvolutionChart = ({ frameworkId, scoreType = 'scale_0_5' }: Sc
                 itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
                 formatter={(value: number) => [formatValue(value), 'Score']}
               />
-              <Line 
-                type="monotone" 
-                dataKey="score" 
-                stroke="#8b5cf6"
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke="hsl(var(--primary))"
                 strokeWidth={2}
-                dot={{ fill: '#8b5cf6', r: 4 }}
-                activeDot={{ r: 6 }}
+                dot={{ fill: 'hsl(var(--primary))', r: 4 }}
+                activeDot={{ r: 6, fill: 'hsl(var(--primary-glow))' }}
               />
             </LineChart>
           </ResponsiveContainer>
