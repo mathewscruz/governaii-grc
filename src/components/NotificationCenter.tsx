@@ -406,24 +406,31 @@ const NotificationCenter: React.FC = () => {
 
   const unreadCount = allNotifications.filter(n => !n.read).length;
 
-  const handleNotificationClick = (notification: Notification) => {
-    if (!notification.read) {
-      if (notification.isAutomatic) {
-        markAutomaticNotificationAsRead(notification.id);
-        setReadAutomaticIds(prev => {
-          const newSet = new Set(prev);
-          newSet.add(notification.id);
-          return newSet;
-        });
-        queryClient.invalidateQueries({ queryKey: ['automatic-notifications'] });
-      } else {
-        markAsReadMutation.mutate(notification.id);
-      }
+  const markRead = (notification: Notification) => {
+    if (notification.read) return;
+    if (notification.isAutomatic) {
+      markAutomaticNotificationAsRead(notification.id);
+      setReadAutomaticIds(prev => {
+        const newSet = new Set(prev);
+        newSet.add(notification.id);
+        return newSet;
+      });
+      queryClient.invalidateQueries({ queryKey: ['automatic-notifications'] });
+    } else {
+      markAsReadMutation.mutate(notification.id);
     }
+  };
 
-    if (notification.link_to) {
-      navigate(notification.link_to);
-      setIsOpen(false);
+  const handleNotificationClick = (notification: Notification) => {
+    markRead(notification);
+    setDetail(notification);
+    setIsOpen(false);
+  };
+
+  const handleNavigateFromDetail = () => {
+    if (detail?.link_to) {
+      navigate(detail.link_to);
+      setDetail(null);
     }
   };
 
