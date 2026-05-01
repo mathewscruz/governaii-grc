@@ -557,11 +557,11 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
             <div className="flex items-center gap-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0">N/A</Badge><span className="text-muted-foreground">Não aplicável ao escopo</span></div>
           </div>
           <div className="space-y-1.5 border-t pt-2">
-            <p className="font-medium text-foreground">Ícones e prioridade</p>
+            <p className="font-medium text-foreground">Ícones e sinalizações</p>
             <div className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-destructive" strokeWidth={1.5}/><span className="text-muted-foreground">Requisito de alta prioridade não conforme</span></div>
             <div className="flex items-center gap-1.5"><Paperclip className="h-3.5 w-3.5" strokeWidth={1.5}/><span className="text-muted-foreground">Há evidências anexadas</span></div>
-            <div className="flex items-center gap-1.5"><Badge variant="destructive" className="text-[10px] px-1.5 py-0">Obrigatório</Badge><span className="text-muted-foreground">Marcado pelo framework</span></div>
-            <div className="flex items-center gap-1.5"><Badge variant="warning" className="text-[10px] px-1.5 py-0">Alta</Badge><span className="text-muted-foreground">Peso ≥ 3 — alto impacto</span></div>
+            <div className="flex items-center gap-1.5"><CalendarClock className="h-3.5 w-3.5 text-destructive" strokeWidth={1.5}/><span className="text-muted-foreground">Prazo vencido ou vence hoje</span></div>
+            <div className="flex items-center gap-1.5"><CalendarClock className="h-3.5 w-3.5 text-warning" strokeWidth={1.5}/><span className="text-muted-foreground">Prazo nos próximos 7 dias</span></div>
           </div>
         </PopoverContent>
       </Popover>
