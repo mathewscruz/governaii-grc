@@ -249,9 +249,6 @@ const Auth = () => {
         {/* Centro: narrativa editorial */}
         <div className="relative z-10 max-w-xl space-y-10 landing-fade-in-2">
           <div className="space-y-5">
-            <span className="inline-block text-primary/70 tracking-[0.22em] text-[11px] font-medium uppercase">
-              {t('auth.eyebrowPlatform')}
-            </span>
             <h1 className="text-4xl lg:text-5xl font-semibold text-white leading-[1.05] tracking-tight">
               {t('auth.platformTitle')}{' '}
               <span className="text-gradient">{t('auth.platformHighlight')}</span>
@@ -319,7 +316,6 @@ const Auth = () => {
               <h2 className="text-2xl font-semibold text-white tracking-tight">
                 {t('auth.heading')}
               </h2>
-              <p className="text-sm text-white/45">{t('auth.headingSub')}</p>
             </div>
 
             <form onSubmit={handleSignIn} className="space-y-5">
@@ -381,21 +377,9 @@ const Auth = () => {
               </Button>
             </form>
 
-            {/* Selo de segurança */}
-            <div className="pt-1">
-              <div className="h-px bg-gradient-to-r from-transparent via-white/8 to-transparent mb-3" />
-              <p className="flex items-center justify-center gap-1.5 text-white/35 text-[11px]">
-                <Lock className="w-3 h-3" />
-                {t('auth.securityFootnote')}
-              </p>
-            </div>
           </div>
 
           <div className="text-center space-y-2 landing-fade-in-5">
-            <p className="text-white/45 text-sm">
-              {t('auth.noAccount')}{' '}
-              <Link to="/registro" className="text-primary hover:text-primary/80 hover:underline font-medium">{t('auth.createFreeAccount')}</Link>
-            </p>
             <Link to="/politica-privacidade" target="_blank" className="text-white/30 hover:text-primary text-xs transition-colors block">
               {t('auth.privacyPolicy')}
             </Link>
