@@ -699,8 +699,8 @@ export const getSensibilidadeColor = (tipo: string, sensibilidade: string): stri
 };
 
 /**
- * Cores para status de riscos (Identificado, Analisado, Tratado, Monitorado, Aceito)
- * Usado em: Riscos
+ * @deprecated Use `resolveRiscoStatusTone` de `@/lib/status-tone` + `<StatusBadge>`.
+ * Será removida em breve. Cores Tailwind cruas quebram o tema dark e o padrão visual.
  */
 export const getRiscoStatusColor = (status: string): string => {
   const value = status?.toLowerCase() || '';
@@ -721,8 +721,7 @@ export const getRiscoStatusColor = (status: string): string => {
 };
 
 /**
- * Cores para nível de risco (Crítico, Muito Alto, Alto, Médio, Baixo, Muito Baixo)
- * Usado em: Riscos - badges de nível de risco inicial e residual
+ * @deprecated Use `resolveNivelRiscoTone` de `@/lib/status-tone` + `<StatusBadge>`.
  */
 export const getNivelRiscoColor = (nivel: string): string => {
   const value = nivel?.toLowerCase() || '';
@@ -747,8 +746,7 @@ export const getNivelRiscoColor = (nivel: string): string => {
 };
 
 /**
- * Cores para status de Due Diligence (Pendente, Ativo, Em Andamento, Concluído, Expirado)
- * Usado em: Due Diligence Assessments
+ * @deprecated Use `resolveDueDiligenceStatusTone` de `@/lib/status-tone` + `<StatusBadge>`.
  */
 export const getDueDiligenceStatusColor = (status: string): string => {
   const value = status?.toLowerCase() || '';
@@ -768,8 +766,7 @@ export const getDueDiligenceStatusColor = (status: string): string => {
 };
 
 /**
- * Cores para tipo de tratamento de risco (Mitigar, Transferir, Aceitar, Evitar)
- * Usado em: Riscos - TratamentosList
+ * @deprecated Use `resolveTratamentoTipoTone` de `@/lib/status-tone` + `<StatusBadge>`.
  */
 export const getTratamentoTipoColor = (tipo: string): string => {
   const value = tipo?.toLowerCase() || '';
@@ -788,8 +785,7 @@ export const getTratamentoTipoColor = (tipo: string): string => {
 };
 
 /**
- * Cores para status de tratamento de risco (Pendente, Em Andamento, Concluído, Cancelado)
- * Usado em: Riscos - TratamentosList
+ * @deprecated Use `resolveTratamentoStatusTone` de `@/lib/status-tone` + `<StatusBadge>`.
  */
 export const getTratamentoStatusColor = (status: string): string => {
   const value = status?.toLowerCase() || '';
