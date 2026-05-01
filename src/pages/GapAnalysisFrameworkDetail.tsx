@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Download, FileBarChart, Brain, FileDown, HelpCircle } from 'lucide-react';
-import { GapAnalysisIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -225,7 +224,6 @@ export default function GapAnalysisFrameworkDetail() {
         <PageHeader
           title={`${framework.nome} ${framework.versao}`}
           description={framework.descricao || FRAMEWORK_DESCRIPTIONS[framework.nome] || `Avaliação de conformidade ${framework.tipo_framework}`}
-          icon={<GapAnalysisIcon className="h-7 w-7 text-primary" />}
           actions={
             <div className="flex items-center gap-2 flex-wrap">
               {/* Ação primária — IA estratégica */}
