@@ -738,6 +738,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
         submitLabel={footerLabel}
         isSubmitting={saving}
         submitDisabled={loading}
+        className="h-[100dvh] sm:h-[92vh]"
       >
         <div className="flex flex-col h-full min-h-0 overflow-hidden">
           {/* ====================================================== */}
