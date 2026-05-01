@@ -17,7 +17,9 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useChavesStats } from '@/hooks/useChavesStats';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { formatDateOnly } from '@/lib/date-utils';
-import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/text-utils';
+import { formatStatus } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveCriticidadeTone, resolveItemStatusTone } from '@/lib/status-tone';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ChaveCriptografica {
@@ -160,18 +162,17 @@ export default function AtivosChaves() {
     const Icon = config.icon;
 
     return (
-      <Badge className={`${getItemStatusColor(status)} flex items-center gap-1 whitespace-nowrap`}>
-        <Icon className="h-3 w-3" />
+      <StatusBadge size="sm" {...resolveItemStatusTone(status)} icon={<Icon className="h-3 w-3" strokeWidth={1.5} />}>
         {config.label}
-      </Badge>
+      </StatusBadge>
     );
   };
 
   const getCriticidadeBadge = (criticidade: string) => {
     return (
-      <Badge className={`${getCriticidadeColor(criticidade)} whitespace-nowrap`}>
+      <StatusBadge size="sm" {...resolveCriticidadeTone(criticidade)}>
         {formatStatus(criticidade)}
-      </Badge>
+      </StatusBadge>
     );
   };
 

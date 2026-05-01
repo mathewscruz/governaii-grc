@@ -38,7 +38,9 @@ import { logger } from '@/lib/logger';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
 import { PageSkeleton } from '@/components/ui/page-skeleton';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { capitalizeText, getItemStatusColor, getTipoColor, getClassificacaoColor, formatStatus } from '@/lib/text-utils';
+import { capitalizeText, formatStatus } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveItemStatusTone, resolveTipoDocumentoTone, resolveClassificacaoTone } from '@/lib/status-tone';
 import { formatDateOnly } from '@/lib/date-utils';
 
 interface Documento {
@@ -380,9 +382,9 @@ export default function Documentos() {
 
   const getTipoBadge = (tipo: string) => {
     return (
-      <Badge className={`border ${getTipoColor(tipo)} whitespace-nowrap`}>
+      <StatusBadge size="sm" {...resolveTipoDocumentoTone(tipo)}>
         {capitalizeText(tipo)}
-      </Badge>
+      </StatusBadge>
     );
   };
 
@@ -684,17 +686,14 @@ export default function Documentos() {
                       </TableCell>
                       <TableCell>{getTipoBadge(documento.tipo)}</TableCell>
                       <TableCell>
-                        <Badge 
-                          variant="secondary" 
-                          className={`border ${getClassificacaoColor(documento.classificacao || 'interna')} whitespace-nowrap`}
-                        >
+                        <StatusBadge size="sm" {...resolveClassificacaoTone(documento.classificacao || 'interna')}>
                           {capitalizeText(documento.classificacao || 'interna')}
-                        </Badge>
+                        </StatusBadge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={`${getItemStatusColor(documento.status)} border whitespace-nowrap`}>
+                        <StatusBadge size="sm" {...resolveItemStatusTone(documento.status)}>
                           {formatStatus(documento.status)}
-                        </Badge>
+                        </StatusBadge>
                       </TableCell>
                       <TableCell>v{documento.versao}</TableCell>
                       <TableCell>

@@ -11,7 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
-import { formatStatus, capitalizeText, getCriticidadeColor } from '@/lib/text-utils';
+import { formatStatus, capitalizeText } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveCriticidadeTone } from '@/lib/status-tone';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -122,9 +124,9 @@ export default function SistemasContent() {
 
   const getCriticidadeBadge = (criticidade: string) => {
     return (
-      <Badge className={`${getCriticidadeColor(criticidade)} whitespace-nowrap`}>
+      <StatusBadge size="sm" {...resolveCriticidadeTone(criticidade)}>
         {formatStatus(criticidade)}
-      </Badge>
+      </StatusBadge>
     );
   };
 

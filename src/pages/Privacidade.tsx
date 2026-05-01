@@ -22,7 +22,9 @@ import { StatCard } from "@/components/ui/stat-card";
 import { PageHeader } from "@/components/ui/page-header";
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
-import { formatStatus, getSensibilidadeColor, getItemStatusColor, getWorkflowStatusColor } from '@/lib/text-utils';
+import { formatStatus } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveSensibilidadeTone, resolveItemStatusTone, resolveWorkflowStatusTone } from '@/lib/status-tone';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -157,13 +159,18 @@ export default function Privacidade() {
       : sensibilidade === 'sensivel' 
         ? 'Moderado' 
         : 'Comum';
-    return <Badge className={`${colorClass} border whitespace-nowrap`}>{label}</Badge>;
+    const sensTone = (tipo === 'sensivel' || sensibilidade === 'muito_sensivel')
+      ? resolveSensibilidadeTone('muito_sensivel')
+      : sensibilidade === 'sensivel'
+        ? resolveSensibilidadeTone('moderado')
+        : resolveSensibilidadeTone('comum');
+    return <StatusBadge size="sm" {...sensTone}>{label}</StatusBadge>;
   };
 
   const getStatusBadge = (status: string) => {
     const isWorkflow = ['pendente', 'em_analise', 'atendida', 'rejeitada'].includes(status);
-    const colorClass = isWorkflow ? getWorkflowStatusColor(status) : getItemStatusColor(status);
-    return <Badge className={`${colorClass} border whitespace-nowrap`}>{formatStatus(status)}</Badge>;
+    const tone = isWorkflow ? resolveWorkflowStatusTone(status) : resolveItemStatusTone(status);
+    return <StatusBadge size="sm" {...tone}>{formatStatus(status)}</StatusBadge>;
   };
 
   const getCategoriaLabel = (categoria: string) => {

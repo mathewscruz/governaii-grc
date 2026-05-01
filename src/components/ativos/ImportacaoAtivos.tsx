@@ -10,7 +10,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
-import { formatStatus, getCriticidadeColor } from '@/lib/text-utils';
+import { formatStatus } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveCriticidadeTone } from '@/lib/status-tone';
 
 interface ImportacaoAtivosProps {
   open: boolean;
@@ -410,9 +412,9 @@ const ImportacaoAtivos: React.FC<ImportacaoAtivosProps> = ({ open, onOpenChange,
                         <TableCell>{ativo.nome}</TableCell>
                         <TableCell>{formatStatus(ativo.tipo)}</TableCell>
                         <TableCell>
-                          <Badge className={`border whitespace-nowrap ${getCriticidadeColor(ativo.criticidade)}`}>
+                          <StatusBadge size="sm" {...resolveCriticidadeTone(ativo.criticidade)}>
                             {formatStatus(ativo.criticidade)}
-                          </Badge>
+                          </StatusBadge>
                         </TableCell>
                         <TableCell>
                           {ativo.errors.length > 0 && (

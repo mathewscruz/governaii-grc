@@ -9,7 +9,9 @@ import { useToast } from '@/hooks/use-toast';
 import { DataTable } from '@/components/ui/data-table';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatDateOnly } from '@/lib/date-utils';
-import { getDenunciaStatusColor, getCriticidadeColor, formatStatus } from '@/lib/text-utils';
+import { formatStatus } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveDenunciaStatusTone, resolveCriticidadeTone } from '@/lib/status-tone';
 
 interface Denuncia {
   id: string;
@@ -153,9 +155,9 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
       label: 'Status',
       sortable: true,
       render: (_: any, denuncia: Denuncia) => (
-        <Badge className={`${getDenunciaStatusColor(denuncia.status)} border whitespace-nowrap`}>
+        <StatusBadge size="sm" {...resolveDenunciaStatusTone(denuncia.status)}>
           {formatStatus(denuncia.status)}
-        </Badge>
+        </StatusBadge>
       )
     },
     {
@@ -163,9 +165,9 @@ export function DenunciasDashboard({ itemIdToOpen }: { itemIdToOpen?: string | n
       label: 'Gravidade',
       sortable: true,
       render: (_: any, denuncia: Denuncia) => (
-        <Badge className={`${getCriticidadeColor(denuncia.gravidade)} border whitespace-nowrap`}>
+        <StatusBadge size="sm" {...resolveCriticidadeTone(denuncia.gravidade)}>
           {formatStatus(denuncia.gravidade)}
-        </Badge>
+        </StatusBadge>
       )
     },
     {

@@ -12,7 +12,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
-import { formatStatus, getSensibilidadeColorSimple, getCriticidadeColor } from "@/lib/text-utils";
+import { formatStatus, getSensibilidadeColorSimple } from "@/lib/text-utils";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { resolveCriticidadeTone } from "@/lib/status-tone";
 
 interface RopaWizardProps {
   isOpen: boolean;
@@ -323,9 +325,9 @@ export function RopaWizard({ isOpen, onClose, onSave, preSelectedDadoId }: RopaW
                       <div className="font-medium">{ativo.nome}</div>
                       <div className="text-sm text-muted-foreground">{formatStatus(ativo.tipo)} - {ativo.localizacao}</div>
                     </div>
-                    <Badge className={`border whitespace-nowrap ${getCriticidadeColor(ativo.criticidade)}`}>
+                    <StatusBadge size="sm" {...resolveCriticidadeTone(ativo.criticidade)}>
                       {formatStatus(ativo.criticidade)}
-                    </Badge>
+                    </StatusBadge>
                   </div>
                 ))}
               </div>
