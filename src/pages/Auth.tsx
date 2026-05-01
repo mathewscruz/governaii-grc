@@ -234,66 +234,99 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[hsl(230,25%,7%)]">
       {/* ===== BRAND PANEL (desktop only) ===== */}
-      <div className="hidden lg:flex lg:w-[60%] relative flex-col items-center justify-center sidebar-gradient overflow-hidden">
-        <div className="landing-grid-bg absolute inset-0 opacity-30" />
-        <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-[hsl(252,100%,66%,0.08)] rounded-full blur-[100px] glow-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[hsl(252,100%,66%,0.06)] rounded-full blur-[120px] glow-pulse" style={{ animationDelay: '1s' }} />
+      <div className="hidden lg:flex lg:w-[58%] relative flex-col justify-between sidebar-gradient overflow-hidden p-14">
+        {/* Pattern de marca + glow único */}
+        <AkurisMarkPattern opacity={0.05} />
+        <div className="absolute top-1/3 -left-24 w-[420px] h-[420px] bg-[hsl(252,100%,66%,0.08)] rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col items-center gap-10 px-12 max-w-lg landing-fade-in-1">
-          <img src={logoImage} alt="Akuris Logo" className="h-20 object-contain landing-fade-in-1" />
-          <div className="text-center space-y-3 landing-fade-in-2">
-            <h1 className="text-3xl font-bold text-white">
-              {t('auth.platformTitle')} <span className="text-gradient">{t('auth.platformHighlight')}</span>
+        {/* Topo: logo */}
+        <div className="relative z-10 landing-fade-in-1">
+          <img src={logoImage} alt="Akuris" className="h-9 object-contain" />
+        </div>
+
+        {/* Centro: narrativa editorial */}
+        <div className="relative z-10 max-w-xl space-y-10 landing-fade-in-2">
+          <div className="space-y-5">
+            <span className="inline-block text-primary/70 tracking-[0.22em] text-[11px] font-medium uppercase">
+              {t('auth.eyebrowPlatform')}
+            </span>
+            <h1 className="text-4xl lg:text-5xl font-semibold text-white leading-[1.05] tracking-tight">
+              {t('auth.platformTitle')}{' '}
+              <span className="text-gradient">{t('auth.platformHighlight')}</span>
             </h1>
-            <p className="text-white/50 text-sm">{t('auth.platformDesc')}</p>
+            <p className="text-white/55 text-base max-w-md leading-relaxed">
+              {t('auth.platformDesc')}
+            </p>
           </div>
 
-          <div className="w-full space-y-3 landing-fade-in-3">
-            {features.map((f, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-sm px-5 py-4 landing-fade-in-4"
-                style={{ animationDelay: `${0.5 + i * 0.15}s` }}
-              >
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/15 text-primary shrink-0">
-                  <f.icon className="w-5 h-5" />
+          {/* Pilares como lista editorial — sem caixas */}
+          <ul className="space-y-5 landing-fade-in-3">
+            {pillars.map((p, i) => (
+              <li key={i} className="flex items-start gap-4">
+                <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 text-primary shrink-0">
+                  <p.Icon className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                </span>
+                <div className="pt-1">
+                  <p className="text-sm font-semibold text-white tracking-tight">{p.title}</p>
+                  <p className="text-xs text-white/45 mt-0.5">{p.desc}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">{f.title}</p>
-                  <p className="text-xs text-white/45">{f.desc}</p>
-                </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
+        </div>
+
+        {/* Rodapé: selo de confiança */}
+        <div className="relative z-10 landing-fade-in-4">
+          <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-5" />
+          <p className="text-white/35 text-[11px] tracking-[0.18em] uppercase font-medium">
+            {t('auth.complianceBadges')}
+          </p>
         </div>
       </div>
 
       {/* ===== LOGIN PANEL ===== */}
       <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[hsl(230,25%,7%)] to-[hsl(228,20%,9%)] px-6 py-12 relative overflow-hidden">
-        <div className="absolute top-4 right-4 z-20">
+        <AkurisMarkPattern opacity={0.04} />
+        <div className="absolute top-0 right-0 w-72 h-72 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+
+        {/* Header utilitário */}
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-3">
+          <Link
+            to="/"
+            className="hidden sm:inline-flex items-center gap-1 text-xs text-white/40 hover:text-white/70 transition-colors"
+          >
+            <ArrowLeft className="w-3 h-3" />
+            {t('auth.backToSite')}
+          </Link>
           <LanguageSelector variant="dark" />
         </div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
 
         <div className="w-full max-w-sm relative z-10 space-y-8">
           <div className="lg:hidden text-center landing-fade-in-1">
-            <img src={logoImage} alt="Akuris Logo" className="h-16 mx-auto object-contain" />
-            <p className="text-white/40 text-xs mt-2">{t('auth.mobileSubtitle')}</p>
+            <img src={logoImage} alt="Akuris" className="h-12 mx-auto object-contain" />
+            <p className="text-white/40 text-xs mt-2 tracking-wide">{t('auth.mobileSubtitle')}</p>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-md p-8 shadow-2xl space-y-6 landing-fade-in-2">
-            <div className="text-center space-y-1">
-              <h2 className="text-xl font-bold text-white">{t('auth.systemAccess')}</h2>
-              <p className="text-sm text-white/50">{t('auth.enterCredentials')}</p>
+          <div className="relative rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-md p-8 shadow-2xl space-y-7 landing-fade-in-2 overflow-hidden">
+            <CornerAccent />
+
+            <div className="space-y-2">
+              <span className="block text-primary/70 text-[10px] tracking-[0.22em] font-medium uppercase">
+                {t('auth.eyebrowWelcome')}
+              </span>
+              <h2 className="text-2xl font-semibold text-white tracking-tight">
+                {t('auth.heading')}
+              </h2>
+              <p className="text-sm text-white/45">{t('auth.headingSub')}</p>
             </div>
 
             <form onSubmit={handleSignIn} className="space-y-5">
               <div className="space-y-1.5 landing-fade-in-3">
-                <Label htmlFor="email" className="text-white/70 text-sm font-medium">{t('auth.email')}</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <Label htmlFor="email" className="text-white/65 text-[11px] tracking-wide font-medium uppercase">{t('auth.email')}</Label>
+                <div className="relative group">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/40 group-focus-within:text-primary transition-colors" />
                   <Input
                     id="email"
                     type="email"
@@ -301,25 +334,25 @@ const Auth = () => {
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors(p => ({ ...p, email: undefined })); }}
                     autoFocus
-                    className={`h-11 pl-9 rounded-lg bg-white/[0.03] border-white/[0.08] text-white placeholder:text-white/25 focus:border-primary focus:ring-primary ${errors.email ? 'border-destructive' : ''}`}
+                    className={`h-12 pl-10 rounded-lg bg-[hsl(230,25%,9%)] border-white/[0.08] text-white placeholder:text-white/25 focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-all ${errors.email ? 'border-destructive' : ''}`}
                   />
                 </div>
                 {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
               </div>
 
               <div className="space-y-1.5 landing-fade-in-4">
-                <Label htmlFor="password" className="text-white/70 text-sm font-medium">{t('auth.password')}</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <Label htmlFor="password" className="text-white/65 text-[11px] tracking-wide font-medium uppercase">{t('auth.password')}</Label>
+                <div className="relative group">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/40 group-focus-within:text-primary transition-colors" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); if (errors.password) setErrors(p => ({ ...p, password: undefined })); }}
-                    className={`h-11 pl-9 pr-11 rounded-lg bg-white/[0.03] border-white/[0.08] text-white placeholder:text-white/25 focus:border-primary focus:ring-primary ${errors.password ? 'border-destructive' : ''}`}
+                    className={`h-12 pl-10 pr-11 rounded-lg bg-[hsl(230,25%,9%)] border-white/[0.08] text-white placeholder:text-white/25 focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-all ${errors.password ? 'border-destructive' : ''}`}
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -329,7 +362,7 @@ const Auth = () => {
               <div className="flex items-center justify-between landing-fade-in-5">
                 <div className="flex items-center space-x-2">
                   <Checkbox id="remember" checked={rememberMe} onCheckedChange={(c) => setRememberMe(c as boolean)} />
-                  <Label htmlFor="remember" className="text-xs text-white/50 cursor-pointer">{t('auth.rememberMe')}</Label>
+                  <Label htmlFor="remember" className="text-xs text-white/55 cursor-pointer">{t('auth.rememberMe')}</Label>
                 </div>
                 <button type="button" onClick={() => setForgotPasswordDialogOpen(true)} className="text-xs text-primary hover:text-primary/80 hover:underline transition-colors">
                   {t('auth.forgotPassword')}
@@ -338,18 +371,28 @@ const Auth = () => {
 
               <Button
                 type="submit"
-                variant="gradient"
-                className="w-full h-11 font-semibold text-sm landing-glow-btn"
+                className="group w-full h-12 font-semibold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.5)] hover:shadow-[0_10px_30px_-8px_hsl(var(--primary)/0.6)] transition-all rounded-lg"
                 disabled={isBusy}
               >
-                {t('auth.signIn')}
+                <span className="inline-flex items-center justify-center gap-2">
+                  {t('auth.signIn')}
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
               </Button>
             </form>
 
+            {/* Selo de segurança */}
+            <div className="pt-1">
+              <div className="h-px bg-gradient-to-r from-transparent via-white/8 to-transparent mb-3" />
+              <p className="flex items-center justify-center gap-1.5 text-white/35 text-[11px]">
+                <Lock className="w-3 h-3" />
+                {t('auth.securityFootnote')}
+              </p>
+            </div>
           </div>
 
           <div className="text-center space-y-2 landing-fade-in-5">
-            <p className="text-white/40 text-sm">
+            <p className="text-white/45 text-sm">
               {t('auth.noAccount')}{' '}
               <Link to="/registro" className="text-primary hover:text-primary/80 hover:underline font-medium">{t('auth.createFreeAccount')}</Link>
             </p>
