@@ -165,9 +165,9 @@ export function SistemaUsuariosList() {
       label: "Tipo de Acesso",
       sortable: true,
       render: (row) => (
-        <Badge className={`${getTipoAcessoBadge(row.tipo_acesso)} whitespace-nowrap`}>
+        <StatusBadge size="sm" {...resolveTipoAcessoTone(row.tipo_acesso)}>
           {formatStatus(row.tipo_acesso)}
-        </Badge>
+        </StatusBadge>
       ),
     },
     {
@@ -181,15 +181,9 @@ export function SistemaUsuariosList() {
       label: "Status",
       sortable: true,
       render: (row) => (
-        <Badge
-          className={
-            row.ativo
-              ? "bg-green-100 text-green-800 border-green-200 whitespace-nowrap"
-              : "bg-gray-100 text-gray-800 border-gray-200 whitespace-nowrap"
-          }
-        >
+        <StatusBadge size="sm" {...resolveAtivoTone(row.ativo)}>
           {row.ativo ? "Ativo" : "Inativo"}
-        </Badge>
+        </StatusBadge>
       ),
     },
     {
