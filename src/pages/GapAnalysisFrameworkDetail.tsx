@@ -243,7 +243,7 @@ export default function GapAnalysisFrameworkDetail() {
                 Gerar Política
               </Button>
               <Button
-                onClick={() => setShowOnboarding(true)}
+                onClick={() => { setActiveTab('avaliacao'); setShowOnboarding(true); }}
                 variant="outline"
                 size="sm"
                 title="Revisitar tour do framework"
