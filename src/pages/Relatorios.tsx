@@ -21,6 +21,7 @@ import { Plus, FileText, Download, Pencil, Trash2, Eye, MoreHorizontal, FileBarC
 import { useLanguage } from '@/contexts/LanguageContext';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { formatStatus } from '@/lib/text-utils';
 const templateConfigs: Record<string, { nome: string; descricao: string; icon: any; cor: string }> = {
   executivo_trimestral: { nome: 'Resumo Executivo Trimestral', descricao: 'Panorama trimestral de riscos, compliance e incidentes para a diretoria', icon: BarChart3, cor: 'text-primary' },
   compliance_geral: { nome: 'Status Geral de Compliance', descricao: 'Aderência a frameworks, controles, políticas e auditorias ativas', icon: BookOpen, cor: 'text-violet-600' },
@@ -125,7 +126,7 @@ export default function Relatorios() {
         doc.text(relatorio.descricao || 'Sem descrição', 20, 45);
         doc.setFontSize(10);
         doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 20, 60);
-        doc.text(`Status: ${relatorio.status}`, 20, 70);
+        doc.text(`Status: ${formatStatus(relatorio.status)}`, 20, 70);
         doc.save(`${relatorio.nome.replace(/\s+/g, '_')}.pdf`);
       }
       toast.success('PDF exportado com sucesso');

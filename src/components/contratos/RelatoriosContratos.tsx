@@ -15,6 +15,7 @@ import { ptBR } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import { loadAkurisLogo, addAkurisHeader, addAkurisFooter, addSectionTitle, drawTableHeader, formatLabel, AKURIS_COLORS } from '@/lib/pdf-utils';
 import { exportCSV } from '@/lib/csv-utils';
+import { formatStatus } from '@/lib/text-utils';
 
 interface RelatorioData {
   contratos: any[];
@@ -520,7 +521,7 @@ export default function RelatoriosContratos() {
                               risco === 'alto' ? 'bg-red-500' : 
                               risco === 'medio' ? 'bg-yellow-500' : 'bg-green-500'
                             }`} />
-                            <span className="capitalize">{risco} Risco</span>
+                            <span>Risco {formatStatus(risco)}</span>
                           </div>
                           <div className="text-right">
                             <div className="font-medium">{fornecedoresRisco.length} fornecedores</div>

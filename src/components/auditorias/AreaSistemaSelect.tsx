@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Building, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { formatStatus } from '@/lib/text-utils';
 
 interface AreaSistema {
   id: string;
@@ -114,7 +115,7 @@ export function AreaSistemaSelect({
                   <Building className="h-3 w-3 text-muted-foreground" />
                   <span>{area.nome}</span>
                   {area.tipo && (
-                    <span className="text-xs text-muted-foreground">({area.tipo})</span>
+                    <span className="text-xs text-muted-foreground">({formatStatus(area.tipo)})</span>
                   )}
                 </div>
               </SelectItem>

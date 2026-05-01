@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { Check, ChevronLeft, ChevronRight, FileText, DollarSign, Calendar, Users, ClipboardList } from 'lucide-react';
+import { formatStatus } from '@/lib/text-utils';
 
 interface Contrato {
   id: string;
@@ -609,11 +610,11 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tipo:</span>
-                    <Badge variant="outline" className="capitalize">{formData.tipo}</Badge>
+                    <Badge variant="outline">{formatStatus(formData.tipo)}</Badge>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Status:</span>
-                    <Badge variant="secondary" className="capitalize">{formData.status}</Badge>
+                    <Badge variant="secondary">{formatStatus(formData.status)}</Badge>
                   </div>
                   {formData.confidencial && (
                     <div className="flex justify-between">

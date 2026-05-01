@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { formatStatus } from '@/lib/text-utils';
 interface Documento {
   id: string;
   nome: string;
@@ -124,9 +125,9 @@ export function DocumentoPreview({ open, onOpenChange, documento }: DocumentoPre
               {documento.nome}
             </DialogTitle>
             <div className="flex items-center gap-2">
-              <Badge variant="secondary">{documento.tipo}</Badge>
+              <Badge variant="secondary">{formatStatus(documento.tipo)}</Badge>
               <Badge variant={documento.status === 'ativo' ? 'default' : 'secondary'}>
-                {documento.status}
+                {formatStatus(documento.status)}
               </Badge>
             </div>
           </div>

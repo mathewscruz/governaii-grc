@@ -14,6 +14,7 @@ import { WizardSummaryCard, WizardSummaryRow } from '@/components/ui/wizard-summ
 import { FieldHelpTooltip } from '@/components/ui/field-help-tooltip';
 import { useWizardDraft } from '@/hooks/useWizardDraft';
 import { logger } from '@/lib/logger';
+import { formatStatus } from '@/lib/text-utils';
 
 interface Contrato {
   id: string;
@@ -333,11 +334,11 @@ export function ContratoDialog({ contrato, open, onOpenChange, onSuccess, fornec
   const summary = (
     <WizardSummaryCard title="Resumo do Contrato">
       <WizardSummaryRow label="Nome" value={formData.nome || <span className="text-muted-foreground italic">Sem nome</span>} highlight />
-      <WizardSummaryRow label="Nº" value={formData.numero_contrato || '—'} />
+      <WizardSummaryRow label="Número" value={formData.numero_contrato || '—'} />
       <WizardSummaryRow label="Fornecedor" value={fornecedorNome || <span className="text-muted-foreground italic">—</span>} />
       <WizardSummaryRow
         label="Status"
-        value={<Badge variant={STATUS_VARIANT[formData.status] || 'outline'} className="text-[10px] capitalize">{formData.status.replace('_', ' ')}</Badge>}
+        value={<Badge variant={STATUS_VARIANT[formData.status] || 'outline'} className="text-[10px]">{formatStatus(formData.status)}</Badge>}
       />
       <WizardSummaryRow
         label="Valor"

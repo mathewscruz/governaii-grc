@@ -17,6 +17,7 @@ import { WizardDialog, WizardTab, WizardTabState } from "@/components/ui/wizard-
 import { WizardSummaryCard, WizardSummaryRow } from "@/components/ui/wizard-summary-card";
 import { FieldHelpTooltip } from "@/components/ui/field-help-tooltip";
 import { logger } from "@/lib/logger";
+import { formatStatus } from '@/lib/text-utils';
 
 const formatDateForDatabase = (dateString: string): string | null => (!dateString ? null : dateString);
 const formatDateForInput = (dateString: string | null): string => (!dateString ? '' : dateString.split('T')[0]);
@@ -357,12 +358,12 @@ export default function ControleDialog({ open, onOpenChange, controle, categoria
   const summary = (
     <WizardSummaryCard title="Resumo do Controle">
       <WizardSummaryRow label="Nome" value={formData.nome || <span className="text-muted-foreground italic">Sem nome</span>} highlight />
-      <WizardSummaryRow label="Tipo" value={<span className="capitalize">{formData.tipo}</span>} />
+      <WizardSummaryRow label="Tipo" value={<span>{formatStatus(formData.tipo)}</span>} />
       <WizardSummaryRow
         label="Criticidade"
-        value={<Badge variant={CRITICIDADE_VARIANT[formData.criticidade]} className="text-[10px] capitalize">{formData.criticidade}</Badge>}
+        value={<Badge variant={CRITICIDADE_VARIANT[formData.criticidade]} className="text-[10px]">{formatStatus(formData.criticidade)}</Badge>}
       />
-      <WizardSummaryRow label="Status" value={<span className="capitalize">{formData.status.replace('_', ' ')}</span>} />
+      <WizardSummaryRow label="Status" value={<span>{formatStatus(formData.status)}</span>} />
       <WizardSummaryRow label="Auditorias" value={formData.auditorias_ids.length} />
     </WizardSummaryCard>
   );

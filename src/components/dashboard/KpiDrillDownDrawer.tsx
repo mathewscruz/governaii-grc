@@ -30,6 +30,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { logger } from '@/lib/logger';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatStatus } from '@/lib/text-utils';
 
 export type DrillDownKey =
   | 'ativos'
@@ -673,7 +674,7 @@ export const KpiDrillDownDrawer: React.FC<KpiDrillDownDrawerProps> = ({ open, on
                   <div className="mt-1 flex items-center gap-2 flex-wrap">
                     {item.status && (
                       <StatusBadge tone={item.tone ?? 'neutral'} variant="soft">
-                        {item.status}
+                        {formatStatus(item.status)}
                       </StatusBadge>
                     )}
                     {item.date && (

@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { exportCSV } from '@/lib/csv-utils';
 import jsPDF from 'jspdf';
 import { loadAkurisLogo, addAkurisHeader, addAkurisFooter, addSectionTitle, drawTableHeader, formatLabel, AKURIS_COLORS } from '@/lib/pdf-utils';
+import { formatStatus } from '@/lib/text-utils';
 
 export function ReportsView() {
   const { data: reportsData, isLoading, error } = useReportsData();
@@ -275,7 +276,7 @@ export function ReportsView() {
                   <div className="text-right">
                     <p className="font-bold text-red-600">{fornecedor.score.toFixed(1)}%</p>
                     <Badge variant="destructive" className="text-xs">
-                      {fornecedor.status}
+                      {formatStatus(fornecedor.status)}
                     </Badge>
                   </div>
                 </div>

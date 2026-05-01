@@ -10,6 +10,7 @@ import { UserSelect } from '@/components/riscos/UserSelect';
 import { WizardDialog, WizardTab, WizardTabState } from '@/components/ui/wizard-dialog';
 import { WizardSummaryCard, WizardSummaryRow } from '@/components/ui/wizard-summary-card';
 import { FieldHelpTooltip } from '@/components/ui/field-help-tooltip';
+import { formatStatus } from '@/lib/text-utils';
 
 interface AtivoFormData {
   nome: string;
@@ -344,11 +345,11 @@ const AtivoDialog: React.FC<AtivoDialogProps> = ({ open, onOpenChange, formData,
         label="Criticidade"
         value={
           formData.criticidade
-            ? <Badge variant={CRITICIDADE_VARIANT[formData.criticidade]} className="text-[10px] capitalize">{formData.criticidade}</Badge>
+            ? <Badge variant={CRITICIDADE_VARIANT[formData.criticidade]} className="text-[10px]">{formatStatus(formData.criticidade)}</Badge>
             : <span className="text-muted-foreground italic">—</span>
         }
       />
-      <WizardSummaryRow label="Status" value={<span className="capitalize">{formData.status.replace('_', ' ')}</span>} />
+      <WizardSummaryRow label="Status" value={<span>{formatStatus(formData.status)}</span>} />
       <WizardSummaryRow label="Quantidade" value={formData.quantidade} />
     </WizardSummaryCard>
   );

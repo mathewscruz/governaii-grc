@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { formatStatus } from '@/lib/text-utils';
 
 interface Risco {
   id: string;
@@ -132,9 +133,9 @@ export function RiscoSelect({ value, onValueChange, placeholder = "Selecionar ri
                         <span className="font-medium truncate">{risco.nome}</span>
                         <div className="flex items-center gap-2">
                           <Badge variant={getNivelBadgeVariant(risco.nivel_risco_inicial)} className="text-xs">
-                            {risco.nivel_risco_inicial}
+                            {formatStatus(risco.nivel_risco_inicial)}
                           </Badge>
-                          <Badge variant="outline" className="text-xs">{risco.status}</Badge>
+                          <Badge variant="outline" className="text-xs">{formatStatus(risco.status)}</Badge>
                         </div>
                       </div>
                     </div>

@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link, Unlink, Shield, Package } from "lucide-react";
+import { formatStatus } from '@/lib/text-utils';
 
 interface ControlesVinculacaoDialogProps {
   open: boolean;
@@ -382,7 +383,7 @@ export default function ControlesVinculacaoDialog({
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h4 className="font-medium">{ativo.nome}</h4>
-                        <Badge variant="outline">{ativo.tipo}</Badge>
+                        <Badge variant="outline">{formatStatus(ativo.tipo)}</Badge>
                         {getCriticidadeBadge(ativo.criticidade)}
                       </div>
                       {ativo.descricao && (

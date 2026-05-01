@@ -23,6 +23,7 @@ import { WizardDialog, WizardTab, WizardTabState } from '@/components/ui/wizard-
 import { WizardSummaryCard, WizardSummaryRow } from '@/components/ui/wizard-summary-card';
 import { FieldHelpTooltip } from '@/components/ui/field-help-tooltip';
 import { useWizardDraft } from '@/hooks/useWizardDraft';
+import { formatStatus } from '@/lib/text-utils';
 
 const incidenteSchema = z.object({
   titulo: z.string().min(1, 'Título é obrigatório'),
@@ -530,8 +531,8 @@ export function IncidenteDialog({ incidente, onSuccess, trigger, externalOpen, o
       <WizardSummaryRow
         label="Criticidade"
         value={
-          <Badge variant={CRITICIDADE_VARIANT[watched.criticidade]} className="text-[10px] capitalize">
-            {watched.criticidade}
+          <Badge variant={CRITICIDADE_VARIANT[watched.criticidade]} className="text-[10px]">
+            {formatStatus(watched.criticidade)}
           </Badge>
         }
       />

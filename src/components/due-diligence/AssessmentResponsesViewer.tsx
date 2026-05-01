@@ -10,6 +10,7 @@ import { ScoreVisualization } from './ScoreVisualization';
 import { FileText, Download, User, Calendar, Mail } from 'lucide-react';
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { formatStatus } from '@/lib/text-utils';
 interface Assessment {
   id: string;
   fornecedor_nome: string;
@@ -212,7 +213,7 @@ export function AssessmentResponsesViewer({
                   </div>
                   <div>
                     <span className="text-muted-foreground">Status:</span>
-                    <Badge variant="default">{assessment.status}</Badge>
+                    <Badge variant="default">{formatStatus(assessment.status)}</Badge>
                   </div>
                   {assessment.data_conclusao && (
                     <div className="col-span-2">

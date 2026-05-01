@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import { loadAkurisLogo, addAkurisHeader, addAkurisFooter, addSectionTitle, drawTableHeader, formatLabel, AKURIS_COLORS } from "@/lib/pdf-utils";
 import { exportCSV } from "@/lib/csv-utils";
+import { formatStatus } from '@/lib/text-utils';
 
 interface RelatoriosDialogProps {
   open: boolean;
@@ -317,13 +318,13 @@ export function RelatoriosDialog({ open, onOpenChange }: RelatoriosDialogProps) 
                         <Badge 
                           variant={controle.status === 'ativo' ? 'default' : 'secondary'}
                         >
-                          {controle.status}
+                          {formatStatus(controle.status)}
                         </Badge>
                         <Badge 
                           variant={controle.criticidade === 'alto' ? 'destructive' : 
                                   controle.criticidade === 'medio' ? 'secondary' : 'outline'}
                         >
-                          {controle.criticidade}
+                          {formatStatus(controle.criticidade)}
                         </Badge>
                       </div>
                     </div>

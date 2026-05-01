@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { UserSelect } from './UserSelect';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatStatus } from '@/lib/text-utils';
 
 interface Props {
   open: boolean;
@@ -336,7 +337,7 @@ export function AprovacaoRiscoDialog({ open, onOpenChange, risco, onSuccess }: P
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <StatusBadge size="sm" tone="neutral" variant="outline" className="capitalize">{item.acao}</StatusBadge>
+                        <StatusBadge size="sm" tone="neutral" variant="outline">{formatStatus(item.acao)}</StatusBadge>
                         {item.comentario && (
                           <span className="text-muted-foreground flex items-center gap-1">
                             <MessageSquare className="h-3 w-3" />
