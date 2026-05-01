@@ -204,34 +204,8 @@
     }
   }
 
-  .toaster {
-    --normal-bg: hsl(0 0% 100%);
-    --normal-text: hsl(200, 25%, 12%);
-    --normal-border: hsl(200, 18%, 88%);
-  }
-
-  .toaster [data-sonner-toast] {
-    background: var(--normal-bg) !important;
-    border: 1px solid var(--normal-border) !important;
-    color: var(--normal-text) !important;
-    box-shadow: var(--shadow-elegant) !important;
-  }
-
-  .toaster [data-sonner-toast][data-type="success"] {
-    border-left: 4px solid hsl(152, 69%, 40%) !important;
-  }
-
-  .toaster [data-sonner-toast][data-type="error"] {
-    border-left: 4px solid hsl(0, 72%, 51%) !important;
-  }
-
-  .toaster [data-sonner-toast][data-type="warning"] {
-    border-left: 4px solid hsl(38, 92%, 50%) !important;
-  }
-
-  .toaster [data-sonner-toast][data-type="info"] {
-    border-left: 4px solid hsl(199, 89%, 48%) !important;
-  }
+  /* Toaster Akuris: toda estilização vem de src/components/ui/sonner.tsx.
+     CSS legado removido para evitar conflito com o acento editorial de 2px. */
 
   /* ========================================
      Dark Mode - Akuris Night Theme
