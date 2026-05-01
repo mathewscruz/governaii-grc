@@ -20,7 +20,7 @@ import {
   resolveAprovacaoTone,
   resolveRevisaoTone,
 } from '@/lib/status-tone';
-import { ShieldCheck } from 'lucide-react';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -359,21 +359,19 @@ export function Riscos() {
     if (!dataRevisao) return null;
     const dias = differenceInDays(new Date(dataRevisao), new Date());
     if (dias < 0) {
-      return <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px] px-1.5 py-0">Vencida</Badge>;
+      return <StatusBadge size="sm" {...resolveRevisaoTone(dias)}>Vencida</StatusBadge>;
     }
     if (dias <= 7) {
-      return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-[10px] px-1.5 py-0">{dias}d</Badge>;
+      return <StatusBadge size="sm" {...resolveRevisaoTone(dias)}>{dias}d</StatusBadge>;
     }
     return null;
   };
 
   const getAprovacaoBadge = (status?: string) => {
-    switch (status) {
-      case 'aprovado': return <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px] px-1.5 py-0">Aprovado</Badge>;
-      case 'rejeitado': return <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px] px-1.5 py-0">Rejeitado</Badge>;
-      case 'pendente': return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-[10px] px-1.5 py-0">Pendente</Badge>;
-      default: return null;
-    }
+    if (!status || status === 'nao_requerido') return null;
+    const labels: Record<string, string> = { aprovado: 'Aprovado', rejeitado: 'Rejeitado', pendente: 'Pendente' };
+    if (!labels[status]) return null;
+    return <StatusBadge size="sm" {...resolveAprovacaoTone(status)}>{labels[status]}</StatusBadge>;
   };
 
   // Função para calcular variação percentual
@@ -451,21 +449,21 @@ export function Riscos() {
       key: 'nivel_risco_inicial',
       label: 'Nível Inicial',
       render: (value: string) => (
-        <Badge className={`${getNivelRiscoColor(value)} border whitespace-nowrap`}>{value}</Badge>
+        <StatusBadge size="sm" {...resolveNivelRiscoTone(value)}>{value}</StatusBadge>
       )
     },
     {
       key: 'nivel_risco_residual',
       label: 'Nível Residual',
       render: (value: string) => value ? (
-        <Badge className={`${getNivelRiscoColor(value)} border whitespace-nowrap`}>{value}</Badge>
-      ) : <Badge className="bg-muted text-muted-foreground border whitespace-nowrap">Não avaliado</Badge>
+        <StatusBadge size="sm" {...resolveNivelRiscoTone(value)}>{value}</StatusBadge>
+      ) : <StatusBadge size="sm" tone="neutral">Não avaliado</StatusBadge>
     },
     {
       key: 'status',
       label: 'Status',
       render: (value: string) => (
-        <Badge className={`${getRiscoStatusColor(value)} border whitespace-nowrap`}>{formatStatus(value)}</Badge>
+        <StatusBadge size="sm" {...resolveRiscoStatusTone(value)}>{formatStatus(value)}</StatusBadge>
       )
     },
     {
@@ -474,10 +472,10 @@ export function Riscos() {
       render: (_value: any, risco: Risco) => {
         const tags: React.ReactNode[] = [];
         const aprovBadge = getAprovacaoBadge(risco.status_aprovacao);
-        if (aprovBadge) tags.push(aprovBadge);
-        if (risco.aceito) tags.push(<Badge key="aceito" className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] px-1.5 py-0">Aceito</Badge>);
+        if (aprovBadge) tags.push(<span key="aprov">{aprovBadge}</span>);
+        if (risco.aceito) tags.push(<StatusBadge key="aceito" size="sm" tone="warning" icon={<ShieldCheck strokeWidth={1.5} className="h-3 w-3" />}>Aceito</StatusBadge>);
         const revBadge = getRevisaoBadge(risco.data_proxima_revisao);
-        if (revBadge) tags.push(revBadge);
+        if (revBadge) tags.push(<span key="rev">{revBadge}</span>);
 
         if (tags.length === 0) return <span className="text-muted-foreground text-sm">-</span>;
         
