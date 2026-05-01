@@ -161,6 +161,11 @@ export default function GapAnalysisFrameworkDetail() {
     setShowOnboarding(!scoreLoading && evaluatedRequirements === 0 && totalRequirements > 0);
   }, [scoreLoading, evaluatedRequirements, totalRequirements]);
 
+  // Se o usuário está na aba SoA mas o framework não a suporta, voltar para avaliação
+  useEffect(() => {
+    if (!supportsSoA && activeTab === 'soa') setActiveTab('avaliacao');
+  }, [supportsSoA, activeTab]);
+
   const getExportData = async () => {
     const { data: reqs } = await supabase
       .from('gap_analysis_requirements')
