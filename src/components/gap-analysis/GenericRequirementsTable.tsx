@@ -408,17 +408,24 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       </div>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Ver legenda">
             <HelpCircle className="h-4 w-4 text-muted-foreground" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-72 text-xs space-y-2">
-          <p className="font-medium text-foreground">Legenda de Status</p>
+        <PopoverContent className="w-80 text-xs space-y-3">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5"><Badge variant="success" className="text-[10px] px-1.5 py-0">Conforme</Badge><span className="text-muted-foreground">Atende 100%</span></div>
+            <p className="font-medium text-foreground">Status de conformidade</p>
+            <div className="flex items-center gap-1.5"><Badge variant="success" className="text-[10px] px-1.5 py-0">Conforme</Badge><span className="text-muted-foreground">Atende 100% ao requisito</span></div>
             <div className="flex items-center gap-1.5"><Badge variant="warning" className="text-[10px] px-1.5 py-0">Parcial</Badge><span className="text-muted-foreground">Atende parcialmente</span></div>
             <div className="flex items-center gap-1.5"><Badge variant="destructive" className="text-[10px] px-1.5 py-0">Não Conforme</Badge><span className="text-muted-foreground">Não atende</span></div>
-            <div className="flex items-center gap-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0">N/A</Badge><span className="text-muted-foreground">Não aplicável</span></div>
+            <div className="flex items-center gap-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0">N/A</Badge><span className="text-muted-foreground">Não aplicável ao escopo</span></div>
+          </div>
+          <div className="space-y-1.5 border-t pt-2">
+            <p className="font-medium text-foreground">Ícones e prioridade</p>
+            <div className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-destructive" /><span className="text-muted-foreground">Requisito de alta prioridade não conforme</span></div>
+            <div className="flex items-center gap-1.5"><Paperclip className="h-3.5 w-3.5" /><span className="text-muted-foreground">Há evidências anexadas</span></div>
+            <div className="flex items-center gap-1.5"><Badge variant="destructive" className="text-[10px] px-1.5 py-0">Obrigatório</Badge><span className="text-muted-foreground">Marcado pelo framework</span></div>
+            <div className="flex items-center gap-1.5"><Badge variant="warning" className="text-[10px] px-1.5 py-0">Alta</Badge><span className="text-muted-foreground">Peso ≥ 3 — alto impacto</span></div>
           </div>
         </PopoverContent>
       </Popover>
