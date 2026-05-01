@@ -1,48 +1,67 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import { CornerAccent } from '@/components/identity/CornerAccent';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/components/AuthProvider';
-import { useQuery } from '@tanstack/react-query';
 import {
   AreaChart,
   Area,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ComposedChart,
+  ReferenceLine,
 } from 'recharts';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { Icon } from '@/components/icons/Icon';
+import { TrendingUp, TrendingDown, Minus, LineChart as LineChartIcon } from 'lucide-react';
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
+import { CornerAccent } from '@/components/identity/CornerAccent';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
+import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-interface RiskData {
-  month: string;
+type TimeRange = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+interface PointData {
+  date: string;
+  score: number;
+  total: number;
   criticos: number;
   altos: number;
-  medios: number;
-  baixos: number;
 }
 
-type TimeRange = 'week' | 'month' | 'year';
+const SEVERITY_WEIGHT = { critico: 4, alto: 3, medio: 2, baixo: 1 } as const;
+const GOAL_VALUE = 80;
 
-const SERIES = [
-  { key: 'criticos', tone: 'destructive', labelKey: 'dashboard.critical' },
-  { key: 'altos', tone: 'warning', labelKey: 'dashboard.high' },
-  { key: 'medios', tone: 'primary', labelKey: 'dashboard.medium' },
-  { key: 'baixos', tone: 'muted-foreground', labelKey: 'dashboard.low' },
-] as const;
+/** Normaliza nivel_risco para chave de peso. */
+const bucketOf = (nivel?: string | null): keyof typeof SEVERITY_WEIGHT | null => {
+  if (!nivel) return null;
+  const v = nivel.toLowerCase();
+  if (v.includes('crit')) return 'critico';
+  if (v.includes('alt')) return 'alto';
+  if (v.includes('med') || v.includes('méd') || v.includes('moder')) return 'medio';
+  if (v.includes('baix')) return 'baixo';
+  return null;
+};
+
+/**
+ * Score 0–100. Quanto maior, menor exposição.
+ * exposição = min(100, (peso_total / total_riscos) × 25); score = 100 − exposição.
+ */
+const computeScore = (counts: Record<keyof typeof SEVERITY_WEIGHT, number>): number => {
+  const total = counts.critico + counts.alto + counts.medio + counts.baixo;
+  if (total === 0) return 100;
+  const peso =
+    counts.critico * SEVERITY_WEIGHT.critico +
+    counts.alto * SEVERITY_WEIGHT.alto +
+    counts.medio * SEVERITY_WEIGHT.medio +
+    counts.baixo * SEVERITY_WEIGHT.baixo;
+  const exposicao = Math.min(100, (peso / total) * 25);
+  return Math.round(100 - exposicao);
+};
 
 export function RiskScoreTimeline() {
   const { profile } = useAuth();
-  const [timeRange, setTimeRange] = useState<TimeRange>('month');
-  const [hidden, setHidden] = useState<Set<string>>(new Set());
   const { t } = useLanguage();
+  const [period, setPeriod] = useState<TimeRange>('monthly');
 
   const { data: riscos, isLoading } = useQuery({
     queryKey: ['riscos-timeline', profile?.empresa_id],
@@ -50,7 +69,7 @@ export function RiskScoreTimeline() {
       if (!profile?.empresa_id) return [];
       const { data, error } = await supabase
         .from('riscos')
-        .select('id, nivel_risco_inicial, created_at')
+        .select('id, nivel_risco_residual, nivel_risco_inicial, created_at')
         .eq('empresa_id', profile.empresa_id);
       if (error) throw error;
       return data || [];
@@ -59,279 +78,243 @@ export function RiskScoreTimeline() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { chartData, totals, deltaPct, trend } = useMemo(() => {
+  const periods: { value: TimeRange; label: string }[] = [
+    { value: 'daily', label: 'Dia' },
+    { value: 'weekly', label: 'Semana' },
+    { value: 'monthly', label: 'Mês' },
+    { value: 'yearly', label: 'Ano' },
+  ];
+
+  const { displayData, latestScore, delta, totalAtual } = useMemo(() => {
     const empty = {
-      chartData: [] as RiskData[],
-      totals: { criticos: 0, altos: 0, medios: 0, baixos: 0 },
-      deltaPct: 0,
-      trend: 'stable' as 'up' | 'down' | 'stable',
+      displayData: [] as PointData[],
+      latestScore: null as number | null,
+      delta: null as null | { value: number; dir: 'up' | 'down' | 'flat' },
+      totalAtual: 0,
     };
     if (!riscos || riscos.length === 0) return empty;
 
     const now = new Date();
-    const periods: { end: Date; label: string }[] = [];
+    const buckets: { end: Date; label: string }[] = [];
 
-    if (timeRange === 'week') {
+    if (period === 'daily') {
       for (let i = 6; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        date.setHours(23, 59, 59, 999);
-        periods.push({
-          end: date,
-          label: date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
-        });
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        d.setHours(23, 59, 59, 999);
+        buckets.push({ end: d, label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) });
       }
-    } else if (timeRange === 'month') {
+    } else if (period === 'weekly') {
       for (let i = 3; i >= 0; i--) {
-        const endDate = new Date(now);
-        endDate.setDate(endDate.getDate() - i * 7);
-        periods.push({ end: endDate, label: `Sem ${4 - i}` });
+        const d = new Date(now);
+        d.setDate(d.getDate() - i * 7);
+        d.setHours(23, 59, 59, 999);
+        buckets.push({ end: d, label: `Sem ${4 - i}` });
+      }
+    } else if (period === 'monthly') {
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+        buckets.push({ end: d, label: d.toLocaleDateString('pt-BR', { month: 'short' }) });
       }
     } else {
-      for (let i = 11; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-        periods.push({
-          end: date,
-          label: date.toLocaleDateString('pt-BR', { month: 'short' }),
-        });
+      for (let i = 4; i >= 0; i--) {
+        const d = new Date(now.getFullYear() - i, 11, 31, 23, 59, 59);
+        buckets.push({ end: d, label: d.getFullYear().toString() });
       }
     }
 
-    const processed: RiskData[] = periods.map((period) => {
-      const slice = riscos.filter((r) => new Date(r.created_at) <= period.end);
+    const points: PointData[] = buckets.map(({ end, label }) => {
+      const slice = riscos.filter((r) => new Date(r.created_at) <= end);
+      const counts = { critico: 0, alto: 0, medio: 0, baixo: 0 };
+      for (const r of slice) {
+        const b = bucketOf(r.nivel_risco_residual || r.nivel_risco_inicial);
+        if (b) counts[b] += 1;
+      }
       return {
-        month: period.label,
-        criticos: slice.filter((r) => r.nivel_risco_inicial === 'Crítico').length,
-        altos: slice.filter(
-          (r) => r.nivel_risco_inicial === 'Alto' || r.nivel_risco_inicial === 'Muito Alto'
-        ).length,
-        medios: slice.filter(
-          (r) => r.nivel_risco_inicial === 'Médio' || r.nivel_risco_inicial === 'Moderado'
-        ).length,
-        baixos: slice.filter(
-          (r) => r.nivel_risco_inicial === 'Baixo' || r.nivel_risco_inicial === 'Muito Baixo'
-        ).length,
+        date: label,
+        score: computeScore(counts),
+        total: slice.length,
+        criticos: counts.critico,
+        altos: counts.alto,
       };
     });
 
-    const last = processed[processed.length - 1];
-    const prev = processed[processed.length - 2];
-    const lastSevere = (last?.criticos || 0) + (last?.altos || 0);
-    const prevSevere = (prev?.criticos || 0) + (prev?.altos || 0);
-    const delta = prevSevere === 0 ? (lastSevere > 0 ? 100 : 0) : ((lastSevere - prevSevere) / prevSevere) * 100;
-
+    const last = points[points.length - 1];
+    const prev = points[points.length - 2];
+    const diff = prev ? last.score - prev.score : 0;
     return {
-      chartData: processed,
-      totals: last || { criticos: 0, altos: 0, medios: 0, baixos: 0 },
-      deltaPct: Math.round(delta),
-      trend: lastSevere > prevSevere ? 'up' : lastSevere < prevSevere ? 'down' : 'stable',
-    } as const;
-  }, [riscos, timeRange]);
-
-  const customTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload?.length) return null;
-    return (
-      <div className="rounded-lg border border-border bg-popover/95 backdrop-blur-md shadow-lg px-3 py-2 min-w-[140px]">
-        <p className="text-[11px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">{label}</p>
-        <div className="space-y-1">
-          {payload.map((entry: any) => (
-            <div key={entry.dataKey} className="flex items-center justify-between gap-3 text-xs">
-              <span className="flex items-center gap-1.5 text-foreground">
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: entry.color }}
-                  aria-hidden="true"
-                />
-                {entry.name}
-              </span>
-              <span className="font-semibold tabular-nums text-foreground">{entry.value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const toggleSeries = (key: string) =>
-    setHidden((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+      displayData: points,
+      latestScore: last?.score ?? null,
+      delta: !prev
+        ? null
+        : Math.abs(diff) < 0.5
+        ? { value: 0, dir: 'flat' as const }
+        : { value: diff, dir: diff > 0 ? ('up' as const) : ('down' as const) },
+      totalAtual: last?.total ?? 0,
+    };
+  }, [riscos, period]);
 
   if (isLoading) {
     return (
-      <Card className="h-full w-full flex flex-col">
+      <Card className="relative h-full w-full flex flex-col overflow-hidden">
+        <CornerAccent />
         <CardHeader>
-          <Skeleton className="h-5 w-40" />
-          <Skeleton className="h-4 w-56 mt-2" />
+          <CardTitle className="text-base">{t('dashboard.riskEvolution')}</CardTitle>
         </CardHeader>
-        <CardContent className="flex-1">
-          <Skeleton className="h-52 sm:h-72 w-full rounded-lg" />
+        <CardContent className="min-h-[260px] flex flex-col items-center justify-center gap-2">
+          <AkurisPulse size={56} />
+          <p className="text-xs text-muted-foreground">Carregando histórico...</p>
         </CardContent>
       </Card>
     );
   }
 
-  const colorOf = (tone: string) => {
-    if (tone === 'muted-foreground') return 'hsl(var(--muted-foreground))';
-    return `hsl(var(--${tone}))`;
-  };
-
-  const trendColor =
-    trend === 'up' ? 'text-destructive' : trend === 'down' ? 'text-success' : 'text-muted-foreground';
-  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
-
   return (
     <Card className="relative h-full w-full flex flex-col overflow-hidden min-w-0">
       <CornerAccent />
-      <CardHeader className="pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 w-full">
-          <div className="min-w-0">
-            <CardTitle className="text-base">{t('dashboard.riskEvolution')}</CardTitle>
-            <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="text-foreground font-semibold tabular-nums">{totals.criticos}</span>
-              <span>{t('dashboard.critical')}</span>
-              <span className="text-border">·</span>
-              <span className="text-foreground font-semibold tabular-nums">{totals.altos}</span>
-              <span>{t('dashboard.high')}</span>
-              <span className="text-border">·</span>
-              <span className={`inline-flex items-center gap-1 ${trendColor}`}>
-                <Icon as={TrendIcon} size="xs" />
-                <span className="tabular-nums font-medium">
-                  {deltaPct === 0 ? '—' : `${deltaPct > 0 ? '+' : ''}${deltaPct}%`}
-                </span>
-              </span>
-            </div>
-          </div>
-          <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
-            <TabsList className="h-8">
-              <TabsTrigger value="week" className="text-xs px-2.5">{t('dashboard.weekly')}</TabsTrigger>
-              <TabsTrigger value="month" className="text-xs px-2.5">{t('dashboard.monthly')}</TabsTrigger>
-              <TabsTrigger value="year" className="text-xs px-2.5">{t('dashboard.yearly')}</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        {/* Legenda interativa */}
-        <div className="flex flex-wrap gap-1.5 mt-3">
-          {SERIES.map((s) => {
-            const active = !hidden.has(s.key);
-            return (
-              <button
-                key={s.key}
-                onClick={() => toggleSeries(s.key)}
-                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] transition-all ${
-                  active
-                    ? 'bg-card border-border text-foreground hover:border-primary/40'
-                    : 'bg-muted/30 border-transparent text-muted-foreground hover:bg-muted/50'
-                }`}
-                aria-pressed={active}
-              >
+      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-2">
+        <div className="space-y-1 min-w-0">
+          <CardTitle className="text-base">{t('dashboard.riskEvolution')}</CardTitle>
+          {latestScore !== null && (
+            <div className="flex items-center gap-2 text-sm flex-wrap">
+              <span className="font-bold text-foreground tabular-nums">{latestScore}</span>
+              <span className="text-xs text-muted-foreground">/ 100</span>
+              {delta && (
                 <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: active ? colorOf(s.tone) : 'hsl(var(--muted-foreground))' }}
-                  aria-hidden="true"
-                />
-                {t(s.labelKey)}
-              </button>
-            );
-          })}
+                  className={`inline-flex items-center gap-1 text-xs font-medium ${
+                    delta.dir === 'up'
+                      ? 'text-success'
+                      : delta.dir === 'down'
+                      ? 'text-destructive'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  {delta.dir === 'up' && <TrendingUp className="h-3 w-3" strokeWidth={1.5} />}
+                  {delta.dir === 'down' && <TrendingDown className="h-3 w-3" strokeWidth={1.5} />}
+                  {delta.dir === 'flat' && <Minus className="h-3 w-3" strokeWidth={1.5} />}
+                  {delta.value > 0 ? '+' : ''}
+                  {delta.value.toFixed(0)}
+                  <span className="text-muted-foreground font-normal">vs. anterior</span>
+                </span>
+              )}
+              {totalAtual > 0 && (
+                <span className="text-[11px] text-muted-foreground">· {totalAtual} riscos</span>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex gap-0.5 rounded-md border border-border p-0.5 bg-muted/30 shrink-0">
+          {periods.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => setPeriod(p.value)}
+              className={`px-2.5 py-1 text-xs rounded transition-colors ${
+                period === p.value
+                  ? 'bg-background text-foreground shadow-sm font-medium'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
       </CardHeader>
-
-      <CardContent className="flex-1 flex flex-col pt-0 pb-4 min-h-0">
-        <div className="relative flex-1 min-h-[14rem] w-full">
-          <div className="absolute inset-0">
-            <ResponsiveContainer width="100%" height="100%" debounce={50}>
-            <ComposedChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
-              <defs>
-                <linearGradient id="grad-criticos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="grad-altos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(var(--warning))" stopOpacity={0.25} />
-                  <stop offset="100%" stopColor="hsl(var(--warning))" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-
-              <CartesianGrid
-                vertical={false}
-                stroke="hsl(var(--border))"
-                strokeDasharray="3 4"
-                opacity={0.5}
-              />
-              <XAxis
-                dataKey="month"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                padding={{ left: 12, right: 12 }}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                allowDecimals={false}
-                width={32}
-                domain={[0, 'auto']}
-                padding={{ top: 8, bottom: 8 }}
-                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-              />
-              <Tooltip content={customTooltip} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }} />
-
-              {!hidden.has('baixos') && (
-                <Line
-                  type="monotone"
-                  dataKey="baixos"
-                  name={t('dashboard.low')}
-                  stroke="hsl(var(--muted-foreground))"
-                  strokeWidth={1.5}
-                  strokeDasharray="3 3"
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
-              )}
-              {!hidden.has('medios') && (
-                <Line
-                  type="monotone"
-                  dataKey="medios"
-                  name={t('dashboard.medium')}
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={1.5}
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
-              )}
-              {!hidden.has('altos') && (
-                <Area
-                  type="monotone"
-                  dataKey="altos"
-                  name={t('dashboard.high')}
-                  stroke="hsl(var(--warning))"
-                  strokeWidth={2}
-                  fill="url(#grad-altos)"
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
-              )}
-              {!hidden.has('criticos') && (
-                <Area
-                  type="monotone"
-                  dataKey="criticos"
-                  name={t('dashboard.critical')}
-                  stroke="hsl(var(--destructive))"
-                  strokeWidth={2.5}
-                  fill="url(#grad-criticos)"
-                  dot={false}
-                  activeDot={{ r: 5 }}
-                />
-              )}
-            </ComposedChart>
-          </ResponsiveContainer>
+      <CardContent className="pt-3 flex-1 flex flex-col min-h-0">
+        {displayData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-[260px] gap-3 rounded-lg border border-dashed border-border bg-muted/20">
+            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-muted">
+              <LineChartIcon className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+            </div>
+            <div className="text-center space-y-1 max-w-[280px]">
+              <p className="text-sm font-medium text-foreground">Sem histórico ainda</p>
+              <p className="text-xs text-muted-foreground">
+                Cadastre alguns riscos para começar a registrar a evolução do seu score nesse período.
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="relative flex-1 min-h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={displayData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="riskScoreFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border))"
+                  strokeOpacity={0.6}
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  tickLine={false}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  ticks={[0, 25, 50, 75, 100]}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                  tickFormatter={(v) => `${v}`}
+                  axisLine={false}
+                  tickLine={false}
+                  width={32}
+                />
+                <ReferenceLine
+                  y={GOAL_VALUE}
+                  stroke="hsl(var(--success))"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.5}
+                  label={{
+                    value: 'Meta',
+                    position: 'right',
+                    fill: 'hsl(var(--success))',
+                    fontSize: 10,
+                  }}
+                />
+                <Tooltip
+                  cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    boxShadow: '0 4px 12px hsl(var(--foreground) / 0.08)',
+                  }}
+                  labelStyle={{
+                    color: 'hsl(var(--muted-foreground))',
+                    fontSize: 11,
+                    marginBottom: 4,
+                  }}
+                  itemStyle={{ color: 'hsl(var(--popover-foreground))', fontSize: 13 }}
+                  formatter={(value: number, _name, item: any) => {
+                    const p = item?.payload as PointData | undefined;
+                    const extra = p ? ` · ${p.criticos} crít · ${p.altos} altos` : '';
+                    return [`${value}${extra}`, 'Score de risco'];
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="score"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2.5}
+                  fill="url(#riskScoreFill)"
+                  dot={{ fill: 'hsl(var(--primary))', r: 3 }}
+                  activeDot={{
+                    r: 6,
+                    fill: 'hsl(var(--primary))',
+                    stroke: 'hsl(var(--background))',
+                    strokeWidth: 2,
+                  }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
