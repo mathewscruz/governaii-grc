@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -69,19 +70,38 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   initialCategoryFilter,
 }) => {
   const { empresaId, loading: loadingEmpresa } = useEmpresaId();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>('all');
-  const [activeSection, setActiveSection] = useState<string>(config.sections?.[0]?.id || '');
+  const [activeTab, setActiveTab] = useState<string>(searchParams.get('cat') || 'all');
+  const [activeSection, setActiveSection] = useState<string>(searchParams.get('sec') || config.sections?.[0]?.id || '');
   const [selectedRequirement, setSelectedRequirement] = useState<Requirement | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [onlyMandatory, setOnlyMandatory] = useState(false);
+  const [itemsPerPage, setItemsPerPage] = useState(Number(searchParams.get('size')) || 10);
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>((searchParams.get('status') as StatusFilter) || 'all');
+  const [onlyMandatory, setOnlyMandatory] = useState(searchParams.get('prio') === '1');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
+
+  // Sync filters → URL (replace, no history pollution)
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    const setOrDelete = (key: string, value: string, defaultValue: string) => {
+      if (value && value !== defaultValue) params.set(key, value);
+      else params.delete(key);
+    };
+    setOrDelete('q', searchTerm, '');
+    setOrDelete('status', statusFilter, 'all');
+    setOrDelete('prio', onlyMandatory ? '1' : '', '');
+    setOrDelete('cat', activeTab, 'all');
+    setOrDelete('sec', activeSection, config.sections?.[0]?.id || '');
+    setOrDelete('size', String(itemsPerPage), '10');
+    setOrDelete('page', String(currentPage), '1');
+    setSearchParams(params, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, statusFilter, onlyMandatory, activeTab, activeSection, itemsPerPage, currentPage]);
 
   const loadRequirements = async () => {
     if (!empresaId) return;
@@ -231,38 +251,45 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   const handleBulkStatusChange = async (newStatus: string) => {
     if (!empresaId || selectedIds.size === 0) return;
     setBulkUpdating(true);
+    const ids = Array.from(selectedIds);
+    const previous = [...requirements];
+
+    // Optimistic update
+    setRequirements(prev =>
+      prev.map(r => selectedIds.has(r.id) ? { ...r, conformity_status: newStatus } : r)
+    );
+
     try {
-      const ids = Array.from(selectedIds);
-      // For each selected requirement, upsert evaluation
-      for (const reqId of ids) {
-        const { data: existing } = await supabase
-          .from('gap_analysis_evaluations')
-          .select('id')
-          .eq('requirement_id', reqId)
-          .eq('framework_id', frameworkId)
-          .eq('empresa_id', empresaId)
-          .maybeSingle();
+      // Single batch upsert (uses unique constraint framework_id+requirement_id+empresa_id)
+      const rows = ids.map(reqId => ({
+        framework_id: frameworkId,
+        requirement_id: reqId,
+        empresa_id: empresaId,
+        conformity_status: newStatus,
+        updated_at: new Date().toISOString(),
+      }));
 
-        if (existing) {
-          await supabase
-            .from('gap_analysis_evaluations')
-            .update({ conformity_status: newStatus, updated_at: new Date().toISOString() })
-            .eq('id', existing.id);
-        } else {
-          await supabase
-            .from('gap_analysis_evaluations')
-            .insert({ framework_id: frameworkId, requirement_id: reqId, empresa_id: empresaId, conformity_status: newStatus });
-        }
-      }
+      const { error } = await supabase
+        .from('gap_analysis_evaluations')
+        .upsert(rows, { onConflict: 'framework_id,requirement_id,empresa_id' });
 
-      // Update local state
-      setRequirements(prev =>
-        prev.map(r => selectedIds.has(r.id) ? { ...r, conformity_status: newStatus } : r)
+      if (error) throw error;
+
+      // Score history once after bulk
+      const updatedReqs = previous.map(r =>
+        selectedIds.has(r.id) ? { ...r, conformity_status: newStatus } : r
       );
+      const totalReqs = updatedReqs.length;
+      const evaluatedReqs = updatedReqs.filter(r => r.conformity_status && r.conformity_status !== 'nao_aplicavel' && r.conformity_status !== 'nao_avaliado').length;
+      const score = calculateScore(updatedReqs);
+      saveScoreHistory(frameworkId, empresaId, score, totalReqs, evaluatedReqs).catch(() => {});
+
       setSelectedIds(new Set());
       onStatusChange?.();
-      toast.success(`${ids.length} requisitos atualizados para "${newStatus === 'conforme' ? 'Conforme' : newStatus === 'parcial' ? 'Parcial' : newStatus === 'nao_conforme' ? 'Não Conforme' : 'N/A'}"`);
+      const label = newStatus === 'conforme' ? 'Conforme' : newStatus === 'parcial' ? 'Parcial' : newStatus === 'nao_conforme' ? 'Não Conforme' : 'N/A';
+      toast.success(`${ids.length} requisitos atualizados para "${label}"`);
     } catch (error: any) {
+      setRequirements(previous);
       logger.error('Erro na atualização em lote de requisitos', { error: error instanceof Error ? error.message : String(error) });
       toast.error('Erro na atualização em lote');
     } finally {
@@ -271,24 +298,23 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
   };
 
   const toggleSelectAll = (reqs: Requirement[]) => {
-    const allSelected = reqs.every(r => selectedIds.has(r.id));
-    if (allSelected) {
-      const newSet = new Set(selectedIds);
-      reqs.forEach(r => newSet.delete(r.id));
-      setSelectedIds(newSet);
-    } else {
-      const newSet = new Set(selectedIds);
-      reqs.forEach(r => newSet.add(r.id));
-      setSelectedIds(newSet);
-    }
+    setSelectedIds(prev => {
+      const allSelected = reqs.every(r => prev.has(r.id));
+      const newSet = new Set(prev);
+      if (allSelected) reqs.forEach(r => newSet.delete(r.id));
+      else reqs.forEach(r => newSet.add(r.id));
+      return newSet;
+    });
   };
 
-  const toggleSelect = (id: string) => {
-    const newSet = new Set(selectedIds);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    setSelectedIds(newSet);
-  };
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
+    });
+  }, []);
 
   const getStatusBadge = (status?: string | null) => {
     const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' }> = {
