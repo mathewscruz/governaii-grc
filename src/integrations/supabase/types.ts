@@ -4214,6 +4214,134 @@ export type Database = {
           },
         ]
       }
+      evidence_library: {
+        Row: {
+          arquivo_hash: string | null
+          arquivo_nome: string | null
+          arquivo_tamanho: number | null
+          arquivo_tipo: string | null
+          arquivo_url: string | null
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          link_externo: string | null
+          nome: string
+          origem_evaluation_id: string | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          arquivo_hash?: string | null
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          link_externo?: string | null
+          nome: string
+          origem_evaluation_id?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          arquivo_hash?: string | null
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          arquivo_tipo?: string | null
+          arquivo_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          link_externo?: string | null
+          nome?: string
+          origem_evaluation_id?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_library_origem_evaluation_id_fkey"
+            columns: ["origem_evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence_library_links: {
+        Row: {
+          aceito_em: string | null
+          aceito_por: string | null
+          created_at: string
+          created_by: string | null
+          empresa_id: string
+          evaluation_id: string
+          evidence_id: string
+          framework_id: string
+          ia_justificativa: string | null
+          ia_score: number | null
+          id: string
+          requirement_id: string
+          updated_at: string
+          vinculo_tipo: string
+        }
+        Insert: {
+          aceito_em?: string | null
+          aceito_por?: string | null
+          created_at?: string
+          created_by?: string | null
+          empresa_id: string
+          evaluation_id: string
+          evidence_id: string
+          framework_id: string
+          ia_justificativa?: string | null
+          ia_score?: number | null
+          id?: string
+          requirement_id: string
+          updated_at?: string
+          vinculo_tipo?: string
+        }
+        Update: {
+          aceito_em?: string | null
+          aceito_por?: string | null
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string
+          evaluation_id?: string
+          evidence_id?: string
+          framework_id?: string
+          ia_justificativa?: string | null
+          ia_score?: number | null
+          id?: string
+          requirement_id?: string
+          updated_at?: string
+          vinculo_tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_library_links_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "gap_analysis_evaluations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_library_links_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fornecedores: {
         Row: {
           avaliacao_risco: string | null
