@@ -878,14 +878,12 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
                               size="sm"
                               className="justify-start"
                               onClick={() => {
-                                const url = prompt('URL da evidência:');
-                                if (url?.trim()) {
-                                  const name = prompt('Nome do link:') || new URL(url).hostname;
-                                  setFormData(prev => ({ ...prev, evidence_files: [...prev.evidence_files, { type: 'link', name, url: url.trim() }] }));
-                                }
+                                setLinkUrl('');
+                                setLinkName('');
+                                setLinkDialogOpen(true);
                               }}
                             >
-                              <ExternalLink className="h-4 w-4 mr-2" />
+                              <ExternalLink className="h-4 w-4 mr-2" strokeWidth={1.5} />
                               <div className="text-left leading-tight">
                                 <div className="text-xs font-semibold">Adicionar link</div>
                                 <div className="text-[10px] text-muted-foreground">URL externa</div>
