@@ -653,7 +653,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
               </TableHead>
               <TableHead className="w-28">Status</TableHead>
               <TableHead className="w-20">Evidências</TableHead>
-              <TableHead className="w-44">Avaliação</TableHead>
+              <TableHead className="w-48">Avaliação</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -705,7 +705,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                       onValueChange={(value) => handleStatusChange(req.id, value)}
                       disabled={loadingEmpresa || !empresaId}
                     >
-                      <SelectTrigger onClick={(e) => e.stopPropagation()}>
+                      <SelectTrigger onClick={(e) => e.stopPropagation()} className="px-2 text-sm">
                         <SelectValue placeholder={loadingEmpresa ? "Carregando..." : "Selecione..."} />
                       </SelectTrigger>
                       <SelectContent>
