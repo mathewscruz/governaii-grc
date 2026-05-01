@@ -388,13 +388,6 @@ export default function GapAnalysisFrameworkDetail() {
             />
           </TabsContent>
         </Tabs>
-
-        <DocGenDialog
-          open={showDocGen}
-          onOpenChange={setShowDocGen}
-          frameworkName={framework.nome}
-          frameworkId={frameworkId}
-        />
       </div>
     </ErrorBoundary>
   );
