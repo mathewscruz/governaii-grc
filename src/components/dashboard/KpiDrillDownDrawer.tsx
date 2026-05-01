@@ -507,22 +507,22 @@ const buildConfig = (key: DrillDownKey): DrillConfig => {
         fetcher: async (empresaId) => {
           const { data, error } = await supabase
             .from('riscos')
-            .select('id, titulo, severidade, proxima_revisao_aceite')
+            .select('id, titulo, severidade, data_proxima_revisao')
             .eq('empresa_id', empresaId)
-            .eq('status', 'aceito')
-            .order('proxima_revisao_aceite', { ascending: true, nullsFirst: false })
+            .eq('aceito', true)
+            .order('data_proxima_revisao', { ascending: true, nullsFirst: false })
             .limit(5);
           if (error) throw error;
           const today = todayIso();
           return (data || []).map((r: any) => {
-            const overdue = r.proxima_revisao_aceite && r.proxima_revisao_aceite < today;
+            const overdue = r.data_proxima_revisao && r.data_proxima_revisao < today;
             return {
               id: r.id,
               title: r.titulo,
               subtitle: r.severidade,
               status: overdue ? 'revisão vencida' : 'aceite ativo',
               tone: (overdue ? 'destructive' : 'info') as DrillItem['tone'],
-              date: fmtDate(r.proxima_revisao_aceite),
+              date: fmtDate(r.data_proxima_revisao),
             };
           });
         },
