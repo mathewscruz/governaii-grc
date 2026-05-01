@@ -6,6 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveMarcoStatusTone, resolveMarcoTipoTone } from '@/lib/status-tone';
+import { formatStatus } from '@/lib/text-utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Calendar, DollarSign, User, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -232,58 +235,7 @@ export function MarcosDialog({ contrato, open, onOpenChange }: MarcosDialogProps
     setShowForm(false);
   };
 
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'pendente':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'concluido':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'atrasado':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'cancelado':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-  
-  const getStatusLabel = (status: string): string => {
-    switch (status) {
-      case 'pendente': return 'Pendente';
-      case 'concluido': return 'Concluído';
-      case 'atrasado': return 'Atrasado';
-      case 'cancelado': return 'Cancelado';
-      default: return status;
-    }
-  };
-
-  const getTipoColor = (tipo: string): string => {
-    switch (tipo) {
-      case 'vencimento':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'renovacao':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'pagamento':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'entrega':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'revisao':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-  
-  const getTipoLabel = (tipo: string): string => {
-    switch (tipo) {
-      case 'vencimento': return 'Vencimento';
-      case 'renovacao': return 'Renovação';
-      case 'pagamento': return 'Pagamento';
-      case 'entrega': return 'Entrega';
-      case 'revisao': return 'Revisão';
-      default: return tipo;
-    }
-  };
+  // status e tipo agora resolvidos via StatusBadge + resolvers
 
   const isOverdue = (dataPrevista: string, status: string) => {
     if (status === 'concluido' || status === 'cancelado') return false;
