@@ -533,7 +533,8 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
       for (const file of Array.from(files)) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-        const filePath = `gap-analysis/${empresaId}/${fileName}`;
+        // Path must start with empresa_id to satisfy storage RLS policy
+        const filePath = `${empresaId}/gap-analysis/${fileName}`;
         const { error: uploadError } = await supabase.storage.from('documentos').upload(filePath, file);
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('documentos').getPublicUrl(filePath);
