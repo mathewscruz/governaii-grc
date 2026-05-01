@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { formatDateOnly } from '@/lib/date-utils';
-import { getNivelRiscoColor } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveNivelRiscoTone } from '@/lib/status-tone';
 import { CheckCircle, User, Calendar, FileText, Clock, AlertTriangle } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 
@@ -100,11 +101,11 @@ export function AceiteDetalheDialog({ open, onOpenChange, risco }: Props) {
             <h3 className="font-semibold text-lg">{risco.nome}</h3>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Nível Inicial:</span>
-              <Badge className={`${getNivelRiscoColor(risco.nivel_risco_inicial)} border`}>{risco.nivel_risco_inicial}</Badge>
+              <StatusBadge {...resolveNivelRiscoTone(risco.nivel_risco_inicial)}>{risco.nivel_risco_inicial}</StatusBadge>
               {risco.nivel_risco_residual && (
                 <>
                   <span className="text-sm text-muted-foreground ml-2">Residual:</span>
-                  <Badge className={`${getNivelRiscoColor(risco.nivel_risco_residual)} border`}>{risco.nivel_risco_residual}</Badge>
+                  <StatusBadge {...resolveNivelRiscoTone(risco.nivel_risco_residual)}>{risco.nivel_risco_residual}</StatusBadge>
                 </>
               )}
             </div>

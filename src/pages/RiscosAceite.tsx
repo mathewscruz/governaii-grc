@@ -14,7 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { CheckCircle, AlertTriangle, Clock, CalendarX, MoreHorizontal, Eye, CalendarClock, XCircle } from 'lucide-react';
 import { formatDateOnly } from '@/lib/date-utils';
-import { getNivelRiscoColor } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveNivelRiscoTone, resolveRevisaoTone } from '@/lib/status-tone';
 import { differenceInDays } from 'date-fns';
 import { AceiteDetalheDialog } from '@/components/riscos/AceiteDetalheDialog';
 import { AprovacaoRiscoDialog } from '@/components/riscos/AprovacaoRiscoDialog';
@@ -179,20 +180,19 @@ export default function RiscosAceite() {
 
   const getRevisaoBadge = (dataRevisao?: string) => {
     const status = getRevisaoStatus(dataRevisao);
+    if (status === 'sem_data') return <StatusBadge size="sm" tone="neutral">Sem data</StatusBadge>;
+    if (!dataRevisao) return null;
+    const dias = differenceInDays(new Date(dataRevisao), new Date());
     switch (status) {
-      case 'vencida': return <Badge className="bg-red-100 text-red-800 border-red-200">Vencida</Badge>;
-      case 'proxima': {
-        const dias = differenceInDays(new Date(dataRevisao!), new Date());
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">{dias}d restantes</Badge>;
-      }
-      case 'ok': return <Badge className="bg-green-100 text-green-800 border-green-200">Em dia</Badge>;
-      case 'sem_data': return <Badge variant="outline" className="text-muted-foreground">Sem data</Badge>;
+      case 'vencida': return <StatusBadge size="sm" {...resolveRevisaoTone(dias)}>Vencida</StatusBadge>;
+      case 'proxima': return <StatusBadge size="sm" {...resolveRevisaoTone(dias)}>{dias}d restantes</StatusBadge>;
+      case 'ok': return <StatusBadge size="sm" {...resolveRevisaoTone(dias)}>Em dia</StatusBadge>;
     }
   };
 
   const columns: Array<Column<RiscoAceito>> = [
     { key: 'nome', label: 'Risco', sortable: true, render: (value: any) => <span className="font-medium">{value}</span> },
-    { key: 'nivel_risco_inicial', label: 'Nível', render: (value: string) => <Badge className={`${getNivelRiscoColor(value)} border whitespace-nowrap`}>{value}</Badge> },
+    { key: 'nivel_risco_inicial', label: 'Nível', render: (value: string) => <StatusBadge size="sm" {...resolveNivelRiscoTone(value)}>{value}</StatusBadge> },
     { key: 'justificativa_aceite', label: 'Justificativa', render: (value: string) => value ? <span className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]">{value}</span> : '-' },
     { key: 'data_aceite', label: 'Data Aceite', sortable: true, render: (value: string) => value ? formatDateOnly(value) : '-' },
     { key: 'aprovador_nome', label: 'Aprovador', render: (value: string) => value || '-' },
@@ -233,7 +233,7 @@ export default function RiscosAceite() {
 
   const pendentesColumns: Array<Column<RiscoAceito>> = [
     { key: 'nome', label: 'Risco', sortable: true, render: (value: any) => <span className="font-medium">{value}</span> },
-    { key: 'nivel_risco_inicial', label: 'Nível', render: (value: string) => <Badge className={`${getNivelRiscoColor(value)} border whitespace-nowrap`}>{value}</Badge> },
+    { key: 'nivel_risco_inicial', label: 'Nível', render: (value: string) => <StatusBadge size="sm" {...resolveNivelRiscoTone(value)}>{value}</StatusBadge> },
     { key: 'justificativa_aceite', label: 'Justificativa', render: (value: string) => value ? <span className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]">{value}</span> : '-' },
     { key: 'aprovador_nome', label: 'Aprovador', render: (value: string) => value || '-' },
     { key: 'data_proxima_revisao', label: 'Data Revisão', render: (value: string) => value ? formatDateOnly(value) : '-' },
@@ -300,7 +300,7 @@ export default function RiscosAceite() {
           <TabsTrigger value="pendentes" className="relative">
             Pendentes de Aprovação
             {totalPendentes > 0 && (
-              <Badge className="ml-2 bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">{totalPendentes}</Badge>
+              <StatusBadge size="sm" tone="warning" className="ml-2">{totalPendentes}</StatusBadge>
             )}
           </TabsTrigger>
           <TabsTrigger value="aceitos">Riscos Aceitos ({totalAceitos})</TabsTrigger>
