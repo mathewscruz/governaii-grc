@@ -1,38 +1,50 @@
-## Problema identificado
+Vou ajustar em duas frentes: detalhe completo para itens longos e padronização real dos toasts no visual Akuris.
 
-O toast da screenshot ("Login realizado com sucesso!") está com **borda verde grossa de 4px à esquerda** e layout desalinhado porque há um **CSS legado em `src/index.css` (linhas 207–234)** que aplica `!important` sobre todos os toasts do Sonner, **conflitando** com o `<Toaster>` editorial Akuris (`src/components/ui/sonner.tsx`). Esse CSS:
+## 1. Notificações: abrir uma tela/modal de leitura completa
+- Alterar o comportamento do sino: ao clicar em uma notificação, em vez de navegar direto e cortar o texto, abrir um detalhe em `Dialog` com layout editorial Akuris.
+- O detalhe exibirá:
+  - módulo/origem com ícone proprietário;
+  - título completo;
+  - mensagem completa, sem `line-clamp`;
+  - data/tempo relativo;
+  - tipo/prioridade em `StatusBadge`;
+  - botão de ação “Ir para o módulo” quando existir `link_to`.
+- Manter a marcação como lida ao abrir o detalhe.
+- Preservar o popover compacto no sino com texto truncado, mas agora ele será apenas a lista resumida.
 
-- Força `border-left: 4px solid` por `data-type` → sobrescreve o acento de 2px do Akuris (pseudo-elemento `before:`), resultando em duas marcações visuais e o "barrão" verde da screenshot.
-- Força `background`, `border`, `color` e `box-shadow` com `!important` → anula o glassmorphism, a sombra primary e a tipografia editorial definidas no `toastOptions.classNames`.
-- Usa cores hardcoded fora do design system (não tokens HSL semânticos), fugindo da identidade.
+## 2. Novidades: abrir detalhe completo das versões
+- Atualizar o `ChangelogPopover` para que o clique em uma versão/item abra um `Dialog` de detalhe.
+- O detalhe exibirá a versão, data e todos os itens em uma área ampla e rolável, evitando corte de textos longos.
+- Substituir o loader visual legado por `AkurisPulse`, mantendo a regra de identidade do sistema.
+- Padronizar os badges de “Novo / Melhoria / Correção” para `StatusBadge`, evitando visual genérico e cores inconsistentes.
 
-Resultado: o toast de login parece "genérico", sobressai sobre elementos do header e quebra a padronização que já foi implementada na onda anterior de notificações editoriais.
+## 3. Toasts: corrigir sobreposição e padronizar de verdade
+- Ajustar `src/components/ui/sonner.tsx` usando as classes internas corretas do Sonner (`content`, `icon`, `title`, `description`) para que o chip do ícone não invada o texto.
+- Remover a causa do item “sobresair” no toast: hoje o ícone customizado tem 32px, mas o Sonner ainda reserva apenas 16px para a área de ícone. Vou expandir essa área e alinhar o conteúdo com `items-start`, `gap` e largura fixa.
+- Garantir largura consistente (`360px`, com `max-width` responsivo), texto sem sobreposição, quebra segura de linha e espaçamento correto entre toasts empilhados.
+- Manter o padrão visual Akuris: fundo glass, acento vertical fino de 2px, chip semântico, DM Sans, stroke 1.5 e tons `success/warning/destructive/info`.
+- Atualizar `akurisToast` para usar a mesma anatomia visual do `Toaster`, evitando dois padrões diferentes.
 
-## Solução
+## 4. Compatibilidade com toasts antigos
+- Refatorar `src/hooks/use-toast.ts` para encaminhar chamadas legadas de `useToast()` para o Sonner.
+- Isso é importante porque muitos módulos ainda usam `useToast`; hoje esses toasts podem não aparecer ou não seguir o visual oficial.
+- A compatibilidade será mantida para chamadas como:
+  - `toast({ title, description })`
+  - `toast({ title, description, variant: 'destructive' })`
+- Assim, todos os módulos passam a usar o mesmo Toaster Akuris sem precisar alterar dezenas de arquivos agora.
 
-### 1. Remover o bloco CSS legado de toasts em `src/index.css`
-Apagar integralmente as regras `.toaster { ... }` e `.toaster [data-sonner-toast]...` (linhas ~207–234). Toda a estilização do toast passa a vir **exclusivamente** do `Toaster` Akuris (`sonner.tsx`), garantindo:
-- Acento vertical único de 2px (pseudo-elemento `before:`) na cor do tom semântico.
-- Glassmorphism (`bg-background/95 backdrop-blur-2xl`) + sombra primary suave.
-- Tipografia editorial (title 13px semibold, description 12px muted).
-- Modo escuro automático via tokens HSL do design system.
+## 5. Segurança e consistência
+- Ao tocar em queries de notificações, manter o isolamento por usuário e, quando houver `empresa_id` disponível, preservar/aplicar filtros de empresa conforme padrão do projeto.
+- Não adicionar backend novo.
+- Não reintroduzir CSS global para `[data-sonner-toast]`; a estilização ficará centralizada no componente `sonner.tsx`.
 
-### 2. Garantir responsividade ao tema (light/dark)
-Trocar `theme="light"` por `theme="system"` no `<Sonner>` para acompanhar o `ThemeProvider` da ferramenta — hoje o toast fica branco mesmo em dark mode.
+## Arquivos previstos
+- `src/components/NotificationCenter.tsx`
+- `src/components/ChangelogPopover.tsx`
+- `src/components/ui/sonner.tsx`
+- `src/lib/akuris-toast.tsx`
+- `src/hooks/use-toast.ts`
+- `src/i18n/pt.ts`
+- `src/i18n/en.ts`
 
-### 3. Reforçar largura/empilhamento consistentes
-No `toastOptions.classNames.toast`, fixar `w-[360px] max-w-[92vw]` (mesma medida do `akurisToast` custom) para que toasts disparados via `toast.success(...)` e via `akurisToast(...)` tenham **exatamente o mesmo footprint** — eliminando o efeito de "um sobressaindo ao outro" quando empilhados.
-
-### 4. Validação visual
-Após a remoção, validar:
-- Toast de login (`toast.success(t('auth.loginSuccess'))` em `src/pages/Auth.tsx`) deve aparecer com chip 32x32 verde + ícone `CheckCircle2`, acento de 2px e tipografia editorial.
-- Toasts de erro, warning e info no mesmo padrão.
-- Empilhamento de 2–3 toasts simultâneos sem variação de largura.
-
-## Arquivos afetados
-
-- `src/index.css` — remover linhas ~207–234 (bloco `.toaster` legado).
-- `src/components/ui/sonner.tsx` — `theme="system"` + largura fixa no classNames.
-- `mem://design/foundations/notifications-editorial-akuris` — adicionar nota: "CSS legado do Sonner em index.css proibido; toda estilização vem do `<Toaster>` Akuris".
-
-Nenhuma alteração necessária em chamadas existentes (`toast.success`, `toast.error`, `akurisToast`) — a correção é puramente de camada de estilo.
+Depois de aprovado, implemento esses ajustes e valido visualmente o fluxo esperado: toast de login, toast de erro/sucesso e abertura completa de notificação/novidade.

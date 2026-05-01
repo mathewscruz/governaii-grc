@@ -1,18 +1,23 @@
 import { Toaster as Sonner, toast } from "sonner"
-import { Icon } from "@/components/icons/Icon"
 import { CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 /**
- * Toaster Akuris — identidade editorial:
- * - Acento vertical 2px à esquerda na cor do tom (success/warning/destructive/info)
- * - Chip 32x32 com ícone proprietário (stroke 1.5) e tom semântico
- * - Glassmorphism + sombra densa primary; cantos rounded-xl
- * - Tipografia: title 13px semibold; description 12px muted
+ * Toaster Akuris — identidade editorial centralizada.
  *
- * Mantém compatibilidade total com `toast.success(...)`, `toast.error(...)`, etc.
- * Para toasts com eyebrow + módulo proprietário, use `akurisToast` (src/lib/akuris-toast.tsx).
+ * Anatomia (alinhada com a estrutura interna do Sonner):
+ *   ┌─┬──────────────────────────────────┬──┐
+ *   │ │ [chip] Title                     │X │
+ *   │a│        Description (line-clamp)  │  │
+ *   └─┴──────────────────────────────────┴──┘
+ *     ↑ acento vertical 2px na cor do tom
+ *
+ * Nota técnica:
+ * - Sonner expõe slots `icon`, `content`, `title`, `description` via classNames.
+ *   Personalizamos esses slots para garantir alinhamento (sem o ícone
+ *   "sobresair" sobre o texto) e largura consistente (360px).
+ * - Toda estilização vive aqui — proibido recriar regras globais em CSS.
  */
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
@@ -23,52 +28,58 @@ const Toaster = ({ ...props }: ToasterProps) => {
       expand={false}
       richColors={false}
       duration={4500}
-      gap={10}
+      gap={12}
       offset={16}
       icons={{
-        success: (
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10 ring-1 ring-success/20 text-success">
-            <Icon as={CheckCircle2} size="sm" />
-          </span>
-        ),
-        error: (
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10 ring-1 ring-destructive/20 text-destructive">
-            <Icon as={XCircle} size="sm" />
-          </span>
-        ),
-        warning: (
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10 ring-1 ring-warning/20 text-warning">
-            <Icon as={AlertTriangle} size="sm" />
-          </span>
-        ),
-        info: (
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10 ring-1 ring-info/20 text-info">
-            <Icon as={Info} size="sm" />
-          </span>
-        ),
+        success: <CheckCircle2 className="h-[18px] w-[18px] text-success" strokeWidth={1.5} />,
+        error: <XCircle className="h-[18px] w-[18px] text-destructive" strokeWidth={1.5} />,
+        warning: <AlertTriangle className="h-[18px] w-[18px] text-warning" strokeWidth={1.5} />,
+        info: <Info className="h-[18px] w-[18px] text-info" strokeWidth={1.5} />,
       }}
       toastOptions={{
         classNames: {
-          toast:
-            "group toast relative overflow-hidden group-[.toaster]:w-[360px] group-[.toaster]:max-w-[92vw] group-[.toaster]:bg-background/95 group-[.toaster]:backdrop-blur-2xl group-[.toaster]:text-foreground group-[.toaster]:border group-[.toaster]:border-border/60 group-[.toaster]:shadow-[0_12px_32px_-8px_hsl(var(--primary)/0.18)] group-[.toaster]:rounded-xl group-[.toaster]:p-4 group-[.toaster]:pl-5 group-[.toaster]:min-h-[60px] group-[.toaster]:gap-3 group-[.toaster]:animate-toast-slide-in before:content-[''] before:absolute before:left-0 before:top-3 before:bottom-3 before:w-[2px] before:rounded-full before:bg-border",
-          title:
-            "group-[.toast]:text-[13px] group-[.toast]:font-semibold group-[.toast]:leading-tight group-[.toast]:tracking-tight",
-          description:
-            "group-[.toast]:text-xs group-[.toast]:text-muted-foreground group-[.toast]:leading-relaxed group-[.toast]:mt-1",
+          // Container do toast: largura fixa, glass, acento 2px
+          toast: [
+            "group toast relative w-[360px] max-w-[92vw]",
+            "bg-background/95 backdrop-blur-2xl",
+            "text-foreground",
+            "border border-border/60 rounded-xl",
+            "shadow-[0_12px_32px_-8px_hsl(var(--primary)/0.18)]",
+            "!p-0 overflow-hidden",
+            "animate-toast-slide-in",
+            // Layout interno: alinhamento topo
+            "!items-start !gap-0",
+            // Acento vertical 2px (cor sobrescrita por success/error/warning/info abaixo)
+            "before:content-[''] before:absolute before:left-0 before:top-3 before:bottom-3",
+            "before:w-[2px] before:rounded-full before:bg-border",
+            // Padding "real" via wrapper interno
+            "[&>*]:pt-3 [&>*]:pb-3",
+          ].join(" "),
+          // Chip do ícone (32x32) — substitui o slot padrão do Sonner
+          icon: [
+            "!m-0 !mr-0 shrink-0",
+            "flex h-8 w-8 items-center justify-center rounded-lg",
+            "bg-muted/40 ring-1 ring-border/50",
+            "ml-4 mt-0",
+          ].join(" "),
+          // Bloco de texto — largura controlada para nunca colidir com o ícone/close
+          content: "min-w-0 flex-1 px-3 pr-8",
+          title: "text-[13px] font-semibold leading-tight tracking-tight text-foreground",
+          description: "text-xs text-muted-foreground leading-relaxed mt-1 break-words",
           actionButton:
-            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground group-[.toast]:hover:bg-primary/90 group-[.toast]:text-xs group-[.toast]:font-semibold group-[.toast]:px-3 group-[.toast]:py-1.5 group-[.toast]:rounded-md",
+            "!bg-primary !text-primary-foreground hover:!bg-primary/90 !text-xs !font-semibold !px-3 !py-1.5 !rounded-md",
           cancelButton:
-            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground group-[.toast]:hover:bg-muted/80 group-[.toast]:text-xs group-[.toast]:px-3 group-[.toast]:py-1.5 group-[.toast]:rounded-md",
-          closeButton:
-            "group-[.toast]:bg-transparent group-[.toast]:border-0 group-[.toast]:text-muted-foreground/60 group-[.toast]:hover:text-foreground group-[.toast]:transition-colors",
-          success:
-            "group-[.toaster]:before:bg-success",
-          error:
-            "group-[.toaster]:before:bg-destructive",
-          warning:
-            "group-[.toaster]:before:bg-warning",
-          info:
-            "group-[.toaster]:before:bg-info",
+            "!bg-muted !text-muted-foreground hover:!bg-muted/80 !text-xs !px-3 !py-1.5 !rounded-md",
+          closeButton: [
+            "!bg-transparent !border-0 !text-muted-foreground/60 hover:!text-foreground",
+            "!top-2 !right-2 !left-auto !translate-x-0 !translate-y-0",
+            "!h-6 !w-6",
+          ].join(" "),
+          // Cores do acento por tom
+          success: "before:!bg-success [&_[data-icon]]:!bg-success/10 [&_[data-icon]]:!ring-success/25",
+          error: "before:!bg-destructive [&_[data-icon]]:!bg-destructive/10 [&_[data-icon]]:!ring-destructive/25",
+          warning: "before:!bg-warning [&_[data-icon]]:!bg-warning/10 [&_[data-icon]]:!ring-warning/25",
+          info: "before:!bg-info [&_[data-icon]]:!bg-info/10 [&_[data-icon]]:!ring-info/25",
         },
       }}
       {...props}
