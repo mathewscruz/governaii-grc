@@ -12,7 +12,9 @@ import { Edit, MessageSquare, Send, Trash2, User, Calendar, AtSign, Shield, Acti
 import { toast } from "sonner";
 import { formatDateOnly } from "@/lib/date-utils";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { capitalizeText } from "@/lib/text-utils";
+import { capitalizeText, formatStatus } from "@/lib/text-utils";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { resolveControleStatusTone, resolveCriticidadeTone } from "@/lib/status-tone";
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface ControleDetalheDialogProps {
@@ -21,56 +23,6 @@ interface ControleDetalheDialogProps {
   controle: any;
   onEdit: () => void;
 }
-
-const getStatusColor = (status: string): string => {
-  switch (status) {
-    case 'ativo':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'inativo':
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-    case 'em_revisao':
-      return 'bg-amber-100 text-amber-800 border-amber-200';
-    case 'descontinuado':
-      return 'bg-red-100 text-red-800 border-red-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
-
-const getStatusLabel = (status: string): string => {
-  switch (status) {
-    case 'ativo': return 'Ativo';
-    case 'inativo': return 'Inativo';
-    case 'em_revisao': return 'Em Revisão';
-    case 'descontinuado': return 'Descontinuado';
-    default: return status;
-  }
-};
-
-const getCriticidadeColor = (criticidade: string): string => {
-  switch (criticidade) {
-    case 'critico':
-      return 'bg-red-100 text-red-800 border-red-200';
-    case 'alto':
-      return 'bg-orange-100 text-orange-800 border-orange-200';
-    case 'medio':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'baixo':
-      return 'bg-green-100 text-green-800 border-green-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
-
-const getCriticidadeLabel = (criticidade: string): string => {
-  switch (criticidade) {
-    case 'critico': return 'Crítico';
-    case 'alto': return 'Alto';
-    case 'medio': return 'Médio';
-    case 'baixo': return 'Baixo';
-    default: return criticidade;
-  }
-};
 
 export function ControleDetalheDialog({
   open,
