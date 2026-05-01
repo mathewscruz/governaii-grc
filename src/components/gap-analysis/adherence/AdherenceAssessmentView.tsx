@@ -231,8 +231,8 @@ export function AdherenceAssessmentView({ onViewResult, frameworkId, frameworkNo
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h4 className="font-semibold">{assessment.nome_analise}</h4>
-                      <Badge className={`${getStatusColor(assessment.status)} border whitespace-nowrap`}>{getStatusLabel(assessment.status)}</Badge>
-                      {assessment.resultado_geral && <Badge className={`${getResultColor(assessment.resultado_geral)} border whitespace-nowrap`}>{getResultLabel(assessment.resultado_geral)}</Badge>}
+                      <Badge variant={getStatusVariant(assessment.status)} className="whitespace-nowrap">{getStatusLabel(assessment.status)}</Badge>
+                      {assessment.resultado_geral && <Badge variant={getResultVariant(assessment.resultado_geral)} className="whitespace-nowrap">{getResultLabel(assessment.resultado_geral)}</Badge>}
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-3">
