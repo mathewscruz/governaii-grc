@@ -11,6 +11,7 @@ import { Plus, Link, Trash2, FileText, Shield, AlertTriangle, CheckCircle, Build
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Documento {
   id: string;
   nome: string;
@@ -357,7 +358,7 @@ export function VinculacoesDialog({ open, onOpenChange, documento, empresaId }: 
 
               {loading ? (
                 <div className="flex items-center justify-center h-32">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <AkurisPulse size={32} />
                 </div>
               ) : vinculacoes.length === 0 ? (
                 <Card>
@@ -520,7 +521,7 @@ export function VinculacoesDialog({ open, onOpenChange, documento, empresaId }: 
                 <Button type="submit" disabled={loading}>
                   {loading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <AkurisPulse size={16} className="mr-2" />
                       Criando...
                     </>
                   ) : (

@@ -5,6 +5,7 @@ import { Upload, FileText, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Categoria {
   id: string;
   nome: string;
@@ -206,7 +207,7 @@ export function UploadMultiplosDialog({ open, onOpenChange, onSuccess, categoria
           <Button onClick={handleUpload} disabled={uploading || files.length === 0}>
             {uploading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <AkurisPulse size={16} className="mr-2" />
                 Enviando...
               </>
             ) : (

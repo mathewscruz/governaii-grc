@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Edit, Star, Users, Sparkles, Loader2, Building2 } from 'lucide-react';
+import { Plus, Edit, Star, Users, Sparkles, Building2 } from 'lucide-react';
 import { fetchPlanos, formatBRL, MODULOS_DISPONIVEIS, type Plano } from '@/lib/planos-utils';
 import { PlanoFormDialog } from './PlanoFormDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface PlanoWithCount extends Plano {
   empresas_count: number;
 }
@@ -74,7 +75,7 @@ export const GerenciamentoPlanos: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <AkurisPulse size={32} className="text-muted-foreground" />
       </div>
     );
   }

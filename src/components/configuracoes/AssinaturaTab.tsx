@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Crown, Shield, Zap, Sparkles, CreditCard, Calendar, Loader2, Users, AlertTriangle } from 'lucide-react';
+import { Crown, Shield, Zap, Sparkles, CreditCard, Calendar, Users, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { differenceInDays } from 'date-fns';
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { formatBRL, type Plano } from '@/lib/planos-utils';
 import { Link } from 'react-router-dom';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface EmpresaInfo {
   id: string;
   nome: string;
@@ -80,7 +81,7 @@ export function AssinaturaTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <AkurisPulse size={32} className="text-muted-foreground" />
       </div>
     );
   }

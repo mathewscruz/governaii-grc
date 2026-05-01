@@ -7,6 +7,7 @@ import { X, Download, ExternalLink, FileText, Image, File } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Documento {
   id: string;
   nome: string;
@@ -158,7 +159,7 @@ export function DocumentoPreview({ open, onOpenChange, documento }: DocumentoPre
           <div className="flex-1 border rounded-md overflow-hidden">
             {loading ? (
               <div className="flex items-center justify-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                <AkurisPulse size={48} />
               </div>
             ) : canPreview && previewUrl ? (
               <div className="h-96 overflow-auto">

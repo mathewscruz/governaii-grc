@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Upload, FileText, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, FileText, AlertCircle } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Documento {
   id: string;
   nome: string;
@@ -278,7 +279,7 @@ export const RenovarDocumentoDialog = ({
           <Button onClick={handleSubmit} disabled={loading || !novoArquivo}>
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <AkurisPulse size={16} className="mr-2" />
                 Renovando...
               </>
             ) : (

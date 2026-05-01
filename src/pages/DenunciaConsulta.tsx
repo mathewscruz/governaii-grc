@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { getCompanyLogo } from '@/lib/brand-logo';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Empresa {
   id: string;
   nome: string;
@@ -262,7 +263,7 @@ export default function DenunciaConsulta() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <AkurisPulse size={32} />
           <p className="text-muted-foreground">Carregando...</p>
         </div>
       </div>

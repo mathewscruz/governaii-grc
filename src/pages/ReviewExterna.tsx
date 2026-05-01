@@ -3,10 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle } from 'lucide-react';
 import { ReviewExternalForm } from "@/components/revisao-acessos/ReviewExternalForm";
 import { logger } from '@/lib/logger';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 export default function ReviewExterna() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -73,7 +74,7 @@ export default function ReviewExterna() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <AkurisPulse size={32} className="mx-auto mb-4" />
           <p className="text-muted-foreground">Carregando revisão...</p>
         </div>
       </div>

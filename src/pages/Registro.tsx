@@ -6,13 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Loader2, ArrowLeft, Building2, Mail, Lock, User, CheckCircle2, XCircle } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Building2, Mail, Lock, User, CheckCircle2, XCircle } from 'lucide-react';
 import logoImage from '@/assets/akuris-logo.png';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { z } from 'zod';
 import { Progress } from '@/components/ui/progress';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 const formatCNPJ = (value: string) => {
   const digits = value.replace(/\D/g, '').slice(0, 14);
   return digits
@@ -264,7 +265,7 @@ const Registro = () => {
             </div>
 
             <Button type="submit" variant="gradient" className="w-full h-11 font-semibold text-sm mt-2" disabled={isLoading}>
-              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('register.creatingAccount')}</> : t('register.createFreeAccount')}
+              {isLoading ? <><AkurisPulse size={16} className="mr-2" />{t('register.creatingAccount')}</> : t('register.createFreeAccount')}
             </Button>
           </form>
         </div>

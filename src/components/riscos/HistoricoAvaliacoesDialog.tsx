@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getNivelRiscoColor } from '@/lib/text-utils';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -71,7 +72,7 @@ export function HistoricoAvaliacoesDialog({ open, onOpenChange, riscoId, riscoNo
 
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            <AkurisPulse size={32} />
           </div>
         ) : !historico || historico.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">

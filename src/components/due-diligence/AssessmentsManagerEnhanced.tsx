@@ -22,6 +22,7 @@ import { IntegrationSuggestions } from './IntegrationSuggestions';
 import { formatDateOnly } from '@/lib/date-utils';
 import { getDueDiligenceStatusColor, formatStatus } from '@/lib/text-utils';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Assessment {
   id: string;
   fornecedor_nome: string;
@@ -939,7 +940,7 @@ function ScoreVisualizationWrapper({ assessment }: { assessment: Assessment }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <AkurisPulse size={32} />
       </div>
     );
   }

@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { getCompanyLogo, AKURIS_DEFAULT_LOGO } from '@/lib/brand-logo';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Empresa {
   id: string;
   nome: string;
@@ -73,7 +74,7 @@ export default function DenunciaMenu() {
     return (
       <div className="min-h-screen bg-muted/20 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <AkurisPulse size={32} />
           <p className="mt-2 text-muted-foreground">Carregando...</p>
         </div>
       </div>

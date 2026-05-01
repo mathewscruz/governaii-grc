@@ -25,12 +25,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Send, Save, ImageIcon, Upload, X, Eye, MailCheck } from 'lucide-react';
+import { Send, Save, ImageIcon, Upload, X, Eye, MailCheck } from 'lucide-react';
 import { AkurisAIIcon } from '@/components/icons';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { EmailPreview } from './EmailPreview';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 export interface CampanhaRow {
   id: string;
   assunto: string;
@@ -289,7 +290,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
                     Sugerir assunto
                   </label>
                   <Button onClick={handleGenerate} disabled={generating} size="sm" className="ml-auto">
-                    {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <AkurisAIIcon className="h-4 w-4" />}
+                    {generating ? <AkurisPulse size={16} /> : <AkurisAIIcon className="h-4 w-4" />}
                     Gerar
                   </Button>
                 </div>
@@ -327,7 +328,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
                       htmlFor="upload-img"
                       className="inline-flex items-center gap-2 cursor-pointer rounded-md border border-dashed border-border px-3 py-2 text-sm hover:bg-muted/50"
                     >
-                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      {uploading ? <AkurisPulse size={16} /> : <Upload className="h-4 w-4" />}
                       Enviar imagem manualmente
                     </Label>
                     <Input id="upload-img" type="file" accept="image/*" onChange={handleUpload} className="hidden" disabled={uploading} />
@@ -365,7 +366,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
           <DialogFooter className="flex-wrap gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button variant="outline" onClick={handleSaveDraft} disabled={saving || sending || sendingTest}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {saving ? <AkurisPulse size={16} /> : <Save className="h-4 w-4" />}
               Salvar rascunho
             </Button>
             <Button
@@ -374,7 +375,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
               disabled={saving || sending || sendingTest}
               title={profile?.email ? `Enviar somente para ${profile.email}` : 'Enviar somente para você'}
             >
-              {sendingTest ? <Loader2 className="h-4 w-4 animate-spin" /> : <MailCheck className="h-4 w-4" />}
+              {sendingTest ? <AkurisPulse size={16} /> : <MailCheck className="h-4 w-4" />}
               Enviar teste para mim
             </Button>
             <Button onClick={openConfirmSend} disabled={saving || sending || sendingTest}>
@@ -398,7 +399,7 @@ export function EmailCampanhaEditor({ open, onOpenChange, campanha, onSaved }: P
           <AlertDialogFooter>
             <AlertDialogCancel disabled={sending}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmSend} disabled={sending || !activeUserCount}>
-              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {sending ? <AkurisPulse size={16} /> : <Send className="h-4 w-4" />}
               Confirmar envio
             </AlertDialogAction>
           </AlertDialogFooter>

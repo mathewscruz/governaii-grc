@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { CheckCircle2, AlertTriangle, Lightbulb, ArrowLeft, Download, TrendingUp, FileText, RefreshCw, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Lightbulb, ArrowLeft, Download, TrendingUp, FileText, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { AdherenceAssessment, PontoForte, PontoMelhoria } from './types';
@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { logger } from '@/lib/logger';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface AdherenceResultViewProps {
   assessment: AdherenceAssessment;
   onBack: () => void;
@@ -202,7 +203,7 @@ export function AdherenceResultView({ assessment, onBack, frameworkId, onApplied
           {frameworkId && details && details.length > 0 && (
             <Button variant="default" onClick={handleApplyToEvaluation} disabled={applying}>
               {applying ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" strokeWidth={1.5}/>Aplicando...</>
+                <><AkurisPulse size={16} className="mr-2" />Aplicando...</>
               ) : (
                 <><RefreshCw className="mr-2 h-4 w-4" strokeWidth={1.5}/>Aplicar na Avaliação Manual</>
               )}

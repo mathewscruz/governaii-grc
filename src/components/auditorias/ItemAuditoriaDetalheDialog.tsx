@@ -12,24 +12,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Edit,
-  Paperclip,
-  MessageSquare,
-  Send,
-  Upload,
-  Trash2,
-  User,
-  Calendar,
-  Download,
-  FileText,
-  Loader2,
-  AtSign,
-} from "lucide-react";
+import { Edit, Paperclip, MessageSquare, Send, Upload, Trash2, User, Calendar, Download, FileText, AtSign } from 'lucide-react';
 import { toast } from "sonner";
 import { formatDateOnly } from "@/lib/date-utils";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface ItemAuditoriaDetalheDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -479,7 +467,7 @@ export function ItemAuditoriaDetalheDialog({
                   className="self-end"
                 >
                   {isSubmittingComment ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <AkurisPulse size={16} />
                   ) : (
                     <Send className="h-4 w-4" />
                   )}
@@ -535,7 +523,7 @@ export function ItemAuditoriaDetalheDialog({
                   <div className="border-2 border-dashed rounded-lg p-4 text-center hover:bg-muted/50 transition-colors">
                     {isUploading ? (
                       <div className="flex items-center justify-center gap-2">
-                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <AkurisPulse size={20} />
                         <span>Fazendo upload...</span>
                       </div>
                     ) : (

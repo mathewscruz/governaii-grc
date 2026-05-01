@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useIntegrationNotify } from '@/hooks/useIntegrationNotify';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Server, Activity, AlertTriangle, TrendingUp, Upload, Shield, CloudCog, Loader2, MoreHorizontal, Edit, Trash2, Wrench, History } from 'lucide-react';
+import { Plus, Server, Activity, AlertTriangle, TrendingUp, Upload, Shield, CloudCog, MoreHorizontal, Edit, Trash2, Wrench, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatCard } from '@/components/ui/stat-card';
@@ -25,6 +25,7 @@ import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/tex
 import { logger } from '@/lib/logger';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Ativo {
   id: string;
   nome: string;
@@ -486,7 +487,7 @@ const Ativos = () => {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="outline" onClick={handleAzureSync} disabled={azureSyncing} className="gap-2">
-                      {azureSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudCog className="h-4 w-4" />}
+                      {azureSyncing ? <AkurisPulse size={16} /> : <CloudCog className="h-4 w-4" />}
                       Azure Sync
                     </Button>
                   </TooltipTrigger>

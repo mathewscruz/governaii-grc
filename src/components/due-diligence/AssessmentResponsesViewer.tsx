@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ScoreVisualization } from './ScoreVisualization';
 import { FileText, Download, User, Calendar, Mail } from 'lucide-react';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Assessment {
   id: string;
   fornecedor_nome: string;
@@ -248,7 +249,7 @@ export function AssessmentResponsesViewer({
             {/* Respostas por Categoria */}
             {loading ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <AkurisPulse size={32} />
                 <p className="mt-2 text-muted-foreground">Carregando respostas...</p>
               </div>
             ) : (

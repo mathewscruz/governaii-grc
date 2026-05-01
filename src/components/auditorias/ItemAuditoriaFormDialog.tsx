@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
-import { ListChecks, Loader2 } from "lucide-react";
+import { ListChecks } from "lucide-react";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { ControleSelect } from "./ControleSelect";
 import { AreaSistemaSelect } from "./AreaSistemaSelect";

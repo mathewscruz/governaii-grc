@@ -18,6 +18,7 @@ import { GerenciamentoPlanos } from '@/components/configuracoes/GerenciamentoPla
 import GerenciamentoChangelog from '@/components/configuracoes/GerenciamentoChangelog';
 import NoticiasTab from '@/components/configuracoes/NoticiasTab';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 const Configuracoes = () => {
   const { profile, loading } = useAuth();
   const [searchParams] = useSearchParams();
@@ -30,7 +31,7 @@ const Configuracoes = () => {
     return (
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <AkurisPulse size={48} className="mb-4" />
           <p className="text-muted-foreground">Carregando configurações...</p>
         </div>
       </div>

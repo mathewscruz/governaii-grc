@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { CreditsExhaustedDialog } from '@/components/CreditsExhaustedDialog';
 import { UserSelect } from './UserSelect';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 const tratamentoSchema = z.object({
   tipo_tratamento: z.string().min(1, 'Tipo de tratamento é obrigatório'),
   descricao: z.string().min(1, 'Descrição é obrigatória'),
@@ -225,7 +226,7 @@ export function TratamentoForm({ riscoId, tratamento, onSuccess, riscoData }: Tr
             >
               {iaSuggestionLoading ? (
                 <>
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-2"></div>
+                  <AkurisPulse size={12} className="mr-2" />
                   Gerando...
                 </>
               ) : (

@@ -8,8 +8,9 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, CheckSquare, Square, BookOpen, ShieldCheck } from 'lucide-react';
+import { CheckSquare, Square, BookOpen, ShieldCheck } from 'lucide-react';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Module {
   id: string;
   name: string;
@@ -218,7 +219,7 @@ export const PermissionProfileDialog: React.FC<Props> = ({
     <div className="flex justify-end gap-2 w-full">
       <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
       <Button size="sm" onClick={handleSave} disabled={saving}>
-        {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+        {saving && <AkurisPulse size={16} className="mr-2" />}
         {profile ? 'Atualizar' : 'Criar'}
       </Button>
     </div>
@@ -273,7 +274,7 @@ export const PermissionProfileDialog: React.FC<Props> = ({
 
         {loading ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
+            <AkurisPulse size={24} />
           </div>
         ) : (
           <div className="border rounded-lg overflow-hidden">

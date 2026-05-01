@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface TrilhaAuditoriaProps {
   ativoId?: string;
   open: boolean;
@@ -175,7 +176,7 @@ const TrilhaAuditoriaAtivos: React.FC<TrilhaAuditoriaProps> = ({ ativoId, open, 
           <ScrollArea className="h-[600px]">
             {isLoading ? (
               <div className="flex items-center justify-center h-32">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <AkurisPulse size={32} />
               </div>
             ) : auditLogs.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">

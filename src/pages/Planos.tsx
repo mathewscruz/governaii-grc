@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, Sparkles, Loader2, ArrowLeft } from 'lucide-react';
+import { Check, Sparkles, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { fetchPlanos, formatBRL, type Plano } from '@/lib/planos-utils';
 import { PlanBadge } from '@/components/PlanBadge';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 export default function Planos() {
   const [isAnnual, setIsAnnual] = useState(false);
   const [planos, setPlanos] = useState<Plano[]>([]);
@@ -25,7 +26,7 @@ export default function Planos() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <AkurisPulse size={32} className="text-muted-foreground" />
       </div>
     );
   }

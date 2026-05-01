@@ -11,6 +11,7 @@ import { History, User, Calendar, Edit, Plus, Trash, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface TrilhaAuditoriaProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -177,7 +178,7 @@ export function TrilhaAuditoriaDocumentos({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <AkurisPulse size={48} />
           </div>
         </DialogContent>
       </Dialog>

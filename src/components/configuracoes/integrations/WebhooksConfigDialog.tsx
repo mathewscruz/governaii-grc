@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, CheckCircle2, XCircle, Send, Webhook, Plus, Trash2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Send, Webhook, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -24,6 +24,7 @@ interface WebhooksConfigDialogProps {
 
 import { INTEGRATION_EVENTS } from '@/lib/integration-events';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 const EVENTOS_DISPONIVEIS = INTEGRATION_EVENTS;
 
 const PAYLOAD_EXEMPLO = `{
@@ -222,7 +223,7 @@ export function WebhooksConfigDialog({
           Cancelar
         </Button>
         <Button size="sm" onClick={handleSave} disabled={saving || !webhookUrl || selectedEvents.length === 0}>
-          {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          {saving && <AkurisPulse size={16} className="mr-2" />}
           Salvar
         </Button>
       </div>
@@ -263,7 +264,7 @@ export function WebhooksConfigDialog({
                 disabled={testing || !webhookUrl}
               >
                 {testing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <AkurisPulse size={16} />
                 ) : testResult === 'success' ? (
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
                 ) : testResult === 'error' ? (

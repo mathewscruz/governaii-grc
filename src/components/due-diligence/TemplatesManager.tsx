@@ -17,6 +17,7 @@ import { TemplateDialog } from './TemplateDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Template {
   id: string;
   nome: string;
@@ -461,7 +462,7 @@ export function TemplatesManager() {
                             onClick={() => cloneSuggestedTemplate(suggested)}
                           >
                             {cloningTemplate === suggested.nome ? (
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1" />
+                              <AkurisPulse size={12} className="mr-1" />
                             ) : alreadyExists ? (
                               'Já adicionado'
                             ) : (

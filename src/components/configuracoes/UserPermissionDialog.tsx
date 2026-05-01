@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, AlertCircle, UserCog } from 'lucide-react';
+import { AlertCircle, UserCog } from 'lucide-react';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface Module {
   id: string;
   name: string;
@@ -223,7 +224,7 @@ export const UserPermissionDialog: React.FC<Props> = ({
     <div className="flex justify-end gap-2 w-full">
       <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
       <Button size="sm" onClick={handleSave} disabled={saving}>
-        {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+        {saving && <AkurisPulse size={16} className="mr-2" />}
         Salvar
       </Button>
     </div>
@@ -241,7 +242,7 @@ export const UserPermissionDialog: React.FC<Props> = ({
     >
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin" />
+          <AkurisPulse size={24} />
         </div>
       ) : (
         <div className="space-y-4">

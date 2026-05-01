@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Lock, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 import logoImage from '@/assets/akuris-logo.png';
 import { z } from 'zod';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 const buildPasswordSchema = (t: (k: string) => string) => z.object({
   password: z.string()
     .min(8, t('defineSenhaPage.reqMinChars'))
@@ -140,7 +141,7 @@ const DefinirSenha = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(216,60%,8%)] via-[hsl(216,45%,12%)] to-[hsl(216,60%,8%)]">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <AkurisPulse size={48} className="text-primary mx-auto" />
           <p className="mt-4 text-white/60">{t('defineSenhaPage.verifying')}</p>
         </div>
       </div>
@@ -240,7 +241,7 @@ const DefinirSenha = () => {
                   className="w-full h-11 font-semibold"
                   disabled={isLoading}
                 >
-                  {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('defineSenhaPage.saving')}</> : t('defineSenhaPage.submit')}
+                  {isLoading ? <><AkurisPulse size={16} className="mr-2" />{t('defineSenhaPage.saving')}</> : t('defineSenhaPage.submit')}
                 </Button>
               </form>
             </>

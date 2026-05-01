@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
-import { Upload, Building2, Loader2 } from 'lucide-react';
+import { Upload, Building2 } from 'lucide-react';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 export function CompanyLogoUpload() {
   const { user, company, refetchProfile, forceLogoUpdate } = useAuth();
   const [empresaId, setEmpresaId] = useState<string | null>(null);
@@ -152,7 +153,7 @@ export function CompanyLogoUpload() {
                 />
                 {uploading && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <AkurisPulse size={24} className="text-primary" />
                   </div>
                 )}
               </div>

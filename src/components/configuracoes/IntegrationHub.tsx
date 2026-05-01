@@ -5,16 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { 
-  Plug, 
-  CheckCircle2, 
-  XCircle, 
-  Info,
-  Loader2,
-  History,
-  Key,
-  Webhook
-} from 'lucide-react';
+import { Plug, CheckCircle2, XCircle, Info, History, Key, Webhook } from 'lucide-react';
 import { SlackConfigDialog } from './integrations/SlackConfigDialog';
 import { TeamsConfigDialog } from './integrations/TeamsConfigDialog';
 import { WebhooksConfigDialog } from './integrations/WebhooksConfigDialog';
@@ -24,6 +15,7 @@ import { IntegrationLogViewer } from './integrations/IntegrationLogViewer';
 import { ApiKeysManager } from './ApiKeysManager';
 import { InboundWebhooksManager } from './InboundWebhooksManager';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 // Logos inline SVG
 const SlackLogo = () => (
   <svg viewBox="0 0 127 127" className="w-8 h-8">
@@ -329,7 +321,7 @@ export function IntegrationHub() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <AkurisPulse size={32} className="text-muted-foreground" />
       </div>
     );
   }

@@ -3,10 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
-import { Loader2, Mail, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Mail, RefreshCw, ShieldCheck } from 'lucide-react';
 import logoImage from '@/assets/akuris-logo.png';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface MFAVerificationProps {
   userId: string;
   email: string;
@@ -149,7 +150,7 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
             disabled={isVerifying || code.length !== 6}
           >
             {isVerifying ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('mfaScreen.verifying')}</>
+              <><AkurisPulse size={16} className="mr-2" />{t('mfaScreen.verifying')}</>
             ) : (
               t('mfaScreen.verify')
             )}
@@ -162,7 +163,7 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
               className="text-sm text-primary hover:text-primary/80 disabled:text-white/30 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-1"
             >
               {isResending ? (
-                <><Loader2 className="w-3 h-3 animate-spin" /> {t('mfaScreen.resending')}</>
+                <><AkurisPulse size={12} /> {t('mfaScreen.resending')}</>
               ) : canResend ? (
                 <><RefreshCw className="w-3 h-3" /> {t('mfaScreen.resendCode')}</>
               ) : (

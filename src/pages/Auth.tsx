@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Eye, EyeOff, CheckCircle2, Loader2, Shield, BarChart3, FileCheck, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2, Shield, BarChart3, FileCheck, Mail, Lock } from 'lucide-react';
 import logoImage from '@/assets/akuris-logo.png';
 import { ForgotPasswordDialog } from '@/components/ForgotPasswordDialog';
 import { LanguageSelector } from '@/components/LanguageSelector';
@@ -16,6 +16,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
 
+import { AkurisPulse } from '@/components/ui/AkurisPulse';
 const Auth = () => {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
@@ -71,7 +72,7 @@ const Auth = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[hsl(230,25%,7%)]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+          <AkurisPulse size={48} />
           <p className="mt-4 text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
@@ -334,7 +335,7 @@ const Auth = () => {
                 {loginSuccess ? (
                   <><CheckCircle2 className="mr-2 h-4 w-4 text-green-400" />{t('auth.success')}</>
                 ) : isLoading ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('auth.signingIn')}</>
+                  <><AkurisPulse size={16} className="mr-2" />{t('auth.signingIn')}</>
                 ) : (
                   t('auth.signIn')
                 )}
