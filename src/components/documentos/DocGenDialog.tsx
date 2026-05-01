@@ -158,7 +158,7 @@ export const DocGenDialog: React.FC<DocGenDialogProps> = ({
       // Foco no input ao abrir
       setTimeout(() => inputRef.current?.focus(), 200);
     }
-  }, [open, frameworkName]);
+  }, [open, frameworkName, requirementContext]);
 
   // Auto scroll para última mensagem (rola só o container do chat).
   // Só rola automaticamente se o usuário já estava perto do fim — assim
