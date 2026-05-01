@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StatusBlocks, StatusBlocksLegend } from "./StatusBlocks";
+import { getScoreTextClass } from "@/lib/gap-analysis-tokens";
 
 interface CategoryData {
   categoria: string;
