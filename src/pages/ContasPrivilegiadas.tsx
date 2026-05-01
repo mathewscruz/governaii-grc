@@ -15,7 +15,8 @@ import { PageHeader } from '@/components/ui/page-header';
 import { DataTable } from '@/components/ui/data-table';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDateOnly } from '@/lib/date-utils';
-import { capitalizeText, getItemStatusColor } from '@/lib/text-utils';
+import { capitalizeText } from '@/lib/text-utils';
+import { resolveItemStatusTone } from '@/lib/status-tone';
 import { exportCSV } from '@/lib/csv-utils';
 import {
   DropdownMenu,
@@ -167,10 +168,9 @@ export default function ContasPrivilegiadas() {
     const Icon = config.icon;
 
     return (
-      <Badge className={`${getItemStatusColor(status)} flex items-center gap-1 whitespace-nowrap`}>
-        <Icon className="h-3 w-3" />
+      <StatusBadge size="sm" {...resolveItemStatusTone(status)} icon={<Icon className="h-3 w-3" strokeWidth={1.5} />}>
         {config.label}
-      </Badge>
+      </StatusBadge>
     );
   };
 

@@ -21,7 +21,9 @@ import AtivoDialog from '@/components/ativos/AtivoDialog';
 import ManutencaoDialog from '@/components/ativos/ManutencaoDialog';
 import TrilhaAuditoriaAtivos from '@/components/ativos/TrilhaAuditoriaAtivos';
 import { formatDateOnly } from '@/lib/date-utils';
-import { getCriticidadeColor, getItemStatusColor, formatStatus } from '@/lib/text-utils';
+import { formatStatus } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveCriticidadeTone, resolveItemStatusTone } from '@/lib/status-tone';
 import { logger } from '@/lib/logger';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -376,9 +378,9 @@ const Ativos = () => {
       label: 'Criticidade',
       sortable: true,
       render: (_: any, ativo: Ativo) => (
-        <Badge className={`${getCriticidadeColor(ativo.criticidade)} border whitespace-nowrap`}>
+        <StatusBadge size="sm" {...resolveCriticidadeTone(ativo.criticidade)}>
           {criticidades.find(c => c.value === ativo.criticidade)?.label || ativo.criticidade}
-        </Badge>
+        </StatusBadge>
       )
     },
     {
@@ -386,9 +388,9 @@ const Ativos = () => {
       label: 'Status',
       sortable: true,
       render: (_: any, ativo: Ativo) => (
-        <Badge className={`${getItemStatusColor(ativo.status)} border whitespace-nowrap`}>
+        <StatusBadge size="sm" {...resolveItemStatusTone(ativo.status)}>
           {formatStatus(ativo.status)}
-        </Badge>
+        </StatusBadge>
       )
     },
     {

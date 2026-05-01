@@ -32,7 +32,8 @@ import { useContratosStats } from '@/hooks/useContratosStats';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatDateOnly } from '@/lib/date-utils';
-import { formatStatus, getContratoStatusColor, getCriticidadeColor } from '@/lib/text-utils';
+import { formatStatus } from '@/lib/text-utils';
+import { resolveContratoStatusTone, resolveCriticidadeTone } from '@/lib/status-tone';
 
 interface Contrato {
   id: string;
@@ -226,17 +227,17 @@ export default function Contratos() {
 
   const getStatusBadge = (status: string) => {
     return (
-      <Badge className={`${getContratoStatusColor(status)} whitespace-nowrap`}>
+      <StatusBadge size="sm" {...resolveContratoStatusTone(status)}>
         {formatStatus(status)}
-      </Badge>
+      </StatusBadge>
     );
   };
 
   const getRiskBadge = (risk: string) => {
     return (
-      <Badge className={`${getCriticidadeColor(risk)} whitespace-nowrap`}>
+      <StatusBadge size="sm" {...resolveCriticidadeTone(risk)}>
         {formatStatus(risk)}
-      </Badge>
+      </StatusBadge>
     );
   };
 

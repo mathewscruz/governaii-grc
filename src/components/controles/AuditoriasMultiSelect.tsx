@@ -8,7 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { formatStatus, getAuditoriaTipoColor, getAuditoriaStatusColor } from '@/lib/text-utils';
+import { formatStatus } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveAuditoriaTipoTone, resolveAuditoriaStatusTone } from '@/lib/status-tone';
 
 interface Auditoria {
   id: string;
@@ -124,12 +126,12 @@ export function AuditoriasMultiSelect({
                         <div className="flex flex-col flex-1 min-w-0">
                           <span className="font-medium truncate">{auditoria.nome}</span>
                       <div className="flex items-center gap-2 mt-1">
-                            <Badge className={`text-xs border whitespace-nowrap ${getAuditoriaTipoColor(auditoria.tipo)}`}>
+                            <StatusBadge size="sm" {...resolveAuditoriaTipoTone(auditoria.tipo)}>
                               {formatStatus(auditoria.tipo)}
-                            </Badge>
-                            <Badge className={`text-xs border whitespace-nowrap ${getAuditoriaStatusColor(auditoria.status)}`}>
+                            </StatusBadge>
+                            <StatusBadge size="sm" {...resolveAuditoriaStatusTone(auditoria.status)}>
                               {formatStatus(auditoria.status)}
-                            </Badge>
+                            </StatusBadge>
                           </div>
                         </div>
                       </div>

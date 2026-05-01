@@ -40,7 +40,9 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { formatStatus, getCriticidadeColor, getWorkflowStatusColor } from '@/lib/text-utils';
+import { formatStatus } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveCriticidadeTone, resolveWorkflowStatusTone } from '@/lib/status-tone';
 import { formatDateOnly } from '@/lib/date-utils';
 import { IncidenteDialog } from '@/components/incidentes/IncidenteDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -240,9 +242,9 @@ export default function Incidentes() {
       label: "Criticidade",
       sortable: true,
       render: (_v: any, item: Incidente) => (
-        <Badge className={`${getCriticidadeColor(item.criticidade)} whitespace-nowrap`}>
+        <StatusBadge size="sm" {...resolveCriticidadeTone(item.criticidade)}>
           {formatStatus(item.criticidade)}
-        </Badge>
+        </StatusBadge>
       )
     },
     {
@@ -253,10 +255,9 @@ export default function Incidentes() {
         const StatusIcon = getStatusIcon(item.status);
         return (
           <div className="flex items-center gap-2">
-            <StatusIcon className="h-4 w-4" />
-            <Badge className={`${getWorkflowStatusColor(item.status)} whitespace-nowrap`}>
+            <StatusBadge size="sm" {...resolveWorkflowStatusTone(item.status)} icon={<StatusIcon className="h-3 w-3" strokeWidth={1.5} />}>
               {formatStatus(item.status)}
-            </Badge>
+            </StatusBadge>
           </div>
         );
       }

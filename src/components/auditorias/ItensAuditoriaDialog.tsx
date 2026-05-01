@@ -33,7 +33,9 @@ import { ItemAuditoriaDetalheDialog } from "./ItemAuditoriaDetalheDialog";
 import { ImportarControlesDialog } from "./ImportarControlesDialog";
 import { useUsuariosEmpresa } from "@/hooks/useAuditoriaData";
 import { formatDateOnly } from "@/lib/date-utils";
-import { getWorkflowStatusColor, getCriticidadeColor, formatStatus } from "@/lib/text-utils";
+import { formatStatus } from "@/lib/text-utils";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { resolveWorkflowStatusTone, resolveAuditoriaPrioridadeTone } from "@/lib/status-tone";
 
 interface ItensAuditoriaDialogProps {
   open: boolean;
@@ -213,17 +215,17 @@ export function ItensAuditoriaDialog({
 
   const getStatusBadge = (status: string) => {
     return (
-      <Badge className={`${getWorkflowStatusColor(status)} border whitespace-nowrap`}>
+      <StatusBadge size="sm" {...resolveWorkflowStatusTone(status)}>
         {formatStatus(status)}
-      </Badge>
+      </StatusBadge>
     );
   };
 
   const getPrioridadeBadge = (prioridade: string) => {
     return (
-      <Badge className={`${getCriticidadeColor(prioridade)} border whitespace-nowrap`}>
+      <StatusBadge size="sm" {...resolveAuditoriaPrioridadeTone(prioridade)}>
         {formatStatus(prioridade)}
-      </Badge>
+      </StatusBadge>
     );
   };
 

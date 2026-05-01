@@ -39,7 +39,9 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { capitalizeText, formatStatus, getCriticidadeColor, getItemStatusColor, getControleTipoColor } from '@/lib/text-utils';
+import { capitalizeText, formatStatus } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveCriticidadeTone, resolveControleStatusTone, resolveControleTipoTone } from '@/lib/status-tone';
 import { formatDateOnly } from '@/lib/date-utils';
 
 interface Controle {
@@ -354,17 +356,17 @@ export default function ControlesContent() {
 
   const getStatusBadge = (status: string) => {
     return (
-      <Badge className={`${getItemStatusColor(status)} whitespace-nowrap`}>
+      <StatusBadge size="sm" {...resolveControleStatusTone(status)}>
         {formatStatus(status)}
-      </Badge>
+      </StatusBadge>
     );
   };
 
   const getCriticidadeBadge = (criticidade: string) => {
     return (
-      <Badge className={`${getCriticidadeColor(criticidade)} whitespace-nowrap`}>
+      <StatusBadge size="sm" {...resolveCriticidadeTone(criticidade)}>
         {formatStatus(criticidade)}
-      </Badge>
+      </StatusBadge>
     );
   };
 
@@ -434,9 +436,9 @@ export default function ControlesContent() {
       label: 'Tipo',
       sortable: true,
       render: (value: any, controle: Controle) => (
-        <Badge className={`${getControleTipoColor(controle.tipo)} whitespace-nowrap`}>
+        <StatusBadge size="sm" {...resolveControleTipoTone(controle.tipo)}>
           {capitalizeText(controle.tipo)}
-        </Badge>
+        </StatusBadge>
       )
     },
     {

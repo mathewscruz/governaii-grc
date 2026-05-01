@@ -16,7 +16,9 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Shield } from 'lucide-react';
 import { toast } from "sonner";
-import { formatStatus, getControleTipoColor, getItemStatusColor, getCriticidadeColor } from "@/lib/text-utils";
+import { formatStatus } from "@/lib/text-utils";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { resolveCriticidadeTone, resolveControleStatusTone, resolveControleTipoTone } from "@/lib/status-tone";
 
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
 interface ImportarControlesDialogProps {
@@ -129,9 +131,9 @@ export function ImportarControlesDialog({
 
   const getCriticidadeBadge = (criticidade: string) => {
     return (
-      <Badge className={`text-xs border whitespace-nowrap ${getCriticidadeColor(criticidade)}`}>
+      <StatusBadge size="sm" {...resolveCriticidadeTone(criticidade)}>
         {formatStatus(criticidade)}
-      </Badge>
+      </StatusBadge>
     );
   };
 
@@ -200,12 +202,12 @@ export function ImportarControlesDialog({
                         </p>
                       )}
                       <div className="flex gap-2 mt-1">
-                        <Badge className={`text-xs border whitespace-nowrap ${getControleTipoColor(controle.tipo)}`}>
+                        <StatusBadge size="sm" {...resolveControleTipoTone(controle.tipo)}>
                           {formatStatus(controle.tipo)}
-                        </Badge>
-                        <Badge className={`text-xs border whitespace-nowrap ${getItemStatusColor(controle.status)}`}>
+                        </StatusBadge>
+                        <StatusBadge size="sm" {...resolveControleStatusTone(controle.status)}>
                           {formatStatus(controle.status)}
-                        </Badge>
+                        </StatusBadge>
                       </div>
                     </div>
                   </div>

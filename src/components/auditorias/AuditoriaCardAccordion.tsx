@@ -17,7 +17,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatStatus, getAuditoriaStatusColor, getAuditoriaPrioridadeColor } from "@/lib/text-utils";
+import { formatStatus } from "@/lib/text-utils";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { resolveAuditoriaStatusTone, resolveAuditoriaPrioridadeTone } from "@/lib/status-tone";
 import { formatDateOnly } from "@/lib/date-utils";
 
 interface AuditoriaCardAccordionProps {
@@ -56,16 +58,12 @@ export function AuditoriaCardAccordion({
             <Badge variant="outline" className="text-[11px] py-0 h-5 px-2 whitespace-nowrap">
               {formatStatus(auditoria.tipo)}
             </Badge>
-            <Badge 
-              className={`text-[11px] py-0 h-5 px-2 whitespace-nowrap border ${getAuditoriaStatusColor(auditoria.status)}`}
-            >
+            <StatusBadge size="sm" {...resolveAuditoriaStatusTone(auditoria.status)}>
               {formatStatus(auditoria.status)}
-            </Badge>
-            <Badge 
-              className={`text-[11px] py-0 h-5 px-2 whitespace-nowrap border ${getAuditoriaPrioridadeColor(auditoria.prioridade)}`}
-            >
+            </StatusBadge>
+            <StatusBadge size="sm" {...resolveAuditoriaPrioridadeTone(auditoria.prioridade)}>
               {formatStatus(auditoria.prioridade)}
-            </Badge>
+            </StatusBadge>
             
             {/* Botão Itens com progresso */}
             <Button

@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { resolveRevisaoTone } from '@/lib/status-tone';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -38,7 +36,9 @@ import { logger } from '@/lib/logger';
 import { useDocumentosStats } from '@/hooks/useDocumentosStats';
 import { PageSkeleton } from '@/components/ui/page-skeleton';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { capitalizeText, getItemStatusColor, getTipoColor, getClassificacaoColor, formatStatus } from '@/lib/text-utils';
+import { capitalizeText, formatStatus } from '@/lib/text-utils';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { resolveItemStatusTone, resolveTipoDocumentoTone, resolveClassificacaoTone, resolveRevisaoTone } from '@/lib/status-tone';
 import { formatDateOnly } from '@/lib/date-utils';
 
 interface Documento {
@@ -380,9 +380,9 @@ export default function Documentos() {
 
   const getTipoBadge = (tipo: string) => {
     return (
-      <Badge className={`border ${getTipoColor(tipo)} whitespace-nowrap`}>
+      <StatusBadge size="sm" {...resolveTipoDocumentoTone(tipo)}>
         {capitalizeText(tipo)}
-      </Badge>
+      </StatusBadge>
     );
   };
 
@@ -684,17 +684,14 @@ export default function Documentos() {
                       </TableCell>
                       <TableCell>{getTipoBadge(documento.tipo)}</TableCell>
                       <TableCell>
-                        <Badge 
-                          variant="secondary" 
-                          className={`border ${getClassificacaoColor(documento.classificacao || 'interna')} whitespace-nowrap`}
-                        >
+                        <StatusBadge size="sm" {...resolveClassificacaoTone(documento.classificacao || 'interna')}>
                           {capitalizeText(documento.classificacao || 'interna')}
-                        </Badge>
+                        </StatusBadge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={`${getItemStatusColor(documento.status)} border whitespace-nowrap`}>
+                        <StatusBadge size="sm" {...resolveItemStatusTone(documento.status)}>
                           {formatStatus(documento.status)}
-                        </Badge>
+                        </StatusBadge>
                       </TableCell>
                       <TableCell>v{documento.versao}</TableCell>
                       <TableCell>
