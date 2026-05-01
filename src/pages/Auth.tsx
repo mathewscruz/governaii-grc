@@ -69,6 +69,10 @@ const Auth = () => {
 
   if (!loading && user && !mfaInProgressRef.current) return <Navigate to="/dashboard" replace />;
 
+  if (loginSuccess) {
+    return <LoadingOverlay />;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[hsl(230,25%,7%)]">
