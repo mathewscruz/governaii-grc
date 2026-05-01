@@ -1,109 +1,149 @@
-## Diagnóstico
 
-Validei o módulo Gap Analysis e mapeei o fluxo de documentos em todo o app. Três problemas concretos:
+# Refatoração Visual — Módulo Gap Analysis
 
-### 1. Popup do Consultor IA cortando conteúdo
-- `AIRecommendationsCard.tsx` usa `max-w-2xl` (≈672px). Em telas como o print enviado, badges ("Médio", "Alto") e textos longos vazam para a direita.
-- Faltam responsividade real (sem `sm:` / `lg:`) e densidade interna ajustada.
+## Diagnóstico (o que encontrei revisando 30+ arquivos)
 
-### 2. Fluxo de documentos fragmentado
-Hoje o usuário tem que viajar entre 3 lugares para um mesmo objetivo:
+### 1. Cores fora da identidade Akuris
+O design system é **Violet (#7552FF) + Navy + neutros**, com tokens semânticos `success/warning/destructive/info` e charts via `chart-1..5`. O módulo usa **cores cruas Tailwind** em dezenas de pontos:
+- `FrameworkCard.tsx`: `bg-blue-100`, `bg-emerald-100`, `bg-amber-100`, `bg-purple-100`, `bg-red-100`, `text-emerald-600` etc. (categorias e esforço)
+- `CategoryBarChart.tsx`: barras em `bg-blue-200..600` (azul fora da paleta)
+- `AreaBarChart.tsx`: 5 tons de verde hardcoded (`#059669`, `#10b981`…)
+- `ScoreEvolutionChart.tsx`: linha em `#8b5cf6` hardcoded
+- `GenericScoreDashboard.tsx` (donut): `#22c55e/#3b82f6/#f59e0b/#ef4444` hardcoded
+- `StatusBlocks.tsx`: `bg-emerald-500 / bg-amber-400 / bg-red-500 / bg-blue-400`
+- `FrameworkCard` (status pills): `bg-emerald-100 dark:bg-emerald-900/30…`
+- `AdherenceAssessmentView.tsx`: `bg-green-100 / bg-blue-100 / bg-yellow-100 / bg-red-100` para badges (deveria usar `<Badge variant>`)
+- `AIRecommendationsCard.tsx`: botão `bg-purple-600` hardcoded em vez de `bg-primary`
+- `RequirementDetailDialog`: `text-amber-500`, `bg-emerald-500/10`, `text-blue-500`, `bg-chart-2/chart-4` (mistura tokens novos com cores cruas)
+- `AdherenceAssessmentView`: `text-blue-600` para "Processando…"
 
-```text
-Detalhe do requisito (dialog)
-  └─ Vê orientação ........................... OK
-  └─ Anexa evidência (drag&drop) ............. OK, mas SEM validação por IA
-  └─ Quer gerar política?
-       Fechar dialog → header → "Gerar Política" → DocGenDialog (sem contexto do requisito)
-  └─ Já tem o documento e quer validar aderência?
-       Fechar dialog → aba "Análise de Documentos (IA)" → criar assessment do framework inteiro
-```
+**Resultado**: o módulo "destoa" do resto do sistema — ele tem cara de "AI default" (azul/verde Tailwind crus), não de Akuris (violet/navy).
 
-A IA de validação **existe** (`analyze-document-adherence`) mas só atua a nível de framework, nunca a nível de requisito/evidência individual.
+### 2. Ícones — não seguem o sistema Akuris
+A regra do projeto (memo `Akuris Icon System`) exige:
+- **Stroke 1.5** (assinatura visual) — `FrameworkLogos.tsx` segue, mas o resto usa default 2.
+- **Catálogo `@/components/icons`** para conceitos (IconEdit, IconSuccess, etc.).
+- **Ícones proprietários para módulos GRC** — existe `GapAnalysisIcon` em `@/components/icons/modules`, mas o módulo continua usando `Activity`, `Shield` (Lucide) no header e em vários cards.
 
-### 3. DocGen espalhado e inconsistente
-- `src/pages/Documentos.tsx` → botão "**DocGen**"
-- `src/pages/GapAnalysisFrameworkDetail.tsx` → botão "**Gerar Política**" (nome diferente!)
-- `LandingPage.tsx` → texto fala em "Geração de documentos com IA (DocGen)"
-- O componente é único (`DocGenDialog`) mas é instanciado solto em cada página, sem hook ou provider compartilhado, e em cada lugar passa props diferentes.
+Inconsistências de ícones detectadas:
+- Header da listagem usa `Activity` (Lucide), deveria usar `GapAnalysisIcon`.
+- `WelcomeHero` mistura `Sparkles, Search, Brain, BarChart3` (todos Lucide crus).
+- `RequirementDetailDialog` importa **27 ícones Lucide diferentes** numa só linha (CheckSquare, FileCheck, ScanSearch, Brain, Sparkles, Shield…) — sem usar o catálogo.
+- `FrameworkOnboarding` importa 16 ícones Lucide para "ilustrar" cada framework — duplica o que já está em `FrameworkLogos.tsx`.
+- `Brain` (cérebro) é usado para "Gerador de Documentos IA" — visual genérico de IA, fora da identidade.
 
----
+### 3. Componentes duplicados / órfãos (código morto)
+Confirmado por busca de imports: **7 componentes não são importados em lugar nenhum**:
+- `AssessmentDialog.tsx` (187 linhas)
+- `AssignmentDialog.tsx` (253 linhas)
+- `EvidenceDialog.tsx` (271 linhas)
+- `EvidenceUpload.tsx` (211 linhas)
+- `RequirementDialog.tsx` (378 linhas)
+- `RequirementsManager.tsx` (224 linhas)
+- `FrameworkDialog.tsx` (157 linhas)
 
-## O que será entregue
+**Total: ~1.700 linhas de código morto** — vestígios de versões antigas que foram substituídas pelo `RequirementDetailDialog` unificado e pelos templates globais. Manter aumenta confusão e risco.
 
-### A. Correção visual do popup Consultor IA
-- Aumentar para `max-w-3xl lg:max-w-4xl` com `w-[95vw]`.
-- Reduzir paddings internos e ajustar quebra de texto para não cortar badges.
-- Score atual com formatação `toFixed(1)%` (hoje aparece `47.25806451612903%`).
+### 4. Popup principal (RequirementDetailDialog) — campos OK, mas estrutura confusa
+**Estrutura atual**: split 40/60, painel esquerdo com orientação IA, painel direito com formulário em `CollapsibleSection`s.
 
-### B. Centralização do DocGen
-1. Criar `src/contexts/DocGenContext.tsx` com provider global e hook `useDocGen()`:
-   - `openDocGen({ frameworkId?, frameworkName?, requirementCode?, requirementTitle?, mode: 'generate' | 'validate' })`
-   - Um único `<DocGenDialog>` montado no `App.tsx`, eliminando instâncias duplicadas.
-2. Renomear o botão e o título em todo o sistema para **"Gerador de Documentos (IA)"** — único nome, único ícone (`Brain`).
-   - Atualiza `Documentos.tsx`, `GapAnalysisFrameworkDetail.tsx`, `LandingPage.tsx`.
-3. `DocGenDialog` ganha modo `validate`: ao invés de gerar, envia o documento existente para o validador (`analyze-document-adherence`) e mostra o resultado na mesma janela. O usuário não precisa mais ir para outra aba.
+Problemas identificados:
+- **Mistura de tokens**: usa `text-chart-2` / `text-chart-4` (tokens) lado a lado com `text-amber-500` / `bg-emerald-500/10` (crus).
+- **27 ícones Lucide importados** — sem padrão semântico.
+- Hub de evidências (3 ações) usa `Brain`, `Upload`, `ExternalLink` — ok funcionalmente, mas ícones deveriam vir do catálogo.
+- `ScanSearch` (Lucide) para "Validar com IA" — substituível por `IconSuccess` ou ícone proprietário.
+- Hint "Sparkles" no rodapé — usar ícone Akuris.
+- Verdict da validação (`bg-emerald-500/10 text-emerald-700 border-emerald-200`) deveria virar `Badge variant="success/warning/destructive"`.
+- `prompt()` nativo do browser para "Adicionar link" — quebra UX. Substituir por mini-dialog Akuris.
+- Plano de Ação: alerta usa `text-amber-500` cru.
 
-### C. Hub de documentos dentro do dialog do requisito
-No `RequirementDetailDialog`, na seção "Evidências", adicionar 3 ações claras que cobrem 100% dos cenários:
+### 5. Gráficos com tokens errados
+- `CategoryBarChart`: usa só azul, sem distinção semântica de score (igual a heatmap monocromático).
+- `AreaBarChart`: 5 tons de verde — sem indicação visual de "ruim" (vermelho).
+- `FrameworkComparisonRadar`: `fillOpacity={0.5}` muito chapado, falta gradient sutil da identidade.
+- `ScoreEvolutionChart`: linha `#8b5cf6` hardcoded em vez de `hsl(var(--primary))`.
+- `GenericScoreDashboard` Donut: cores cruas (`#22c55e/#3b82f6/#f59e0b/#ef4444`).
 
-```text
-┌──────────────────────────────────────────────────────┐
-│  Como você quer trabalhar a evidência?               │
-│                                                       │
-│  [📝 Gerar com IA]  [🔍 Validar existente]  [📎 Anexar]│
-│                                                       │
-│  Após anexar: "Validar aderência com IA" automático  │
-└──────────────────────────────────────────────────────┘
-```
-
-- **Gerar com IA**: abre o DocGen já com contexto (`requirementCode`, `requirementTitle`, framework). O documento gerado é salvo e automaticamente vinculado como evidência do requisito.
-- **Validar existente**: abre o DocGen em modo `validate`, recebe upload, chama `analyze-document-adherence` filtrando pelo requisito atual e devolve um veredito (Conforme / Parcial / Não conforme) + justificativa. Se o usuário aceitar, o doc vira evidência e o status do requisito é sugerido.
-- **Anexar diretamente**: fluxo atual + novo botão "Validar com IA" no card de cada arquivo anexado, que reaproveita a mesma função.
-
-### D. Edge function de validação por requisito
-Criar (ou estender `analyze-document-adherence`) uma rota `analyze-evidence-against-requirement` que recebe `{ requirementId, fileUrl, empresaId }` e devolve `{ verdict, score, justification }`. Consome 1 crédito de IA via `consume_ai_credit`, retorna 402 se esgotado, log com `logger`.
-
-### E. Limpeza e consistência
-- Remover botão "Gerar Política" do header do framework — agora vive no fluxo do requisito (onde faz sentido) e no botão global do DocGen.
-- Remover textos duplicados ("DocGen" vs "Gerar Política") da landing.
-- Atualizar memória do projeto registrando "DocGen é o nome único e o ponto único de entrada".
-
----
-
-## Detalhes técnicos
-
-**Arquivos novos**
-- `src/contexts/DocGenContext.tsx` — provider + hook + render único do dialog.
-- `supabase/functions/analyze-evidence-against-requirement/index.ts` — IA por requisito, com `consume_ai_credit`, 402 e CORS padrão.
-
-**Arquivos editados**
-- `src/components/gap-analysis/AIRecommendationsCard.tsx` — width, formatação score.
-- `src/components/documentos/DocGenDialog.tsx` — aceita `mode: 'generate' | 'validate'` e `requirementContext`. Em modo validate, mostra área de upload + resultado da IA.
-- `src/components/gap-analysis/dialogs/RequirementDetailDialog.tsx` — adiciona o "hub" de 3 ações na seção Evidências e botão "Validar com IA" por arquivo.
-- `src/pages/GapAnalysisFrameworkDetail.tsx` — remove botão "Gerar Política" do header (movido para dentro do fluxo do requisito).
-- `src/pages/Documentos.tsx` — botão renomeado para "Gerador de Documentos (IA)".
-- `src/App.tsx` — wrap com `<DocGenProvider>`.
-
-**Schema / DB**
-Sem migration nova nesta sprint. Reaproveita:
-- `gap_analysis_evaluations.evidence_files` (jsonb) já guarda anexos.
-- `gap_analysis_adherence_assessments` continua para análise full-framework.
-- Adicionamos um campo opcional `ai_validation` dentro de cada `evidence_file` (jsonb, livre — não exige migration).
-
-**Segurança**
-- Edge function nova com `verify_jwt = true`.
-- Toda query Supabase no front com `.eq('empresa_id', empresaId)`.
-- `consume_ai_credit` antes de qualquer chamada à Lovable AI; 402 surfaceado via `invokeEdgeFunction`.
-
-**Telemetria/Logging**
-- `logger.debug` nos pontos de decisão do hub.
-- `logger.error` com `{ error: e instanceof Error ? e.message : String(e) }`.
+### 6. Outras inconsistências visuais
+- `AIRecommendationsButton`: pílula roxa flutuante (`bg-purple-600`) — destoa do resto. Header tem 4 botões diferentes (`AI`, `DocGen`, `Tour`, `Exportar`) sem hierarquia clara.
+- `WelcomeHero` usa `bg-gradient-to-br from-primary/5 via-background to-accent/5` (ok) mas badges/ícones internos não seguem.
+- `JourneyProgressBar`: usa tokens `chart-2/chart-4` (ok) — bom exemplo a manter.
+- `CategoryStatusCards`: `text-emerald-600 / text-amber-600 / text-red-600` cru.
+- `RemediationTab`: uso correto de `Badge variant="success/warning/destructive"` — bom padrão a replicar.
 
 ---
 
-## Resultado para o usuário
+## Plano de Refatoração
 
-Antes: 3 telas, 2 nomes diferentes ("DocGen" / "Gerar Política"), sem IA validando evidência individual.
+### Sprint 1 — Padronização de Cores (alta prioridade visual)
+1. **Centralizar paleta de status** em um helper `src/lib/gap-analysis-tokens.ts`:
+   - `STATUS_COLORS_TOKEN` mapeia `conforme/parcial/nao_conforme/nao_aplicavel/nao_avaliado` → tokens semânticos (`success/warning/destructive/info/muted`).
+   - `getScoreColor(score, max)` retorna `hsl(var(--success))` / `--warning` / `--destructive` / `--primary`.
+   - `getScoreVariant(score, max)` retorna `'success' | 'warning' | 'destructive' | 'info'` para Badges.
+2. **Substituir cores cruas** em todos os componentes do módulo:
+   - `FrameworkCard`, `CategoryStatusCards`, `StatusBlocks`, `AdherenceAssessmentView`, `RequirementDetailDialog` (verdicts), `AIRecommendationsCard` (botão `bg-primary`), `JourneyProgressBar` (já está ok, manter).
+3. **Categorias** (Segurança/Privacidade/Governança/Qualidade) → mover para tokens neutros + `--primary` (sem azul/verde/amarelo/roxo cru). Manter ícones diferenciando.
 
-Depois: **uma janela** (detalhe do requisito) onde, em uma decisão de 1 clique, ele Gera, Valida ou Anexa — e a IA confirma se a evidência atende. Em todo o app, o gerador se chama **"Gerador de Documentos (IA)"** e abre do mesmo lugar.
+### Sprint 2 — Sistema de Ícones Akuris
+1. **Header do módulo** usa `GapAnalysisIcon` proprietário (em `PageHeader` icon prop ou ao lado do título).
+2. **Migrar ícones Lucide para catálogo** (`@/components/icons`) onde aplicável:
+   - `Search → IconSearch`, `X → IconClose`, `Trash2 → IconDelete`, `Plus → IconAdd`, `RefreshCw → IconRefresh`, `Upload → IconUpload`, `ExternalLink → IconExternal`, `FileText → IconFile`, `User → IconUser`, `Calendar → IconCalendar`, `CheckCircle2 → IconSuccess`, `AlertTriangle → IconWarning`.
+3. **Stroke 1.5** em todos os Lucide remanescentes do módulo (props `strokeWidth={1.5}` ou usar wrapper `<Icon as={...} />`).
+4. **`FrameworkLogos.tsx`**: revisar paleta de cores para usar `text-primary / text-chart-1..5` em vez de `text-blue-700 / text-green-700` etc.
+5. **`FrameworkOnboarding`**: descartar import de 16 ícones Lucide e reutilizar `FrameworkLogo` (já existe).
+
+### Sprint 3 — Limpeza de Código Morto
+Remover (após confirmar via grep que nada importa):
+- `AssessmentDialog.tsx`
+- `AssignmentDialog.tsx`
+- `EvidenceDialog.tsx`
+- `EvidenceUpload.tsx`
+- `RequirementDialog.tsx`
+- `RequirementsManager.tsx`
+- `FrameworkDialog.tsx`
+
+**Ganho**: -1.700 linhas, redução de superfície de manutenção.
+
+### Sprint 4 — Refinamento de Gráficos
+1. **Donut do Score Geral** (`GenericScoreDashboard`): cores via tokens (`hsl(var(--success/warning/destructive/primary))`), animação de "fill" suave.
+2. **`CategoryBarChart`**: gradiente semântico (vermelho→amarelo→verde) em vez de mono-azul. Cor por score.
+3. **`AreaBarChart`**: usar paleta semântica (não só verde). `--destructive` quando score < 40, `--warning` 40-60, `--success` > 60.
+4. **`ScoreEvolutionChart`**: linha em `hsl(var(--primary))`, dots em `hsl(var(--primary-glow))`.
+5. **`FrameworkComparisonRadar`**: usar `--gradient-primary` (variável CSS Akuris) com `fillOpacity` 0.3, stroke `hsl(var(--primary))`.
+6. **`StatusBlocks`** (heatmap de quadradinhos): cores via tokens.
+
+### Sprint 5 — Refinamento do Popup do Requisito
+1. **Substituir `prompt()` nativo** por mini-dialog Akuris para "Adicionar link" (campo URL + nome).
+2. **Verdict de validação IA** vira `<Badge variant="success/warning/destructive" />` + ícone semântico do catálogo, sem cores cruas.
+3. **Hub de 3 ações**: ícones `IconUpload / IconExternal` do catálogo; botão "Gerar com IA" mantém ícone `Brain` mas com cor `--primary`.
+4. **Header do dialog**: ícone `GapAnalysisIcon` proprietário em vez de `Shield`.
+5. **Hint "Sparkles" no rodapé**: substituir por `IconInfo` do catálogo.
+6. **Diagnóstico Rápido**: botões "Sim/Parcial/Não" usam `Badge variant` em vez de cores cruas (`bg-chart-2`, `bg-chart-4`).
+7. **Alerta "Requisito não conforme"** no Plano de Ação: trocar `text-amber-500` cru por `IconWarning` do catálogo.
+
+### Sprint 6 — Ajustes Finos
+1. **Header da página de detalhe**: agrupar 4 botões (`AI`, `DocGen`, `Tour`, `Exportar`) com hierarquia — botão primário `Avaliar com IA` (atual round purple), secundários em outline.
+2. **`AIRecommendationsButton`**: trocar `bg-purple-600` por `bg-primary` (já é violet).
+3. **Pílulas de status** no `FrameworkCard`: usar `Badge variant` consistente.
+4. **`AdherenceAssessmentView`**: badges de status/resultado viram `<Badge variant>`.
+5. **`WelcomeHero`**: ícone `Sparkles` → `IconInfo` ou ícone Akuris; passos numerados com `--primary`.
+6. **`CategoryStatusCards`** (% no canto): cor via `getScoreColor` token.
+
+---
+
+## Resumo do Impacto
+
+| Métrica | Antes | Depois |
+|---|---|---|
+| Cores cruas Tailwind | ~80 ocorrências | 0 |
+| Lucide direto p/ conceitos | 30+ pontos | catálogo Akuris |
+| Componentes órfãos | 7 (~1.700 linhas) | removidos |
+| Stroke 1.5 (assinatura) | só `FrameworkLogos` | módulo todo |
+| Ícone proprietário do módulo | não usado | usado em header + dialog |
+| Campos do popup | OK | OK + UX refinada (sem prompt nativo) |
+| Cores de gráfico | mono/cruas | gradiente semântico via tokens |
+
+## Ordem sugerida de execução
+Sprint 1 (cores) → Sprint 3 (limpeza, rápido) → Sprint 2 (ícones) → Sprint 4 (gráficos) → Sprint 5 (popup) → Sprint 6 (refinos).
+
+Aprovando, executo todos os sprints em sequência ou posso pausar para feedback após cada um — me diga sua preferência.
