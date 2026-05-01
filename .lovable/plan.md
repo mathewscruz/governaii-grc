@@ -1,88 +1,75 @@
-Vou atacar as 3 frentes em paralelo. Tudo direto, sem mexer em lógica de dados — só visual/navegação.
+## AkurisPulse — Loader único do sistema
 
-## 1. Auditoria e correção de ícones inconsistentes
+Adotar `AkurisPulse` como o **único padrão de carregamento** em toda a aplicação. Conforme escolhido, vamos substituir **tudo**: Suspense fallbacks, spinners de botão, skeletons estruturais e loaders locais de listas/cards.
 
-### Conflitos confirmados na sidebar (`AppSidebar.tsx`)
+---
 
-Mesmo ícone usado para conceitos diferentes — usuário não consegue distinguir:
+### 1. Componentes base (novos)
 
-| Ícone Lucide | Usado para | Problema |
-|---|---|---|
-| `CheckSquare` | Aceite de Riscos · Revisão de Acessos · grupo Compliance | 3 conceitos diferentes |
-| `Users` | Contas Privilegiadas | Conflita com ícone semântico genérico de usuários |
-| `RiscosIcon` | Grupo "Gestão de Riscos" **e** subitem "Riscos" | Pai e filho idênticos |
-| `AtivosIcon` | Grupo "Gestão de Ativos" **e** subitem "Ativos" | Pai e filho idênticos |
-| `Shield` / `ShieldAlert` | Privacidade vs. Continuidade | Quase iguais visualmente |
-| `Lock` | Grupo Segurança | Genérico, sem identidade |
+**`src/components/ui/AkurisPulse.tsx`** — símbolo Akuris (path "A") em `#8B78E8` com 3 anéis pulsantes (delays `0s`, `0.8s`, `1.6s`) usando o keyframe `akuris-ring-expand`. Props: `size?: number` (default 80). SVG com `overflow="visible"` para os anéis não serem cortados. Sem libs externas, só CSS.
 
-### Mudanças propostas
+**`src/components/ui/LoadingOverlay.tsx`** — overlay full-screen `fixed inset-0 z-50` com fundo `#06060e` e `<AkurisPulse />` centralizado. Inclui `role="status"` + `aria-label="Carregando"` para acessibilidade.
 
-- **Aceite de Riscos** → trocar `CheckSquare` por `ShieldCheck` (proteção aceita)
-- **Revisão de Acessos** → trocar `CheckSquare` por `UserCheck` (validação de acessos)
-- **Grupo Compliance** → trocar `CheckSquare` por `BadgeCheck` (selo de conformidade)
-- **Contas Privilegiadas** → trocar `Users` por `KeyRound` (já usado para Chaves — mover Chaves para `Key`) **OU** usar `UserCog` (administração de usuários)
-- **Grupos pai com subitem de mesmo nome**: o ícone do grupo pai vira o ícone proprietário, o subitem "principal" recebe variação Lucide consistente. Solução mais limpa: no estado **expandido**, esconder o ícone do subitem pai redundante (o "Riscos"/"Ativos" raiz exibe só o texto, ganhando espaço). Mantém ícone proprietário no grupo.
-- **Continuidade de Negócios** → trocar `ShieldAlert` por `LifeBuoy` (metáfora universal de continuidade/recuperação)
-- **Grupo Segurança** → manter `Lock` (semanticamente correto e único nesse contexto)
+**`src/index.css`** — adicionar:
+```css
+@keyframes akuris-ring-expand {
+  0%   { transform: scale(0.88); opacity: 0.72; }
+  100% { transform: scale(2.1);  opacity: 0;    }
+}
+```
 
-### Ícones genéricos de IA (21 ocorrências)
+---
 
-Substituir `Sparkles`, `Brain`, `Bot`, `Cpu` por `AkurisAIIcon` em todos os contextos de IA do produto, mantendo Lucide apenas onde NÃO é IA (ex: `Sparkles` em "Mais popular" do plano comercial, `Cpu` em métrica de hardware/tokens).
+### 2. Substituições globais (na ordem)
 
-Arquivos prioritários a atualizar:
-- `src/components/riscos/TratamentoForm.tsx` (4 usos — botão "Sugerir tratamento com IA")
-- `src/pages/Documentos.tsx` + `src/components/documentos/DocGenDialog.tsx` (geração de documentos)
-- `src/components/configuracoes/CreditosIAManager.tsx` + `FinanceiroIATab.tsx` (dashboards de IA)
-- `src/components/configuracoes/EmailCampanhaEditor.tsx`, `ChangelogEntryDialog.tsx`, `GerenciamentoChangelog.tsx`
-- `src/components/due-diligence/TemplatesManager.tsx`
-- `src/pages/Configuracoes.tsx` (3 usos)
-- `src/pages/Assessment.tsx`, `src/components/onboarding/OnboardingWizard.tsx`, `src/components/ChangelogPopover.tsx`
+**a) `RouteFallback` → `LoadingOverlay`**
+- `src/components/ui/route-fallback.tsx`: re-exportar `LoadingOverlay` como `RouteFallback` (mantém os 16+ pontos de uso em `App.tsx` funcionando sem editar cada `<Route>`).
 
-**Manter Lucide (NÃO trocar):**
-- `src/pages/Planos.tsx` linha 82 — "Mais popular" (badge comercial, não IA)
-- `src/components/configuracoes/GerenciamentoPlanos.tsx` — mesma razão
-- `src/components/configuracoes/FinanceiroIATab.tsx` linha 300 (`Cpu`) — métrica de hardware
+**b) Skeletons estruturais → `LoadingOverlay` (página) / `<AkurisPulse />` (seção)**
+- `src/components/ui/page-skeleton.tsx`: substituir o conteúdo por `<LoadingOverlay />` (mantém a API, todos os pontos de uso continuam válidos).
+- `src/components/ui/module-loading-skeleton.tsx`: idem.
+- `src/components/ui/skeleton.tsx`: transformar `<Skeleton />` em wrapper que centraliza um `<AkurisPulse size={28} />` no espaço onde antes desenhava a barra cinza. Mantém className/dimensões para não quebrar o layout dos containers que reservam espaço.
 
-### Limpeza visual — remover ícones decorativos onde texto basta
+**c) `Loader2` em botões → `<AkurisPulse size={16} />`**
+- ~47 arquivos. Codemod com `rg`/`sed`:
+  - Remover imports `Loader2` de `lucide-react` (preservando outros ícones).
+  - Trocar `<Loader2 className="... animate-spin" />` por `<AkurisPulse size={16} />`.
+- Validar visualmente alguns pontos críticos (botões de submit em `Auth`, `DocGenDialog`, `TratamentoForm`, dialogs de criação).
 
-- Botões de ação secundária dentro de cards já titulados (ex: "Exportar", "Importar" quando o contexto deixa claro)
-- Não vou remover ícones de cabeçalhos de seção/tab — eles ajudam na varredura visual
-- Cards de métrica que já têm ícone grande no lado, mas repetem ícone pequeno no título
+**d) Loaders inline (`animate-spin` em divs/imgs) → `<AkurisPulse />`**
+- Casos restantes detectados por `rg "animate-spin"`: substituir pelo `<AkurisPulse>` em tamanho proporcional ao container (24/32/48).
 
-Essa última passagem será cirúrgica e conservadora — só onde realmente há redundância.
+---
 
-## 2. Remover botão "Voltar" do header
+### 3. Estratégia de execução
 
-Em `src/components/Layout.tsx` linhas 180-200: remover o bloco `Tooltip` com o botão `ArrowLeft`. O usuário tem:
-- **Breadcrumb clicável** ao lado (linhas 202+) para navegar entre níveis
-- Botões de "voltar" próprios em cada módulo quando relevante
+1. Criar `AkurisPulse.tsx`, `LoadingOverlay.tsx` e o keyframe no `index.css`.
+2. Reapontar `route-fallback.tsx`, `page-skeleton.tsx`, `module-loading-skeleton.tsx` e `skeleton.tsx` (4 arquivos cobrem ~80% das referências sem tocar nos consumidores).
+3. Codemod para `Loader2` em lote, depois revisão arquivo a arquivo para os casos com import compartilhado.
+4. Sweep final: `rg "animate-spin|<Skeleton|Loader2"` deve retornar 0 ocorrências (exceto dentro dos componentes base do shadcn que vamos sobrescrever).
+5. Smoke test visual nas rotas principais: `/auth`, `/dashboard`, `/gap-analysis`, `/riscos`, dialogs de submit.
 
-Também removo o import `ArrowLeft` da linha 28 se não houver outro uso no arquivo.
+---
 
-## 3. Gráfico de evolução do score — eliminar tela branca de 1 ponto
+### 4. Considerações
 
-O `ScoreEvolutionChart` (aba Histórico) já foi corrigido na rodada anterior. **O que ainda quebra** é o sparkline do **`FrameworkHeroSummary`** (que aparece na aba Avaliação, no banner principal do framework) — ele continua usando `AreaChart` puro com 1 ponto, então fica branco.
+- **UX**: você confirmou que prefere identidade total mesmo perdendo o efeito "esqueleto que imita o layout final". O CLS vai aumentar levemente em listas/tabelas (a área onde antes havia placeholders cinza vai mostrar o pulse e depois o conteúdo).
+- **Bundle**: nenhum impacto — saímos de Lucide/Skeleton para SVG inline.
+- **Acessibilidade**: overlay e pulse recebem `role="status"` + `aria-label="Carregando"`.
+- **Memória**: vou atualizar a memória `ux/ui-consistency-standards` informando que `PageSkeleton`/`ModuleLoadingSkeleton`/`Skeleton`/`Loader2` estão **descontinuados** em favor de `AkurisPulse`/`LoadingOverlay`.
 
-### Mudanças no `FrameworkHeroSummary.tsx`
+---
 
-Aplicar o mesmo tratamento já feito no `ScoreEvolutionChart`, mas adaptado para o sparkline compacto (110px de altura):
+### Arquivos criados
+- `src/components/ui/AkurisPulse.tsx`
+- `src/components/ui/LoadingOverlay.tsx`
 
-1. **Quando `history.length === 1`**: duplicar o ponto internamente como `[{...p, date:'Início'}, p]` para que a `Area` desenhe uma faixa horizontal preenchida com o gradiente roxo, em vez de ficar branco
-2. **Empty state ilustrado** (`history.length === 0`): substituir o texto solto por mini empty-state com ícone `LineChart` num círculo + texto curto
-3. **Adicionar `ReferenceLine` da meta** (80% / 4.0) tracejada sutil para dar referência visual
-4. **Pontos visíveis** quando há 1-2 registros (raio 4 com borda branca), invisíveis quando há muitos
-5. **Chip discreto sobreposto** ("Registre mais avaliações para ver tendência") quando só há 1 ponto, igual ao já feito no chart maior
+### Arquivos editados (núcleo)
+- `src/index.css` (keyframe)
+- `src/components/ui/route-fallback.tsx`
+- `src/components/ui/page-skeleton.tsx`
+- `src/components/ui/module-loading-skeleton.tsx`
+- `src/components/ui/skeleton.tsx`
 
-### Arquivos modificados
-
-- `src/components/AppSidebar.tsx` — sidebar icons sem colisão + esconder ícone redundante de subitem-pai
-- `src/components/Layout.tsx` — remover botão Voltar e import `ArrowLeft`
-- `src/components/gap-analysis/FrameworkHeroSummary.tsx` — sparkline com tratamento de 1-ponto + meta + empty state
-- ~12 arquivos de IA — substituir `Sparkles`/`Brain`/`Bot` por `AkurisAIIcon`
-
-### Resultado
-
-- Identidade visual mais consistente — cada conceito tem seu próprio ícone
-- Header mais limpo, navegação por breadcrumb (que já funciona)
-- Sparkline do banner nunca mais aparece "tudo branco", mesmo no primeiro registro
-- IA do Akuris fica reconhecível pelo ícone proprietário em todo o sistema
+### Arquivos editados (sweep — ~50 arquivos)
+- Todos os arquivos com `Loader2` ou `animate-spin` (Auth, dialogs, formulários, botões de save/delete, gerenciadores de configuração, etc.)
