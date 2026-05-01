@@ -18,7 +18,7 @@ import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { FrameworkConfig, NIST_PILLAR_NAMES } from "@/lib/framework-configs";
-import { RequirementDetailDialog } from "./nist/NISTRequirementDetailDialog";
+import { RequirementDetailDialog } from "./dialogs/RequirementDetailDialog";
 import { saveScoreHistory } from "@/hooks/useScoreHistory";
 
 interface Requirement {
