@@ -13,14 +13,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { resolveRevisaoTone } from "@/lib/status-tone";
+import { resolveRevisaoTone, resolveWorkflowStatusTone } from "@/lib/status-tone";
 import { ReviewDialog } from "@/components/revisao-acessos/ReviewDialog";
 import { ReviewItemsDialog } from "@/components/revisao-acessos/ReviewItemsDialog";
 import { SistemaUsuariosList } from "@/components/revisao-acessos/SistemaUsuariosList";
 import { formatDateOnly } from "@/lib/date-utils";
 import { formatStatus } from "@/lib/text-utils";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { resolveWorkflowStatusTone } from "@/lib/status-tone";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
 import {
