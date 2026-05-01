@@ -187,17 +187,30 @@ export default function GapAnalysisFrameworks() {
     return { activeFrameworks: active, availableFrameworks: available };
   }, [frameworks, frameworkProgress]);
 
-  const filteredAvailableFrameworks = useMemo(() => {
-    if (!debouncedSearch.trim()) return availableFrameworks;
-    const term = debouncedSearch.toLowerCase();
-    return availableFrameworks.filter(fw =>
+  // Helper genérico de filtragem (busca + categoria)
+  const matchesFilters = (fw: Framework) => {
+    if (categoryFilter !== 'all' && getCategory(fw.tipo_framework) !== categoryFilter) return false;
+    const term = debouncedSearch.trim().toLowerCase();
+    if (!term) return true;
+    return (
       fw.nome.toLowerCase().includes(term) ||
       fw.tipo_framework?.toLowerCase().includes(term) ||
       fw.descricao?.toLowerCase().includes(term)
     );
-  }, [availableFrameworks, debouncedSearch]);
+  };
+
+  const filteredActiveFrameworks = useMemo(
+    () => activeFrameworks.filter(matchesFilters),
+    [activeFrameworks, debouncedSearch, categoryFilter]
+  );
+
+  const filteredAvailableFrameworks = useMemo(
+    () => availableFrameworks.filter(matchesFilters),
+    [availableFrameworks, debouncedSearch, categoryFilter]
+  );
 
   const hasActiveFrameworks = activeFrameworks.length > 0;
+  const hasFilters = debouncedSearch.trim() !== '' || categoryFilter !== 'all';
 
   // Stats relevantes
   const relevantStats = useMemo(() => {
@@ -222,7 +235,6 @@ export default function GapAnalysisFrameworks() {
       if (sc) criticalCount += sc.nao_conforme;
     });
 
-    // Total avaliados este mês (simplificado)
     let totalEvaluated = 0;
     activeFrameworks.forEach(fw => {
       const p = frameworkProgress[fw.id];
@@ -230,7 +242,7 @@ export default function GapAnalysisFrameworks() {
     });
 
     return { overallCompliance, criticalCount, totalEvaluated };
-  }, [activeFrameworks, frameworkProgress, frameworkStatusCounts]);
+  }, [activeFrameworks, frameworkProgress, frameworkStatusCounts, hasActiveFrameworks]);
 
   // Radar data
   const comparisonData = useMemo(() => {
@@ -240,11 +252,20 @@ export default function GapAnalysisFrameworks() {
     }));
   }, [activeFrameworks, frameworkProgress]);
 
-  // Suggested frameworks for welcome hero
+  // Frameworks recomendados (busca dinâmica por priority list + fallback de tipo)
   const suggestedFrameworks = useMemo(() => {
-    return SUGGESTED_NAMES
+    const found = SUGGESTED_NAMES
       .map(name => frameworks.find(fw => fw.nome === name))
       .filter(Boolean) as Framework[];
+    // Deduplicar por id
+    const seen = new Set<string>();
+    const unique = found.filter(fw => (seen.has(fw.id) ? false : seen.add(fw.id)));
+    if (unique.length >= 3) return unique.slice(0, 3);
+    // Fallback: completar com primeiros frameworks de cada categoria principal
+    const fallbacks = ['seguranca', 'privacidade', 'governanca']
+      .map(cat => frameworks.find(fw => getCategory(fw.tipo_framework) === cat && !seen.has(fw.id)))
+      .filter(Boolean) as Framework[];
+    return [...unique, ...fallbacks].slice(0, 3);
   }, [frameworks]);
 
   const handleFrameworkClick = (framework: Framework) => {
