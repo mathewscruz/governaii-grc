@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Download, FileBarChart, Brain, FileDown, HelpCircle } from 'lucide-react';
+import { GapAnalysisIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -217,15 +218,17 @@ export default function GapAnalysisFrameworkDetail() {
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => navigate('/gap-analysis/frameworks')}>
-            <ChevronLeft className="h-4 w-4 mr-2" />Voltar
+            <ChevronLeft className="h-4 w-4 mr-2" strokeWidth={1.5} />Voltar
           </Button>
         </div>
 
         <PageHeader
           title={`${framework.nome} ${framework.versao}`}
           description={framework.descricao || FRAMEWORK_DESCRIPTIONS[framework.nome] || `Avaliação de conformidade ${framework.tipo_framework}`}
+          icon={<GapAnalysisIcon className="h-7 w-7 text-primary" />}
           actions={
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Ação primária — IA estratégica */}
               {empresaId && totalRequirements > 0 && (
                 <AIRecommendationsButton
                   frameworkId={frameworkId!}
@@ -238,37 +241,41 @@ export default function GapAnalysisFrameworkDetail() {
                   onGoToRemediation={() => setActiveTab('remediacao')}
                 />
               )}
+
+              {/* Ação produtiva — gerar documento */}
               <Button
                 onClick={() => openDocGen({ frameworkId, frameworkName: framework.nome })}
                 variant="outline"
                 size="sm"
               >
-                <Brain className="h-4 w-4 mr-2" />
+                <Brain className="h-4 w-4 mr-2" strokeWidth={1.5} />
                 Gerador de Documentos (IA)
               </Button>
+
+              {/* Ações utilitárias agrupadas em ghost */}
               <Button
                 onClick={() => { setActiveTab('avaliacao'); setShowOnboarding(true); }}
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 title="Revisitar tour do framework"
               >
-                <HelpCircle className="h-4 w-4 mr-2" />
+                <HelpCircle className="h-4 w-4 mr-2" strokeWidth={1.5} />
                 Tour
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" disabled={exporting}>
-                    <FileDown className="h-4 w-4 mr-2" />
+                  <Button variant="ghost" size="sm" disabled={exporting}>
+                    <FileDown className="h-4 w-4 mr-2" strokeWidth={1.5} />
                     {exporting ? 'Exportando...' : 'Exportar'}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleExportPDF} disabled={exporting}>
-                    <Download className="h-4 w-4 mr-2" />
+                    <Download className="h-4 w-4 mr-2" strokeWidth={1.5} />
                     PDF Técnico (detalhado)
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExportBoard} disabled={exporting}>
-                    <FileBarChart className="h-4 w-4 mr-2" />
+                    <FileBarChart className="h-4 w-4 mr-2" strokeWidth={1.5} />
                     Relatório Executivo (Board)
                   </DropdownMenuItem>
                 </DropdownMenuContent>
