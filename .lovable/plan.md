@@ -1,60 +1,38 @@
 ## Objetivo
+Quando o usuário clica em "Entrar" e o login é bem-sucedido, exibir imediatamente o loader oficial da Akuris (AkurisPulse em tela cheia) cobrindo a tela de login, em vez de deixar apenas o spinner dentro do botão até que o `AuthProvider` re-hidrate a sessão e a navegação para `/dashboard` aconteça.
 
-Concluir a padronização visual dos status — eliminar todos os badges renderizados via `bg-{red|blue|green|...}-100` (helpers legacy `getItemStatusColor`, `getCriticidadeColor`, `getContratoStatusColor`, `getControleTipoColor`, `getClassificacaoColor`, `getDenunciaStatusColor`, `getSensibilidadeColor*`, `getWorkflowStatusColor`, `getAuditoria*Color`, `getTipoColor`) e fazer todos os módulos usarem `<StatusBadge>` com resolvers semânticos de `src/lib/status-tone.tsx`.
+## Onde está o problema
+Em `src/pages/Auth.tsx`, o handler `handleSignIn` já marca `setLoginSuccess(true)` após autenticar (com e sem MFA), mas esse estado nunca é usado na renderização. O usuário continua vendo o formulário com o botão em loading até o `Navigate to="/dashboard"` disparar — o que dá a sensação de "travado no botão".
 
-## Diagnóstico
+O sistema já tem o componente oficial `LoadingOverlay` (em `src/components/ui/LoadingOverlay.tsx`) que renderiza o `AkurisPulse` em tela cheia sobre `#06060e` — exatamente o padrão usado em Suspense, transições de rota e PageSkeleton. Vamos reutilizá-lo.
 
-O módulo de Ativos está com o visual antigo porque consome diretamente `getCriticidadeColor` e `getItemStatusColor` (cores Tailwind cruas de `text-utils.ts`). A mesma situação ocorre em mais 12 telas/componentes — todas mapeadas abaixo.
+## Mudança proposta (escopo cirúrgico)
 
-## Etapa 1 — Ampliar `src/lib/status-tone.tsx` com resolvers faltantes
+Arquivo: `src/pages/Auth.tsx`
 
-Adicionar resolvers semânticos novos (todos seguem o padrão atual: dot HSL, `intensity: 'high'` em níveis críticos, ícones com `strokeWidth: 1.5`):
+1. Importar `LoadingOverlay` de `@/components/ui/LoadingOverlay`.
+2. Logo após o early-return de `loading` (e antes do form), adicionar:
+   - Se `loginSuccess === true` → renderizar `<LoadingOverlay />` e nada mais.
+   Isso cobre tanto o caminho sem MFA quanto o pós-MFA verificado, pois ambos setam `setLoginSuccess(true)` antes do `AuthProvider` propagar o `user` que dispara o `Navigate`.
+3. Garantir que, no fluxo principal sem MFA, `setLoginSuccess(true)` seja chamado imediatamente após `signInWithPassword` retornar sem erro — antes do `try/catch` do `send-mfa-code` quando aplicável (já é o caso nos branches de sucesso; manter como está). A única ajuste extra: no branch de MFA pendente (`setMfaPending(true)`), NÃO mostrar o overlay (continua a tela de MFA).
+4. Manter o `setIsLoading(false)` no `finally` — o overlay tomará a tela antes do botão "voltar ao normal" ser percebido.
 
-- `resolveItemStatusTone` — ativo/inativo/vencido/expirado/a_vencer/em_renovacao/em_rotacao/arquivado/descontinuado/revogado.
-- `resolveContratoStatusTone` — ativo/negociacao/aprovacao/suspenso/encerrado/cancelado/rascunho/inativo.
-- `resolveControleTipoTone` — preventivo/detectivo/corretivo (categoria, sem alarme).
-- `resolveClassificacaoTone` — confidencial/restrita/interna/publica.
-- `resolveDenunciaStatusTone` — nova/em_analise/em_investigacao/resolvida/arquivada.
-- `resolveSensibilidadeTone` — sensivel|muito_sensivel/moderado|medio/comum|baixo (reaproveita escala de criticidade).
-- `resolveWorkflowStatusTone` — aberto/em_andamento/concluido/cancelado/aguardando_aprovacao.
-- `resolveTipoDocumentoTone` — documento/politica/procedimento/instrucao/formulario/certificado/contrato/relatorio (categoria neutra com tons rotativos).
-- `resolveAuditoriaStatusTone`, `resolveAuditoriaTipoTone`, `resolveAuditoriaPrioridadeTone` — alias para os já existentes (`resolveItemAuditoriaStatusTone`, novo categoria, `resolvePrioridadeTone`).
+Resultado: no instante em que o login é validado, a tela de login é substituída por uma tela cheia com o AkurisPulse pulsando, e em seguida o `Navigate` leva ao `/dashboard` (que também usa o mesmo loader durante o Suspense do módulo). A transição fica contínua e com a identidade da marca.
 
-## Etapa 2 — Migrar telas para `<StatusBadge>`
+## Detalhes técnicos
 
-Substituir `<Badge className={getXxxColor(...)}>{label}</Badge>` por `<StatusBadge size="sm" {...resolveXxxTone(value)}>{formatStatus(value)}</StatusBadge>`. Tamanho `sm` em tabelas, `md` em headers/dialogs.
+```tsx
+import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 
-Arquivos:
-
-```text
-src/pages/Ativos.tsx                                — criticidade + status item
-src/pages/AtivosChaves.tsx                          — criticidade + status item
-src/pages/AtivosLicencas.tsx                        — criticidade + status item
-src/pages/Documentos.tsx                            — status + tipo + classificação
-src/pages/Incidentes.tsx                            — criticidade + workflow status
-src/pages/ContasPrivilegiadas.tsx                   — status item
-src/pages/Privacidade.tsx                           — workflow + status item
-src/pages/Contratos.tsx                             — criticidade (status já migrado)
-src/components/ativos/ImportacaoAtivos.tsx          — criticidade
-src/components/governanca/SistemasContent.tsx       — criticidade
-src/components/governanca/ControlesContent.tsx      — status + criticidade + tipo controle
-src/components/auditorias/ItensAuditoriaDialog.tsx  — prioridade
-src/components/auditorias/ImportarControlesDialog.tsx — criticidade + status item
-src/components/denuncia/DenunciasDashboard.tsx      — criticidade (gravidade)
-src/components/dados/RopaWizard.tsx                 — criticidade
+// ... dentro do componente, logo após o bloco `if (loading) { ... }`:
+if (loginSuccess) {
+  return <LoadingOverlay />;
+}
 ```
 
-## Etapa 3 — Marcar helpers legacy como `@deprecated`
+Nenhuma outra mudança é necessária. Sem alterações em `AuthProvider`, rotas, ou no MFA dialog.
 
-Em `src/lib/text-utils.ts`, anotar como `@deprecated` (não remover, para evitar quebras em terceiros): `getItemStatusColor`, `getCriticidadeColor`, `getContratoStatusColor`, `getControleTipoColor`, `getTipoColor`, `getClassificacaoColor`, `getDenunciaStatusColor`, `getSensibilidadeColor`, `getSensibilidadeColorSimple`, `getWorkflowStatusColor`, `getAuditoriaStatusColor`, `getAuditoriaTipoColor`, `getAuditoriaPrioridadeColor` — apontando para o resolver equivalente.
-
-## Validação
-
-- `rg "getItemStatusColor|getCriticidadeColor|getContratoStatusColor|getControleTipoColor|getClassificacaoColor|getDenunciaStatusColor|getSensibilidadeColor|getWorkflowStatusColor|getAuditoria(Status|Tipo|Prioridade)Color" src --glob '!src/lib/text-utils.ts'` deve retornar vazio.
-- Conferir visualmente: badges nas tabelas de Ativos, Licenças, Chaves, Documentos, Incidentes, Contas Privilegiadas, Contratos, Auditorias, Controles, Denúncias e Privacidade exibindo dot semântico + texto na fonte DM Sans, sem fundos `bg-*-100`.
-- Sem novas cores Tailwind cruas introduzidas. Tema dark continua coerente.
-
-## Observações
-
-- Categorias informativas (tipo de documento, tipo de controle) usam tons sóbrios (`info`/`primary`/`neutral`) sem `intensity: 'high'`, preservando hierarquia visual sem alarme cromático.
-- Telas públicas (Denúncia anônima, Registro, Assessment público) e dialogs informativos coloridos tipo Alert ficam fora do escopo — não são badges de status.
+## Fora de escopo
+- Não mexer no fluxo de MFA (continua exibindo `MFAVerification`).
+- Não mexer em validação, "lembrar-me", recuperação de senha, ou layout do form.
+- Não tocar em `Layout.tsx` / Suspense fallback (já usam AkurisPulse).
