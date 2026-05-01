@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEmpresaId } from "@/hooks/useEmpresaId";
 import { Loader2, Upload, X, FileText, Calendar, Lightbulb, ClipboardList, CheckCircle2, ExternalLink, AlertTriangle, ChevronDown, History, BookOpen, RefreshCw, HelpCircle, Building2, Settings, FileCheck, CheckSquare, Shield, Target, Sparkles, Brain, ScanSearch, type LucideIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDateForInput, parseDateForDB } from "@/lib/date-utils";
 import { PlanoAcaoDialog } from "@/components/planos-acao/PlanoAcaoDialog";
 import { AuditTrailTimeline } from "@/components/gap-analysis/AuditTrailTimeline";
