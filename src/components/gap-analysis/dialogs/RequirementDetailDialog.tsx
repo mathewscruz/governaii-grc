@@ -760,11 +760,11 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="flex flex-col md:flex-row min-h-0 flex-1">
+            <div className="flex flex-col md:flex-row min-h-0 flex-1 overflow-hidden">
               {/* ============================================ */}
               {/* LEFT PANEL — Apenas leitura/educação        */}
               {/* ============================================ */}
-              <ScrollArea className="md:w-[42%] border-r bg-muted/20">
+              <ScrollArea className="h-full md:w-[42%] border-r bg-muted/20 flex-1 md:flex-none min-h-0">
                 <div className="p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
