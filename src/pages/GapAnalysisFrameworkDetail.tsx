@@ -221,7 +221,7 @@ export default function GapAnalysisFrameworkDetail() {
           description={framework.descricao || FRAMEWORK_DESCRIPTIONS[framework.nome] || `Avaliação de conformidade ${framework.tipo_framework}`}
           actions={
             <div className="flex items-center gap-2">
-              {empresaId && evaluatedRequirements > 0 && (
+              {empresaId && totalRequirements > 0 && (
                 <AIRecommendationsButton
                   frameworkId={frameworkId!}
                   frameworkNome={framework.nome}
@@ -230,11 +230,21 @@ export default function GapAnalysisFrameworkDetail() {
                   totalRequirements={totalRequirements}
                   evaluatedRequirements={evaluatedRequirements}
                   scoreType={config.scoreType}
+                  onGoToRemediation={() => setActiveTab('remediacao')}
                 />
               )}
               <Button onClick={() => setShowDocGen(true)} variant="outline" size="sm">
                 <Brain className="h-4 w-4 mr-2" />
                 Gerar Política
+              </Button>
+              <Button
+                onClick={() => setShowOnboarding(true)}
+                variant="outline"
+                size="sm"
+                title="Revisitar tour do framework"
+              >
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Tour
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
