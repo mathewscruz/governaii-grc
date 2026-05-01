@@ -825,7 +825,7 @@ export const RequirementDetailDialog: React.FC<RequirementDetailDialogProps> = (
               {/* ============================================ */}
               {/* RIGHT PANEL — Jornada numerada              */}
               {/* ============================================ */}
-              <ScrollArea className="md:w-[58%]">
+              <ScrollArea className="h-full md:w-[58%] flex-1 md:flex-none min-h-0">
                 <div className="p-5 space-y-3">
 
                   {/* ===== STEP 1: Avaliar Conformidade ===== */}
