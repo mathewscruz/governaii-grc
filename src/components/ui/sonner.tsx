@@ -17,13 +17,14 @@ type ToasterProps = React.ComponentProps<typeof Sonner>
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
-      theme="light"
+      theme="system"
       className="toaster group"
       position="top-right"
       expand={false}
       richColors={false}
       duration={4500}
       gap={10}
+      offset={16}
       icons={{
         success: (
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10 ring-1 ring-success/20 text-success">
@@ -49,7 +50,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast relative overflow-hidden group-[.toaster]:bg-background/95 group-[.toaster]:backdrop-blur-2xl group-[.toaster]:text-foreground group-[.toaster]:border group-[.toaster]:border-border/60 group-[.toaster]:shadow-[0_12px_32px_-8px_hsl(var(--primary)/0.18)] group-[.toaster]:rounded-xl group-[.toaster]:p-4 group-[.toaster]:pl-5 group-[.toaster]:min-h-[60px] group-[.toaster]:gap-3 group-[.toaster]:animate-toast-slide-in before:content-[''] before:absolute before:left-0 before:top-3 before:bottom-3 before:w-[2px] before:rounded-full before:bg-border",
+            "group toast relative overflow-hidden group-[.toaster]:w-[360px] group-[.toaster]:max-w-[92vw] group-[.toaster]:bg-background/95 group-[.toaster]:backdrop-blur-2xl group-[.toaster]:text-foreground group-[.toaster]:border group-[.toaster]:border-border/60 group-[.toaster]:shadow-[0_12px_32px_-8px_hsl(var(--primary)/0.18)] group-[.toaster]:rounded-xl group-[.toaster]:p-4 group-[.toaster]:pl-5 group-[.toaster]:min-h-[60px] group-[.toaster]:gap-3 group-[.toaster]:animate-toast-slide-in before:content-[''] before:absolute before:left-0 before:top-3 before:bottom-3 before:w-[2px] before:rounded-full before:bg-border",
           title:
             "group-[.toast]:text-[13px] group-[.toast]:font-semibold group-[.toast]:leading-tight group-[.toast]:tracking-tight",
           description:
