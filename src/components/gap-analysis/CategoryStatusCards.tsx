@@ -48,12 +48,7 @@ export const CategoryStatusCards: React.FC<CategoryStatusCardsProps> = ({
                   <CardContent className="p-3 space-y-2">
                     <div className="flex items-start justify-between gap-1">
                       <p className="text-xs font-semibold leading-tight line-clamp-2">{cat.categoria}</p>
-                      <span className={`text-xs font-bold shrink-0 ${
-                        pct >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
-                        pct >= 50 ? 'text-amber-600 dark:text-amber-400' :
-                        pct > 0 ? 'text-red-600 dark:text-red-400' :
-                        'text-muted-foreground'
-                      }`}>
+                      <span className={`text-xs font-bold shrink-0 ${pct > 0 ? getScoreTextClass(pct) : 'text-muted-foreground'}`}>
                         {pct}%
                       </span>
                     </div>
