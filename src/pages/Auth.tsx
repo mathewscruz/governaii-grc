@@ -137,46 +137,64 @@ const Auth = () => {
         return;
       }
 
-      // Decide se MFA é necessário SEM derrubar a sessão antes da hora.
-      let requiresMfa = false;
+      // Decide se MFA é necessário. Política: MFA é OBRIGATÓRIO sempre, exceto
+      // quando o backend confirma explicitamente uma sessão MFA válida nas últimas 24h.
+      // Qualquer falha de envio mantém o usuário no fluxo de MFA — nunca libera direto.
+      let mfaSkipped = false;
+      let mfaSendFailed = false;
       try {
         const mfaResponse = await supabase.functions.invoke('send-mfa-code', {
           body: { userId, email: email.trim() },
         });
 
         if (mfaResponse.error) {
-          logger.error('Erro ao enviar MFA, seguindo com login direto', {
+          logger.error('Erro ao invocar send-mfa-code', {
             module: 'Auth',
             error: String(mfaResponse.error),
           });
+          mfaSendFailed = true;
         } else if (mfaResponse.data?.success && mfaResponse.data?.skipped) {
-          logger.debug('MFA pulado — sessão MFA recente válida', { module: 'Auth' });
+          // Único caminho legítimo de bypass: sessão MFA válida nas últimas 24h.
+          mfaSkipped = true;
         } else if (mfaResponse.data?.success) {
-          requiresMfa = true;
-        } else if (mfaResponse.data?.error) {
-          // Falha controlada (ex.: rate-limit do envio): não bloqueia o login,
-          // apenas avisa o usuário e prossegue como login direto.
-          toast.warning(mfaResponse.data.error);
+          // success=true cobre tanto novo envio quanto alreadySent → segue para MFA.
+          mfaSkipped = false;
+        } else {
+          // Backend retornou erro controlado (ex.: 500). Tratar como falha de envio.
+          logger.error('send-mfa-code retornou erro controlado', {
+            module: 'Auth',
+            error: String(mfaResponse.data?.error || 'desconhecido'),
+          });
+          mfaSendFailed = true;
         }
       } catch (mfaError) {
-        logger.error('Exceção ao chamar send-mfa-code, prosseguindo sem MFA', {
+        logger.error('Exceção ao chamar send-mfa-code', {
           module: 'Auth',
           error: String(mfaError),
         });
+        mfaSendFailed = true;
       }
 
-      if (requiresMfa) {
-        // Só agora derruba a sessão e exibe a tela de MFA.
+      if (mfaSendFailed) {
+        // Falha de envio NÃO pode liberar acesso. Aborta o login.
         await supabase.auth.signOut();
+        toast.error(t('auth.errorAuth'));
+        setPhase('idle');
+        return;
+      }
+
+      if (!mfaSkipped) {
+        // Preparar a tela de MFA ANTES de derrubar a sessão, para evitar
+        // que o <Navigate> dispare durante o flush do onAuthStateChange.
         setMfaUserId(userId);
         setMfaEmail(email.trim());
         setMfaPassword(password);
         setPhase('mfa_required');
+        await supabase.auth.signOut();
         return;
       }
 
-      // Fluxo direto (sem MFA): sessão já está ativa, apenas finalizar.
-      // O <Navigate> dispara assim que o AuthProvider propaga `user`.
+      // Fluxo direto (sessão MFA válida nas últimas 24h).
       toast.success(t('auth.loginSuccess'));
       setPhase('finalizing');
     } catch (error: any) {

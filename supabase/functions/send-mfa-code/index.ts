@@ -40,7 +40,8 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { userId, email }: SendMFARequest = await req.json()
+    const body = await req.json() as SendMFARequest & { force?: boolean }
+    const { userId, email, force } = body
 
     if (!userId || !email) {
       throw new Error('userId e email são obrigatórios')
@@ -67,18 +68,42 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Rate limiting: verificar se código foi enviado nos últimos 60s
+    // Verificar se já existe código não usado e ainda válido (não expirado).
+    // Se sim e não for um pedido de "reenviar" (force=true), retorna sucesso
+    // indicando que o código já foi enviado — não bloqueia o fluxo de MFA.
+    const { data: activeCode } = await supabaseAdmin
+      .from('mfa_codes')
+      .select('id, created_at, expires_at')
+      .eq('user_id', userId)
+      .eq('used', false)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (activeCode && !force) {
+      console.log('Código MFA ativo encontrado para userId:', userId, '- reaproveitando')
+      return new Response(JSON.stringify({
+        success: true,
+        alreadySent: true,
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      })
+    }
+
+    // Rate limiting: aplicado apenas em pedidos explícitos de reenvio (force=true)
+    // ou quando não há código ativo mas houve envio recente (<60s).
     const { data: recentCode } = await supabaseAdmin
       .from('mfa_codes')
       .select('created_at')
       .eq('user_id', userId)
-      .eq('used', false)
       .gte('created_at', new Date(Date.now() - 60 * 1000).toISOString())
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
-    if (recentCode) {
+    if (recentCode && force) {
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Aguarde 1 minuto antes de solicitar um novo código' 
