@@ -43,6 +43,18 @@ const Auth = () => {
   const [mfaEmail, setMfaEmail] = useState('');
   const [mfaPassword, setMfaPassword] = useState('');
 
+  // Trava síncrona — declarada no topo para respeitar a regra de hooks.
+  const mfaInProgressRef = useRef(false);
+
+  const setMfaPendingFlag = (pending: boolean) => {
+    try {
+      if (pending) sessionStorage.setItem(MFA_PENDING_KEY, '1');
+      else sessionStorage.removeItem(MFA_PENDING_KEY);
+    } catch {
+      // ignore
+    }
+  };
+
   const isBusy = phase !== 'idle';
   const showOverlay = phase === 'authenticating' || phase === 'verifying_mfa' || phase === 'finalizing';
 
@@ -101,18 +113,6 @@ const Auth = () => {
     );
   }
 
-  // Trava síncrona — usada antes de qualquer evento async para impedir
-  // que o <Navigate> abaixo dispare entre signInWithPassword e signOut.
-  const mfaInProgressRef = useRef(false);
-
-  const setMfaPendingFlag = (pending: boolean) => {
-    try {
-      if (pending) sessionStorage.setItem(MFA_PENDING_KEY, '1');
-      else sessionStorage.removeItem(MFA_PENDING_KEY);
-    } catch {
-      // ignore
-    }
-  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
