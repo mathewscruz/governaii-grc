@@ -221,9 +221,21 @@ const Auth = () => {
       }
 
       // Fluxo direto (sessão MFA válida nas últimas 24h).
-      // Libera a flag para o AuthProvider expor a sessão e o app navegar.
+      // A flag MFA estava ativa quando o SIGNED_IN foi disparado, então o
+      // AuthProvider descartou aquela sessão. Limpamos a flag e forçamos
+      // um refresh para que um novo evento (TOKEN_REFRESHED) seja emitido
+      // e o AuthProvider passe a expor a sessão — sem isso, o usuário
+      // ficaria preso no overlay de "finalizing" até dar refresh manual.
       setMfaPendingFlag(false);
       mfaInProgressRef.current = false;
+      try {
+        await supabase.auth.refreshSession();
+      } catch (refreshError) {
+        logger.warn('Falha ao refrescar sessão pós-bypass MFA', {
+          module: 'Auth',
+          error: String(refreshError),
+        });
+      }
       toast.success(t('auth.loginSuccess'));
       setPhase('finalizing');
     } catch (error: any) {
