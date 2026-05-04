@@ -97,6 +97,19 @@ const Auth = () => {
     );
   }
 
+  // Trava síncrona — usada antes de qualquer evento async para impedir
+  // que o <Navigate> abaixo dispare entre signInWithPassword e signOut.
+  const mfaInProgressRef = useRef(false);
+
+  const setMfaPendingFlag = (pending: boolean) => {
+    try {
+      if (pending) sessionStorage.setItem(MFA_PENDING_KEY, '1');
+      else sessionStorage.removeItem(MFA_PENDING_KEY);
+    } catch {
+      // ignore
+    }
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -111,7 +124,13 @@ const Auth = () => {
       return;
     }
 
+    // CRÍTICO: marcar MFA como pendente ANTES do signInWithPassword.
+    // Assim, mesmo que o evento SIGNED_IN dispare antes de decidirmos,
+    // o AuthProvider mantém user/session = null e não há flash do dashboard.
+    mfaInProgressRef.current = true;
+    setMfaPendingFlag(true);
     setPhase('authenticating');
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -132,6 +151,8 @@ const Auth = () => {
       if (!userId) {
         // Caso degenerado — sem userId não há como continuar.
         await supabase.auth.signOut();
+        setMfaPendingFlag(false);
+        mfaInProgressRef.current = false;
         toast.error(t('auth.errorAuth'));
         setPhase('idle');
         return;
@@ -178,14 +199,15 @@ const Auth = () => {
       if (mfaSendFailed) {
         // Falha de envio NÃO pode liberar acesso. Aborta o login.
         await supabase.auth.signOut();
+        setMfaPendingFlag(false);
+        mfaInProgressRef.current = false;
         toast.error(t('auth.errorAuth'));
         setPhase('idle');
         return;
       }
 
       if (!mfaSkipped) {
-        // Preparar a tela de MFA ANTES de derrubar a sessão, para evitar
-        // que o <Navigate> dispare durante o flush do onAuthStateChange.
+        // Mantém a flag MFA_PENDING ativa — só será removida após verificar o código.
         setMfaUserId(userId);
         setMfaEmail(email.trim());
         setMfaPassword(password);
@@ -195,9 +217,15 @@ const Auth = () => {
       }
 
       // Fluxo direto (sessão MFA válida nas últimas 24h).
+      // Libera a flag para o AuthProvider expor a sessão e o app navegar.
+      setMfaPendingFlag(false);
+      mfaInProgressRef.current = false;
       toast.success(t('auth.loginSuccess'));
       setPhase('finalizing');
     } catch (error: any) {
+      // Falha no signInWithPassword — limpar flags.
+      setMfaPendingFlag(false);
+      mfaInProgressRef.current = false;
       logger.warn('Login failed', {
         module: 'Auth',
         action: 'login',
