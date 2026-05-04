@@ -366,20 +366,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!isSubscribed) return;
 
-      logger.debug('Initial session check', { 
+      logger.debug('Initial session check', {
         userId: session?.user?.id,
-        module: 'auth' 
+        module: 'auth'
       });
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // Paralelizar: senha temporária + profile ao mesmo tempo
+
+      // Mesma proteção: se MFA está pendente, não exponha a sessão.
+      const mfaPending = isMfaPending();
+      const effectiveSession = mfaPending ? null : session;
+
+      setSession(effectiveSession);
+      setUser(effectiveSession?.user ?? null);
+
+      if (effectiveSession?.user) {
         await Promise.all([
-          checkTemporaryPasswordForUser(session.user.id),
-          fetchProfile(session.user.id),
+          checkTemporaryPasswordForUser(effectiveSession.user.id),
+          fetchProfile(effectiveSession.user.id),
         ]);
-        // Permissions depois (depende do user estar setado)
         setTimeout(async () => {
           if (isSubscribed) {
             await initializeUserPermissions();
