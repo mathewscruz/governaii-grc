@@ -34,6 +34,20 @@ interface Company {
   };
 }
 
+// Sinaliza globalmente que o login está aguardando o passo de MFA.
+// Enquanto presente em sessionStorage, o AuthProvider não expõe a sessão
+// como autenticada — evita que páginas protegidas renderizem entre o
+// signInWithPassword e o signOut imediato do fluxo MFA.
+export const MFA_PENDING_KEY = 'akuris_mfa_pending';
+
+const isMfaPending = (): boolean => {
+  try {
+    return typeof window !== 'undefined' && sessionStorage.getItem(MFA_PENDING_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -271,20 +285,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           userId: session?.user?.id,
           module: 'auth' 
         });
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
+        // Se há um desafio MFA pendente, NÃO expomos a sessão para o app.
+        // Isso impede que rotas protegidas renderizem o dashboard durante
+        // o curto intervalo entre signInWithPassword e signOut() do fluxo MFA.
+        const mfaPending = isMfaPending();
+        const effectiveSession = mfaPending ? null : session;
+
+        setSession(effectiveSession);
+        setUser(effectiveSession?.user ?? null);
+
+        if (effectiveSession?.user) {
           // Usar setTimeout para evitar deadlock no callback
           // Verificar senha temporária IMEDIATAMENTE após login
           setTimeout(async () => {
             if (isSubscribed) {
-              logger.debug('Iniciando verificação pós-login', { userId: session.user.id });
-              
+              logger.debug('Iniciando verificação pós-login', { userId: effectiveSession.user.id });
+
               // Paralelizar: senha temporária + profile ao mesmo tempo
               await Promise.all([
-                checkTemporaryPasswordForUser(session.user.id),
-                fetchProfile(session.user.id),
+                checkTemporaryPasswordForUser(effectiveSession.user.id),
+                fetchProfile(effectiveSession.user.id),
               ]);
               await initializeUserPermissions();
             }
@@ -294,7 +314,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setCompany(null);
           setHasTemporaryPassword(false);
         }
-        
+
         setLoading(false);
       }
     );
@@ -346,20 +366,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!isSubscribed) return;
 
-      logger.debug('Initial session check', { 
+      logger.debug('Initial session check', {
         userId: session?.user?.id,
-        module: 'auth' 
+        module: 'auth'
       });
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // Paralelizar: senha temporária + profile ao mesmo tempo
+
+      // Mesma proteção: se MFA está pendente, não exponha a sessão.
+      const mfaPending = isMfaPending();
+      const effectiveSession = mfaPending ? null : session;
+
+      setSession(effectiveSession);
+      setUser(effectiveSession?.user ?? null);
+
+      if (effectiveSession?.user) {
         await Promise.all([
-          checkTemporaryPasswordForUser(session.user.id),
-          fetchProfile(session.user.id),
+          checkTemporaryPasswordForUser(effectiveSession.user.id),
+          fetchProfile(effectiveSession.user.id),
         ]);
-        // Permissions depois (depende do user estar setado)
         setTimeout(async () => {
           if (isSubscribed) {
             await initializeUserPermissions();
