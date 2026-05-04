@@ -34,6 +34,20 @@ interface Company {
   };
 }
 
+// Sinaliza globalmente que o login está aguardando o passo de MFA.
+// Enquanto presente em sessionStorage, o AuthProvider não expõe a sessão
+// como autenticada — evita que páginas protegidas renderizem entre o
+// signInWithPassword e o signOut imediato do fluxo MFA.
+export const MFA_PENDING_KEY = 'akuris_mfa_pending';
+
+const isMfaPending = (): boolean => {
+  try {
+    return typeof window !== 'undefined' && sessionStorage.getItem(MFA_PENDING_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
