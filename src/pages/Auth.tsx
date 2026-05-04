@@ -92,6 +92,16 @@ const Auth = () => {
     }
   }, []);
 
+  // Salvaguarda: se ficamos em 'finalizing' sem o AuthProvider expor o user,
+  // forçamos um refresh de sessão para destravar o overlay.
+  useEffect(() => {
+    if (phase !== 'finalizing' || user) return;
+    const timer = setTimeout(() => {
+      supabase.auth.refreshSession().catch(() => { /* ignore */ });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [phase, user]);
+
   // Só navega para dashboard quando o fluxo NÃO está aguardando MFA.
   // Durante 'authenticating', 'verifying_mfa' e 'finalizing' o overlay cobre tudo.
   if (!loading && user && phase !== 'mfa_required') {
