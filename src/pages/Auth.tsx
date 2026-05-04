@@ -68,6 +68,10 @@ const Auth = () => {
   ];
 
   useEffect(() => {
+    // Limpa qualquer flag MFA pendente ao montar a tela de login —
+    // garante que recargas/voltas para /auth não fiquem com sessão escondida.
+    try { sessionStorage.removeItem(MFA_PENDING_KEY); } catch { /* ignore */ }
+
     const savedEmail = localStorage.getItem('akuris_remember_email');
     const savedRemember = localStorage.getItem('akuris_remember_me') === 'true';
     if (savedEmail && savedRemember) {
