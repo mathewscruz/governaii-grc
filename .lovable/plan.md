@@ -1,54 +1,30 @@
-Vou corrigir o fluxo de MFA para eliminar a corrida entre `signInWithPassword`, `Navigate` e `signOut`, que hoje permite o dashboard aparecer por um instante antes da tela MFA/deslogout.
+## Causa raiz
 
-Plano de implementação:
+O erro "Rendered fewer hooks than expected" acontece porque, ao implementar a correção do MFA, o `useRef(false)` foi adicionado em `src/pages/Auth.tsx` **depois** dos `if`-returns iniciais (linhas 85, 89 e 93). Quando o componente passa de uma fase com `return` antecipado para a fase normal, a quantidade de hooks executados muda — violando as Rules of Hooks. É isso que dispara o `ErrorBoundary` (tela "Algo deu errado") logo após digitar credenciais.
 
-1. Tornar o fluxo de MFA resistente a race conditions em `src/pages/Auth.tsx`
-   - Adicionar uma trava síncrona via `useRef` para marcar imediatamente que o MFA está em andamento antes de qualquer `signOut()`.
-   - Persistir temporariamente o desafio MFA em `sessionStorage` enquanto o usuário está entre “senha validada” e “código MFA validado”.
-   - Ajustar o redirecionamento do `/auth` para `/dashboard` para só acontecer quando não houver desafio MFA pendente.
-   - Resultado esperado: após credenciais corretas e MFA expirado, o usuário fica na tela MFA e não vê o dashboard antes de validar o código.
+O fluxo lógico (AuthProvider, Edge Functions, MFAVerification) está correto — o problema é puramente a posição do hook.
 
-2. Bloquear a sessão provisória antes de renderizar páginas autenticadas
-   - Alterar `src/components/AuthProvider.tsx` para detectar quando existe desafio MFA pendente para o usuário atual.
-   - Enquanto existir desafio pendente, o provider não deve expor `user/session` como sessão autenticada para o restante do app.
-   - Com isso, mesmo que o Supabase emita uma sessão curta durante a validação de senha, `Layout` e `ProtectedRoute` não recebem acesso autenticado.
+## Correção
 
-3. Finalizar login somente após código MFA correto
-   - No callback `handleMFAVerified`, limpar o desafio pendente apenas depois de o código ser aceito e a autenticação final com senha ser refeita com sucesso.
-   - Manter o comportamento de bypass legítimo somente quando `send-mfa-code` retornar explicitamente `skipped: true` por existir sessão MFA válida nas últimas 24h.
+Mover `useRef` para o topo do componente, antes de qualquer `return` condicional. A função auxiliar `setMfaPendingFlag` (que não é hook) também sobe junto, por proximidade.
 
-4. Fortalecer as Edge Functions de MFA
-   - Validar melhor o corpo recebido em `send-mfa-code` e `verify-mfa-code`.
-   - Garantir que `send-mfa-code` nunca retorne `skipped: true` se a sessão MFA estiver expirada.
-   - Garantir que o reuso de código ativo retorne sucesso para direcionar o usuário à tela MFA, não para liberar acesso.
+Em `src/pages/Auth.tsx`:
 
-5. Validar o cenário reportado
-   - Conferir logs das funções após a correção.
-   - Testar o caminho esperado:
+1. Logo após `const [mfaPassword, setMfaPassword] = useState('')` (linha 44), adicionar:
+   - `const mfaInProgressRef = useRef(false);`
+   - `const setMfaPendingFlag = (pending: boolean) => { ... }`
 
-```text
-Credenciais corretas
-  -> envia/reaproveita código por e-mail
-  -> derruba/oculta sessão provisória
-  -> mostra tela MFA
-  -> usuário informa código
-  -> cria sessão MFA de 24h
-  -> refaz login
-  -> entra no dashboard
-```
+2. Remover o bloco duplicado dessas mesmas declarações que hoje aparece nas linhas 104-115 (depois dos `if`-returns).
 
-Também validarei o caminho dentro de 24h:
+Nenhuma outra alteração é necessária — o restante do fluxo MFA (flag `MFA_PENDING_KEY` no `AuthProvider`, edge functions `send-mfa-code` / `verify-mfa-code`, `MFAVerification`) já está correto.
 
-```text
-Credenciais corretas
-  -> backend confirma sessão MFA válida
-  -> entra direto no dashboard
-```
+## Validação após o fix
 
-Arquivos previstos:
-- `src/pages/Auth.tsx`
-- `src/components/AuthProvider.tsx`
-- `supabase/functions/send-mfa-code/index.ts`
-- `supabase/functions/verify-mfa-code/index.ts`
+1. Login fora das 24h: credenciais → tela MFA → código por e-mail → dashboard.
+2. Login dentro das 24h: credenciais → dashboard direto (sem flash).
+3. Cancelar MFA: volta ao login limpo, sem sessão residual.
+4. Recarregar `/auth` durante MFA: limpa a flag e permite novo login.
 
-Observação: identifiquei nos logs que o código está sendo enviado/reaproveitado, mas o app ainda está expondo uma sessão provisória ao frontend antes de completar o MFA. A correção principal é impedir que essa sessão provisória seja tratada como login válido.
+## Arquivos alterados
+
+- `src/pages/Auth.tsx` (única mudança: reposicionar `useRef`).
