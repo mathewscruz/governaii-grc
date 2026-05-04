@@ -1,54 +1,59 @@
-## Padronizar "Evolução de Riscos" no padrão dos frameworks
+# Corrigir bypass de MFA no login
 
-Hoje o card **Evolução de Riscos** do dashboard usa um `ComposedChart` com 4 curvas (críticos/altos/médios/baixos) e legenda interativa, enquanto os frameworks usam o `ScoreEvolutionChart` (Gap Analysis): área única com gradiente, seletor Dia/Semana/Mês/Ano, KPI de delta no header e linha de meta. A inconsistência visual quebra a identidade.
+## O que aconteceu (diagnóstico real)
 
-### Solução
-
-Reescrever `src/components/dashboard/RiskScoreTimeline.tsx` espelhando o `ScoreEvolutionChart`, consolidando as 4 séries em **um único Score de Risco (0–100, quanto maior, melhor)**.
-
-### Fórmula do Score (0–100)
-
-Calculado por bucket de tempo, sobre os riscos cadastrados até a data do bucket (acumulado, igual ao comportamento atual):
+Reconstruí a sequência exata pelos logs do auth + edge function + sessões MFA do banco:
 
 ```
-peso = críticos×4 + altos×3 + médios×2 + baixos×1
-exposição = min(100, (peso / total_riscos) × 25)
-score = 100 − exposição     // 100 = sem exposição, 0 = todos críticos
+10:36:24  POST /token 200      → Login #1 OK (signInWithPassword)
+10:36:26  POST send-mfa-code   → 200, "Código MFA enviado" (success: true → requiresMfa=true)
+10:36:28  POST /logout 204     → signOut() do Auth.tsx (preparando tela MFA)
+            ⚠ Aqui o usuário viu "deslogou sozinho após 1s"
+10:36:31  POST /token 200      → Login #2 (usuário tentou de novo)
+10:36:33  POST send-mfa-code   → 429 (rate-limit de 60s no envio)
+            ⚠ Front IGNOROU o erro e deixou entrar SEM MFA
 ```
 
-- Sem riscos → score = 100.
-- Bucketização por `nivel_risco_residual` (com fallback para `nivel_risco_inicial`), cobrindo as variações "Muito Alto", "Moderado", "Muito Baixo".
+Banco confirma: nenhuma sessão MFA válida existia em 10:36:24 (a última expirou em 02/05 15:18, ~43h antes). Ou seja, MFA realmente deveria ter sido exigido — e a tela chegou a aparecer brevemente, mas o usuário interrompeu e ao retentar caiu no bypass.
 
-### Visual (idêntico ao framework)
+## Causas
 
-- Card com `CornerAccent` (mantém identidade Akuris).
-- Header: `CardTitle` + valor herói (`97 / 100`) + delta `vs. anterior` com TrendingUp/Down e cor success/destructive (subir o score = verde, pois exposição caiu).
-- Subtítulo discreto: `· N riscos`.
-- Seletor Dia / Semana / Mês / Ano à direita (mesmos pills do `ScoreEvolutionChart`).
-- `AreaChart` com 1 série (`hsl(var(--primary))`), gradiente do mesmo `linearGradient`.
-- `ReferenceLine` em **80** com label "Meta".
-- `Tooltip` no padrão Akuris mostrando `Score de risco · X crít · Y altos`.
-- `EmptyState` ilustrado quando não houver riscos.
-- `AkurisPulse` no estado de loading (substitui o `Skeleton` atual, alinhando com a regra "AkurisPulse é o único loader").
+1. **Bypass de segurança em `src/pages/Auth.tsx` (linhas 147-166)**: quando `send-mfa-code` retorna erro (incluindo rate-limit `429`), o front apenas mostra `toast.warning` e **prossegue para o dashboard sem MFA**. Isso quebra o requisito de MFA obrigatório a cada 24h.
+2. **Transição visual instável**: o `await supabase.auth.signOut()` (linha 170) dispara `onAuthStateChange` → `user=null`, que pode renderizar o form por um frame antes de `setPhase('mfa_required')` ser aplicado. O usuário interpreta como "logou e deslogou".
+3. **Rate-limit de envio bloqueia o fluxo**: o limite de 60s entre envios em `send-mfa-code` é correto para anti-spam, mas não deve impedir a continuidade do MFA quando já existe um código válido recente.
 
-### Buckets por período
+## Correções
 
-- Dia: últimos 7 dias.
-- Semana: últimas 4 semanas.
-- Mês: últimos 6 meses.
-- Ano: últimos 5 anos.
+### 1. `src/pages/Auth.tsx` — fechar o bypass
 
-### Arquivos afetados
+- Quando `requiresMfa` não puder ser determinado com certeza como `false`, **forçar `mfa_required`**.
+- Tratar `429` (rate-limit) como "código já foi enviado há pouco, siga para a tela de MFA" — não como sucesso de login direto.
+- Tratar erros genéricos de `send-mfa-code` (network, 500) como **falha de login**: signOut + toast de erro + voltar para `idle`. Nunca deixar entrar sem MFA quando o sistema esperava MFA.
+- Manter o caminho `skipped: true` (sessão MFA válida nas últimas 24h) como o único caso legítimo de pular MFA.
 
-- `src/components/dashboard/RiskScoreTimeline.tsx` — reescrita completa.
+### 2. `src/pages/Auth.tsx` — estabilizar a transição
 
-Sem mudanças de schema, sem migrações, sem novos hooks. A query já existente (`riscos` com `nivel_risco_*` + `created_at` filtrado por `empresa_id`) é reutilizada.
+- Trocar a ordem: `setPhase('mfa_required')` e setar `mfaUserId/mfaEmail/mfaPassword` **antes** de chamar `supabase.auth.signOut()`. Como a guarda no topo já é `phase !== 'mfa_required'`, isso impede o `<Navigate>` de disparar mesmo que `user` ainda esteja momentaneamente preenchido.
+- Garantir que durante `'authenticating'` → `'mfa_required'` o `LoadingOverlay` continua coberto (já está).
 
-### Validação
+### 3. `supabase/functions/send-mfa-code/index.ts` — não falhar quando há código válido
 
-Abrir `/dashboard` e conferir:
-1. Card "Evolução de Riscos" com mesmo layout visual do "Evolução do Score" dos frameworks.
-2. Score atual e delta no header.
-3. Alternar Dia/Semana/Mês/Ano recalcula a curva.
-4. Linha tracejada de Meta em 80.
-5. Tooltip mostra crít/altos do ponto.
+- Antes do rate-limit de envio, checar se já existe um código MFA **não usado e não expirado** para o usuário. Se existir, retornar `200 { success: true, alreadySent: true }` em vez de `429`. Assim o front segue para a tela de MFA naturalmente — o código já está no inbox do usuário.
+- Manter o `429` real apenas para tentativas de "reenviar" (ex.: o botão Reenviar do `MFAVerification`), que pode passar uma flag `force: true`.
+
+### 4. `src/components/MFAVerification.tsx` — alinhar com o backend
+
+- No `handleResend`, passar `{ userId, email, force: true }` para o `send-mfa-code`, mantendo o rate-limit anti-spam apenas no botão de reenvio explícito.
+
+## Arquivos alterados
+
+- `src/pages/Auth.tsx` — lógica de decisão MFA + ordem de transição.
+- `supabase/functions/send-mfa-code/index.ts` — `alreadySent` em vez de `429` na primeira chamada.
+- `src/components/MFAVerification.tsx` — `force: true` no reenviar.
+
+## Por que isso resolve
+
+- O usuário **nunca mais entra sem MFA** quando o sistema deveria exigir.
+- A tela de MFA aparece de forma estável, sem o "flash" de logout.
+- Se algo der errado no envio do e-mail, o login falha de forma explícita (com mensagem) em vez de silenciosamente liberar acesso.
+- O rate-limit de 60s continua protegendo contra spam do botão "Reenviar", sem afetar o fluxo normal de login.
