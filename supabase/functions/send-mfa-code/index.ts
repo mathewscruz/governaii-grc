@@ -68,49 +68,26 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Verificar se já existe código não usado e ainda válido (não expirado).
-    // Se sim e não for um pedido de "reenviar" (force=true), retorna sucesso
-    // indicando que o código já foi enviado — não bloqueia o fluxo de MFA.
-    const { data: activeCode } = await supabaseAdmin
-      .from('mfa_codes')
-      .select('id, created_at, expires_at')
-      .eq('user_id', userId)
-      .eq('used', false)
-      .gt('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+    // Rate limit apenas em pedidos explícitos de reenvio (botão "Reenviar")
+    if (force) {
+      const { data: recentCode } = await supabaseAdmin
+        .from('mfa_codes')
+        .select('created_at')
+        .eq('user_id', userId)
+        .gte('created_at', new Date(Date.now() - 60 * 1000).toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-    if (activeCode && !force) {
-      console.log('Código MFA ativo encontrado para userId:', userId, '- reaproveitando')
-      return new Response(JSON.stringify({
-        success: true,
-        alreadySent: true,
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      })
-    }
-
-    // Rate limiting: aplicado apenas em pedidos explícitos de reenvio (force=true)
-    // ou quando não há código ativo mas houve envio recente (<60s).
-    const { data: recentCode } = await supabaseAdmin
-      .from('mfa_codes')
-      .select('created_at')
-      .eq('user_id', userId)
-      .gte('created_at', new Date(Date.now() - 60 * 1000).toISOString())
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (recentCode && force) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Aguarde 1 minuto antes de solicitar um novo código' 
-      }), {
-        status: 429,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      })
+      if (recentCode) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Aguarde 1 minuto antes de solicitar um novo código'
+        }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        })
+      }
     }
 
     // Buscar empresa_id do usuário
@@ -124,21 +101,37 @@ Deno.serve(async (req) => {
       throw new Error('Perfil do usuário não encontrado')
     }
 
-    const code = generateOTP()
-
-    // Inserir código (trigger invalida anteriores automaticamente)
-    const { error: insertError } = await supabaseAdmin
+    // Reusa código ativo se existir (não expirado e não usado);
+    // caso contrário, gera novo. Em ambos os casos, SEMPRE reenvia o e-mail.
+    const { data: activeCode } = await supabaseAdmin
       .from('mfa_codes')
-      .insert({
-        user_id: userId,
-        empresa_id: profile.empresa_id,
-        code,
-        expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-      })
+      .select('id, code, expires_at')
+      .eq('user_id', userId)
+      .eq('used', false)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
-    if (insertError) {
-      console.error('Erro ao inserir código MFA:', insertError)
-      throw new Error('Erro ao gerar código de verificação')
+    let code: string
+    if (activeCode && !force) {
+      code = activeCode.code
+      console.log('Reusando código MFA ativo para userId:', userId)
+    } else {
+      code = generateOTP()
+      const { error: insertError } = await supabaseAdmin
+        .from('mfa_codes')
+        .insert({
+          user_id: userId,
+          empresa_id: profile.empresa_id,
+          code,
+          expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        })
+
+      if (insertError) {
+        console.error('Erro ao inserir código MFA:', insertError)
+        throw new Error('Erro ao gerar código de verificação')
+      }
     }
 
     // Enviar e-mail com o código

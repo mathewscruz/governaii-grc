@@ -1,30 +1,27 @@
 ## Causa raiz
 
-O erro "Rendered fewer hooks than expected" acontece porque, ao implementar a correção do MFA, o `useRef(false)` foi adicionado em `src/pages/Auth.tsx` **depois** dos `if`-returns iniciais (linhas 85, 89 e 93). Quando o componente passa de uma fase com `return` antecipado para a fase normal, a quantidade de hooks executados muda — violando as Rules of Hooks. É isso que dispara o `ErrorBoundary` (tela "Algo deu errado") logo após digitar credenciais.
+Os logs da edge function `send-mfa-code` mostram: **"Código MFA ativo encontrado para userId ... - reaproveitando"** — e a função retorna `{ success: true, alreadySent: true }` **sem reenviar o e-mail**.
 
-O fluxo lógico (AuthProvider, Edge Functions, MFAVerification) está correto — o problema é puramente a posição do hook.
+Isso foi introduzido na correção anterior para evitar 429. O efeito colateral é: se já existe um código válido no banco (de uma tentativa anterior), o login atual nunca dispara um novo e-mail, então o usuário fica esperando um código que nunca chega.
 
 ## Correção
 
-Mover `useRef` para o topo do componente, antes de qualquer `return` condicional. A função auxiliar `setMfaPendingFlag` (que não é hook) também sobe junto, por proximidade.
+Em `supabase/functions/send-mfa-code/index.ts`, mudar a lógica para:
 
-Em `src/pages/Auth.tsx`:
+1. **Sempre enviar o e-mail** durante o login (exceto quando há sessão MFA válida de 24h — esse caso continua pulando o MFA).
+2. **Reusar o código** se ainda houver um ativo e não expirado (não invalida o que o usuário pode já ter no inbox).
+3. **Gerar novo código** apenas quando não há ativo OU quando `force = true` (botão "Reenviar").
+4. **Rate limit (60s)** aplica-se apenas ao botão "Reenviar" (`force = true`), nunca ao login normal.
 
-1. Logo após `const [mfaPassword, setMfaPassword] = useState('')` (linha 44), adicionar:
-   - `const mfaInProgressRef = useRef(false);`
-   - `const setMfaPendingFlag = (pending: boolean) => { ... }`
-
-2. Remover o bloco duplicado dessas mesmas declarações que hoje aparece nas linhas 104-115 (depois dos `if`-returns).
-
-Nenhuma outra alteração é necessária — o restante do fluxo MFA (flag `MFA_PENDING_KEY` no `AuthProvider`, edge functions `send-mfa-code` / `verify-mfa-code`, `MFAVerification`) já está correto.
-
-## Validação após o fix
-
-1. Login fora das 24h: credenciais → tela MFA → código por e-mail → dashboard.
-2. Login dentro das 24h: credenciais → dashboard direto (sem flash).
-3. Cancelar MFA: volta ao login limpo, sem sessão residual.
-4. Recarregar `/auth` durante MFA: limpa a flag e permite novo login.
+Resultado: a cada login fora das 24h, o usuário recebe o e-mail com o código (novo ou reusado), e o botão de reenviar continua protegido contra abuso.
 
 ## Arquivos alterados
 
-- `src/pages/Auth.tsx` (única mudança: reposicionar `useRef`).
+- `supabase/functions/send-mfa-code/index.ts` — substituir o bloco de "alreadySent" por reuso-com-reenvio e reordenar o rate limit.
+
+## Validação
+
+1. Login fora das 24h → e-mail chega com código → MFA verifica → dashboard.
+2. Login com código ainda ativo (ex.: tentativa anterior) → e-mail é reenviado com o mesmo código.
+3. Botão "Reenviar" em <60s → 429 com mensagem amigável.
+4. Login dentro das 24h → continua pulando MFA.
