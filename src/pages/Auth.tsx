@@ -92,6 +92,16 @@ const Auth = () => {
     }
   }, []);
 
+  // Salvaguarda: se ficamos em 'finalizing' sem o AuthProvider expor o user,
+  // forçamos um refresh de sessão para destravar o overlay.
+  useEffect(() => {
+    if (phase !== 'finalizing' || user) return;
+    const timer = setTimeout(() => {
+      supabase.auth.refreshSession().catch(() => { /* ignore */ });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [phase, user]);
+
   // Só navega para dashboard quando o fluxo NÃO está aguardando MFA.
   // Durante 'authenticating', 'verifying_mfa' e 'finalizing' o overlay cobre tudo.
   if (!loading && user && phase !== 'mfa_required') {
@@ -221,9 +231,21 @@ const Auth = () => {
       }
 
       // Fluxo direto (sessão MFA válida nas últimas 24h).
-      // Libera a flag para o AuthProvider expor a sessão e o app navegar.
+      // A flag MFA estava ativa quando o SIGNED_IN foi disparado, então o
+      // AuthProvider descartou aquela sessão. Limpamos a flag e forçamos
+      // um refresh para que um novo evento (TOKEN_REFRESHED) seja emitido
+      // e o AuthProvider passe a expor a sessão — sem isso, o usuário
+      // ficaria preso no overlay de "finalizing" até dar refresh manual.
       setMfaPendingFlag(false);
       mfaInProgressRef.current = false;
+      try {
+        await supabase.auth.refreshSession();
+      } catch (refreshError) {
+        logger.warn('Falha ao refrescar sessão pós-bypass MFA', {
+          module: 'Auth',
+          error: String(refreshError),
+        });
+      }
       toast.success(t('auth.loginSuccess'));
       setPhase('finalizing');
     } catch (error: any) {
