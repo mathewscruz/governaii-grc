@@ -239,6 +239,11 @@ const Auth = () => {
   const handleMFAVerified = async () => {
     setPhase('verifying_mfa');
     try {
+      // Liberar a flag MFA para que o AuthProvider passe a expor a sessão
+      // assim que o signInWithPassword abaixo emitir o evento SIGNED_IN.
+      setMfaPendingFlag(false);
+      mfaInProgressRef.current = false;
+
       const { error } = await supabase.auth.signInWithPassword({
         email: mfaEmail,
         password: mfaPassword,
@@ -260,7 +265,11 @@ const Auth = () => {
     }
   };
 
-  const handleMFACancel = () => {
+  const handleMFACancel = async () => {
+    // Garantir que nenhuma sessão residual permaneça e limpar a flag MFA.
+    try { await supabase.auth.signOut(); } catch { /* ignore */ }
+    setMfaPendingFlag(false);
+    mfaInProgressRef.current = false;
     setMfaUserId('');
     setMfaEmail('');
     setMfaPassword('');
