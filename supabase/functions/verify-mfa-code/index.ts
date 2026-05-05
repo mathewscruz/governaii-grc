@@ -20,16 +20,41 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      })
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    )
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token)
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      })
+    }
+    const callerUserId = claimsData.claims.sub as string
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { userId, code }: VerifyMFARequest = await req.json()
+    const { code }: VerifyMFARequest = await req.json()
 
-    if (!userId || !code) {
-      throw new Error('userId e code são obrigatórios')
+    if (!code) {
+      throw new Error('code é obrigatório')
     }
+
+    // Always operate on the caller's identity
+    const userId = callerUserId
 
     // Buscar código válido (não usado e não expirado)
     const { data: mfaCode, error: fetchError } = await supabaseAdmin
