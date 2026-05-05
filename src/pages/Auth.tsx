@@ -221,12 +221,12 @@ const Auth = () => {
       }
 
       if (!mfaSkipped) {
-        // Mantém a flag MFA_PENDING ativa — só será removida após verificar o código.
+        // Mantém a sessão ativa (porém oculta via MFA_PENDING_KEY) para que
+        // a Edge Function verify-mfa-code receba um JWT válido e identifique
+        // o usuário pelo claim `sub`. NÃO chamar signOut aqui — quebra o MFA.
         setMfaUserId(userId);
         setMfaEmail(email.trim());
-        setMfaPassword(password);
         setPhase('mfa_required');
-        await supabase.auth.signOut();
         return;
       }
 
