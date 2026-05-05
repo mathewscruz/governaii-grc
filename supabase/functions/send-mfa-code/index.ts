@@ -11,18 +11,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface SendMFARequest {
-  userId: string
-  email: string
-}
-
 function generateOTP(): string {
-  const digits = '0123456789'
-  let otp = ''
-  for (let i = 0; i < 6; i++) {
-    otp += digits.charAt(Math.floor(Math.random() * 10))
-  }
-  return otp
+  const arr = new Uint32Array(6)
+  crypto.getRandomValues(arr)
+  return Array.from(arr).map((n) => n % 10).join('')
 }
 
 Deno.serve(async (req) => {
@@ -35,17 +27,51 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Verify caller JWT
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      })
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    )
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token)
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      })
+    }
+
+    const callerUserId = claimsData.claims.sub as string
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const body = await req.json() as SendMFARequest & { force?: boolean }
-    const { userId, email, force } = body
+    const body = await req.json().catch(() => ({})) as { force?: boolean }
+    const force = !!body.force
 
-    if (!userId || !email) {
-      throw new Error('userId e email são obrigatórios')
+    // Always operate on the caller's own identity. Body-supplied userId/email are ignored.
+    const userId = callerUserId
+
+    // Fetch the user's registered email from auth.users (server-side, trusted)
+    const { data: authUserResult, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(userId)
+    if (authUserError || !authUserResult?.user?.email) {
+      console.error('Falha ao recuperar e-mail do usuário:', authUserError)
+      return new Response(JSON.stringify({ error: 'Usuário não encontrado' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      })
     }
+    const email = authUserResult.user.email
 
     // Verificar se existe uma sessão MFA válida (não expirada) para hoje
     const { data: validSession } = await supabaseAdmin
@@ -59,10 +85,7 @@ Deno.serve(async (req) => {
 
     if (validSession) {
       console.log('MFA session válida encontrada para userId:', userId, '- pulando MFA')
-      return new Response(JSON.stringify({ 
-        success: true, 
-        skipped: true 
-      }), {
+      return new Response(JSON.stringify({ success: true, skipped: true }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       })
@@ -98,11 +121,13 @@ Deno.serve(async (req) => {
       .single()
 
     if (!profile?.empresa_id) {
-      throw new Error('Perfil do usuário não encontrado')
+      return new Response(JSON.stringify({ error: 'Perfil do usuário não encontrado' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      })
     }
 
-    // Reusa código ativo se existir (não expirado e não usado);
-    // caso contrário, gera novo. Em ambos os casos, SEMPRE reenvia o e-mail.
+    // Reusa código ativo se existir; caso contrário, gera novo
     const { data: activeCode } = await supabaseAdmin
       .from('mfa_codes')
       .select('id, code, expires_at')
@@ -134,7 +159,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Enviar e-mail com o código
     const html = await renderAsync(
       React.createElement(MFACodeEmail, {
         userName: profile.nome || email.split('@')[0],
@@ -154,7 +178,7 @@ Deno.serve(async (req) => {
       throw new Error('Erro ao enviar código por e-mail')
     }
 
-    console.log('Código MFA enviado para:', email)
+    console.log('Código MFA enviado para userId:', userId)
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -163,7 +187,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error('Erro na função send-mfa-code:', error)
     return new Response(
-      JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) }),
+      JSON.stringify({ error: 'Erro interno ao processar código MFA' }),
       { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     )
   }
