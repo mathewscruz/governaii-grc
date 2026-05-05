@@ -61,7 +61,7 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
     setIsVerifying(true);
     try {
       const response = await supabase.functions.invoke('verify-mfa-code', {
-        body: { userId, code },
+        body: { code },
       });
 
       if (response.error) throw response.error;
