@@ -179,7 +179,7 @@ const Auth = () => {
       let mfaSendFailed = false;
       try {
         const mfaResponse = await supabase.functions.invoke('send-mfa-code', {
-          body: { userId, email: email.trim() },
+          body: {},
         });
 
         if (mfaResponse.error) {

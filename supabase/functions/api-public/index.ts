@@ -16,6 +16,16 @@ const MODULE_TABLES: Record<string, string> = {
   ativos: 'ativos',
 };
 
+// Campos permitidos para INSERT via API pública (allowlist por módulo)
+const WRITABLE_FIELDS: Record<string, string[]> = {
+  riscos: ['nome', 'descricao', 'responsavel', 'probabilidade_inicial', 'impacto_inicial', 'categoria_id', 'matriz_id'],
+  controles: ['nome', 'descricao', 'tipo', 'criticidade', 'frequencia_teste', 'responsavel', 'categoria_id'],
+  incidentes: ['titulo', 'descricao', 'tipo', 'gravidade', 'data_ocorrencia', 'data_deteccao'],
+  auditorias: ['nome', 'tipo', 'prioridade', 'data_inicio', 'data_fim_prevista'],
+  documentos: ['nome', 'descricao', 'tipo', 'classificacao', 'tags', 'data_vencimento'],
+  ativos: ['nome', 'tipo', 'descricao', 'criticidade', 'proprietario', 'localizacao', 'fornecedor', 'versao'],
+};
+
 // Campos seguros para leitura (evita expor dados sensíveis)
 const SAFE_FIELDS: Record<string, string> = {
   riscos: 'id, nome, descricao, status, nivel_risco_inicial, responsavel, created_at, updated_at',
@@ -171,15 +181,30 @@ serve(async (req) => {
         },
       };
     } else if (req.method === 'POST') {
-      // Criar registro — apenas campos seguros, sempre vinculado à empresa
-      const { data: insertData, ...insertFields } = requestBody;
-      const safeInsert = {
-        ...insertFields,
-        empresa_id: keyData.empresa_id,
-      };
-      // Remover campos que não devem ser inseridos via API
-      delete safeInsert.id;
-      delete safeInsert.modulo;
+      // Criar registro — apenas campos do allowlist, sempre vinculado à empresa
+      const allowed = WRITABLE_FIELDS[targetModule] || [];
+      const safeInsert: Record<string, any> = { empresa_id: keyData.empresa_id };
+      const rejected: string[] = [];
+      for (const [k, v] of Object.entries(requestBody || {})) {
+        if (k === 'modulo') continue;
+        if (allowed.includes(k)) {
+          safeInsert[k] = v;
+        } else {
+          rejected.push(k);
+        }
+      }
+
+      if (rejected.length > 0) {
+        await logRequest(supabase, keyData, req, 400);
+        return new Response(
+          JSON.stringify({
+            error: 'Campos não permitidos no payload',
+            campos_rejeitados: rejected,
+            campos_permitidos: allowed,
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       const { data, error } = await supabase
         .from(table)
