@@ -116,13 +116,10 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       let query = supabase
         .from('profiles')
         .select(`
-          *,
-          empresas (
-            nome
-          ),
-          permission_profiles (
-            name
-          )
+          id, user_id, nome, email, role, ativo, empresa_id, foto_url,
+          created_at, permission_profile_id, invitation_sent_at,
+          empresas ( nome ),
+          permission_profiles ( name )
         `)
         .order('nome');
 
@@ -659,11 +656,17 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                 Reenviar Convite
               </DropdownMenuItem>
             )}
-            {usuario.invitation_link && shouldShowResendButton(usuario) && (
+            {shouldShowResendButton(usuario) && (
               <DropdownMenuItem
                 onClick={async () => {
                   try {
-                    await navigator.clipboard.writeText(usuario.invitation_link!);
+                    const { data: link, error } = await supabase
+                      .rpc('get_user_invitation_link', { _user_id: usuario.user_id });
+                    if (error || !link) {
+                      toast.error('Link de convite indisponível');
+                      return;
+                    }
+                    await navigator.clipboard.writeText(link as string);
                     toast.success('Link de convite copiado');
                   } catch {
                     toast.error('Não foi possível copiar o link');
