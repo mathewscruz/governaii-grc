@@ -7185,6 +7185,7 @@ export type Database = {
       get_user_empresa_id:
         | { Args: never; Returns: string }
         | { Args: { _user_id: string }; Returns: string }
+      get_user_invitation_link: { Args: { _user_id: string }; Returns: string }
       has_admin_role: { Args: never; Returns: boolean }
       has_role: {
         Args: {
