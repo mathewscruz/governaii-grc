@@ -293,7 +293,7 @@ const Auth = () => {
     mfaInProgressRef.current = false;
     setMfaUserId('');
     setMfaEmail('');
-    setMfaPassword('');
+    setPassword('');
     setPhase('idle');
     toast.info(t('auth.loginCancelled'));
   };
