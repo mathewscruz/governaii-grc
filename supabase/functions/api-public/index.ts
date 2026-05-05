@@ -16,6 +16,16 @@ const MODULE_TABLES: Record<string, string> = {
   ativos: 'ativos',
 };
 
+// Campos permitidos para INSERT via API pública (allowlist por módulo)
+const WRITABLE_FIELDS: Record<string, string[]> = {
+  riscos: ['nome', 'descricao', 'responsavel', 'probabilidade_inicial', 'impacto_inicial', 'categoria_id', 'matriz_id'],
+  controles: ['nome', 'descricao', 'tipo', 'criticidade', 'frequencia_teste', 'responsavel', 'categoria_id'],
+  incidentes: ['titulo', 'descricao', 'tipo', 'gravidade', 'data_ocorrencia', 'data_deteccao'],
+  auditorias: ['nome', 'tipo', 'prioridade', 'data_inicio', 'data_fim_prevista'],
+  documentos: ['nome', 'descricao', 'tipo', 'classificacao', 'tags', 'data_vencimento'],
+  ativos: ['nome', 'tipo', 'descricao', 'criticidade', 'proprietario', 'localizacao', 'fornecedor', 'versao'],
+};
+
 // Campos seguros para leitura (evita expor dados sensíveis)
 const SAFE_FIELDS: Record<string, string> = {
   riscos: 'id, nome, descricao, status, nivel_risco_inicial, responsavel, created_at, updated_at',
