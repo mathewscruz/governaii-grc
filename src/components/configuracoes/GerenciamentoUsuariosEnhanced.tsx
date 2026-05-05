@@ -656,11 +656,17 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
                 Reenviar Convite
               </DropdownMenuItem>
             )}
-            {usuario.invitation_link && shouldShowResendButton(usuario) && (
+            {shouldShowResendButton(usuario) && (
               <DropdownMenuItem
                 onClick={async () => {
                   try {
-                    await navigator.clipboard.writeText(usuario.invitation_link!);
+                    const { data: link, error } = await supabase
+                      .rpc('get_user_invitation_link', { _user_id: usuario.user_id });
+                    if (error || !link) {
+                      toast.error('Link de convite indisponível');
+                      return;
+                    }
+                    await navigator.clipboard.writeText(link as string);
                     toast.success('Link de convite copiado');
                   } catch {
                     toast.error('Não foi possível copiar o link');
