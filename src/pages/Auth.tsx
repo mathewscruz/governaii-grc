@@ -41,7 +41,6 @@ const Auth = () => {
   const [phase, setPhase] = useState<AuthPhase>('idle');
   const [mfaUserId, setMfaUserId] = useState('');
   const [mfaEmail, setMfaEmail] = useState('');
-  const [mfaPassword, setMfaPassword] = useState('');
 
   // Trava síncrona — declarada no topo para respeitar a regra de hooks.
   const mfaInProgressRef = useRef(false);
@@ -221,12 +220,12 @@ const Auth = () => {
       }
 
       if (!mfaSkipped) {
-        // Mantém a flag MFA_PENDING ativa — só será removida após verificar o código.
+        // Mantém a sessão ativa (porém oculta via MFA_PENDING_KEY) para que
+        // a Edge Function verify-mfa-code receba um JWT válido e identifique
+        // o usuário pelo claim `sub`. NÃO chamar signOut aqui — quebra o MFA.
         setMfaUserId(userId);
         setMfaEmail(email.trim());
-        setMfaPassword(password);
         setPhase('mfa_required');
-        await supabase.auth.signOut();
         return;
       }
 
@@ -265,27 +264,23 @@ const Auth = () => {
   const handleMFAVerified = async () => {
     setPhase('verifying_mfa');
     try {
-      // Liberar a flag MFA para que o AuthProvider passe a expor a sessão
-      // assim que o signInWithPassword abaixo emitir o evento SIGNED_IN.
+      // Sessão já está ativa (foi mantida durante o MFA via flag MFA_PENDING_KEY).
+      // Basta liberar a flag e forçar o AuthProvider a reemitir o evento expondo o user.
       setMfaPendingFlag(false);
       mfaInProgressRef.current = false;
 
-      const { error } = await supabase.auth.signInWithPassword({
-        email: mfaEmail,
-        password: mfaPassword,
-      });
-      setMfaPassword('');
-
-      if (error) {
-        toast.error(t('auth.errorAuthAfterMFA'));
-        setPhase('idle');
-        return;
+      try {
+        await supabase.auth.refreshSession();
+      } catch (refreshError) {
+        logger.warn('Falha ao refrescar sessão pós-MFA', {
+          module: 'Auth',
+          error: String(refreshError),
+        });
       }
 
       toast.success(t('auth.loginSuccess'));
       setPhase('finalizing');
     } catch (err) {
-      setMfaPassword('');
       toast.error(t('auth.errorAuth'));
       setPhase('idle');
     }
@@ -298,7 +293,7 @@ const Auth = () => {
     mfaInProgressRef.current = false;
     setMfaUserId('');
     setMfaEmail('');
-    setMfaPassword('');
+    setPassword('');
     setPhase('idle');
     toast.info(t('auth.loginCancelled'));
   };
