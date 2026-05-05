@@ -265,27 +265,23 @@ const Auth = () => {
   const handleMFAVerified = async () => {
     setPhase('verifying_mfa');
     try {
-      // Liberar a flag MFA para que o AuthProvider passe a expor a sessão
-      // assim que o signInWithPassword abaixo emitir o evento SIGNED_IN.
+      // Sessão já está ativa (foi mantida durante o MFA via flag MFA_PENDING_KEY).
+      // Basta liberar a flag e forçar o AuthProvider a reemitir o evento expondo o user.
       setMfaPendingFlag(false);
       mfaInProgressRef.current = false;
 
-      const { error } = await supabase.auth.signInWithPassword({
-        email: mfaEmail,
-        password: mfaPassword,
-      });
-      setMfaPassword('');
-
-      if (error) {
-        toast.error(t('auth.errorAuthAfterMFA'));
-        setPhase('idle');
-        return;
+      try {
+        await supabase.auth.refreshSession();
+      } catch (refreshError) {
+        logger.warn('Falha ao refrescar sessão pós-MFA', {
+          module: 'Auth',
+          error: String(refreshError),
+        });
       }
 
       toast.success(t('auth.loginSuccess'));
       setPhase('finalizing');
     } catch (err) {
-      setMfaPassword('');
       toast.error(t('auth.errorAuth'));
       setPhase('idle');
     }
