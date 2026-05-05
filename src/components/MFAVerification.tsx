@@ -160,7 +160,7 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
             >
               <InputOTPGroup className="gap-2">
                 {[0, 1, 2, 3, 4, 5].map((index) => (
-                  <React.Fragment key={index}>
+                  <div key={index} className="contents">
                     {index === 3 && (
                       <span className="self-center w-2 h-px bg-white/15" aria-hidden="true" />
                     )}
@@ -168,7 +168,7 @@ export const MFAVerification: React.FC<MFAVerificationProps> = ({
                       index={index}
                       className="w-11 h-14 text-lg font-semibold bg-[hsl(230,25%,9%)] border-white/[0.10] text-white rounded-lg transition-all data-[active=true]:border-primary data-[active=true]:ring-2 data-[active=true]:ring-primary/20"
                     />
-                  </React.Fragment>
+                  </div>
                 ))}
               </InputOTPGroup>
             </InputOTP>
