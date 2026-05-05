@@ -41,7 +41,6 @@ const Auth = () => {
   const [phase, setPhase] = useState<AuthPhase>('idle');
   const [mfaUserId, setMfaUserId] = useState('');
   const [mfaEmail, setMfaEmail] = useState('');
-  const [mfaPassword, setMfaPassword] = useState('');
 
   // Trava síncrona — declarada no topo para respeitar a regra de hooks.
   const mfaInProgressRef = useRef(false);
