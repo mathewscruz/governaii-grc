@@ -6,7 +6,6 @@ const corsHeaders = {
 }
 
 interface VerifyMFARequest {
-  userId: string
   code: string
 }
 
