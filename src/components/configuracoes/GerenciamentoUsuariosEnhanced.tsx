@@ -116,13 +116,10 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       let query = supabase
         .from('profiles')
         .select(`
-          *,
-          empresas (
-            nome
-          ),
-          permission_profiles (
-            name
-          )
+          id, user_id, nome, email, role, ativo, empresa_id, foto_url,
+          created_at, permission_profile_id, invitation_sent_at,
+          empresas ( nome ),
+          permission_profiles ( name )
         `)
         .order('nome');
 
