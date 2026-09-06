@@ -27,7 +27,7 @@ export function AkurisPulse({ size = 80, className }: AkurisPulseProps) {
       className={className}
       style={{ width: size, height: size, display: "inline-flex" }}
       role="status"
-      aria-label={tGlobal('cardsKpi.sweep.sistema.carregando')}
+      aria-label={tGlobal('common.loading')}
     >
       <svg
         viewBox="0 0 80 80"

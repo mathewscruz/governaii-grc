@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { buscarForaDoEscopo } from '@/lib/gap-soa';
 import { calcularScoreFramework, type RequisitoParaScore } from '@/lib/gap-score';
+import { CategoryCoverage } from '@/components/gap-analysis/v2/CategoryCoverage';
+import { categorySearchParams } from '@/lib/gap-category-navigation';
 import { DefinirMarcoDialog } from '@/components/gap-analysis/v2/DefinirMarcoDialog';
 import { useMarcoCertificacao } from '@/hooks/useMarcoCertificacao';
 import { fasesDe, chaveDoFramework } from '@/lib/gap-fases';
@@ -78,7 +80,7 @@ function GapAnalysisFrameworkDetailInner() {
   /* Conformes sem uma única prova anexada. `null` enquanto não se sabe — ver
      `lib/gap-provas`: uma leitura falhada não pode virar acusação. */
   const [conformesSemProva, setConformesSemProva] = useState<number | null>(null);
-  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | undefined>();
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | undefined>(searchParams.get('cat') || undefined);
   const [activeTab, setActiveTab] = useState('diagnostico');
   const [evidenceView, setEvidenceView] = useState<'analise' | 'biblioteca'>('analise');
   const [scoreRefreshKey, setScoreRefreshKey] = useState(0);
@@ -167,6 +169,7 @@ function GapAnalysisFrameworkDetailInner() {
         Object.entries(catMap)
           .map(([categoria, data]) => ({
             categoria,
+            filterCategory: reqs.find(r => (reqCategoria(r as any) || 'Outros') === categoria)?.categoria || 'Outros',
             ...data,
             // Aderência da categoria pela mesma conta do score do framework:
             // ponderada pelo peso e restrita ao escopo do SoA. O cartão do
@@ -572,18 +575,41 @@ function GapAnalysisFrameworkDetailInner() {
                   onAbrirMarco={empresaId ? () => setMarcoDialogAberto(true) : undefined}
                 />
 
+                <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,1fr)]">
+                  {empresaId && (
+                  <div id="priority-queue" className="scroll-mt-4">
+                    <PriorityQueueCard
+                      frameworkId={frameworkId!}
+                      empresaId={empresaId}
+                      refreshKey={scoreRefreshKey}
+                      limit={6}
+                      onRequirementClick={(req) => abrirRequisitoCompleto(req.id)}
+                      onSeeAll={() => {
+                        document.getElementById('reqs-table')?.scrollIntoView({
+                          behavior: 'smooth', block: 'start',
+                        });
+                      }}
+                    />
+                  </div>
+                )}
+                  <div className="space-y-4">
+                    <CategoryCoverage categories={categoryData} onSelect={(category) => {
+                      setActiveCategoryFilter(category);
+                      setSearchParams(categorySearchParams(searchParams, category), { replace: true });
+                      requestAnimationFrame(() => document.getElementById('reqs-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+                    }} />
                 {empresaId && (
-                  <section className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+                  <section className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-4">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                       <IconShieldCheck className="h-5 w-5" strokeWidth={1.5} />
                     </span>
-                    <div className="min-w-[12rem] flex-1">
+                    <div className="min-w-0 flex-1 basis-40">
                       <p className="text-sm font-medium text-foreground">
                         {jaDeclarouEscopo
                           ? t('gapV2.journey.scopeDefined')
                           : t('gapV2.journey.scopePending')}
                       </p>
-                      <p className="text-xs leading-5 text-muted-foreground">
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">
                         {jaDeclarouEscopo
                           ? t('gapV2.journey.scopeDefinedDescription')
                           : t('gapV2.journey.scopePendingDescription', { total: totalRequirements })}
@@ -600,43 +626,12 @@ function GapAnalysisFrameworkDetailInner() {
                   </section>
                 )}
 
-                {empresaId && (
-                  <div id="priority-queue" className="scroll-mt-4">
-                    <PriorityQueueCard
-                      frameworkId={frameworkId!}
-                      empresaId={empresaId}
-                      refreshKey={scoreRefreshKey}
-                      limit={6}
-                      onRequirementClick={(req) => abrirRequisitoCompleto(req.id)}
-                      onSeeAll={() => {
-                        document.getElementById('reqs-table')?.scrollIntoView({
-                          behavior: 'smooth', block: 'start',
-                        });
-                      }}
-                    />
+
                   </div>
-                )}
+                </div>
 
-                {/* O mapa de calor saiu daqui.
-
-                    Eram onze cartões de categoria a cortar EXACTAMENTE o mesmo
-                    eixo do painel de fases, 300px abaixo dele: os dois agrupam
-                    requisitos pela coluna `categoria` e os dois filtram a
-                    tabela. Acrescentei o painel e não tirei o mapa, que é o
-                    defeito que este módulo já teve com o `getCategory` em três
-                    cópias e com os chips de filtro.
-
-                    E não era só peso. Com uma fase activa o clique no mapa
-                    ficava morto: o handler mudava `activeCategoryFilter`, mas a
-                    fase tem precedência a jusante e a pílula da categoria nem
-                    aparece nesse estado. O cartão acendia e, 1800px abaixo,
-                    nada acontecia.
-
-                    Dois cortes do mesmo eixo garantem que um deles mente
-                    sempre. Fica o que tem ordem, nome de resultado e diz por
-                    onde começar. O recorte por categoria continua a existir
-                    dentro da tabela, com pílula e endereço partilhável.
-                */}
+                {/* A comparação de categorias é compacta e usa a conta existente.
+                    O clique substitui a fase ativa; a tabela abre a seção pertinente. */}
 
                 {/* A barra de chips saiu daqui.
 

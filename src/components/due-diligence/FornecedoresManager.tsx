@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { readAllPages } from '@/lib/read-all-pages';
 import { useListState } from '@/hooks/useListState';
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
@@ -584,8 +585,7 @@ export const FornecedoresManager = forwardRef<FornecedoresManagerHandle, Props>(
   const filteredFornecedores = fornecedores.filter(f => {
     if (statusFilter !== 'all' && f.status !== statusFilter) return false;
     if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      return f.nome.toLowerCase().includes(term) || f.email?.toLowerCase().includes(term) || f.cnpj?.toLowerCase().includes(term);
+      return matchesText(searchTerm, f.nome, f.email, f.cnpj);
     }
     return true;
   });

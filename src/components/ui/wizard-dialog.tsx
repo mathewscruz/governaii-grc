@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState, useRef } from 'react';
 import { IconSuccess, IconInfo, IconChevron, IconChevronLeft, IconSave, IconDot } from '@/components/icons';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -122,6 +122,7 @@ export function WizardDialog({
   canAdvance,
 }: WizardDialogProps) {
   const { t } = useLanguage();
+  const dialogRef = useRef<HTMLDivElement>(null);
   const _submitLabel = submitLabel ?? t('common.save');
   const _cancelLabel = cancelLabel ?? t('common.cancel');
   const [internalTab, setInternalTab] = useState<string>(tabs[0]?.id ?? '');
@@ -169,7 +170,8 @@ export function WizardDialog({
     enabled: open,
     // Ctrl/Cmd+S não pode concluir o cadastro enquanto o utilizador ainda
     // está nas etapas intermediárias.
-    onSave: isLast ? onSubmit : undefined,
+    scopeRef: dialogRef,
+    onSave: isLast && !submitDisabled && !isSubmitting ? onSubmit : undefined,
     onNext: goNext,
     onPrev: goPrev,
   });
@@ -186,6 +188,7 @@ export function WizardDialog({
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
+          ref={dialogRef}
           className={cn(
             'p-0 gap-0 overflow-hidden flex flex-col',
             'max-w-full max-h-[100dvh] sm:max-h-[92vh]',

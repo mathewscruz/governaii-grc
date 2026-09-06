@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { useState } from 'react';
 import { filterUuids } from '@/lib/uuid';
 import { IconView, IconMore, IconSuccess, IconWarning, IconError, IconTime, IconCalendarClock, IconTimer, IconBan } from '@/components/icons';
@@ -158,7 +159,7 @@ export default function RiscosAceite({ embedded = false }: { embedded?: boolean 
   };
 
   const filteredRiscos = riscos.filter(r => {
-    const matchesSearch = r.nome.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = matchesText(searchTerm, r.nome);
     // `a || b || c === x` avalia como `a || b || (c === x)`: bastava ter nível
     // residual para a expressão dar verdadeiro, e o filtro nunca filtrava nada.
     const matchesNivel =
@@ -169,7 +170,7 @@ export default function RiscosAceite({ embedded = false }: { embedded?: boolean 
   });
 
   const filteredPendentes = riscosPendentes.filter(r =>
-    r.nome.toLowerCase().includes(searchTermPendente.toLowerCase())
+    matchesText(searchTermPendente, r.nome)
   );
 
   const totalAceitos = riscos.length;
@@ -184,7 +185,7 @@ export default function RiscosAceite({ embedded = false }: { embedded?: boolean 
   const totalExpirados = riscosExpirados.length;
 
   const filteredExpirados = riscosExpirados.filter(r =>
-    r.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    matchesText(searchTerm, r.nome)
   );
 
   const getValidadeBadge = (validoAte?: string) => {

@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import React, { useState, useEffect } from 'react';
 import { IconSearch, IconShield, IconUsers } from '@/components/icons';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,8 +84,7 @@ export const UserPermissionsList: React.FC<Props> = ({ empresaId, selectedUserId
   }, [selectedUserId, users]);
 
   const filteredUsers = users.filter(u =>
-    u.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+    matchesText(searchTerm, u.nome, u.email)
   );
 
   const getRoleLabel = (role: string) => {

@@ -1,4 +1,5 @@
 
+import { requestedAuthUsers } from '../_shared/requested-auth-users.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { requireUserContext, requireValidMfa, authErrorResponse } from '../_shared/auth.ts'
 
@@ -30,7 +31,6 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const user = { id: ctx.userId }
     const currentUserProfile = { role: ctx.role, empresa_id: ctx.empresaId }
 
 
@@ -60,11 +60,12 @@ Deno.serve(async (req) => {
     // Tenant boundary: non-super_admins can only look up users in their own empresa
     let allowedUserIds: string[] = user_ids
     if (!isSuperAdmin) {
-      const { data: sameTenantProfiles } = await supabaseAdmin
+      const { data: sameTenantProfiles, error: tenantError } = await supabaseAdmin
         .from('profiles')
         .select('user_id')
         .eq('empresa_id', currentUserProfile.empresa_id)
         .in('user_id', user_ids)
+      if (tenantError) throw tenantError
       allowedUserIds = (sameTenantProfiles || []).map((p: any) => p.user_id)
     }
 
@@ -76,18 +77,13 @@ Deno.serve(async (req) => {
     }
 
 
-    // Buscar informações de acesso dos usuários
-    const { data: authUsers, error: usersError } = await supabaseAdmin.auth.admin
-      .listUsers({ page: 1, perPage: 1000 })
-
-    if (usersError) {
-      throw new Error('Erro ao buscar informações de usuários')
-    }
-
-    // Filtrar apenas os usuários solicitados (respeitando o escopo de tenant)
-    const filteredUsers = authUsers.users.filter(authUser =>
-      allowedUserIds.includes(authUser.id)
-    ).map(authUser => ({
+    // Never silently omit users outside the first Auth page.
+    const authUsers = await requestedAuthUsers(allowedUserIds, async (page, perPage) => {
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage })
+      if (error) throw error
+      return data.users
+    })
+    const filteredUsers = authUsers.map(authUser => ({
       id: authUser.id,
       last_sign_in_at: authUser.last_sign_in_at,
       created_at: authUser.created_at

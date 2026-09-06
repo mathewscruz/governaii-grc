@@ -13,11 +13,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { logger } from '@/lib/logger';
 import { AkurisPulse } from '@/components/ui/AkurisPulse';
-import { SectionHead } from './SectionHead';
+import { ExecutivePanel } from '@/components/ui/executive-summary';
 import { reqTitulo } from "@/lib/gap-i18n";
 import { useLanguage } from '@/contexts/LanguageContext';
 import { isGapCritico, isGapAtrasado } from '@/lib/gap-criticality';
-import { IconWarning, IconArrowRight, IconCalendarClock } from '@/components/icons';
+import { IconArrowRight, IconCalendarClock } from '@/components/icons';
 import { fetchFrameworkRequirements } from '@/lib/framework-requirements';
 
 interface PriorityRequirement {
@@ -169,134 +169,59 @@ export function PriorityQueueCard({
   */
   }, [frameworkId, empresaId, limit, refreshKey]);
 
-  /* Alguma coisa ja foi respondida? A fila muda de discurso conforme isso. */
-  const algumAvaliado = useMemo(
-    () => items.some(i => i.conformity_status && i.conformity_status !== 'nao_avaliado'),
-    [items]
-  );
-
   // Mesma definição de "crítico" usada no cartão Gaps a Tratar e no dashboard.
   const totalCritical = useMemo(
     () => items.filter(i => isGapCritico(i)).length,
     [items]
   );
 
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? items : items.slice(0, 3);
+
   return (
-    <section className="relative overflow-hidden rounded-lg border border-border bg-card">
-      <div className="p-5">
-        {/* Cada requisito numa linha só. Empilhado — código, título, motivo —
-            a fila gastava 366px para quatro itens, mais do que o cabeçalho
-            inteiro da página. À largura toda não há razão para empilhar. */}
-        <SectionHead
-          title={t('gapV2.priorityQueue.title')}
-          count={items.length}
-          right={
-            <div className="flex items-center gap-2">
-              {onSeeAll && (
-                <button
-                  type="button"
-                  onClick={onSeeAll}
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors max-lg:min-h-[36px]"
-                >
-                  {t('gapV2.priorityQueue.seeAll')}
-                  <IconArrowRight className="h-3 w-3" strokeWidth={1.5} />
-                </button>
-              )}
-            </div>
-          }
-        />
-
-        {/*
-            Por que esta ordem, dito em voz alta.
-
-            A fila ordenava por peso × estado × urgência e não dizia nada. O
-            utilizador tinha de confiar que o 01 era mesmo o primeiro. Uma frase
-            resolve, e é o que os concorrentes fazem: a Drata escreve à letra
-            "é importante completar esta conexão primeiro" e explica porquê.
-        */}
-        <p className="-mt-1 mb-3 text-xs leading-6 text-muted-foreground">
-          {/* Quem nunca avaliou nada precisa de instrucao, nao de criterio: o
-              criterio explica uma ordem que ainda nao tem informacao dentro. */}
-          {algumAvaliado ? t('gapV2.priorityQueue.criterio') : t('gapV2.priorityQueue.comecarAqui')}
-        </p>
-
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <AkurisPulse size={32} />
-          </div>
-        ) : items.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic py-4">
-            {t('gapV2.priorityQueue.emptyState')}
-          </p>
-        ) : (
-          <ol className="space-y-1.5">
-            {items.map((item, idx) => {
-              const isCritical = item.conformity_status === 'nao_conforme';
-              const isOverdue = isGapAtrasado(item.prazo_implementacao);
-              return (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onRequirementClick({ id: item.id, codigo: item.codigo, titulo: item.titulo })
-                    }
-                    className="group w-full text-left flex items-center gap-3 rounded-lg border border-border bg-background hover:border-primary/40 hover:bg-accent/40 transition-ui px-3 py-2"
-                  >
-                    <span className="font-mono text-xs tabular-nums text-muted-foreground w-6 text-center shrink-0">
-                      {String(idx + 1).padStart(2, '0')}
-                    </span>
-
-                    {item.codigo && (
-                      <span className="font-mono text-xs tabular-nums text-foreground/80 w-20 shrink-0">
-                        {item.codigo}
-                      </span>
-                    )}
-
-                    <span className="text-sm text-foreground truncate flex-1 min-w-0 group-hover:text-primary transition-colors">
-                      {item.titulo}
-                    </span>
-
-                    {item.categoria && (
-                      <span className="hidden xl:block text-xs text-muted-foreground truncate w-48 shrink-0">
-                        {item.categoria}
-                      </span>
-                    )}
-
-                    <span className="flex items-center gap-2 shrink-0 w-56 justify-end">
-                      {isCritical && (
-                        <span className="inline-flex items-center gap-1 text-xs text-destructive">
-                          <IconWarning className="h-3.5 w-3.5" strokeWidth={1.5} />
-                          {t('gapV2.priorityQueue.nonCompliant')}
-                        </span>
-                      )}
-                      {isOverdue && (
-                        <span className="inline-flex items-center gap-1 text-xs text-destructive">
-                          <IconCalendarClock className="h-3.5 w-3.5" strokeWidth={1.5} />
-                          {t('gapV2.priorityQueue.overdue')}
-                        </span>
-                      )}
-                      {!isCritical && !isOverdue && (
-                        <span className="text-xs text-muted-foreground truncate">{item.reason}</span>
-                      )}
-                    </span>
-
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors shrink-0">
-                      {t('gapV2.priorityQueue.openRequirement')}
-                      <IconArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-
-        {totalCritical > 0 && (
-          <div className="mt-3 pt-3 border-t border-border/60 text-micro text-muted-foreground">
-            <span className="font-semibold text-destructive tabular-nums">{totalCritical}</span> {t('gapV2.priorityQueue.footerSummary', { total: items.length })}
-          </div>
-        )}
-      </div>
-    </section>
+    <ExecutivePanel className="h-full">
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border/60 p-4">
+        <div className="min-w-0 flex-1">
+          <p className="executive-label">{t('executive.priorities')}</p>
+          <h2 className="mt-1 text-base font-semibold">{t('gapV2.priorityQueue.title')}</h2>
+          <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">{t('executive.prioritiesHint')}</p>
+        </div>
+        {onSeeAll && <button type="button" onClick={onSeeAll} className="executive-row inline-flex min-h-9 items-center gap-1 rounded-md px-2 text-xs font-medium text-primary">
+          {t('gapV2.priorityQueue.seeAll')}<IconArrowRight className="h-3.5 w-3.5" />
+        </button>}
+      </header>
+      {loading ? <div className="flex justify-center p-8"><AkurisPulse size={32} /></div>
+        : items.length === 0 ? <p className="p-5 text-sm text-muted-foreground">{t('gapV2.priorityQueue.emptyState')}</p>
+        : <ol className="divide-y divide-border/60">
+          {visible.map((item, idx) => {
+            const overdue = isGapAtrasado(item.prazo_implementacao);
+            const status = item.conformity_status === 'nao_conforme' || item.conformity_status === 'parcial' ? item.conformity_status : 'nao_avaliado';
+            return <li key={item.id}>
+              <button type="button" onClick={() => onRequirementClick({ id: item.id, codigo: item.codigo, titulo: item.titulo })}
+                className="executive-row group flex w-full items-start gap-3 p-4 text-left">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-primary/5 text-xs font-semibold tabular-nums text-primary">
+                  {String(idx + 1).padStart(2, '0')}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="mb-1 block text-xs text-muted-foreground">{[item.codigo, item.categoria].filter(Boolean).join(' · ')}</span>
+                  <span className="block text-sm font-semibold leading-5 group-hover:text-primary">{item.titulo}</span>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">{t(`executive.priorityReason.${status}`)}</span>
+                  {overdue && <span className="mt-1 inline-flex items-center gap-1 text-xs text-destructive">
+                    <IconCalendarClock className="h-3.5 w-3.5" />{t('gapV2.priorityQueue.overdue')}
+                  </span>}
+                </span>
+                <IconArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" aria-hidden="true" />
+              </button>
+            </li>;
+          })}
+        </ol>}
+      {!loading && <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-2">
+        <p className="text-xs text-muted-foreground">{totalCritical > 0 && <>{totalCritical} {t('gapV2.priorityQueue.footerSummary', { total: items.length })}</>}</p>
+        {items.length > 3 && <button type="button" onClick={() => setExpanded(v => !v)} aria-expanded={expanded}
+          className="executive-row min-h-9 rounded-md px-2 text-xs font-medium text-primary">
+          {expanded ? t('executive.showLess') : t('executive.showMore', { count: items.length - 3 })}
+        </button>}
+      </footer>}
+    </ExecutivePanel>
   );
 }

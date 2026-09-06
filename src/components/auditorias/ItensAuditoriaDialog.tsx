@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { useState } from "react";
 import { IconAdd, IconSearch, IconDownload, IconCalendar, IconFile, IconChevron, IconMessage, IconAttach, IconPerson, IconShield, IconLink } from '@/components/icons';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -191,8 +192,7 @@ export function ItensAuditoriaDialog({
 
   const filteredItens = itens?.filter((item) => {
     const matchesSearch =
-      item.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.titulo.toLowerCase().includes(searchTerm.toLowerCase());
+      matchesText(searchTerm, item.codigo, item.titulo);
     const matchesStatus = statusFilter === "todos" || item.status === statusFilter;
     const matchesResponsavel =
       responsavelFilter === "todos" || item.responsavel_id === responsavelFilter;

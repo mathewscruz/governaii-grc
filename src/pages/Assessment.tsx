@@ -367,6 +367,7 @@ export default function Assessment() {
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<{ title: string; message: string } | null>(null);
+  const [canRetryLoad, setCanRetryLoad] = useState(false);
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const questionsPerPage = 5;
@@ -450,12 +451,16 @@ export default function Assessment() {
 
   const fetchAssessment = useCallback(async () => {
     if (!token) {
-      assessmentLogger.error('Token não fornecido');
+      setLoadError({ title: t('publicPortal.assessment.errorInvalidTitle'), message: t('publicPortal.assessment.errorInvalidMessage') });
+      setCanRetryLoad(false);
+      setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
+      setLoadError(null);
+      setCanRetryLoad(false);
       const payload = await invokePublicAssessment<{
         assessment: AssessmentData;
         questions: QuestionData[];
@@ -528,6 +533,7 @@ export default function Assessment() {
     } catch (error) {
       assessmentLogger.error('Erro ao carregar assessment:', error);
       const code = (error as Error & { code?: PublicAssessmentErrorCode }).code;
+      setCanRetryLoad(!code || code === 'INTERNAL_ERROR');
       setLoadError(code === 'EXPIRED'
         ? { title: t('publicPortal.assessment.errorExpiredTitle'), message: t('publicPortal.assessment.errorExpiredMessage') }
         : code === 'NOT_FOUND' || code === 'INVALID_REQUEST'
@@ -651,6 +657,7 @@ export default function Assessment() {
               <p className="text-slate-500">
                 {loadError?.message || t('publicPortal.assessment.notFoundMessage')}
               </p>
+              {canRetryLoad && <Button type="button" className="mt-5" onClick={() => void fetchAssessment()}>{t('common.retry')}</Button>}
             </CardContent>
           </Card>
         </div>

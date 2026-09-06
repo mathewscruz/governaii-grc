@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -46,7 +46,7 @@ interface DialogShellProps {
   /** Main content; will be wrapped in a ScrollArea */
   children: ReactNode;
   /** Optional custom footer (replaces default Cancel/Save) */
-  footer?: ReactNode;
+  footer?: ReactNode | ((actions: { requestClose: () => void }) => ReactNode);
   /** Default footer: IconSave handler */
   onSubmit?: () => void;
   submitLabel?: string;
@@ -122,6 +122,7 @@ export function DialogShell({
   hideFooter = false,
 }: DialogShellProps) {
   const { t } = useLanguage();
+  const dialogRef = useRef<HTMLDivElement>(null);
   const _submitLabel = submitLabel ?? t('common.save');
   const _cancelLabel = cancelLabel ?? t('common.cancel');
   const { showConfirm, confirmCloseIfDirty, confirmDiscard, cancelDiscard } =
@@ -131,7 +132,8 @@ export function DialogShell({
 
   useWizardShortcuts({
     enabled: open && !disableShortcuts,
-    onSave: onSubmit,
+    scopeRef: dialogRef,
+    onSave: !submitDisabled && !isSubmitting ? onSubmit : undefined,
   });
 
   const handleOpenChange = (next: boolean) => {
@@ -146,6 +148,7 @@ export function DialogShell({
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
+          ref={dialogRef}
           className={cn(
             'p-0 gap-0 overflow-hidden flex flex-col',
             'max-w-full max-h-[100dvh] sm:max-h-[92vh]',
@@ -208,7 +211,7 @@ export function DialogShell({
               Sem classe de fundo herda o casco, e acompanha-o nos dois temas. */}
           {!hideFooter && (
             <div className="flex-shrink-0 border-t px-4 sm:px-6 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-3">
-              {footer ?? (
+              {(typeof footer === 'function' ? footer({ requestClose: () => handleOpenChange(false) }) : footer) ?? (
                 <div className="flex items-center justify-end gap-2">
                   <Button
                     type="button"

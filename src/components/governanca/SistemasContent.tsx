@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { readAllPages } from '@/lib/read-all-pages';
 import { useListState } from '@/hooks/useListState';
 import React, { useState, useMemo } from 'react';
@@ -151,10 +152,7 @@ export default function SistemasContent({ actionsSlot }: { actionsSlot?: HTMLEle
 
   const filteredAndSortedSistemas = useMemo(() => {
     const filtered = sistemas.filter(sistema => {
-      const matchesSearch = searchTerm === '' || 
-        sistema.nome_sistema.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sistema.tipo_sistema.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sistema.responsavel_sistema?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = matchesText(searchTerm, sistema.nome_sistema, sistema.tipo_sistema, sistema.responsavel_sistema);
       
       const matchesStatus = statusFilter === 'todos' || (sistema.ativo ? 'ativo' : 'inativo') === statusFilter;
       const matchesTipo = tipoFilter === 'todos' || sistema.tipo_sistema === tipoFilter;

@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { readAllPages, readAllPagesByIds } from '@/lib/read-all-pages';
 import { useListState } from '@/hooks/useListState';
 import React, { useState, useMemo, useEffect } from 'react';
@@ -358,13 +359,7 @@ const Ativos = () => {
     // filtrar por "alto valor" recalcularia o quartil sobre si próprio.
     const corte = corteAltoValor(ativos);
     const filtered = ativos.filter(ativo => {
-      const matchesSearch = searchTerm === '' || 
-        ativo.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ativo.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ativo.proprietario_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ativo.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ativo.imei?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ativo.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesSearch = matchesText(searchTerm, ativo.nome, ativo.tipo, ativo.proprietario_nome, ativo.cliente, ativo.imei, ...(ativo.tags || []));
       const matchesStatus = statusFilter === 'todos' || ativo.status === statusFilter;
       // O banco guarda 'alta'/'media' (feminino); o combo usa a escala canónica
       // ('alto'/'medio'). Normalizar antes de comparar, senão o filtro devolve zero.

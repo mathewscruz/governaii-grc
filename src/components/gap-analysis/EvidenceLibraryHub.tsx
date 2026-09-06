@@ -1,3 +1,4 @@
+import { matchesSearch } from '@/lib/search-utils';
 import { useRef, useState } from 'react';
 import { IconSearch, IconExternal, IconSuccess, IconFile, IconChevron, IconBook, IconUpload } from '@/components/icons';
 import { Card, CardContent } from '@/components/ui/card';
@@ -74,10 +75,7 @@ export function EvidenceLibraryHub() {
   const [matchResult, setMatchResult] = useState<{ suggestions: CrossMatchSuggestion[]; persisted: number } | null>(null);
 
   const filtered = lib.items.filter((it) => {
-    const q = search.trim().toLowerCase();
-    if (!q) return true;
-    return [it.nome, it.descricao, (it.tags || []).join(' '), it.arquivo_nome]
-      .filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
+    return matchesSearch(search, it.nome, it.descricao, (it.tags || []).join(' '), it.arquivo_nome);
   });
 
   const runMatch = async (ev: EvidenceLibraryItem) => {

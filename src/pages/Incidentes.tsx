@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { readAllPages, readAllPagesByIds } from '@/lib/read-all-pages';
 import { norm } from '@/lib/metrics';
 import { useListState } from '@/hooks/useListState';
@@ -192,10 +193,7 @@ export default function Incidentes() {
 
   // Aplicar filtros
   const filteredIncidentes = incidentes.filter(incidente => {
-    const matchesSearch = searchTerm === '' || 
-      incidente.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incidente.categoria?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      nomeResponsavel(incidente.responsavel_tratamento)?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = matchesText(searchTerm, incidente.titulo, incidente.categoria, nomeResponsavel(incidente.responsavel_tratamento));
     
     // Mesmo predicado dos cartões (camada única de métricas)
     const matchesStatus = statusFilter === 'todos' || estadoIncidente(incidente) === statusFilter;

@@ -208,6 +208,11 @@ export default function DenunciaConsulta() {
 
     if (searching) return;
     setLookupError('');
+    // Password managers may mistake this code form for the platform login.
+    if (protocolo.includes('@')) {
+      setLookupError(t('canalExperience.protocolNotEmail'));
+      return;
+    }
     if (!empresa || !protocolo.trim() || (!legacy && !codigo.trim())) {
       setLookupError(t('canalExperience.codeRequired'));
       return;
@@ -236,7 +241,14 @@ export default function DenunciaConsulta() {
       if (sequence !== requestSequence.current) return;
       const denunciaData = (data?.denuncia ?? null) as RespostaConsulta | null;
 
-      if (error || !denunciaData) {
+      if (error) {
+        const status = (error as { context?: { status?: number } }).context?.status;
+        setLookupError(t(status === 429 ? 'canalExperience.lookupRateLimited'
+          : status && [400, 401, 403, 404].includes(status) ? 'publicPortal.denunciaConsulta.notFoundDescription'
+          : 'publicPortal.denunciaConsulta.searchError'));
+        return;
+      }
+      if (!denunciaData) {
         setLookupError(t('publicPortal.denunciaConsulta.notFoundDescription'));
         return;
       }
@@ -326,15 +338,15 @@ export default function DenunciaConsulta() {
         {!showDetails && <div className="canal-search-grid">
           <div>
             <p className="text-muted-foreground mb-6">{t('canalExperience.lookupHint')}</p>
-            <form onSubmit={buscarDenuncia} className="space-y-5">
+            <form autoComplete="off" onSubmit={buscarDenuncia} className="space-y-5">
               <div className="space-y-2"><Label htmlFor="protocolo">{t('publicPortal.denunciaConsulta.protocolLabel')}</Label>
-                <Input id="protocolo" value={protocolo} onChange={(event) => setProtocolo(event.target.value.toUpperCase())}
+                <Input id="protocolo" name="report-protocol" value={protocolo} onChange={(event) => setProtocolo(event.target.value.toUpperCase())}
                   placeholder={t('publicPortal.denunciaConsulta.protocolPlaceholder')} maxLength={100} autoComplete="off" spellCheck={false} required aria-describedby="protocol-help" />
                 <p id="protocol-help" className="text-xs text-muted-foreground">{t('canalExperience.protocolHelp')}</p>
               </div>
               {!legacy && <div className="space-y-2"><Label htmlFor="codigo">{t('publicPortal.denunciaConsulta.codeLabel')}</Label>
-                <div className="flex gap-2"><Input id="codigo" type={showCode ? 'text' : 'password'} value={codigo} onChange={(event) => setCodigo(event.target.value.trim())}
-                  placeholder={t('publicPortal.denunciaConsulta.codePlaceholder')} maxLength={128} autoComplete="off" spellCheck={false} required aria-describedby="code-help" />
+                <div className="flex gap-2"><Input id="codigo" name="report-access-code" type={showCode ? 'text' : 'password'} value={codigo} onChange={(event) => setCodigo(event.target.value.trim())}
+                  placeholder={t('publicPortal.denunciaConsulta.codePlaceholder')} maxLength={128} autoComplete="section-report one-time-code" spellCheck={false} required aria-describedby="code-help" />
                   <Button type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0" aria-label={t(showCode ? 'canalExperience.hideCode' : 'canalExperience.showCode')} aria-pressed={showCode} onClick={() => setShowCode((value) => !value)}>{showCode ? <EyeOff size={18} /> : <Eye size={18} />}</Button>
                 </div><p id="code-help" className="text-xs text-muted-foreground">{t('canalExperience.codeHelp')}</p>
               </div>}

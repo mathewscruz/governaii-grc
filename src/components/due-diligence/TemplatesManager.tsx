@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { useEffect, useState, useMemo } from 'react';
 import { logger } from '@/lib/logger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -343,16 +344,7 @@ export function TemplatesManager() {
   const filteredTemplates = useMemo(() => {
     return templates.filter(template => {
       // Filtro por busca
-      if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        if (
-          !template.nome.toLowerCase().includes(term) &&
-          !template.categoria.toLowerCase().includes(term) &&
-          !template.descricao?.toLowerCase().includes(term)
-        ) {
-          return false;
-        }
-      }
+      if (!matchesText(searchTerm, template.nome, template.categoria, template.descricao)) return false;
 
       // Filtro por categoria
       if (categoriaFilter !== 'all' && template.categoria !== categoriaFilter) {

@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { useState, useEffect, useMemo } from 'react';
 import { IconAdd, IconEdit, IconDelete, IconUpload, IconMore, IconRefresh, IconShieldAlert, IconOrg, IconPower, IconWarning, IconSuccess } from '@/components/icons';
 import { useAuth } from '@/components/AuthProvider';
@@ -183,8 +184,7 @@ const GerenciamentoEmpresasInner = () => {
   }, []);
 
   const filteredEmpresas = empresas.filter(empresa => {
-    const matchesSearch = empresa.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      empresa.cnpj?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = matchesText(searchTerm, empresa.nome, empresa.cnpj);
     const matchesStatus = statusFilter === 'all' || 
       (statusFilter === 'ativo' && empresa.ativo) || 
       (statusFilter === 'inativo' && !empresa.ativo);

@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { readAllPages, readAllPagesByIds } from '@/lib/read-all-pages';
 import { useListState } from '@/hooks/useListState';
 import { useState, useMemo, useEffect } from 'react';
@@ -203,10 +204,7 @@ export default function AtivosLicencas() {
   // Filtrar e ordenar licenças
   const filteredAndSortedLicencas = useMemo(() => {
     const filtered = licencas.filter(licenca => {
-      const matchesSearch = searchTerm === '' || 
-        licenca.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        licenca.tipo_licenca.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        licenca.fornecedor.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = matchesText(searchTerm, licenca.nome, licenca.tipo_licenca, licenca.fornecedor);
       
       const matchesStatus = statusFilter === 'todos' || licenca.status === statusFilter;
       const matchesCriticidade = criticidadeFilter === 'todos' || severidadeDeFaixas(licenca.criticidade) === criticidadeFilter;

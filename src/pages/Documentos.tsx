@@ -1,3 +1,4 @@
+import { paginationPages } from '@/lib/pagination';
 import { readAllPages } from '@/lib/read-all-pages';
 import { useRef } from 'react';
 import { compareSortValues, type SortState } from '@/components/ui/sortable-table-head';
@@ -680,17 +681,7 @@ export default function Documentos() {
                         disabled={currentPage === 1}
                       />
                     </PaginationItem>
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let page = i + 1;
-                      if (totalPages > 5) {
-                        if (currentPage > 3) {
-                          page = currentPage - 2 + i;
-                        }
-                        if (page > totalPages) {
-                          page = totalPages - 4 + i;
-                        }
-                      }
-                      return (
+                    {paginationPages(currentPage, totalPages).map((page) => (
                         <PaginationItem key={page}>
                           <PaginationLink
                             onClick={() => setCurrentPage(page)}
@@ -700,8 +691,7 @@ export default function Documentos() {
                             {page}
                           </PaginationLink>
                         </PaginationItem>
-                      );
-                    })}
+              ))}
                     <PaginationItem>
                       <PaginationNext 
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}

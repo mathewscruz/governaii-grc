@@ -18,7 +18,8 @@ describe('faixas editoriais dos módulos', () => {
     expect(privacidade).toContain('icon={PrivacidadeIcon}');
     expect(gap).toContain('icon={GapAnalysisIcon}');
     expect(gap).toContain('iconClassName="right-8 top-4 translate-y-0 md:right-10"');
-    expect(jornada).toContain('icon={CurrentIcon}');
+    // A jornada compacta mantém o glifo do tema junto da ação, sem marca d'água atrás do botão.
+    expect(jornada).toContain('<CurrentIcon');
     expect(continuidade).toContain('icon={ContinuidadeIcon}');
   });
 });

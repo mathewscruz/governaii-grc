@@ -1,4 +1,6 @@
 const pt = {
+  protocolNotEmail: 'Informe o protocolo do relato, não o e-mail de acesso ao Akuris.',
+  lookupRateLimited: 'Muitas tentativas de consulta. Aguarde alguns minutos antes de tentar novamente.',
   deadlineDone: 'Concluído',
   about: 'Sobre o canal', register: 'Registrar relato', track: 'Acompanhar', navigation: 'Navegação do canal', skip: 'Ir para o conteúdo',
   metaDescription: 'Canal para comunicar irregularidades e acompanhar o tratamento do relato pela equipe responsável.',
@@ -45,6 +47,8 @@ const pt = {
   emailConflict: 'Quando o e-mail é obrigatório, o registro anônimo fica indisponível. Desative a exigência de e-mail para oferecer anonimato.',
 };
 const en: Record<keyof typeof pt, string> = {
+  protocolNotEmail: 'Enter the report reference, not your Akuris account email.',
+  lookupRateLimited: 'Too many lookup attempts. Wait a few minutes before trying again.',
   deadlineDone: 'Completed',
   about: 'About the channel', register: 'Submit a report', track: 'Track a report', navigation: 'Channel navigation', skip: 'Skip to content',
   metaDescription: 'Report concerns and follow how the designated team handles your report.',

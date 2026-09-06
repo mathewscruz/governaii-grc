@@ -54,6 +54,7 @@ export default function Dashboard() {
   // para o dashboard. Não disparamos aqui para evitar reaparecer ao navegar
   // de volta para o dashboard a partir de outras páginas.
   const [drillKey, setDrillKey] = useState<DrillDownKey | null>(null);
+  const [showContext, setShowContext] = useState(false);
 
   /*
     O painel atualiza-se sozinho.
@@ -125,6 +126,12 @@ export default function Dashboard() {
             {t('dashboard_v3.hello', { name: profile?.nome || 'Usuário' })}
           </p>
 
+          <button type="button" aria-expanded={showContext} aria-controls="dashboard-context"
+            onClick={() => setShowContext(v => !v)}
+            className="min-h-10 rounded-md text-xs font-medium text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring sm:hidden">
+            {t('executive.contextToggle')} {showContext ? '−' : '+'}
+          </button>
+          <div id="dashboard-context" className={showContext ? '' : 'hidden sm:block'}>
           <DashboardMeta
             ativos={ativosStats.data?.total || 0}
             activeIncidents={activeIncidents}
@@ -149,6 +156,7 @@ export default function Dashboard() {
             denunciasNovas={denunciasStats.data?.novas || 0}
             onPillClick={(key: KpiKey) => setDrillKey(key as DrillDownKey)}
           />
+          </div>
         </div>
 
 
@@ -158,6 +166,8 @@ export default function Dashboard() {
           kpiKey={drillKey}
         />
 
+
+        <GrcHealthBreakdown />
 
         {/* Para onde vai a carteira · o que está por avaliar */}
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3 lg:gap-5 w-full">
@@ -169,8 +179,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Como está cada domínio, do pior para o melhor */}
-        <GrcHealthBreakdown />
+
 
         {/* O último bloco come o espaço que sobra, em vez de deixar uma faixa
             de fundo vazia por baixo. */}

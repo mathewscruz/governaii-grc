@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 /**
  * SoATabV2 — Onda 5 Akuris.
  * 7 KPIs editoriais + filtros segmentados (Cláusulas/Anexo A/Todos) + tabela
@@ -175,10 +176,7 @@ export function SoATabV2({ frameworkId, frameworkName, frameworkVersion, section
 
   const filteredItems = useMemo(() => {
     return items.filter(item => {
-      if (search) {
-        const s = search.toLowerCase();
-        if (!item.codigo.toLowerCase().includes(s) && !item.titulo.toLowerCase().includes(s)) return false;
-      }
+      if (!matchesText(search, item.codigo, item.titulo)) return false;
       if (segment !== 'todos') {
         const seccao = sections?.find(sec => sec.id === segment);
         if (seccao && !seccao.filter(item.codigo)) return false;

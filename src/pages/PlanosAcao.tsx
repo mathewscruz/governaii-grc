@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { readAllPages } from '@/lib/read-all-pages';
 import { actionPlanOrigin } from '@/lib/action-plan-origin';
 import { fetchEntityById, routeForEntity } from '@/lib/entity-search';
@@ -25,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { PlanoAcaoDialog } from '@/components/planos-acao/PlanoAcaoDialog';
+import { ActionRoadmap } from '@/components/planos-acao/ActionRoadmap';
 import { PlanosAcaoKanban, PLANO_STATUS_EDITAVEIS } from '@/components/planos-acao/PlanosAcaoKanban';
 import { PlanoAcaoDetailDrawer } from '@/components/planos-acao/PlanoAcaoDetailDrawer';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -144,7 +146,7 @@ export default function PlanosAcao() {
   // trabalho que já tem compromisso assumido.
   const [sortField, setSortField] = useListState('sortField', 'prazo');
   const [sortDirection, setSortDirection] = useListState<'asc' | 'desc'>('sortDirection', 'asc');
-  const [viewMode, setViewMode] = useListState<'lista' | 'kanban'>('viewMode', 'lista');
+  const [viewMode, setViewMode] = useListState<'lista' | 'kanban' | 'roadmap'>('viewMode', 'lista');
   // Administradores chegam na visão consolidada que o dashboard resume.
   // Usuários comuns continuam começando pelo que está atribuído a eles.
   const [activeTab, setActiveTab] = useListState('activeTab', () => isAdmin ? 'todos' : 'meus');
@@ -341,12 +343,7 @@ export default function PlanosAcao() {
       result = result.filter((p: any) => p.prioridade === prioridadeFilter);
     }
     if (search) {
-      const s = search.toLowerCase();
-      result = result.filter((p: any) =>
-        p.titulo?.toLowerCase().includes(s) ||
-        p.descricao?.toLowerCase().includes(s) ||
-        p.registro_origem_titulo?.toLowerCase().includes(s)
-      );
+      result = result.filter((p: any) => matchesText(search, p.titulo, p.descricao, p.registro_origem_titulo));
     }
 
     result.sort((a: any, b: any) => {
@@ -746,8 +743,8 @@ export default function PlanosAcao() {
             viewSwitcher={
               <div
                 role="group"
-                aria-label={`${t('planosAcao.viewList')} / ${t('planosAcao.viewKanban')}`}
-                className="inline-flex rounded-lg border border-border bg-muted/25 p-1"
+                aria-label={`${t('planosAcao.viewList')} / ${t('executive.roadmap')} / ${t('planosAcao.viewKanban')}`}
+                className="inline-flex max-w-full flex-wrap gap-1 rounded-lg border border-border bg-muted/25 p-1"
               >
                 <Button
                   type="button"
@@ -768,6 +765,11 @@ export default function PlanosAcao() {
                   onClick={() => setViewMode('kanban')}
                 >
                   <IconGrid className="mr-1.5 h-4 w-4" />{t('planosAcao.viewKanban')}
+                </Button>
+                <Button type="button" variant="ghost" size="sm" aria-pressed={viewMode === 'roadmap'}
+                  className={viewMode === 'roadmap' ? 'bg-card text-primary shadow-sm hover:bg-card' : 'text-muted-foreground'}
+                  onClick={() => setViewMode('roadmap')}>
+                  <IconTime className="mr-1.5 h-4 w-4" />{t('executive.roadmap')}
                 </Button>
               </div>
             }
@@ -807,7 +809,14 @@ export default function PlanosAcao() {
               />
           ) : (
             <div className="p-4 sm:p-6 pt-0">
-              {listError ? <QueryError onRetry={() => { void refetch(); void queryClient.invalidateQueries({ queryKey: ['planos-acao-controles'] }); void queryClient.invalidateQueries({ queryKey: ['planos-acao-auditorias'] }); void queryClient.invalidateQueries({ queryKey: ['planos-acao-incidentes'] }); }} /> : listLoading ? <Skeleton className="h-48 w-full" /> : <PlanosAcaoKanban
+              {listError ? <QueryError onRetry={() => { void refetch(); void queryClient.invalidateQueries({ queryKey: ['planos-acao-controles'] }); void queryClient.invalidateQueries({ queryKey: ['planos-acao-auditorias'] }); void queryClient.invalidateQueries({ queryKey: ['planos-acao-incidentes'] }); }} /> : listLoading ? <Skeleton className="h-48 w-full" /> : viewMode === 'roadmap' ? <ActionRoadmap items={filteredPlanos.map((p: any) => ({
+                id: p.id, title: p.titulo, context: [moduloLabels[p.modulo_origem], p.registro_origem_titulo].filter(Boolean).join(' · '),
+                owner: p.profiles?.nome, deadline: p.prazo,
+                priority: prioridadeConfig[p.prioridade]?.label || p.prioridade || '—',
+                status: statusConfig[p._displayStatus]?.label || p._displayStatus,
+                done: ['concluido', 'cancelado'].includes(p._displayStatus),
+                onOpen: () => setDetailPlano(p),
+              }))} /> : <PlanosAcaoKanban
                 colunas={kanbanColumns}
                 items={filteredPlanos}
                 onOpen={(item) => setDetailPlano(item)}

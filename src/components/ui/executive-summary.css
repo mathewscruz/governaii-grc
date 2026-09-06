@@ -1,0 +1,37 @@
+.akuris-executive {
+  box-shadow: 0 1px 2px hsl(var(--foreground) / .025);
+}
+.executive-tint {
+  background: radial-gradient(ellipse at 0 0, hsl(var(--primary) / .075), transparent 75%), hsl(var(--card));
+}
+.executive-label {
+  font-size: .6875rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  line-height: 1.6;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+.executive-row {
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+.executive-row:hover {
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / .045) 12%, hsl(var(--primary) / .045) 88%, transparent);
+}
+.executive-row:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: -2px;
+  border-radius: .5rem;
+}
+.executive-ring-enter { animation: executive-ring-fill 950ms cubic-bezier(.16, 1, .3, 1) both; }
+.executive-kpis > div { border-radius: var(--radius); padding: 1rem; }
+.executive-kpis > div::before { display: none; }
+@keyframes executive-ring-fill {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: var(--score-offset); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .executive-ring-enter { animation: none; }
+  .executive-row { transition: none; }
+}
+:root[data-reduce-motion="true"] .executive-ring-enter { animation: none; }

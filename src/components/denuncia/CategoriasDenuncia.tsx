@@ -1,3 +1,4 @@
+import { matchesSearch } from '@/lib/search-utils';
 import { useState, useEffect, useMemo } from 'react';
 import { IconAdd, IconClose, IconEdit, IconDelete, IconSave, IconTag } from '@/components/icons';
 import { supabase } from '@/integrations/supabase/client';
@@ -252,15 +253,11 @@ export function CategoriasDenuncia() {
 
   // Filtrar e ordenar
   const filteredAndSortedCategorias = useMemo(() => {
-    let filtered = categorias;
+    let filtered = [...categorias];
 
     // Filtro por busca
     if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(c =>
-        c.nome.toLowerCase().includes(term) ||
-        c.descricao?.toLowerCase().includes(term)
-      );
+      filtered = filtered.filter(c => matchesSearch(searchTerm, c.nome, c.descricao));
     }
 
     // Filtro por status

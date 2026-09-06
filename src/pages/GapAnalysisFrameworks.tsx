@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { useState, useEffect, useMemo } from 'react';
 import { getCategory, CATEGORIAS_DE_FRAMEWORK } from '@/lib/gap-analysis-tokens';
 import { calcularScoreFramework } from '@/lib/gap-score';
@@ -332,13 +333,7 @@ export default function GapAnalysisFrameworks() {
 
   const matchesFilters = (fw: Framework) => {
     if (categoryFilter !== 'all' && getCategory(fw.tipo_framework) !== categoryFilter) return false;
-    const term = debouncedSearch.trim().toLowerCase();
-    if (!term) return true;
-    return (
-      fw.nome.toLowerCase().includes(term) ||
-      fw.tipo_framework?.toLowerCase().includes(term) ||
-      fw.descricao?.toLowerCase().includes(term)
-    );
+    return matchesText(debouncedSearch, fw.nome, fw.tipo_framework, fw.descricao);
   };
 
   const filteredActiveFrameworks = useMemo(

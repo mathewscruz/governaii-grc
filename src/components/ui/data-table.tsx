@@ -1,3 +1,4 @@
+import { paginationPages } from '@/lib/pagination';
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { formatStatus } from "@/lib/text-utils"
@@ -665,16 +666,16 @@ export function DataTable<T extends Record<string, any>>({
       </div>
 
       {/* Pagination */}
-      {paginated && totalPages > 1 && (
+      {paginated && sortedData.length > 0 && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-t">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
               {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, sortedData.length)} {t('common.of')} {sortedData.length}
             </span>
             <label className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
               <span>{t('p3Filtros.table.rowsPerPage')}</span>
               <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-                <SelectTrigger className="w-[76px] h-8" title={t('p3Filtros.table.rowsPerPage')}>
+                <SelectTrigger className="w-[76px] h-8" aria-label={t('p3Filtros.table.rowsPerPage')} title={t('p3Filtros.table.rowsPerPage')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -696,17 +697,7 @@ export function DataTable<T extends Record<string, any>>({
                   disabled={currentPage === 1}
                 />
               </PaginationItem>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let page = i + 1;
-                if (totalPages > 5) {
-                  if (currentPage > 3) {
-                    page = currentPage - 2 + i;
-                  }
-                  if (page > totalPages) {
-                    page = totalPages - 4 + i;
-                  }
-                }
-                return (
+              {paginationPages(currentPage, totalPages).map((page) => (
                   <PaginationItem key={page}>
                     <PaginationLink
                       onClick={() => setCurrentPage(page)}
@@ -716,8 +707,7 @@ export function DataTable<T extends Record<string, any>>({
                       {page}
                     </PaginationLink>
                   </PaginationItem>
-                );
-              })}
+              ))}
               <PaginationItem>
                 <PaginationNext 
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}

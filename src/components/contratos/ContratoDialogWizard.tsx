@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { IconCheck, IconCalendar, IconFile, IconChevron, IconChevronLeft, IconMoney, IconUsers, IconChecklist } from '@/components/icons';
 import { DialogShell } from '@/components/ui/dialog-shell';
 import { Button } from '@/components/ui/button';
@@ -90,6 +90,14 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
     sla_principal: '',
     confidencial: false
   });
+  const initialForm = useRef(JSON.stringify(formData));
+  const [attemptedStep, setAttemptedStep] = useState<number | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+  const resetForm = (values: typeof formData) => {
+    initialForm.current = JSON.stringify(values);
+    setFormData(values);
+  };
+  useEffect(() => { errorRef.current?.focus(); }, [attemptedStep, currentStep]);
   const [loading, setLoading] = useState(false);
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const { toast } = useToast();
@@ -99,9 +107,10 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
   useEffect(() => {
     if (open) {
       setCurrentStep(1);
+      setAttemptedStep(null);
       fetchUsuarios();
       if (contrato) {
-        setFormData({
+        resetForm({
           numero_contrato: contrato.numero_contrato || '',
           nome: contrato.nome || '',
           tipo: contrato.tipo || 'servicos',
@@ -124,7 +133,7 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
           confidencial: contrato.confidencial || false
         });
       } else {
-        setFormData({
+        resetForm({
           numero_contrato: '',
           nome: '',
           tipo: 'servicos',
@@ -175,27 +184,11 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
     }
   };
 
-  const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return !!formData.nome && !!formData.numero_contrato;
-      case 2:
-        if (formData.data_inicio && formData.data_fim) {
-          return parseDataLocal(formData.data_inicio) <= parseDataLocal(formData.data_fim);
-        }
-        return true;
-      case 3:
-        return !!formData.fornecedor_id;
-      default:
-        return true;
-    }
-  };
-
   const getStepError = (step: number): string | null => {
     switch (step) {
       case 1:
-        if (!formData.nome) return t('contratosAtivos.contratoDialogWizard.errorNameRequired');
-        if (!formData.numero_contrato) return t('contratosAtivos.contratoDialogWizard.errorNumberRequired');
+        if (!formData.nome.trim()) return t('contratosAtivos.contratoDialogWizard.errorNameRequired');
+        if (!formData.numero_contrato.trim()) return t('contratosAtivos.contratoDialogWizard.errorNumberRequired');
         return null;
       case 2:
         if (formData.data_inicio && formData.data_fim && parseDataLocal(formData.data_inicio) > parseDataLocal(formData.data_fim)) {
@@ -211,6 +204,7 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
   };
 
   const handleNext = () => {
+    setAttemptedStep(currentStep);
     const error = getStepError(currentStep);
     if (error) {
       toast({
@@ -221,6 +215,7 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
       return;
     }
     if (currentStep < STEPS.length) {
+      setAttemptedStep(null);
       setCurrentStep(currentStep + 1);
     }
   };
@@ -232,6 +227,7 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
   };
 
   const handleSubmit = async () => {
+    if (loading) return;
     // Validate all required fields
     for (let i = 1; i <= 3; i++) {
       const error = getStepError(i);
@@ -241,6 +237,7 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
           description: error,
           variant: "destructive",
         });
+        setAttemptedStep(i);
         setCurrentStep(i);
         return;
       }
@@ -257,8 +254,8 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
         .single();
 
       const contratoData = {
-        numero_contrato: formData.numero_contrato,
-        nome: formData.nome,
+        numero_contrato: formData.numero_contrato.trim(),
+        nome: formData.nome.trim(),
         tipo: formData.tipo,
         status: formData.status,
         valor: formData.valor ? parseFloat(formData.valor) : null,
@@ -360,7 +357,7 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
               <div className="space-y-2">
                 <Label htmlFor="tipo">{t('contratosAtivos.contratoDialogWizard.labelType')}</Label>
                 <Select value={formData.tipo} onValueChange={(value) => setFormData({ ...formData, tipo: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger id="tipo">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -376,7 +373,7 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
               <div className="space-y-2">
                 <Label htmlFor="status">{t('contratosAtivos.contratoDialogWizard.labelStatus')}</Label>
                 <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger id="status">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -425,7 +422,7 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
               <div className="space-y-2">
                 <Label htmlFor="moeda">{t('contratosAtivos.contratoDialogWizard.labelCurrency')}</Label>
                 <Select value={formData.moeda} onValueChange={(value) => setFormData({ ...formData, moeda: value as MoedaCodigo })}>
-                  <SelectTrigger>
+                  <SelectTrigger id="moeda">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -506,7 +503,7 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
                 {t('contratosAtivos.contratoDialogWizard.labelSupplier')} <span className="text-destructive">*</span>
               </Label>
               <Select value={formData.fornecedor_id} onValueChange={(value) => setFormData({ ...formData, fornecedor_id: value })}>
-                <SelectTrigger>
+                <SelectTrigger id="fornecedor_id">
                   <SelectValue placeholder={t('contratosAtivos.contratoDialogWizard.supplierPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -523,7 +520,7 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
               <div className="space-y-2">
                 <Label htmlFor="gestor_contrato">{t('contratosAtivos.contratoDialogWizard.labelManager')}</Label>
                 <Select value={formData.gestor_contrato} onValueChange={(value) => setFormData({ ...formData, gestor_contrato: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger id="gestor_contrato">
                     <SelectValue placeholder={t('contratosAtivos.contratoDialogWizard.managerPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -708,6 +705,7 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
     <DialogShell
       open={open}
       onOpenChange={onOpenChange}
+      isDirty={JSON.stringify(formData) !== initialForm.current}
       icon={IconFile}
       title={contrato ? t('contratosAtivos.contratoDialogWizard.dialogTitleEdit') : t('contratosAtivos.contratoDialogWizard.dialogTitleNew')}
       description={contrato
@@ -715,8 +713,8 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
         : t('contratosAtivos.contratoDialogWizard.dialogDescriptionNew')}
       size="lg"
       noScroll
-      footer={
-        <div className="flex justify-between w-full">
+      footer={({ requestClose }) => (
+        <div className="flex flex-wrap justify-between gap-2 w-full">
           <Button
             type="button"
             variant="outline"
@@ -724,12 +722,12 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
             onClick={handlePrevious}
             disabled={currentStep === 1}
           >
-            <IconChevronLeft className="h-4 w-4 mr-2" />
-            {t('contratosAtivos.contratoDialogWizard.previousButton')}
+            <IconChevronLeft className="h-4 w-4 sm:mr-2" />
+            <span className="sr-only sm:not-sr-only">{t('contratosAtivos.contratoDialogWizard.previousButton')}</span>
           </Button>
 
           <div className="flex gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="ghost" size="sm" onClick={requestClose}>
               {t('contratosAtivos.contratoDialogWizard.cancelButton')}
             </Button>
             {currentStep < STEPS.length ? (
@@ -744,11 +742,11 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
             )}
           </div>
         </div>
-      }
+      )}
     >
       <div className="h-full flex flex-col min-h-0">
         {/* Step Indicator */}
-        <div className="px-6 pt-6 pb-4 flex-shrink-0">
+        <div className="px-3 sm:px-6 pt-6 pb-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             {STEPS.map((step, index) => {
               const StepIcon = step.icon;
@@ -756,10 +754,14 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
               const isCurrent = currentStep === step.id;
               
               return (
-                <div key={step.id} className="flex items-center flex-1">
+                <div key={step.id} className="flex min-w-0 items-center flex-1 last:flex-none">
                   <button
                     type="button"
+                    aria-label={step.title}
+                    aria-current={isCurrent ? 'step' : undefined}
+                    disabled={step.id > currentStep}
                     onClick={() => {
+                      setAttemptedStep(null);
                       if (isCompleted || step.id <= currentStep) {
                         setCurrentStep(step.id);
                       }
@@ -793,7 +795,7 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
                   </button>
                   {index < STEPS.length - 1 && (
                     <div className={cn(
-                      "flex-1 h-0.5 mx-2",
+                      "flex-1 min-w-1 h-0.5 mx-1 sm:mx-2",
                       isCompleted ? "bg-primary" : "bg-muted"
                     )} />
                   )}
@@ -809,6 +811,11 @@ export function ContratoDialogWizard({ contrato, open, onOpenChange, onSuccess, 
             <h3 className="text-lg font-semibold">{STEPS[currentStep - 1].title}</h3>
             <p className="text-sm text-muted-foreground">{STEPS[currentStep - 1].description}</p>
           </div>
+          {attemptedStep === currentStep && getStepError(currentStep) && (
+            <div ref={errorRef} role="alert" tabIndex={-1} className="mb-4 rounded-md border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive outline-none">
+              {getStepError(currentStep)}
+            </div>
+          )}
           {renderStepContent()}
         </div>
       </div>

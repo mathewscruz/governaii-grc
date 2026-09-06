@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEmpresaId } from '@/hooks/useEmpresaId';
 import { useListState } from '@/hooks/useListState';
@@ -475,9 +476,7 @@ export function AssessmentsManagerEnhanced({ filter, focoId }: AssessmentsManage
 
     if (searchTerm) {
       filtered = filtered.filter(assessment =>
-        assessment.fornecedor_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessment.fornecedor_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessment.template.nome.toLowerCase().includes(searchTerm.toLowerCase())
+        matchesText(searchTerm, assessment.fornecedor_nome, assessment.fornecedor_email, assessment.template?.nome)
       );
     }
 

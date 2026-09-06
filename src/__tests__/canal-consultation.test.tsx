@@ -64,3 +64,28 @@ describe('additional evidence delivery', () => {
     await waitFor(() => expect(screen.getByText('canalExperience.uploaded')).toBeVisible());
   });
 });
+describe('QA — consulta distingue credenciais de indisponibilidade', () => {
+  it('não envia e-mail preenchido por um gerenciador de senhas como protocolo', async () => {
+    mount();
+    fireEvent.change(screen.getByLabelText('publicPortal.denunciaConsulta.protocolLabel'), { target: { value: 'example@example.test' } });
+    fireEvent.change(screen.getByLabelText('publicPortal.denunciaConsulta.codeLabel'), { target: { value: 'not-a-report-code' } });
+    fireEvent.click(screen.getByRole('button', { name: 'publicPortal.denunciaConsulta.search' }));
+    expect(screen.getByText('canalExperience.protocolNotEmail')).toBeVisible();
+    expect(mocks.invoke).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('publicPortal.denunciaConsulta.codeLabel')).toHaveAttribute('autocomplete', 'section-report one-time-code');
+  });
+  it.each([
+    [500, 'publicPortal.denunciaConsulta.searchError'],
+    [429, 'canalExperience.lookupRateLimited'],
+    [404, 'publicPortal.denunciaConsulta.notFoundDescription'],
+    [undefined, 'publicPortal.denunciaConsulta.searchError'],
+  ])('apresenta a mensagem correta para status %s', async (status, message) => {
+    mocks.invoke.mockResolvedValue({ data: null, error: { context: { status } } });
+    mount();
+    fireEvent.change(screen.getByLabelText('publicPortal.denunciaConsulta.protocolLabel'), { target: { value: 'TEST-2026' } });
+    fireEvent.change(screen.getByLabelText('publicPortal.denunciaConsulta.codeLabel'), { target: { value: 'private-code' } });
+    fireEvent.click(screen.getByRole('button', { name: 'publicPortal.denunciaConsulta.search' }));
+    expect(await screen.findByText(message)).toBeVisible();
+    expect(screen.getByLabelText('publicPortal.denunciaConsulta.protocolLabel')).toHaveValue('TEST-2026');
+  });
+});

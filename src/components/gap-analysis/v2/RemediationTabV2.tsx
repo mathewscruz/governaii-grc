@@ -1,8 +1,7 @@
 /**
- * RemediationTabV2 — Onda 5+ Akuris (equalizada ao mockup img 255).
- * 4 KPIs editoriais + Sugestões IA com segment (causa-raiz/seção/esforço) +
- * cards de cluster com chips de códigos + Kanban com toggle Quadro/Lista/Timeline.
- * Mantém identidade Navy/Purple, tokens semânticos, AkurisPulse.
+ * Adequação: indicadores existentes, agrupamentos expansíveis e roteiro por
+ * prazos cadastrados. O quadro permanece disponível; nenhuma data ou redução
+ * de risco é inferida pelo layout.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { GAP_CRITICAL_WEIGHT } from '@/lib/gap-criticality';
@@ -19,10 +18,10 @@ import { PlanoAcaoDialog } from '@/components/planos-acao/PlanoAcaoDialog';
 import { toast } from '@/lib/toast';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { resolvePrioridadeTone } from '@/lib/status-tone';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { KpiTiny } from './KpiTiny';
 import { SectionHead } from './SectionHead';
-import { CornerAccent } from '@/components/identity/CornerAccent';
+import { ExecutivePanel } from '@/components/ui/executive-summary';
+import { ActionRoadmap } from '@/components/planos-acao/ActionRoadmap';
 import { reqTitulo } from "@/lib/gap-i18n";
 import { useLanguage } from '@/contexts/LanguageContext';
 import { IconExternal, IconArrowRight, IconChecklist } from '@/components/icons';
@@ -198,6 +197,7 @@ export function RemediationTabV2({ frameworkId, frameworkName }: Props) {
   }, [planos, naoConformes, todosRequisitos]);
 
   const [grouping, setGrouping] = useState<'causa' | 'esforco'>('causa');
+  const [planView, setPlanView] = useState<'roadmap' | 'board'>('roadmap');
 
   const aiClusters = useMemo(() => {
     /**
@@ -344,12 +344,12 @@ export function RemediationTabV2({ frameworkId, frameworkName }: Props) {
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="executive-kpis grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <KpiTiny
           eyebrow={t('gapV2.remediation.kpiOpenGaps')}
           value={kpis.gapsAbertos}
           foot={t('gapV2.remediation.footNonCompliantReqs')}
-          tone={kpis.gapsAbertos > 0 ? 'destructive' : 'success'}
+          tone={kpis.gapsAbertos > 0 ? 'destructive' : 'neutral'}
         />
         <KpiTiny
           eyebrow={t('gapV2.remediation.kpiConsolidatedPlans')}
@@ -417,74 +417,27 @@ export function RemediationTabV2({ frameworkId, frameworkName }: Props) {
             agrupados em 3 planos cobrindo 33 requisitos», que se lê como se
             os 44 tivessem ficado arrumados.
           */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {aiClusters.map(c => (
-              <article
-                key={c.categoria}
-                className="relative overflow-hidden rounded-lg border border-primary/30 bg-card p-4"
-              >
-                <CornerAccent position="top-right" size={10} />
-                <span className="absolute left-0 top-3 bottom-3 w-[2px] rounded-r bg-primary" />
-                <div className="flex items-center gap-1.5 text-xs text-primary">
-                  {t('gapV2.remediation.covers', { count: c.items.length })}
-                </div>
-                <h4 className="mt-1 text-sm font-semibold leading-snug">
-                  {grouping === 'esforco' ? t('gapV2.remediation.consolidatedPlanFor', { category: c.categoria }) : t('gapV2.remediation.treatCategory', { category: c.categoria })}
-                </h4>
-                <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
-                  {grouping === 'esforco'
-                    ? t('gapV2.remediation.byEffortDesc')
-                    : t('gapV2.remediation.byRootCauseDesc')}
-                </p>
-
-                {/* Chips de códigos */}
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {c.items.slice(0, 5).map(r => (
-                    <span
-                      key={r.id}
-                      className="inline-flex items-center rounded border border-destructive/30 bg-destructive/5 px-1.5 py-0.5 text-micro font-mono text-destructive"
-                    >
-                      {r.codigo || '—'}
-                    </span>
-                  ))}
-                  {c.items.length > 5 && (
-                    <span className="inline-flex items-center rounded border border-border px-1.5 py-0.5 text-micro font-mono text-muted-foreground">
-                      +{c.items.length - 5}
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-3 text-micro text-muted-foreground">
-                  {/*
-                    Isto dizia "+{c.peso} pts impacto", e `peso` é a soma dos
-                    PESOS dos requisitos — não pontos de score. Num framework
-                    com 44 gaps, um grupo de 15 anunciava "+42 pts" ao lado de
-                    um KPI que dizia "+37 pts se todos forem resolvidos": a
-                    parte maior do que o todo, na mesma tela. É a mesma conta
-                    que o KPI já fazia bem, com `ganhoPotencial`.
-                  */}
-                  <span className="text-success">
-                    {t('gapV2.remediation.impactPoints', { pontos: c.ganho })}
-                  </span>
-                </div>
-
-                {/*
-                  "Criar plano" criava plano nenhum: era `navigate('/planos-acao')`
-                  e largava a pessoa na lista geral de planos de ação, sem o
-                  requisito, sem o framework, sem nada por onde continuar. Agora
-                  leva os requisitos deste grupo consigo.
-                */}
-                <button
-                  type="button"
-                  onClick={() => abrirPlanoPara(c)}
-                  className="mt-3 inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
-                  {t('gapV2.remediation.createPlan')}
-                  <IconArrowRight className="h-3 w-3" strokeWidth={1.5} />
-                </button>
-              </article>
-            ))}
-          </div>
+          <ExecutivePanel>
+            <ol className="divide-y divide-border/60">
+              {aiClusters.map((c, index) => (
+                <li key={c.categoria} className="grid gap-4 p-4 sm:grid-cols-[2rem_minmax(0,1fr)_auto]">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/5 text-xs font-semibold tabular-nums text-primary">{String(index + 1).padStart(2, '0')}</span>
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-semibold leading-5">{grouping === 'esforco' ? t('gapV2.remediation.consolidatedPlanFor', { category: c.categoria }) : t('gapV2.remediation.treatCategory', { category: c.categoria })}</h4>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('gapV2.remediation.covers', { count: c.items.length })} · {t('gapV2.remediation.impactPoints', { pontos: c.ganho })}</p>
+                    <details className="mt-2">
+                      <summary className="w-fit cursor-pointer rounded text-xs font-medium text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">{t('executive.groupDetails')}</summary>
+                      <ul className="mt-2 space-y-1 border-l border-primary/20 pl-3">
+                        {c.items.map(r => <li key={r.id} className="text-xs leading-5 text-muted-foreground"><span className="mr-2 font-semibold tabular-nums text-foreground">{r.codigo}</span>{r.titulo}</li>)}
+                      </ul>
+                    </details>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => abrirPlanoPara(c)} className="sm:self-start">{t('gapV2.remediation.createPlan')}<IconArrowRight className="ml-2 h-3.5 w-3.5" /></Button>
+                </li>
+              ))}
+            </ol>
+            <p className="border-t border-border/60 px-4 py-2 text-xs leading-5 text-muted-foreground">{t('executive.potentialHint')}</p>
+          </ExecutivePanel>
         </section>
       )}
 
@@ -505,10 +458,10 @@ export function RemediationTabV2({ frameworkId, frameworkName }: Props) {
           </p>
           <div className="divide-y divide-border rounded-lg border border-border bg-card">
             {gapsSemGrupo.map((gap) => (
-              <div key={gap.id} className="flex items-center gap-3 p-3">
+              <div key={gap.id} className="flex flex-wrap items-center gap-3 p-4">
                 <span className="shrink-0 font-mono text-xs text-destructive">{gap.codigo || '—'}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{gap.titulo}</p>
+                  <p className="text-sm font-medium leading-5">{gap.titulo}</p>
                   <p className="text-xs text-muted-foreground">{gap.categoria}</p>
                 </div>
                 <Button
@@ -532,13 +485,10 @@ export function RemediationTabV2({ frameworkId, frameworkName }: Props) {
             title={t('gapV2.remediation.actionPlansTitle')}
             count={planos.length}
           />
-          {/*
-            Havia aqui três botões de vista e dois estavam `disabled` fixo, a
-            50% de opacidade, com tooltip "em breve". Um seletor onde só uma
-            opção funciona não é um seletor — é a promessa de duas coisas que
-            não existem, permanentemente à vista. O quadro é a única vista
-            construída; quando houver lista e cronograma, os botões voltam.
-          */}
+          <SegmentToggle<'roadmap' | 'board'> value={planView} onChange={setPlanView} options={[
+            { value: 'roadmap', label: t('executive.roadmap') },
+            { value: 'board', label: t('executive.board') },
+          ]} />
         </div>
 
         {planos.length === 0 ? (
@@ -551,6 +501,16 @@ export function RemediationTabV2({ frameworkId, frameworkName }: Props) {
                 : 'gapV2.remediation.emptyCreatePlanDescNoGaps')}
             </p>
           </div>
+        ) : planView === 'roadmap' ? (
+          <ActionRoadmap items={planos.map(p => ({
+            id: p.id, title: p.titulo,
+            context: [p.requirement_codigo, p.requirement_titulo].filter(Boolean).join(' · '),
+            owner: p.responsavel_nome, deadline: p.prazo,
+            priority: t(`planosAcao.priority${({ baixa: 'Baixa', media: 'Media', alta: 'Alta', critica: 'Critica' } as Record<string, string>)[p.prioridade] || 'Media'}`),
+            status: t(({ pendente: 'gapV2.remediation.colToStart', em_andamento: 'gapV2.remediation.colInProgress', atrasado: 'planosAcao.statusAtrasado', em_revisao: 'gapV2.remediation.colInReview', concluido: 'gapV2.remediation.colDone', cancelado: 'planosAcao.statusCancelado' } as Record<string, string>)[p.status] || 'gapV2.remediation.colToStart'),
+            done: ['concluido', 'cancelado'].includes(p.status),
+            onOpen: () => navigate(`/planos-acao?plano=${p.id}`),
+          }))} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {COLUMNS.map(col => {
@@ -672,6 +632,7 @@ function SegmentToggle<T extends string>({
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
+          aria-pressed={value === opt.value}
           className={cn(
             'rounded-md px-3 py-1 text-xs transition-colors',
             value === opt.value

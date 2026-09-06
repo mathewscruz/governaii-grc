@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { useState } from "react";
 import { IconSearch, ControlesIcon } from '@/components/icons';
 import { useQuery } from "@tanstack/react-query";
@@ -82,8 +83,7 @@ export function ImportarControlesDialog({
   const filteredControles = controles?.filter(
     (c) =>
       ativoParaAuditar(c) &&
-      (c.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.descricao?.toLowerCase().includes(searchTerm.toLowerCase()))
+      matchesText(searchTerm, c.nome, c.descricao)
   );
 
   const ocultos = (controles ?? []).filter((c) => !ativoParaAuditar(c)).length;

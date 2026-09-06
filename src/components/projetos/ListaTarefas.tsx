@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import React from 'react';
 import { IconSearch, IconChevron } from '@/components/icons';
 import { Input } from '@/components/ui/input';
@@ -29,7 +30,7 @@ export function ListaTarefas({ tarefas, colunas, onSelect }: Props) {
 
   const filtradas = React.useMemo(() => {
     return tarefas.filter((t) => {
-      if (busca && !t.titulo.toLowerCase().includes(busca.toLowerCase())) return false;
+      if (busca && !matchesText(busca, t.titulo)) return false;
       if (fPrior !== 'todas' && t.prioridade !== fPrior) return false;
       if (fColuna !== 'todas' && t.coluna_id !== fColuna) return false;
       if (fStatus === 'abertas' && t.concluida_em) return false;

@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { environmentLabel } from '@/lib/environment-label';
 import { readAllPages, readAllPagesByIds } from '@/lib/read-all-pages';
 import { useListState } from '@/hooks/useListState';
@@ -205,11 +206,7 @@ export default function AtivosChaves() {
   // Filtrar e ordenar chaves
   const filteredAndSortedChaves = useMemo(() => {
     const filtered = chaves.filter(chave => {
-      const matchesSearch = searchTerm === '' || 
-        chave.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        chave.tipo_chave.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        chave.sistema_aplicacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        chave.localizacao.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = matchesText(searchTerm, chave.nome, chave.tipo_chave, chave.sistema_aplicacao, chave.localizacao);
       
       const matchesStatus = statusFilter === 'todos' || chave.status === statusFilter;
       const matchesCriticidade = criticidadeFilter === 'todos' || severidadeDeFaixas(chave.criticidade) === criticidadeFilter;

@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { IconView, IconSuccess, IconWarning, IconTime, IconCalendar, IconShield, IconUserCheck } from '@/components/icons';
 import { supabase } from '@/integrations/supabase/client';
@@ -214,11 +215,7 @@ export function DenunciasDashboard({ itemIdToOpen, refreshKey, empresaSelecionad
   // Filtrar e ordenar denúncias
   const filteredAndSortedDenuncias = useMemo(() => {
     const filtered = denuncias.filter(denuncia => {
-      const matchesSearch = searchTerm === '' || 
-        denuncia.protocolo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        denuncia.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        denuncia.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        denuncia.nome_denunciante?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = matchesText(searchTerm, denuncia.protocolo, denuncia.titulo, denuncia.descricao, denuncia.nome_denunciante);
       
       const matchesStatus = statusFilter === 'todos' || denuncia.status === statusFilter;
       // Normaliza antes de comparar: registos antigos podem ainda trazer a

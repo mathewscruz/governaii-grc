@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { readAllPages, readAllPagesByIds } from '@/lib/read-all-pages';
 import { useListState } from '@/hooks/useListState';
 import { useMemo, useState, useEffect } from 'react';
@@ -76,6 +77,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 
 interface Risco {
   id: string;
+  codigo?: string | null;
   nome: string;
   descricao?: string;
   matriz_id?: string;
@@ -402,8 +404,7 @@ export function Riscos() {
   }, [searchParams, setSearchParams, riscos]);
 
   const filteredRiscos = riscos.filter(risco => {
-    const matchesSearch = risco.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         risco.responsavel?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = matchesText(searchTerm, risco.nome, risco.codigo, risco.responsavel);
     // Filtra pelo status exibido (AKURIS QA-065) para que o resultado bata com o badge.
     const matchesStatus = !statusFilter || statusFilter === 'all' || (risco.status_efetivo ?? risco.status) === statusFilter;
     // Mesmo critério do badge: filtrar pela inerente devolvia riscos cuja

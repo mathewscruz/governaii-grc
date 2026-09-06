@@ -1,5 +1,4 @@
 import { AkurisPulse } from "./AkurisPulse";
-import { tGlobal } from '@/lib/i18n-global';
 
 /**
  * LoadingOverlay — overlay de tela cheia com o AkurisPulse centralizado.
@@ -21,12 +20,8 @@ export function LoadingOverlay({ size = 80, fullScreen = true }: LoadingOverlayP
     <div
       className={`${fullScreen ? "fixed" : "absolute"} inset-0 z-50 flex items-center justify-center`}
       style={{ backgroundColor: "#06060e" }}
-      role="status"
-      aria-live="polite"
-      aria-label={tGlobal('cardsKpi.sweep.sistema.carregando')}
     >
       <AkurisPulse size={size} />
     </div>
   );
 }
-

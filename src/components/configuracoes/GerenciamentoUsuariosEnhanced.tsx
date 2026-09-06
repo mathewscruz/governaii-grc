@@ -1,4 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { matchesSearch as matchesText } from '@/lib/search-utils';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { loadAccessInfo, userAccessState } from '@/lib/user-access-info';
 import { IconAdd, IconEdit, IconDelete, IconMore, IconTime, IconUserCheck, IconPerson, IconShield, IconMail, IconUsers, IconShieldCheck, IconKey } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -121,6 +123,8 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
   const [usersAccessInfo, setUsersAccessInfo] = useState<Map<string, UserAccessInfo>>(new Map());
   /** A consulta de último acesso falhou: não sabemos, e não vamos fingir que sabemos. */
   const [acessoIndisponivel, setAcessoIndisponivel] = useState(false);
+  const [accessLoading, setAccessLoading] = useState(true);
+  const accessRequest = useRef(0);
   const [showPermissionMatrix, setShowPermissionMatrix] = useState(false);
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<string | undefined>();
   const [restoringPermissions, setRestoringPermissions] = useState(false);
@@ -201,30 +205,27 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
    * passava por diagnóstico. Agora a ausência de dado diz que é ausência.
    */
   const fetchUsersAccessInfo = async (userIds: string[]) => {
-    if (!userIds || userIds.length === 0) {
-      setUsersAccessInfo(new Map());
-      setAcessoIndisponivel(false);
-      return;
-    }
-
+    const request = ++accessRequest.current;
+    setAccessLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('get-user-access-info', {
-        body: { user_ids: userIds }
+      const accessMap = await loadAccessInfo<UserAccessInfo>(userIds, async (ids) => {
+        const { data, error } = await supabase.functions.invoke('get-user-access-info', {
+          body: { user_ids: ids },
+        });
+        if (error) throw error;
+        if (!data?.success || !Array.isArray(data.users)) throw new Error('Invalid access response');
+        return data.users;
       });
-
-      if (error) throw error;
-
-      const accessMap = new Map<string, UserAccessInfo>();
-      const users = data?.users || [];
-      users.forEach((info: UserAccessInfo) => {
-        accessMap.set(info.user_id, info);
-      });
+      if (request !== accessRequest.current) return;
       setUsersAccessInfo(accessMap);
       setAcessoIndisponivel(false);
     } catch (error) {
+      if (request !== accessRequest.current) return;
       setUsersAccessInfo(new Map());
       setAcessoIndisponivel(true);
       toast.error(t('admin.usuarios.acessoIndisponivelToast'));
+    } finally {
+      if (request === accessRequest.current) setAccessLoading(false);
     }
   };
 
@@ -319,15 +320,11 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
   }, [permissionProfiles]);
 
   useEffect(() => {
-    if (usuarios.length > 0) {
-      const userIds = usuarios.map(u => u.user_id);
-      fetchUsersAccessInfo(userIds);
-    }
+    void fetchUsersAccessInfo(usuarios.map(u => u.user_id));
   }, [usuarios]);
 
   const filteredUsuarios = usuarios.filter((usuario) => {
-    const matchesSearch = usuario.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         usuario.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = matchesText(searchTerm, usuario.nome, usuario.email);
     const matchesEmpresa = filterEmpresa === 'all' || usuario.empresa_id === filterEmpresa;
     const matchesRole = filterRole === 'all' || usuario.role === filterRole;
     const info = usersAccessInfo.get(usuario.user_id);
@@ -338,6 +335,8 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
     return matchesSearch && matchesEmpresa && matchesRole && matchesAcesso;
   });
 
+  const accessIncomplete = acessoIndisponivel || usuarios.some(u => !usersAccessInfo.has(u.user_id));
+  const accessUnknown = accessLoading || accessIncomplete;
   // Stats
   const stats = {
     total: usuarios.length,
@@ -742,8 +741,9 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       render: (_, usuario) => {
         const accessInfo = usersAccessInfo.get(usuario.user_id);
 
-        if (acessoIndisponivel) {
-          return <span className="text-sm text-muted-foreground">{t('admin.usuarios.acessoIndisponivel')}</span>;
+        const accessState = userAccessState(accessInfo, accessLoading, acessoIndisponivel);
+        if (accessState === 'loading' || accessState === 'unavailable') {
+          return <span className="text-sm text-muted-foreground">{t(accessState === 'loading' ? 'common.loading' : 'admin.usuarios.acessoIndisponivel')}</span>;
         }
 
         if (accessInfo?.last_sign_in_at) {
@@ -896,8 +896,8 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       <StatStrip
         items={[
           { key: 'total', label: t('admin.usuarios.statTotalTitle'), value: stats.total, icon: IconUsers },
-          { key: 'ativos', label: t('admin.usuarios.statActiveTitle'), value: acessoIndisponivel ? '—' : stats.active, icon: IconUserCheck, hint: acessoIndisponivel ? t('admin.usuarios.acessoIndisponivel') : t('admin.usuarios.statActiveDesc') },
-          { key: 'pendentes', label: t('admin.usuarios.statPendingTitle'), value: acessoIndisponivel ? '—' : stats.pending, icon: IconTime, tone: 'warning', hint: acessoIndisponivel ? t('admin.usuarios.acessoIndisponivel') : t('admin.usuarios.statPendingDesc') },
+          { key: 'ativos', label: t('admin.usuarios.statActiveTitle'), value: accessUnknown ? '—' : stats.active, icon: IconUserCheck, hint: accessLoading ? t('common.loading') : accessIncomplete ? t('admin.usuarios.acessoIndisponivel') : t('admin.usuarios.statActiveDesc') },
+          { key: 'pendentes', label: t('admin.usuarios.statPendingTitle'), value: accessUnknown ? '—' : stats.pending, icon: IconTime, tone: 'warning', hint: accessLoading ? t('common.loading') : accessIncomplete ? t('admin.usuarios.acessoIndisponivel') : t('admin.usuarios.statPendingDesc') },
           { key: 'admins', label: t('admin.usuarios.statAdminsTitle'), value: stats.admins, icon: IconShieldCheck },
         ]}
       />
@@ -1108,7 +1108,8 @@ const GerenciamentoUsuariosEnhanced = ({ userRole }: Props) => {
       <DataTable
         data={filteredUsuarios}
         columns={columns}
-        loading={loading}
+        loading={loading || (filterAcesso !== 'all' && accessLoading)}
+        error={!accessLoading && filterAcesso !== 'all' && accessIncomplete}
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder={t('admin.usuarios.searchPlaceholder')}

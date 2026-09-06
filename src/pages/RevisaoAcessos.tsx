@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { compareReviewRows } from '@/lib/access-review-sort';
 import { exportCSV, spreadsheetText } from '@/lib/csv-utils';
 import { readAllPages } from '@/lib/read-all-pages';
@@ -205,8 +206,7 @@ export default function RevisaoAcessos() {
   const filteredAndSortedReviews = reviews
     ?.filter((review) =>
       searchTerm
-        ? review.nome_revisao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          review.sistema?.nome_sistema.toLowerCase().includes(searchTerm.toLowerCase())
+        ? matchesText(searchTerm, review.nome_revisao, review.sistema?.nome_sistema)
         : true
     )
     .sort(compareReviews);

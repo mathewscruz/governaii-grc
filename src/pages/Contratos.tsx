@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { readAllPages, readAllPagesByIds } from '@/lib/read-all-pages';
 import { useListState } from '@/hooks/useListState';
 import { QueryError } from '@/components/ui/query-error';
@@ -314,9 +315,7 @@ export default function Contratos() {
 
   const filteredContratos = useMemo(() => {
     return contratos.filter(contrato => {
-      const matchesSearch = contrato.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           contrato.numero_contrato.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           contrato.fornecedores?.nome?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = matchesText(searchTerm, contrato.nome, contrato.numero_contrato, contrato.fornecedores?.nome);
       const matchesStatus = statusFilter === 'todos' || estadoContrato(contrato) === statusFilter || (statusFilter === 'ativo' && ['vigente','a_vencer'].includes(estadoContrato(contrato)));
       const matchesTipo = tipoFilter === 'todos' || contrato.tipo === tipoFilter;
       

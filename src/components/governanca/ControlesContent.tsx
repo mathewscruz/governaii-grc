@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { loadControls } from '@/lib/queries/controls';
 import { readAllPages, readAllPagesByIds } from '@/lib/read-all-pages';
 import { QueryError } from '@/components/ui/query-error';
@@ -293,9 +294,7 @@ export default function ControlesContent({ actionsSlot }: { actionsSlot?: HTMLEl
       const matchCriticidade = criticidadeFilter === "todos" || criticidadeControle(controle) === criticidadeFilter;
       const matchAuditoria = auditoriaFilter === "todas" || 
         vinculos.some(v => v.controle_id === controle.id && v.auditoria_id === auditoriaFilter);
-      const matchSearch = !searchValue || 
-        controle.nome.toLowerCase().includes(searchValue.toLowerCase()) ||
-        controle.descricao?.toLowerCase().includes(searchValue.toLowerCase());
+      const matchSearch = matchesText(searchValue, controle.codigo, controle.nome, controle.descricao);
       
       return matchStatus && matchTipo && matchCriticidade && matchAuditoria && matchSearch;
     });

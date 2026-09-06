@@ -1,3 +1,4 @@
+import { matchesSearch as matchesText } from '@/lib/search-utils';
 import { loadPrivilegedAccounts } from '@/lib/queries/privileged-accounts';
 import { privilegedAccountStatus } from '@/lib/privileged-review';
 import { readAllPages } from '@/lib/read-all-pages';
@@ -173,10 +174,7 @@ export default function ContasPrivilegiadas() {
   // Filtrar e ordenar contas
   const filteredAndSortedContas = useMemo(() => {
     const filtered = contas.filter(conta => {
-      const matchesSearch = searchTerm === '' || 
-        conta.usuario_beneficiario.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        conta.email_beneficiario?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        conta.sistemas_privilegiados?.nome_sistema.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = matchesText(searchTerm, conta.usuario_beneficiario, conta.email_beneficiario, conta.sistemas_privilegiados?.nome_sistema);
       
       const matchesStatus = statusFilter === 'todos' || displayStatus(conta) === statusFilter;
       const matchesNivel = nivelFilter === 'todos' || conta.nivel_privilegio === nivelFilter;

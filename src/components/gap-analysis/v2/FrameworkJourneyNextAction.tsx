@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { ModuleBanner } from '@/components/ui/module-banner';
+import { ExecutivePanel } from '@/components/ui/executive-summary';
 import {
   IconArrowRight,
   IconCheck,
@@ -126,24 +126,19 @@ export function FrameworkJourneyNextAction({
   ];
 
   return (
-    <ModuleBanner
-      icon={CurrentIcon}
-      className="border-primary/25 from-primary/10 shadow-elegant"
-      contentClassName="p-0"
-      iconClassName="right-8"
-    >
-      <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+    <ExecutivePanel className="executive-tint">
+      <div className="grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+          <p className="executive-label">
             {t('gapV2.journey.eyebrow')}
           </p>
-          <div className="mt-2 flex items-start gap-3">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="mt-1 flex items-start gap-3">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/5 text-primary">
               <CurrentIcon className="h-5 w-5" strokeWidth={1.5} />
             </span>
             <div className="min-w-0">
-              <h2 className="text-lg font-semibold text-foreground">{current.title}</h2>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">{current.description}</p>
+              <h2 className="text-base font-semibold text-foreground">{current.title}</h2>
+              <p className="mt-0.5 max-w-2xl text-xs leading-5 text-muted-foreground">{current.description}</p>
             </div>
           </div>
         </div>
@@ -166,7 +161,7 @@ export function FrameworkJourneyNextAction({
               key={stage.key}
               aria-current={active ? 'step' : undefined}
               className={cn(
-                'flex items-center gap-2.5 px-4 py-3 text-xs font-medium',
+                'flex items-center gap-2.5 px-4 py-2 text-xs font-medium',
                 index > 0 && 'border-t border-border/70 sm:border-l sm:border-t-0',
                 active ? 'text-primary' : 'text-muted-foreground',
               )}
@@ -207,6 +202,6 @@ export function FrameworkJourneyNextAction({
           );
         })}
       </ol>
-    </ModuleBanner>
+    </ExecutivePanel>
   );
 }

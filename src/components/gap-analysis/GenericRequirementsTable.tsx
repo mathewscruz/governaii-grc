@@ -1,6 +1,7 @@
 import { matchesSearch } from '@/lib/search-utils';
 import { buscarForaDoEscopo } from '@/lib/gap-soa';
 import { fasesDe, chaveDoFramework } from '@/lib/gap-fases';
+import { sectionForCategory } from '@/lib/gap-category-navigation';
 import { IconClose, IconSearch, IconWarning, IconChevron, IconChevronLeft, IconAttach, IconCheckbox, IconHelp, IconCalendarClock, IconPerson, RiscosIcon, ControlesIcon } from '@/components/icons';
 import { rowOpenProps } from '@/lib/row-interaction';
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -142,10 +143,15 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
     const outra = config.sections.find((sec) => temFase(sec.id));
     if (outra) setActiveSection(outra.id);
   }, [categoriasDaFase, requirements, config.sections, activeSection]);
+  useEffect(() => {
+    if (categoriasDaFase || categoriaAtiva === 'all' || !config.sections?.length) return;
+    const section = sectionForCategory(config.sections, requirements, categoriaAtiva, activeSection);
+    if (section !== activeSection) setActiveSection(section);
+  }, [categoriasDaFase, categoriaAtiva, requirements, config.sections, activeSection]);
   const [selectedRequirement, setSelectedRequirement] = useState<Requirement | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [itemsPerPage, setItemsPerPage] = useState(Number(searchParams.get('size')) || 10);
-  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
+  const [itemsPerPage, setItemsPerPage] = useState(() => { const size = Number(searchParams.get('size')); return [10, 20, 50, 100].includes(size) ? size : 10; });
+  const [currentPage, setCurrentPage] = useState(() => { const page = Number(searchParams.get('page')); return Number.isSafeInteger(page) && page > 0 ? page : 1; });
   const [sort, setSort] = useState<{ field: string; direction: 'asc' | 'desc' } | null>(null);
   const toggleSort = (field: string) => {
     setSort((prev) => (prev?.field === field
@@ -756,7 +762,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
 
   // Legenda de ícones agora unificada dentro do popover "?" da SearchAndFilterBar.
 
-  const SearchAndFilterBar = () => (
+  const renderSearchAndFilterBar = () => (
     <div className="flex flex-wrap items-center gap-3 mb-4">
       <div className="relative flex-1 min-w-[200px] max-w-md">
         <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5}/>
@@ -768,7 +774,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
         )}
       </div>
       <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-        <SelectTrigger className="w-[180px]"><SelectValue placeholder={t('gapUi.table.filterByStatus')} /></SelectTrigger>
+        <SelectTrigger aria-label={t('gapUi.table.filterByStatus')} className="w-[180px]"><SelectValue placeholder={t('gapUi.table.filterByStatus')} /></SelectTrigger>
         <SelectContent>
           <SelectItem value="all">{t('gapUi.table.allStatuses')}</SelectItem>
           <SelectItem value="conforme">{t('gapUi.status.conforme')}</SelectItem>
@@ -840,14 +846,14 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
     </div>
   );
 
-  const PaginationControls = ({ total, filtered }: { total: number; filtered: number }) => {
+  const renderPaginationControls = (filtered: number) => {
     const pages = Math.ceil(filtered / itemsPerPage);
     return (
-      <div className="flex items-center justify-between mt-4 px-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 px-2">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">{t('gapUi.table.itemsPerPage')}</span>
           <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number(v))}>
-            <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+            <SelectTrigger aria-label={t('gapUi.table.itemsPerPage')} className="w-20"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="10">10</SelectItem>
               <SelectItem value="20">20</SelectItem>
@@ -859,10 +865,10 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">{t('gapUi.table.pageXOfY', { current: currentPage, total: pages || 1, filtered })}</span>
           <div className="flex gap-1">
-            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+            <Button variant="outline" size="sm" aria-label={t('common.previous')} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
               <IconChevronLeft className="h-4 w-4" strokeWidth={1.5}/>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(pages || 1, p + 1))} disabled={currentPage === (pages || 1)}>
+            <Button variant="outline" size="sm" aria-label={t('common.next')} onClick={() => setCurrentPage(p => Math.min(pages || 1, p + 1))} disabled={currentPage === (pages || 1)}>
               <IconChevron className="h-4 w-4" strokeWidth={1.5}/>
             </Button>
           </div>
@@ -937,6 +943,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
                 >
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Checkbox
+                      aria-label={t('gapUi.table.selectRequirement', { code: req.codigo })}
                       checked={selectedIds.has(req.id)}
                       onCheckedChange={() => toggleSelect(req.id)}
                     />
@@ -993,7 +1000,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
             )}
           </TableBody>
         </Table>
-        <PaginationControls total={reqs.length} filtered={filtered.length} />
+        {renderPaginationControls(filtered.length)}
 
         {/* Floating Bulk Action Bar */}
         {selectedIds.size > 0 && (
@@ -1110,7 +1117,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
       <Card>
         <CardHeader><CardTitle>{t('gapUi.table.requirementsOf', { frameworkName })}</CardTitle></CardHeader>
         <CardContent>
-          <SearchAndFilterBar />
+          {renderSearchAndFilterBar()}
 
           <Tabs value={activeSection} onValueChange={(v) => { setActiveSection(v); setCategoriaAtiva('all'); setCurrentPage(1); }}>
             <TabsList className="mb-4">
@@ -1163,7 +1170,7 @@ export const GenericRequirementsTable: React.FC<GenericRequirementsTableProps> =
     <Card>
       <CardHeader><CardTitle>{t('gapUi.table.requirementsOf', { frameworkName })}</CardTitle></CardHeader>
       <CardContent>
-        <SearchAndFilterBar />
+        {renderSearchAndFilterBar()}
 
         {/*
             O TERCEIRO caminho de filtragem, e o unico que servia a maioria.

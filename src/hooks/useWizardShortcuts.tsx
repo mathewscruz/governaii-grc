@@ -1,7 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, type RefObject } from 'react';
 
 interface UseWizardShortcutsOptions {
   enabled?: boolean;
+  /** Restrict keyboard commands to the frontmost dialog. */
+  scopeRef?: RefObject<HTMLElement>;
   onSave?: () => void;
   onNext?: () => void;
   onPrev?: () => void;
@@ -17,6 +19,7 @@ interface UseWizardShortcutsOptions {
  */
 export function useWizardShortcuts({
   enabled = true,
+  scopeRef,
   onSave,
   onNext,
   onPrev,
@@ -26,9 +29,15 @@ export function useWizardShortcuts({
     if (!enabled) return;
 
     const handler = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.repeat) return;
+      if (scopeRef) {
+        const dialogs = document.querySelectorAll('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]');
+        const topmost = dialogs[dialogs.length - 1];
+        if (!scopeRef.current || (topmost && topmost !== scopeRef.current)) return;
+      }
       const meta = e.ctrlKey || e.metaKey;
       const target = e.target as HTMLElement | null;
-      const isTextarea = target?.tagName === 'TEXTAREA';
+      const isEditingText = !!target?.closest?.('input, textarea, [contenteditable="true"], [role="textbox"]');
 
       if (meta && e.key.toLowerCase() === 's') {
         e.preventDefault();
@@ -36,14 +45,14 @@ export function useWizardShortcuts({
         return;
       }
 
-      // Avoid hijacking arrow navigation inside textareas
-      if (meta && e.key === 'ArrowRight' && !isTextarea) {
+      // Preserve word navigation inside every editable field
+      if (meta && e.key === 'ArrowRight' && !isEditingText && onNext) {
         e.preventDefault();
         onNext?.();
         return;
       }
 
-      if (meta && e.key === 'ArrowLeft' && !isTextarea) {
+      if (meta && e.key === 'ArrowLeft' && !isEditingText && onPrev) {
         e.preventDefault();
         onPrev?.();
         return;
@@ -58,5 +67,5 @@ export function useWizardShortcuts({
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [enabled, onSave, onNext, onPrev, onClose]);
+  }, [enabled, scopeRef, onSave, onNext, onPrev, onClose]);
 }

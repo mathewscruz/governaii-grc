@@ -23,9 +23,7 @@
 * recursos seja qual for o framework escolhido.
 */
 import { useMemo } from 'react';
-import { CornerAccent } from '@/components/identity/CornerAccent';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { AnimatedMetricValue } from '@/components/ui/stat-strip';
+import { ExecutivePanel, ExecutiveBar, ScoreRing } from '@/components/ui/executive-summary';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getMaturityLevel } from './MaturityScale';
@@ -83,11 +81,6 @@ const ESTILO_VEREDITO: Record<
   quase: { Icon: IconShieldCheck, cor: 'text-warning', selo: 'bg-warning/10 text-warning' },
   pronto: { Icon: IconShieldCheck, cor: 'text-success', selo: 'bg-success/10 text-success' },
 };
-
-const DONUT = 116;
-const TRACO = 13;
-const RAIO = (DONUT - TRACO) / 2;
-const PERIMETRO = 2 * Math.PI * RAIO;
 
 function formatarData(iso: string) {
   try {
@@ -213,21 +206,6 @@ export function FrameworkHeader({
     pronto: t('gapAnalysis.v2.certificationReadiness.detailReady', { count: avaliados }),
   };
 
-  const totalDonut = conforme + parcial + naoConforme + naoAplicavel || 1;
-  const fatias = [
-    { valor: conforme, cor: 'hsl(var(--success))' },
-    { valor: parcial, cor: 'hsl(var(--warning))' },
-    { valor: naoConforme, cor: 'hsl(var(--destructive))' },
-    { valor: naoAplicavel, cor: 'hsl(var(--info))' },
-  ];
-  let acumulado = 0;
-  const arcos = fatias.map((f) => {
-    const comprimento = (f.valor / totalDonut) * PERIMETRO;
-    const arco = { ...f, comprimento, deslocamento: acumulado };
-    acumulado += comprimento;
-    return arco;
-  });
-
   const estados: Array<{ chave: EstadoFiltravel; ponto: string; rotulo: string; valor: number }> = [
     { chave: 'conforme', ponto: 'bg-success', rotulo: t('gapAnalysis.v2.conformityCard.compliant'), valor: conforme },
     { chave: 'parcial', ponto: 'bg-warning', rotulo: t('gapAnalysis.v2.conformityCard.partial'), valor: parcial },
@@ -269,147 +247,58 @@ export function FrameworkHeader({
   }, [marco, parcial, naoConforme, naoAvaliado, diasParaMarco]);
 
   return (
-    <article className="relative overflow-hidden rounded-lg border border-border bg-card">
-      <CornerAccent position="top-left" />
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr_1fr]">
-        {/* Coluna 1 — Aderência */}
-        <div className="p-6 flex items-center gap-4">
-          <div className="relative shrink-0" style={{ width: DONUT, height: DONUT }}>
-            <svg width={DONUT} height={DONUT} viewBox={`0 0 ${DONUT} ${DONUT}`} aria-hidden>
-              <circle cx={DONUT / 2} cy={DONUT / 2} r={RAIO} fill="none" stroke="hsl(var(--muted))" strokeWidth={TRACO} />
-              {arcos.map((a, i) => (
-                <circle
-                  key={i}
-                  cx={DONUT / 2}
-                  cy={DONUT / 2}
-                  r={RAIO}
-                  fill="none"
-                  stroke={a.cor}
-                  strokeWidth={TRACO}
-                  strokeDasharray={`${a.comprimento} ${PERIMETRO - a.comprimento}`}
-                  strokeDashoffset={-a.deslocamento}
-                  transform={`rotate(-90 ${DONUT / 2} ${DONUT / 2})`}
-                  strokeLinecap="butt"
-                />
-              ))}
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-3xl font-bold tabular-nums leading-none tracking-tight text-foreground">
-                <AnimatedMetricValue value={score} /><span className="text-lg text-muted-foreground">%</span>
-              </span>
+    <ExecutivePanel aria-label={t('executive.frameworkSummary')}>
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(240px,.85fr)_minmax(0,1.4fr)] xl:grid-cols-[minmax(230px,.85fr)_minmax(0,1.4fr)_minmax(230px,.9fr)]">
+        <div className="executive-tint flex flex-col justify-center gap-4 p-5">
+          <div className="flex items-center gap-4">
+            <ScoreRing value={avaliados > 0 ? score : null} label={t('gapAnalysis.v2.conformityCard.title')} suffix="%" />
+            <div className="min-w-0">
+              <p className="executive-label">{t('gapAnalysis.v2.conformityCard.title')}</p>
+              <p className="mt-1.5 text-sm font-medium leading-relaxed">
+                {avaliados > 0 ? t('gapAnalysis.v2.conformityCard.level', { id: maturidade.id, label: maturidade.label }) : t('executive.notAssessed')}
+              </p>
             </div>
           </div>
-          <div className="min-w-0">
-            <div className="text-xs text-muted-foreground">
-              {t('gapAnalysis.v2.conformityCard.title')}
+          <div>
+            <div className="mb-2 flex items-center justify-between gap-2 text-xs">
+              <span className="text-muted-foreground">{t('executive.coverage')}</span>
+              <span className="font-semibold tabular-nums">{cobertura}%</span>
             </div>
-            <div className="mt-1.5">
-              <StatusBadge tone="info">
-                {t('gapAnalysis.v2.conformityCard.level', { id: maturidade.id, label: maturidade.label })}
-              </StatusBadge>
-            </div>
-            <div className="mt-2 text-sm text-muted-foreground tabular-nums">
-              {t('gapV2.header.avaliadosDeAplicaveis', { avaliados, aplicaveis })}
-            </div>
+            <ExecutiveBar value={aplicaveis > 0 ? cobertura : null} label={t('executive.coverage')} />
+            <p className="mt-2 text-xs text-muted-foreground">{t('gapV2.header.avaliadosDeAplicaveis', { avaliados, aplicaveis })}</p>
           </div>
         </div>
-
-        {/* Coluna 2 — Prontidão */}
-        <div className="p-6 border-t lg:border-t-0 lg:border-l border-border/60">
-          <div className="flex items-center gap-2 flex-wrap">
-            <estilo.Icon className={cn('h-4 w-4 shrink-0', estilo.cor)} strokeWidth={1.75} />
-              <span className="text-xs text-muted-foreground">
-              {t('gapV2.header.prontidao')}
-            </span>
-            <span className={cn('rounded-md px-2 py-0.5 text-xs font-semibold', estilo.selo)}>
-              {selo[veredito]}
-            </span>
+        <div className="min-w-0 border-t border-border/60 p-5 md:border-l md:border-t-0">
+          <div className="flex items-center gap-2">
+            <estilo.Icon className={cn('h-4 w-4 shrink-0', estilo.cor)} aria-hidden="true" />
+            <p className="executive-label">{t('executive.overview')}</p>
+            <span className={cn('ml-auto text-xs font-medium', estilo.cor)}>{selo[veredito]}</span>
           </div>
-          <h3 className="mt-1.5 text-base font-semibold text-foreground leading-snug">{manchete[veredito]}</h3>
-          {/*
-              A frase resume; a lista detalha.
-
-              Dizia «14 nao conformidades bloqueiam -- e 15 parciais a fechar»
-              e logo abaixo repetia os mesmos 14 e 15, linha a linha. Ler duas
-              vezes o mesmo numero em dois formatos faz duvidar de qual e o
-              certo. Havendo bloqueios, a frase passa a dar a posicao; sem
-              bloqueios, continua a ser o desfecho.
-          */}
-          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-            {prontidao.bloqueios.length > 0
-              ? t('gapProntidao.aindaNao')
-              : detalhe[veredito]}
-          </p>
-
-          {/*
-              O que falta, em lista, cada linha a filtrar a tabela.
-
-              O detalhe acima diz «14 nao conformidades bloqueiam», e ficava-se
-              por ai: os 15 por avaliar e os 58 conformes sem prova nao
-              apareciam em lado nenhum. Sao bloqueios tanto quanto os outros --
-              um requisito por avaliar e uma pergunta sem resposta, e um
-              conforme sem prova e uma afirmacao por demonstrar.
-          */}
-          {prontidao.bloqueios.length > 0 && (
-            <ul className="mt-3 space-y-1">
-              {prontidao.bloqueios.map((b) => (
+          <h3 className="mt-2 text-lg font-semibold leading-snug tracking-tight">{manchete[veredito]}</h3>
+          {prontidao.bloqueios.length > 0 ? (
+            <ul aria-label={t('executive.blockers')} className="mt-4 grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+              {prontidao.bloqueios.map(b => (
                 <li key={b.chave}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onFiltrarPorEstado?.(
-                        (b.chave === 'conforme_sem_prova' ? 'conforme' : b.chave) as EstadoFiltravel,
-                      )
-                    }
-                    disabled={!onFiltrarPorEstado}
-                    className="group flex w-full items-center gap-2 rounded-md px-1 py-1 text-left text-sm transition-ui enabled:hover:bg-accent"
-                  >
-                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                      {String(b.quantos).padStart(2, '0')}
-                    </span>
-                    <span className="min-w-0 flex-1 text-muted-foreground">
-                      {t(`gapProntidao.bloqueio.${b.chave}`, { count: b.quantos })}
-                    </span>
+                  <button type="button" disabled={!onFiltrarPorEstado}
+                    onClick={() => onFiltrarPorEstado?.((b.chave === 'conforme_sem_prova' ? 'conforme' : b.chave) as EstadoFiltravel)}
+                    className="executive-row flex min-h-11 w-full items-center gap-2 border-t border-border/60 py-2 text-left">
+                    <span className="w-7 shrink-0 text-lg font-semibold tabular-nums">{b.quantos}</span>
+                    <span className="flex-1 text-xs text-muted-foreground">{t(`executive.blocker.${b.chave}`)}</span>
+                    <IconArrowUpRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
                   </button>
                 </li>
               ))}
             </ul>
-          )}
-
-          {/* A ressalva vale sobretudo quando diz «pronto». */}
-          <p className="mt-3 text-xs leading-5 text-muted-foreground">
-            {t('gapProntidao.ressalva')}
-          </p>
-
-          {/* A legenda é o filtro. */}
-          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
-            {estados.map((e) => (
-              <button
-                key={e.chave}
-                type="button"
-                onClick={() => onFiltrarPorEstado?.(e.chave)}
-                disabled={!onFiltrarPorEstado || e.valor === 0}
-                /* `max-lg:min-h-[36px]`: mediam 19 px de altura no telemóvel,
-                   e são a forma principal de filtrar 121 requisitos. */
-                className="inline-flex items-center gap-1.5 text-sm rounded-md -mx-1 px-1 py-0.5 max-lg:min-h-[36px] max-lg:px-2 transition-colors enabled:hover:bg-accent disabled:cursor-default disabled:opacity-60"
-              >
-                <span className={cn('h-2 w-2 rounded-full shrink-0', e.ponto)} />
-                <span className="text-muted-foreground">{e.rotulo}</span>
-                <span className="font-semibold tabular-nums text-foreground">{e.valor}</span>
-              </button>
-            ))}
-          </div>
-
+          ) : <p className="mt-2 text-sm leading-6 text-muted-foreground">{detalhe[veredito]}</p>}
+          {conformesSemProva === null && conforme > 0 && <p className="mt-2 text-xs text-muted-foreground">{t('executive.unknownEvidence')}</p>}
           {onGoToRemediation && naoConforme > 0 && (
-            <Button variant="outline" size="sm" onClick={onGoToRemediation} className="mt-4 gap-1.5">
-              {t('gapAnalysis.v2.certificationReadiness.remediationPlan')}
-              <IconArrowUpRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <Button variant="link" size="sm" onClick={onGoToRemediation} className="mt-2 h-9 gap-1.5 px-0">
+              {t('gapAnalysis.v2.certificationReadiness.remediationPlan')}<IconArrowUpRight className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>
-
         {/* Coluna 3 — Marco */}
-        <div className="p-6 border-t lg:border-t-0 lg:border-l border-border/60">
+        <div className="min-w-0 border-t border-border/60 p-5 xl:border-l xl:border-t-0">
           <div className="text-xs text-muted-foreground">
             {t('gapV2.maturityHero.nextMilestone')}
           </div>
@@ -491,7 +380,19 @@ export function FrameworkHeader({
             </>
           )}
         </div>
+
       </div>
-    </article>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/60 px-5 py-2">
+        {estados.map(e => (
+          <button key={e.chave} type="button" onClick={() => onFiltrarPorEstado?.(e.chave)}
+            disabled={!onFiltrarPorEstado || e.valor === 0}
+            className="executive-row inline-flex min-h-9 items-center gap-1.5 rounded-md px-1 text-xs disabled:opacity-60">
+            <span className={cn('h-1.5 w-1.5 rounded-full', e.ponto)} aria-hidden="true" />
+            <span className="text-muted-foreground">{e.rotulo}</span><span className="font-semibold tabular-nums">{e.valor}</span>
+          </button>
+        ))}
+      </div>
+      <p className="border-t border-border/60 px-5 py-2 text-xs leading-5 text-muted-foreground">{t('gapProntidao.ressalva')}</p>
+    </ExecutivePanel>
   );
 }

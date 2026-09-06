@@ -1,3 +1,4 @@
+import { matchesSearch } from '@/lib/search-utils';
 import { useEffect, useState } from 'react';
 import { IconClose, IconSearch, IconExternal, IconSuccess, IconFile, IconLink } from '@/components/icons';
 import { Button } from '@/components/ui/button';
@@ -94,11 +95,7 @@ export function EvidenceReusePanel({ requirementId, frameworkId, evaluationId, o
   };
 
   const filteredLibrary = lib.items.filter((it) => {
-    const q = search.trim().toLowerCase();
-    if (!q) return true;
-    return [it.nome, it.descricao, (it.tags || []).join(' '), it.arquivo_nome]
-      .filter(Boolean)
-      .some((t) => String(t).toLowerCase().includes(q));
+    return matchesSearch(search, it.nome, it.descricao, (it.tags || []).join(' '), it.arquivo_nome);
   });
 
   return (

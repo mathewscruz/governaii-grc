@@ -10,6 +10,7 @@
  */
 import { riscos } from "./riscos";
 import { experience } from "./experience";
+import { executive } from "./executive";
 import { riscosVisoes } from "./riscos-visoes";
 import { riscosDialogs } from "./riscos-dialogs";
 import { riscosDetalhe } from "./riscos-detalhe";
@@ -114,6 +115,7 @@ import canalExperience from './canal-experience';
 
 const modules: Record<string, ModuleDict> = {
   experience,
+  executive,
   canalExperience,
   privacidadePrograma,
   fornecedorStatus,
