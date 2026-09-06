@@ -39,8 +39,10 @@ Os 27 objetos do bucket de logos de empresas foram preservados; há cópia priva
 - Migração das rotinas ensaiada em transação com ROLLBACK: reserva, recusa de duplicidade, retry de falha e proteção de acesso aprovados.
 - Simulações de ambas as rotinas em produção: HTTP 200, zero elegíveis e zero erros.
 - Primeira execução real de ambas: HTTP 200 e estado `concluida`, com zero e-mails enviados, denúncias apagadas ou arquivos removidos.
+- Repetição dos dois disparos após a conclusão: HTTP 200 com `skipped: true`; ambas as rotinas mantiveram uma única tentativa registrada.
 - Chamadas sem autorização: HTTP 401 nos dois endpoints.
 - Logotipo padrão conferido visualmente no portal público da Nexure e mediante inspeção dos vínculos de todas as empresas.
+- No painel autenticado da Nexure, o logotipo carregado também é o asset padrão Akuris, sem vínculo com o bucket de logos personalizados.
 - 947 testes em 173 arquivos aprovados; lint e TypeScript aprovados.
 - As cinco Edge Functions alteradas passaram pela checagem Deno com tipos React 18 dos templates e foram publicadas. Nenhum frontend separado é necessário para a reposição dos logos, pois o fallback já estava no produto.
 
