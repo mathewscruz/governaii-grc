@@ -7,30 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -38,7 +18,6 @@ export type Database = {
         Row: {
           acao_tomada: string
           conta_id: string | null
-          sistema_usuario_id: string | null
           created_at: string
           data_revisao: string
           decisao: string
@@ -50,13 +29,13 @@ export type Database = {
           review_id: string
           revisado_por: string | null
           sistema_nome: string
+          sistema_usuario_id: string | null
           tipo_acesso: string
           usuario_beneficiario: string
         }
         Insert: {
           acao_tomada: string
           conta_id?: string | null
-          sistema_usuario_id?: string | null
           created_at?: string
           data_revisao: string
           decisao: string
@@ -68,13 +47,13 @@ export type Database = {
           review_id: string
           revisado_por?: string | null
           sistema_nome: string
+          sistema_usuario_id?: string | null
           tipo_acesso: string
           usuario_beneficiario: string
         }
         Update: {
           acao_tomada?: string
           conta_id?: string | null
-          sistema_usuario_id?: string | null
           created_at?: string
           data_revisao?: string
           decisao?: string
@@ -86,6 +65,7 @@ export type Database = {
           review_id?: string
           revisado_por?: string | null
           sistema_nome?: string
+          sistema_usuario_id?: string | null
           tipo_acesso?: string
           usuario_beneficiario?: string
         }
@@ -118,12 +98,18 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "access_review_history_sistema_usuario_id_fkey"
+            columns: ["sistema_usuario_id"]
+            isOneToOne: false
+            referencedRelation: "sistemas_usuarios"
+            referencedColumns: ["id"]
+          },
         ]
       }
       access_review_items: {
         Row: {
           conta_id: string | null
-          sistema_usuario_id: string | null
           created_at: string
           data_concessao: string | null
           data_expiracao: string | null
@@ -138,13 +124,13 @@ export type Database = {
           observacoes_revisor: string | null
           review_id: string
           revisado_por: string | null
+          sistema_usuario_id: string | null
           tipo_acesso: string
           updated_at: string
           usuario_beneficiario: string
         }
         Insert: {
           conta_id?: string | null
-          sistema_usuario_id?: string | null
           created_at?: string
           data_concessao?: string | null
           data_expiracao?: string | null
@@ -159,13 +145,13 @@ export type Database = {
           observacoes_revisor?: string | null
           review_id: string
           revisado_por?: string | null
+          sistema_usuario_id?: string | null
           tipo_acesso: string
           updated_at?: string
           usuario_beneficiario: string
         }
         Update: {
           conta_id?: string | null
-          sistema_usuario_id?: string | null
           created_at?: string
           data_concessao?: string | null
           data_expiracao?: string | null
@@ -180,6 +166,7 @@ export type Database = {
           observacoes_revisor?: string | null
           review_id?: string
           revisado_por?: string | null
+          sistema_usuario_id?: string | null
           tipo_acesso?: string
           updated_at?: string
           usuario_beneficiario?: string
@@ -205,6 +192,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "access_review_items_sistema_usuario_id_fkey"
+            columns: ["sistema_usuario_id"]
+            isOneToOne: false
+            referencedRelation: "sistemas_usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -322,10 +316,10 @@ export type Database = {
           nome: string
           signing_secret: string | null
           tipo_evento: string
+          token_prefix: string
           total_recebidos: number | null
           ultimo_recebimento: string | null
           updated_at: string | null
-          token_prefix: string
           webhook_token: string | null
           webhook_token_hash: string
         }
@@ -341,10 +335,10 @@ export type Database = {
           nome: string
           signing_secret?: string | null
           tipo_evento: string
+          token_prefix: string
           total_recebidos?: number | null
           ultimo_recebimento?: string | null
           updated_at?: string | null
-          token_prefix: string
           webhook_token?: string | null
           webhook_token_hash: string
         }
@@ -360,11 +354,11 @@ export type Database = {
           nome?: string
           signing_secret?: string | null
           tipo_evento?: string
+          token_prefix?: string
           total_recebidos?: number | null
           ultimo_recebimento?: string | null
           updated_at?: string | null
-          token_prefix?: string
-          webhook_token?: string
+          webhook_token?: string | null
           webhook_token_hash?: string
         }
         Relationships: [
@@ -1706,11 +1700,20 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          interest: string | null
+          locale: string
           message: string | null
           name: string
+          notification_attempts: number
+          notification_error: string | null
+          notification_provider_id: string | null
           phone: string | null
-          role: string | null
+          plan_code: string | null
           processed_at: string | null
+          request_hash: string | null
+          request_id: string | null
+          role: string | null
+          source_path: string | null
           status: string | null
         }
         Insert: {
@@ -1719,11 +1722,20 @@ export type Database = {
           created_at?: string | null
           email: string
           id?: string
+          interest?: string | null
+          locale?: string
           message?: string | null
           name: string
+          notification_attempts?: number
+          notification_error?: string | null
+          notification_provider_id?: string | null
           phone?: string | null
-          role?: string | null
+          plan_code?: string | null
           processed_at?: string | null
+          request_hash?: string | null
+          request_id?: string | null
+          role?: string | null
+          source_path?: string | null
           status?: string | null
         }
         Update: {
@@ -1732,11 +1744,20 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          interest?: string | null
+          locale?: string
           message?: string | null
           name?: string
+          notification_attempts?: number
+          notification_error?: string | null
+          notification_provider_id?: string | null
           phone?: string | null
-          role?: string | null
+          plan_code?: string | null
           processed_at?: string | null
+          request_hash?: string | null
+          request_id?: string | null
+          role?: string | null
+          source_path?: string | null
           status?: string | null
         }
         Relationships: []
@@ -1892,57 +1913,78 @@ export type Database = {
       }
       continuidade_planos: {
         Row: {
+          bia_revisada_em: string | null
           created_at: string
           created_by: string | null
+          criterios_ativacao: string | null
           data_ultima_revisao: string | null
           descricao: string | null
           empresa_id: string
+          equipe_crise: Json
           escopo: string | null
+          estrategia_recuperacao: string | null
           id: string
           nome: string
           objetivos: string | null
+          plano_comunicacao: string | null
+          processos_criticos: Json
           proxima_revisao: string | null
           responsavel_id: string | null
           rpo_horas: number | null
           rto_horas: number | null
+          runbook: string | null
           status: string
           tipo: string
           updated_at: string
           versao: string | null
         }
         Insert: {
+          bia_revisada_em?: string | null
           created_at?: string
           created_by?: string | null
+          criterios_ativacao?: string | null
           data_ultima_revisao?: string | null
           descricao?: string | null
           empresa_id: string
+          equipe_crise?: Json
           escopo?: string | null
+          estrategia_recuperacao?: string | null
           id?: string
           nome: string
           objetivos?: string | null
+          plano_comunicacao?: string | null
+          processos_criticos?: Json
           proxima_revisao?: string | null
           responsavel_id?: string | null
           rpo_horas?: number | null
           rto_horas?: number | null
+          runbook?: string | null
           status?: string
           tipo?: string
           updated_at?: string
           versao?: string | null
         }
         Update: {
+          bia_revisada_em?: string | null
           created_at?: string
           created_by?: string | null
+          criterios_ativacao?: string | null
           data_ultima_revisao?: string | null
           descricao?: string | null
           empresa_id?: string
+          equipe_crise?: Json
           escopo?: string | null
+          estrategia_recuperacao?: string | null
           id?: string
           nome?: string
           objetivos?: string | null
+          plano_comunicacao?: string | null
+          processos_criticos?: Json
           proxima_revisao?: string | null
           responsavel_id?: string | null
           rpo_horas?: number | null
           rto_horas?: number | null
+          runbook?: string | null
           status?: string
           tipo?: string
           updated_at?: string
@@ -3135,7 +3177,15 @@ export type Database = {
           updated_at?: string
           volume_aproximado?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dados_fluxos_dados_pessoais_id_fkey"
+            columns: ["dados_pessoais_id"]
+            isOneToOne: false
+            referencedRelation: "dados_pessoais"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dados_mapeamento: {
         Row: {
@@ -3180,11 +3230,26 @@ export type Database = {
           updated_at?: string
           volume_aproximado?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dados_mapeamento_ativo_id_fkey"
+            columns: ["ativo_id"]
+            isOneToOne: false
+            referencedRelation: "ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dados_mapeamento_dados_pessoais_id_fkey"
+            columns: ["dados_pessoais_id"]
+            isOneToOne: false
+            referencedRelation: "dados_pessoais"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dados_pessoais: {
         Row: {
-          base_legal: string
+          base_legal: string | null
           categoria_dados: string
           created_at: string
           created_by: string | null
@@ -3193,16 +3258,20 @@ export type Database = {
           finalidade_tratamento: string
           forma_coleta: string | null
           id: string
+          nivel_catalogo: string
           nome: string
           observacoes: string | null
           origem_coleta: string | null
+          origem_validada: boolean
           prazo_retencao: string | null
+          registro_pai_id: string | null
           sensibilidade: string
           tipo_dados: string
+          titulares_vulneraveis: boolean
           updated_at: string
         }
         Insert: {
-          base_legal: string
+          base_legal?: string | null
           categoria_dados: string
           created_at?: string
           created_by?: string | null
@@ -3211,16 +3280,20 @@ export type Database = {
           finalidade_tratamento: string
           forma_coleta?: string | null
           id?: string
+          nivel_catalogo?: string
           nome: string
           observacoes?: string | null
           origem_coleta?: string | null
+          origem_validada?: boolean
           prazo_retencao?: string | null
+          registro_pai_id?: string | null
           sensibilidade?: string
           tipo_dados: string
+          titulares_vulneraveis?: boolean
           updated_at?: string
         }
         Update: {
-          base_legal?: string
+          base_legal?: string | null
           categoria_dados?: string
           created_at?: string
           created_by?: string | null
@@ -3229,18 +3302,119 @@ export type Database = {
           finalidade_tratamento?: string
           forma_coleta?: string | null
           id?: string
+          nivel_catalogo?: string
           nome?: string
           observacoes?: string | null
           origem_coleta?: string | null
+          origem_validada?: boolean
           prazo_retencao?: string | null
+          registro_pai_id?: string | null
           sensibilidade?: string
           tipo_dados?: string
+          titulares_vulneraveis?: boolean
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dados_pessoais_registro_pai_id_fkey"
+            columns: ["registro_pai_id"]
+            isOneToOne: false
+            referencedRelation: "dados_pessoais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dados_solicitacao_anexos: {
+        Row: {
+          caminho: string
+          categoria: string
+          created_at: string
+          empresa_id: string
+          id: string
+          mime_type: string | null
+          nome_arquivo: string
+          solicitacao_id: string
+          tamanho: number | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          caminho: string
+          categoria?: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          mime_type?: string | null
+          nome_arquivo: string
+          solicitacao_id: string
+          tamanho?: number | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          caminho?: string
+          categoria?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          mime_type?: string | null
+          nome_arquivo?: string
+          solicitacao_id?: string
+          tamanho?: number | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dados_solicitacao_anexos_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "dados_solicitacoes_titular"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dados_solicitacao_eventos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string
+          empresa_id: string
+          id: string
+          metadados: Json
+          solicitacao_id: string
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao: string
+          empresa_id: string
+          id?: string
+          metadados?: Json
+          solicitacao_id: string
+          tipo: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          empresa_id?: string
+          id?: string
+          metadados?: Json
+          solicitacao_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dados_solicitacao_eventos_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "dados_solicitacoes_titular"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dados_solicitacoes_titular: {
         Row: {
+          canal_resposta: string | null
           canal_solicitacao: string | null
           created_at: string
           dados_solicitados: string | null
@@ -3250,9 +3424,16 @@ export type Database = {
           empresa_id: string
           evidencias_atendimento: string | null
           id: string
+          identidade_metodo: string | null
+          identidade_status: string
           justificativa: string | null
+          motivo_prorrogacao: string | null
+          motivo_recusa: string | null
           observacoes_internas: string | null
+          prazo_fonte: string
           prazo_resposta: string
+          prorrogada_ate: string | null
+          recebida_em: string | null
           responsavel_analise: string | null
           resposta_titular: string | null
           status: string
@@ -3260,6 +3441,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          canal_resposta?: string | null
           canal_solicitacao?: string | null
           created_at?: string
           dados_solicitados?: string | null
@@ -3269,9 +3451,16 @@ export type Database = {
           empresa_id: string
           evidencias_atendimento?: string | null
           id?: string
+          identidade_metodo?: string | null
+          identidade_status?: string
           justificativa?: string | null
+          motivo_prorrogacao?: string | null
+          motivo_recusa?: string | null
           observacoes_internas?: string | null
+          prazo_fonte?: string
           prazo_resposta: string
+          prorrogada_ate?: string | null
+          recebida_em?: string | null
           responsavel_analise?: string | null
           resposta_titular?: string | null
           status?: string
@@ -3279,6 +3468,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          canal_resposta?: string | null
           canal_solicitacao?: string | null
           created_at?: string
           dados_solicitados?: string | null
@@ -3288,9 +3478,16 @@ export type Database = {
           empresa_id?: string
           evidencias_atendimento?: string | null
           id?: string
+          identidade_metodo?: string | null
+          identidade_status?: string
           justificativa?: string | null
+          motivo_prorrogacao?: string | null
+          motivo_recusa?: string | null
           observacoes_internas?: string | null
+          prazo_fonte?: string
           prazo_resposta?: string
+          prorrogada_ate?: string | null
+          recebida_em?: string | null
           responsavel_analise?: string | null
           resposta_titular?: string | null
           status?: string
@@ -4946,6 +5143,7 @@ export type Database = {
           accepted_at: string | null
           bounced_at: string | null
           campanha_id: string
+          complained_at: string | null
           created_at: string
           delivered_at: string | null
           email: string
@@ -4955,13 +5153,13 @@ export type Database = {
           provider_id: string | null
           recipient_id: string | null
           status: string
-          complained_at: string | null
           updated_at: string
         }
         Insert: {
           accepted_at?: string | null
           bounced_at?: string | null
           campanha_id: string
+          complained_at?: string | null
           created_at?: string
           delivered_at?: string | null
           email: string
@@ -4971,13 +5169,13 @@ export type Database = {
           provider_id?: string | null
           recipient_id?: string | null
           status: string
-          complained_at?: string | null
           updated_at?: string
         }
         Update: {
           accepted_at?: string | null
           bounced_at?: string | null
           campanha_id?: string
+          complained_at?: string | null
           created_at?: string
           delivered_at?: string | null
           email?: string
@@ -4987,7 +5185,6 @@ export type Database = {
           provider_id?: string | null
           recipient_id?: string | null
           status?: string
-          complained_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -4997,6 +5194,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "email_campanhas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campanha_logs_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -5124,6 +5328,7 @@ export type Database = {
       }
       empresas: {
         Row: {
+          agente_tratamento_pequeno_porte: boolean
           ativo: boolean
           cnpj: string | null
           contato: string | null
@@ -5149,6 +5354,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agente_tratamento_pequeno_porte?: boolean
           ativo?: boolean
           cnpj?: string | null
           contato?: string | null
@@ -5174,6 +5380,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agente_tratamento_pequeno_porte?: boolean
           ativo?: boolean
           cnpj?: string | null
           contato?: string | null
@@ -7058,11 +7265,25 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "planos_acao_created_by_profiles_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "planos_acao_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planos_acao_responsavel_profiles_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "planos_acao_tratamento_risco_id_fkey"
@@ -7105,11 +7326,502 @@ export type Database = {
           },
         ]
       }
+      privacidade_auditoria: {
+        Row: {
+          acao: string
+          antes: Json | null
+          autor_id: string | null
+          created_at: string
+          depois: Json | null
+          empresa_id: string
+          entidade: string
+          entidade_id: string | null
+          id: number
+        }
+        Insert: {
+          acao: string
+          antes?: Json | null
+          autor_id?: string | null
+          created_at?: string
+          depois?: Json | null
+          empresa_id: string
+          entidade: string
+          entidade_id?: string | null
+          id?: never
+        }
+        Update: {
+          acao?: string
+          antes?: Json | null
+          autor_id?: string | null
+          created_at?: string
+          depois?: Json | null
+          empresa_id?: string
+          entidade?: string
+          entidade_id?: string | null
+          id?: never
+        }
+        Relationships: []
+      }
+      privacidade_avaliacoes: {
+        Row: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          conclusao: string | null
+          created_at: string
+          created_by: string | null
+          criterios: Json
+          descricao: string | null
+          empresa_id: string
+          id: string
+          medidas: string | null
+          necessidade: string | null
+          nivel_risco: string
+          plano_acao_id: string | null
+          projeto_id: string | null
+          proporcionalidade: string | null
+          proxima_revisao: string | null
+          responsavel_id: string | null
+          risco_id: string | null
+          riscos: string | null
+          ropa_id: string | null
+          status: string
+          terceiro_id: string | null
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          conclusao?: string | null
+          created_at?: string
+          created_by?: string | null
+          criterios?: Json
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          medidas?: string | null
+          necessidade?: string | null
+          nivel_risco?: string
+          plano_acao_id?: string | null
+          projeto_id?: string | null
+          proporcionalidade?: string | null
+          proxima_revisao?: string | null
+          responsavel_id?: string | null
+          risco_id?: string | null
+          riscos?: string | null
+          ropa_id?: string | null
+          status?: string
+          terceiro_id?: string | null
+          tipo: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          conclusao?: string | null
+          created_at?: string
+          created_by?: string | null
+          criterios?: Json
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          medidas?: string | null
+          necessidade?: string | null
+          nivel_risco?: string
+          plano_acao_id?: string | null
+          projeto_id?: string | null
+          proporcionalidade?: string | null
+          proxima_revisao?: string | null
+          responsavel_id?: string | null
+          risco_id?: string | null
+          riscos?: string | null
+          ropa_id?: string | null
+          status?: string
+          terceiro_id?: string | null
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "privacidade_avaliacoes_plano_acao_id_fkey"
+            columns: ["plano_acao_id"]
+            isOneToOne: false
+            referencedRelation: "planos_acao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "privacidade_avaliacoes_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "privacidade_avaliacoes_risco_id_fkey"
+            columns: ["risco_id"]
+            isOneToOne: false
+            referencedRelation: "riscos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "privacidade_avaliacoes_ropa_id_fkey"
+            columns: ["ropa_id"]
+            isOneToOne: false
+            referencedRelation: "ropa_registros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "privacidade_avaliacoes_terceiro_id_fkey"
+            columns: ["terceiro_id"]
+            isOneToOne: false
+            referencedRelation: "privacidade_terceiros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      privacidade_consentimentos: {
+        Row: {
+          canal: string
+          coletado_em: string
+          created_at: string
+          created_by: string | null
+          empresa_id: string
+          evidencia: string | null
+          finalidade: string
+          id: string
+          revogado_em: string | null
+          ropa_id: string | null
+          status: string
+          titular_referencia: string
+          updated_at: string
+          versao_aviso: string
+        }
+        Insert: {
+          canal: string
+          coletado_em?: string
+          created_at?: string
+          created_by?: string | null
+          empresa_id: string
+          evidencia?: string | null
+          finalidade: string
+          id?: string
+          revogado_em?: string | null
+          ropa_id?: string | null
+          status?: string
+          titular_referencia: string
+          updated_at?: string
+          versao_aviso: string
+        }
+        Update: {
+          canal?: string
+          coletado_em?: string
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string
+          evidencia?: string | null
+          finalidade?: string
+          id?: string
+          revogado_em?: string | null
+          ropa_id?: string | null
+          status?: string
+          titular_referencia?: string
+          updated_at?: string
+          versao_aviso?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "privacidade_consentimentos_ropa_id_fkey"
+            columns: ["ropa_id"]
+            isOneToOne: false
+            referencedRelation: "ropa_registros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      privacidade_incidente_detalhes: {
+        Row: {
+          autoridade_notificada_em: string | null
+          categorias_dados: string[]
+          conhecimento_em: string | null
+          conteudo_comunicacao: string | null
+          created_at: string
+          created_by: string | null
+          decisao_notificar: string
+          detectado_em: string | null
+          empresa_id: string
+          evidencia: string | null
+          id: string
+          incidente_id: string
+          justificativa_decisao: string | null
+          medidas_mitigacao: string | null
+          motivo_atraso: string | null
+          natureza_incidente: string | null
+          prazo_autoridade: string | null
+          prazo_regra: string | null
+          reter_ate: string | null
+          risco_titulares: string | null
+          ropa_ids: string[]
+          titulares_estimados: number | null
+          titulares_notificados_em: string | null
+          updated_at: string
+        }
+        Insert: {
+          autoridade_notificada_em?: string | null
+          categorias_dados?: string[]
+          conhecimento_em?: string | null
+          conteudo_comunicacao?: string | null
+          created_at?: string
+          created_by?: string | null
+          decisao_notificar?: string
+          detectado_em?: string | null
+          empresa_id: string
+          evidencia?: string | null
+          id?: string
+          incidente_id: string
+          justificativa_decisao?: string | null
+          medidas_mitigacao?: string | null
+          motivo_atraso?: string | null
+          natureza_incidente?: string | null
+          prazo_autoridade?: string | null
+          prazo_regra?: string | null
+          reter_ate?: string | null
+          risco_titulares?: string | null
+          ropa_ids?: string[]
+          titulares_estimados?: number | null
+          titulares_notificados_em?: string | null
+          updated_at?: string
+        }
+        Update: {
+          autoridade_notificada_em?: string | null
+          categorias_dados?: string[]
+          conhecimento_em?: string | null
+          conteudo_comunicacao?: string | null
+          created_at?: string
+          created_by?: string | null
+          decisao_notificar?: string
+          detectado_em?: string | null
+          empresa_id?: string
+          evidencia?: string | null
+          id?: string
+          incidente_id?: string
+          justificativa_decisao?: string | null
+          medidas_mitigacao?: string | null
+          motivo_atraso?: string | null
+          natureza_incidente?: string | null
+          prazo_autoridade?: string | null
+          prazo_regra?: string | null
+          reter_ate?: string | null
+          risco_titulares?: string | null
+          ropa_ids?: string[]
+          titulares_estimados?: number | null
+          titulares_notificados_em?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "privacidade_incidente_detalhes_incidente_id_fkey"
+            columns: ["incidente_id"]
+            isOneToOne: true
+            referencedRelation: "incidentes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      privacidade_portais: {
+        Row: {
+          ativo: boolean
+          contato_dpo: string | null
+          created_at: string
+          created_by: string | null
+          empresa_id: string
+          id: string
+          introducao: string | null
+          slug: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          contato_dpo?: string | null
+          created_at?: string
+          created_by?: string | null
+          empresa_id: string
+          id?: string
+          introducao?: string | null
+          slug: string
+          titulo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          contato_dpo?: string | null
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string
+          id?: string
+          introducao?: string | null
+          slug?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      privacidade_retencoes: {
+        Row: {
+          acao_destino: string
+          created_at: string
+          created_by: string | null
+          dado_id: string | null
+          empresa_id: string
+          fundamento: string
+          gatilho: string
+          id: string
+          legal_hold: boolean
+          nome: string
+          prazo_quantidade: number | null
+          prazo_unidade: string | null
+          proxima_execucao: string | null
+          responsavel_id: string | null
+          ropa_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          acao_destino?: string
+          created_at?: string
+          created_by?: string | null
+          dado_id?: string | null
+          empresa_id: string
+          fundamento: string
+          gatilho: string
+          id?: string
+          legal_hold?: boolean
+          nome: string
+          prazo_quantidade?: number | null
+          prazo_unidade?: string | null
+          proxima_execucao?: string | null
+          responsavel_id?: string | null
+          ropa_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          acao_destino?: string
+          created_at?: string
+          created_by?: string | null
+          dado_id?: string | null
+          empresa_id?: string
+          fundamento?: string
+          gatilho?: string
+          id?: string
+          legal_hold?: boolean
+          nome?: string
+          prazo_quantidade?: number | null
+          prazo_unidade?: string | null
+          proxima_execucao?: string | null
+          responsavel_id?: string | null
+          ropa_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "privacidade_retencoes_dado_id_fkey"
+            columns: ["dado_id"]
+            isOneToOne: false
+            referencedRelation: "dados_pessoais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "privacidade_retencoes_ropa_id_fkey"
+            columns: ["ropa_id"]
+            isOneToOne: false
+            referencedRelation: "ropa_registros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      privacidade_terceiros: {
+        Row: {
+          contrato_id: string | null
+          created_at: string
+          created_by: string | null
+          dados_categorias: string[]
+          empresa_id: string
+          finalidade: string | null
+          id: string
+          mecanismo_transferencia: string | null
+          nome: string
+          observacoes: string | null
+          pais: string | null
+          papel: string
+          proxima_revisao: string | null
+          ropa_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contrato_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dados_categorias?: string[]
+          empresa_id: string
+          finalidade?: string | null
+          id?: string
+          mecanismo_transferencia?: string | null
+          nome: string
+          observacoes?: string | null
+          pais?: string | null
+          papel?: string
+          proxima_revisao?: string | null
+          ropa_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contrato_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dados_categorias?: string[]
+          empresa_id?: string
+          finalidade?: string | null
+          id?: string
+          mecanismo_transferencia?: string | null
+          nome?: string
+          observacoes?: string | null
+          pais?: string | null
+          papel?: string
+          proxima_revisao?: string | null
+          ropa_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "privacidade_terceiros_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "privacidade_terceiros_ropa_id_fkey"
+            columns: ["ropa_id"]
+            isOneToOne: false
+            referencedRelation: "ropa_registros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ativo: boolean
           created_at: string
           email: string
+          email_unsubscribe_token: string
           empresa_id: string | null
           foto_url: string | null
           id: string
@@ -7118,10 +7830,9 @@ export type Database = {
           nome: string
           notificar_na_aplicacao: boolean
           notificar_por_email: boolean
-          receber_comunicados: boolean
-          email_unsubscribe_token: string
           permission_profile_id: string | null
           preferred_locale: string
+          receber_comunicados: boolean
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           user_id: string
@@ -7130,6 +7841,7 @@ export type Database = {
           ativo?: boolean
           created_at?: string
           email: string
+          email_unsubscribe_token?: string
           empresa_id?: string | null
           foto_url?: string | null
           id?: string
@@ -7138,10 +7850,9 @@ export type Database = {
           nome: string
           notificar_na_aplicacao?: boolean
           notificar_por_email?: boolean
-          receber_comunicados?: boolean
-          email_unsubscribe_token?: string
           permission_profile_id?: string | null
           preferred_locale: string
+          receber_comunicados?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id: string
@@ -7150,6 +7861,7 @@ export type Database = {
           ativo?: boolean
           created_at?: string
           email?: string
+          email_unsubscribe_token?: string
           empresa_id?: string | null
           foto_url?: string | null
           id?: string
@@ -7158,10 +7870,9 @@ export type Database = {
           nome?: string
           notificar_na_aplicacao?: boolean
           notificar_por_email?: boolean
-          receber_comunicados?: boolean
-          email_unsubscribe_token?: string
           permission_profile_id?: string | null
           preferred_locale?: string
+          receber_comunicados?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id?: string
@@ -9520,6 +10231,27 @@ export type Database = {
           },
         ]
       }
+      security_rate_limits: {
+        Row: {
+          fingerprint_hash: string
+          request_count: number
+          scope: string
+          window_start: string
+        }
+        Insert: {
+          fingerprint_hash: string
+          request_count?: number
+          scope: string
+          window_start: string
+        }
+        Update: {
+          fingerprint_hash?: string
+          request_count?: number
+          scope?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       sistemas_privilegiados: {
         Row: {
           ativo: boolean | null
@@ -9931,14 +10663,6 @@ export type Database = {
         Args: { p_code_id: string; p_user_id: string }
         Returns: boolean
       }
-      create_access_review: {
-        Args: { p_empresa_id: string; p_data: Json }
-        Returns: Database['public']['Tables']['access_reviews']['Row']
-      }
-      finalize_access_review: {
-        Args: { p_review_id: string }
-        Returns: Json
-      }
       agendar_expurgo_denuncias: { Args: never; Returns: string }
       agendar_lembretes_diarios: { Args: never; Returns: string }
       apply_default_permissions_for_user: {
@@ -10010,6 +10734,17 @@ export type Database = {
         }
         Returns: Json
       }
+      consultar_solicitacao_privacidade_publica: {
+        Args: { p_email: string; p_protocolo: string; p_slug: string }
+        Returns: {
+          data_resposta: string
+          data_solicitacao: string
+          prazo_resposta: string
+          prorrogada_ate: string
+          status: string
+          tipo_solicitacao: string
+        }[]
+      }
       consume_ai_credit: {
         Args: {
           p_descricao?: string
@@ -10041,6 +10776,15 @@ export type Database = {
         Args: { p_fingerprint_hash: string }
         Returns: boolean
       }
+      consume_security_rate_limit: {
+        Args: {
+          p_fingerprint_hash: string
+          p_max_requests: number
+          p_scope: string
+          p_window_seconds: number
+        }
+        Returns: boolean
+      }
       conta_privilegiada_pertence_empresa: {
         Args: { conta_id: string }
         Returns: boolean
@@ -10052,6 +10796,46 @@ export type Database = {
       controle_pertence_empresa: {
         Args: { controle_id: string }
         Returns: boolean
+      }
+      create_access_review: {
+        Args: { p_data: Json; p_empresa_id: string }
+        Returns: {
+          contas_aprovadas: number
+          contas_revisadas: number
+          contas_revogadas: number
+          created_at: string
+          created_by: string
+          data_conclusao: string | null
+          data_criacao: string
+          data_inicio: string
+          data_limite: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          link_token: string | null
+          nome_revisao: string
+          observacoes: string | null
+          responsavel_revisao: string
+          sistema_id: string
+          status: string
+          tipo_revisao: string
+          total_contas: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "access_reviews"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_api_key_secure: {
+        Args: { p_nome: string; p_permissoes?: string[]; p_rate_limit?: number }
+        Returns: {
+          api_key: string
+          id: string
+          prefixo: string
+        }[]
       }
       create_audit_log:
         | {
@@ -10104,6 +10888,19 @@ export type Database = {
           protocolo: string
         }[]
       }
+      create_inbound_webhook_secure: {
+        Args: {
+          p_descricao: string
+          p_modulo_destino: string
+          p_nome: string
+          p_tipo_evento: string
+        }
+        Returns: {
+          id: string
+          token_prefix: string
+          webhook_token: string
+        }[]
+      }
       criar_denuncia_manual: {
         Args: {
           p_anonima?: boolean
@@ -10148,6 +10945,27 @@ export type Database = {
           p_title: string
           p_type?: string
           p_user_id: string
+        }
+        Returns: string
+      }
+      criar_solicitacao_privacidade_publica: {
+        Args: {
+          p_dados_solicitados: string
+          p_dados_titular: Json
+          p_justificativa?: string
+          p_slug: string
+          p_tipo: string
+        }
+        Returns: string
+      }
+      criar_tratamento_ropa_completo: {
+        Args: {
+          p_ativos_ids: string[]
+          p_bases?: Json
+          p_dados_ids: string[]
+          p_empresa_id: string
+          p_exercicio_id: string
+          p_payload: Json
         }
         Returns: string
       }
@@ -10236,6 +11054,7 @@ export type Database = {
           id: string
         }[]
       }
+      finalize_access_review: { Args: { p_review_id: string }; Returns: Json }
       finalize_denuncia_attachment: {
         Args: {
           p_mime_type: string
@@ -10285,31 +11104,6 @@ export type Database = {
       gerar_protocolo_denuncia: { Args: never; Returns: string }
       gerar_token_publico: { Args: never; Returns: string }
       gerar_token_revisao: { Args: never; Returns: string }
-      create_api_key_secure: {
-        Args: {
-          p_nome: string
-          p_permissoes?: string[]
-          p_rate_limit?: number
-        }
-        Returns: {
-          api_key: string
-          id: string
-          prefixo: string
-        }[]
-      }
-      create_inbound_webhook_secure: {
-        Args: {
-          p_descricao: string
-          p_modulo_destino: string
-          p_nome: string
-          p_tipo_evento: string
-        }
-        Returns: {
-          id: string
-          token_prefix: string
-          webhook_token: string
-        }[]
-      }
       get_assessment_empresa_info: {
         Args: { p_token: string }
         Returns: {
@@ -10433,9 +11227,9 @@ export type Database = {
           p_user_id: string
         }
         Returns: {
-          code_id: string | null
-          expires_at: string | null
-          retry_after: number | null
+          code_id: string
+          expires_at: string
+          retry_after: number
           status: string
         }[]
       }
@@ -10460,9 +11254,24 @@ export type Database = {
         }
         Returns: string
       }
+      obter_centro_privacidade: {
+        Args: { p_empresa_id: string }
+        Returns: Json
+      }
       podar_notificacoes_lidas: { Args: never; Returns: number }
       pode_ver_denuncia: { Args: { p_denuncia_id: string }; Returns: boolean }
       politica_privacidade_padrao: { Args: never; Returns: string }
+      portal_privacidade_publico: {
+        Args: { p_slug: string }
+        Returns: {
+          contato_dpo: string
+          empresa_nome: string
+          introducao: string
+          jurisdicao: string
+          titulo: string
+        }[]
+      }
+      processar_alertas_privacidade: { Args: never; Returns: number }
       projeto_pertence_empresa: {
         Args: { _projeto_id: string }
         Returns: boolean
@@ -10487,6 +11296,8 @@ export type Database = {
         Args: { review_id_param: string }
         Returns: boolean
       }
+      revoke_my_mfa_sessions: { Args: never; Returns: undefined }
+      revoke_other_mfa_sessions: { Args: never; Returns: undefined }
       risco_avaliar: {
         Args: {
           p_empresa_id: string
@@ -10578,28 +11389,39 @@ export type Database = {
         }
         Returns: Json
       }
+      somar_dias_uteis: {
+        Args: { p_dias: number; p_inicio: string }
+        Returns: string
+      }
+      substituir_bases_ropa: {
+        Args: { p_bases: Json; p_ropa_id: string }
+        Returns: undefined
+      }
+      touch_api_key_usage: { Args: { p_key_id: string }; Returns: undefined }
+      touch_inbound_webhook_usage: {
+        Args: { p_webhook_id: string }
+        Returns: undefined
+      }
       unaccent_immutable_fallback: { Args: { p_text: string }; Returns: string }
       usuario_tem_permissao_modulo: {
         Args: { p_acao?: string; p_modulo: string }
         Returns: boolean
       }
       validate_denuncia_token: { Args: { p_token: string }; Returns: string }
-      revoke_my_mfa_sessions: { Args: never; Returns: undefined }
-      revoke_other_mfa_sessions: { Args: never; Returns: undefined }
+      verify_mfa_code_attempt: {
+        Args: { p_code_hash: string; p_user_id: string }
+        Returns: {
+          remaining_attempts: number
+          session_expires_at: string
+          status: string
+        }[]
+      }
       verify_session_mfa_code_attempt: {
         Args: {
           p_auth_session_id: string
           p_code_hash: string
           p_user_id: string
         }
-        Returns: {
-          remaining_attempts: number
-          session_expires_at: string | null
-          status: string
-        }[]
-      }
-      verify_mfa_code_attempt: {
-        Args: { p_code_hash: string; p_user_id: string }
         Returns: {
           remaining_attempts: number
           session_expires_at: string
@@ -10638,563 +11460,6 @@ export type Database = {
       [_ in never]: never
     }
   }
-  storage: {
-    Tables: {
-      buckets: {
-        Row: {
-          allowed_mime_types: string[] | null
-          avif_autodetection: boolean | null
-          created_at: string | null
-          file_size_limit: number | null
-          id: string
-          name: string
-          owner: string | null
-          owner_id: string | null
-          public: boolean | null
-          type: Database["storage"]["Enums"]["buckettype"]
-          updated_at: string | null
-          versioning_status: string
-        }
-        Insert: {
-          allowed_mime_types?: string[] | null
-          avif_autodetection?: boolean | null
-          created_at?: string | null
-          file_size_limit?: number | null
-          id: string
-          name: string
-          owner?: string | null
-          owner_id?: string | null
-          public?: boolean | null
-          type?: Database["storage"]["Enums"]["buckettype"]
-          updated_at?: string | null
-          versioning_status?: string
-        }
-        Update: {
-          allowed_mime_types?: string[] | null
-          avif_autodetection?: boolean | null
-          created_at?: string | null
-          file_size_limit?: number | null
-          id?: string
-          name?: string
-          owner?: string | null
-          owner_id?: string | null
-          public?: boolean | null
-          type?: Database["storage"]["Enums"]["buckettype"]
-          updated_at?: string | null
-          versioning_status?: string
-        }
-        Relationships: []
-      }
-      buckets_analytics: {
-        Row: {
-          created_at: string
-          deleted_at: string | null
-          format: string
-          id: string
-          name: string
-          type: Database["storage"]["Enums"]["buckettype"]
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          deleted_at?: string | null
-          format?: string
-          id?: string
-          name: string
-          type?: Database["storage"]["Enums"]["buckettype"]
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          deleted_at?: string | null
-          format?: string
-          id?: string
-          name?: string
-          type?: Database["storage"]["Enums"]["buckettype"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      buckets_vectors: {
-        Row: {
-          created_at: string
-          id: string
-          type: Database["storage"]["Enums"]["buckettype"]
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id: string
-          type?: Database["storage"]["Enums"]["buckettype"]
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          type?: Database["storage"]["Enums"]["buckettype"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      iceberg_namespaces: {
-        Row: {
-          bucket_name: string
-          catalog_id: string
-          created_at: string
-          id: string
-          metadata: Json
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          bucket_name: string
-          catalog_id: string
-          created_at?: string
-          id?: string
-          metadata?: Json
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          bucket_name?: string
-          catalog_id?: string
-          created_at?: string
-          id?: string
-          metadata?: Json
-          name?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "iceberg_namespaces_catalog_id_fkey"
-            columns: ["catalog_id"]
-            isOneToOne: false
-            referencedRelation: "buckets_analytics"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      iceberg_tables: {
-        Row: {
-          bucket_name: string
-          catalog_id: string
-          created_at: string
-          id: string
-          location: string
-          name: string
-          namespace_id: string
-          remote_table_id: string | null
-          shard_id: string | null
-          shard_key: string | null
-          updated_at: string
-        }
-        Insert: {
-          bucket_name: string
-          catalog_id: string
-          created_at?: string
-          id?: string
-          location: string
-          name: string
-          namespace_id: string
-          remote_table_id?: string | null
-          shard_id?: string | null
-          shard_key?: string | null
-          updated_at?: string
-        }
-        Update: {
-          bucket_name?: string
-          catalog_id?: string
-          created_at?: string
-          id?: string
-          location?: string
-          name?: string
-          namespace_id?: string
-          remote_table_id?: string | null
-          shard_id?: string | null
-          shard_key?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "iceberg_tables_catalog_id_fkey"
-            columns: ["catalog_id"]
-            isOneToOne: false
-            referencedRelation: "buckets_analytics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "iceberg_tables_namespace_id_fkey"
-            columns: ["namespace_id"]
-            isOneToOne: false
-            referencedRelation: "iceberg_namespaces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      migrations: {
-        Row: {
-          executed_at: string | null
-          hash: string
-          id: number
-          name: string
-        }
-        Insert: {
-          executed_at?: string | null
-          hash: string
-          id: number
-          name: string
-        }
-        Update: {
-          executed_at?: string | null
-          hash?: string
-          id?: number
-          name?: string
-        }
-        Relationships: []
-      }
-      objects: {
-        Row: {
-          archived_at: string | null
-          bucket_id: string | null
-          created_at: string | null
-          id: string
-          is_delete_marker: boolean
-          is_versioned: boolean
-          last_accessed_at: string | null
-          metadata: Json | null
-          name: string | null
-          owner: string | null
-          owner_id: string | null
-          path_tokens: string[] | null
-          updated_at: string | null
-          user_metadata: Json | null
-          version: string | null
-        }
-        Insert: {
-          archived_at?: string | null
-          bucket_id?: string | null
-          created_at?: string | null
-          id?: string
-          is_delete_marker?: boolean
-          is_versioned?: boolean
-          last_accessed_at?: string | null
-          metadata?: Json | null
-          name?: string | null
-          owner?: string | null
-          owner_id?: string | null
-          path_tokens?: string[] | null
-          updated_at?: string | null
-          user_metadata?: Json | null
-          version?: string | null
-        }
-        Update: {
-          archived_at?: string | null
-          bucket_id?: string | null
-          created_at?: string | null
-          id?: string
-          is_delete_marker?: boolean
-          is_versioned?: boolean
-          last_accessed_at?: string | null
-          metadata?: Json | null
-          name?: string | null
-          owner?: string | null
-          owner_id?: string | null
-          path_tokens?: string[] | null
-          updated_at?: string | null
-          user_metadata?: Json | null
-          version?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "objects_bucketId_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      s3_multipart_uploads: {
-        Row: {
-          bucket_id: string
-          created_at: string
-          id: string
-          in_progress_size: number
-          key: string
-          metadata: Json | null
-          owner_id: string | null
-          upload_signature: string
-          user_metadata: Json | null
-          version: string
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string
-          id: string
-          in_progress_size?: number
-          key: string
-          metadata?: Json | null
-          owner_id?: string | null
-          upload_signature: string
-          user_metadata?: Json | null
-          version: string
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string
-          id?: string
-          in_progress_size?: number
-          key?: string
-          metadata?: Json | null
-          owner_id?: string | null
-          upload_signature?: string
-          user_metadata?: Json | null
-          version?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "s3_multipart_uploads_bucket_id_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      s3_multipart_uploads_parts: {
-        Row: {
-          bucket_id: string
-          created_at: string
-          etag: string
-          id: string
-          key: string
-          owner_id: string | null
-          part_number: number
-          size: number
-          upload_id: string
-          version: string
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string
-          etag: string
-          id?: string
-          key: string
-          owner_id?: string | null
-          part_number: number
-          size?: number
-          upload_id: string
-          version: string
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string
-          etag?: string
-          id?: string
-          key?: string
-          owner_id?: string | null
-          part_number?: number
-          size?: number
-          upload_id?: string
-          version?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "s3_multipart_uploads_parts_bucket_id_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "s3_multipart_uploads_parts_upload_id_fkey"
-            columns: ["upload_id"]
-            isOneToOne: false
-            referencedRelation: "s3_multipart_uploads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      vector_indexes: {
-        Row: {
-          bucket_id: string
-          created_at: string
-          data_type: string
-          dimension: number
-          distance_metric: string
-          id: string
-          metadata_configuration: Json | null
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string
-          data_type: string
-          dimension: number
-          distance_metric: string
-          id?: string
-          metadata_configuration?: Json | null
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string
-          data_type?: string
-          dimension?: number
-          distance_metric?: string
-          id?: string
-          metadata_configuration?: Json | null
-          name?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "vector_indexes_bucket_id_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets_vectors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      allow_any_operation: {
-        Args: { expected_operations: string[] }
-        Returns: boolean
-      }
-      allow_only_operation: {
-        Args: { expected_operation: string }
-        Returns: boolean
-      }
-      can_insert_object: {
-        Args: { bucketid: string; metadata: Json; name: string; owner: string }
-        Returns: undefined
-      }
-      extension: { Args: { name: string }; Returns: string }
-      filename: { Args: { name: string }; Returns: string }
-      foldername: { Args: { name: string }; Returns: string[] }
-      get_common_prefix: {
-        Args: { p_delimiter: string; p_key: string; p_prefix: string }
-        Returns: string
-      }
-      get_size_by_bucket: {
-        Args: never
-        Returns: {
-          bucket_id: string
-          size: number
-        }[]
-      }
-      list_multipart_uploads_with_delimiter: {
-        Args: {
-          bucket_id: string
-          delimiter_param: string
-          max_keys?: number
-          next_key_token?: string
-          next_upload_token?: string
-          prefix_param: string
-        }
-        Returns: {
-          created_at: string
-          id: string
-          key: string
-        }[]
-      }
-      list_objects_with_delimiter: {
-        Args: {
-          _bucket_id: string
-          delimiter_param: string
-          max_keys?: number
-          next_token?: string
-          prefix_param: string
-          sort_order?: string
-          start_after?: string
-        }
-        Returns: {
-          created_at: string
-          id: string
-          last_accessed_at: string
-          metadata: Json
-          name: string
-          updated_at: string
-        }[]
-      }
-      operation: { Args: never; Returns: string }
-      search: {
-        Args: {
-          bucketname: string
-          levels?: number
-          limits?: number
-          offsets?: number
-          prefix: string
-          search?: string
-          sortcolumn?: string
-          sortorder?: string
-        }
-        Returns: {
-          created_at: string
-          id: string
-          last_accessed_at: string
-          metadata: Json
-          name: string
-          updated_at: string
-        }[]
-      }
-      search_by_timestamp: {
-        Args: {
-          p_bucket_id: string
-          p_level: number
-          p_limit: number
-          p_prefix: string
-          p_sort_column: string
-          p_sort_column_after: string
-          p_sort_order: string
-          p_start_after: string
-        }
-        Returns: {
-          created_at: string
-          id: string
-          key: string
-          last_accessed_at: string
-          metadata: Json
-          name: string
-          updated_at: string
-        }[]
-      }
-      search_v2: {
-        Args: {
-          bucket_name: string
-          levels?: number
-          limits?: number
-          prefix: string
-          sort_column?: string
-          sort_column_after?: string
-          sort_order?: string
-          start_after?: string
-        }
-        Returns: {
-          created_at: string
-          id: string
-          key: string
-          last_accessed_at: string
-          metadata: Json
-          name: string
-          updated_at: string
-        }[]
-      }
-    }
-    Enums: {
-      buckettype: "STANDARD" | "ANALYTICS" | "VECTOR"
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
@@ -11205,12 +11470,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -11234,11 +11499,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -11259,11 +11524,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -11284,11 +11549,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -11301,11 +11566,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -11315,9 +11580,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       app_role: ["user", "admin", "super_admin"],
@@ -11345,11 +11607,6 @@ export const Constants = {
         "continuidade",
       ],
       user_role: ["super_admin", "admin", "user", "readonly"],
-    },
-  },
-  storage: {
-    Enums: {
-      buckettype: ["STANDARD", "ANALYTICS", "VECTOR"],
     },
   },
 } as const
