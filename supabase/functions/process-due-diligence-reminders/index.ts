@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { readScheduledRows, utcDay } from '../_shared/scheduled-job.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,6 +11,7 @@ const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: corsHeaders });
 
   // Exige service-role explícito para invocar (evita spam externo)
   const authHeader = req.headers.get('Authorization') || '';
@@ -23,7 +25,10 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { days_before_expiration = 3, empresa_id } = await req.json().catch(() => ({}));
+    const { days_before_expiration = 3, empresa_id, dry_run } = await req.json().catch(() => ({}));
+    if (!empresa_id || !Number.isInteger(days_before_expiration) || days_before_expiration < 1 || days_before_expiration > 365) {
+      return new Response(JSON.stringify({ success: false, error: 'Invalid reminder scope' }), { status: 400, headers: corsHeaders });
+    }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -32,6 +37,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days_before_expiration);
+    const today = utcDay();
+    const { data: settings, error: settingsError } = await supabase.from('empresa_reminder_settings')
+      .select('reminders_enabled,due_diligence_expiracao_ativo').eq('empresa_id', empresa_id).maybeSingle();
+    if (settingsError) throw settingsError;
+    if (!settings?.reminders_enabled || !settings.due_diligence_expiracao_ativo) {
+      return new Response(JSON.stringify({ success: true, skipped: true, reason: 'disabled' }), { status: 200, headers: corsHeaders });
+    }
 
     let query = supabase
       .from('due_diligence_assessments')
@@ -44,6 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
         due_diligence_templates!inner(nome)
       `)
       .eq('status', 'enviado')
+      .or(`ultimo_lembrete_enviado.is.null,ultimo_lembrete_enviado.lt.${today}T00:00:00Z`)
       .lt('data_expiracao', futureDate.toISOString())
       .gt('data_expiracao', new Date().toISOString());
 
@@ -54,9 +67,12 @@ const handler = async (req: Request): Promise<Response> => {
       query = query.eq('empresa_id', empresa_id);
     }
 
-    const { data: assessments, error } = await query;
-
-    if (error) throw error;
+    const assessments = await readScheduledRows<any>((from, to) => query.order('id').range(from, to));
+    if (dry_run === true) {
+      return new Response(JSON.stringify({ success: true, dry_run: true, eligible: assessments.length, sent: 0 }), {
+        status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
 
     console.log(`Encontrados ${assessments?.length || 0} assessments para lembrete`);
 
@@ -83,9 +99,14 @@ const handler = async (req: Request): Promise<Response> => {
           headers: { Authorization: `Bearer ${serviceKey}` },
         });
 
-        if (response.error) {
-          throw new Error(`Erro ao enviar email: ${response.error.message || String(response.error)}`);
+        if (response.error || response.data?.success !== true) {
+          throw new Error('Reminder delivery failed');
         }
+
+        const { error: saveError } = await supabase.from('due_diligence_assessments')
+          .update({ ultimo_lembrete_enviado: new Date().toISOString() })
+          .eq('id', assessment.id).eq('empresa_id', empresa_id);
+        if (saveError) throw saveError;
 
         successCount++;
       } catch (emailError) {
@@ -95,11 +116,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     return new Response(JSON.stringify({
-      success: true,
+      success: errorCount === 0,
       message: `Processados ${assessments?.length || 0} assessments`,
       details: { total: assessments?.length || 0, success: successCount, errors: errorCount },
     }), {
-      status: 200,
+      status: errorCount === 0 ? 200 : 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
 

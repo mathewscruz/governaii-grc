@@ -1,246 +1,119 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { authorizedScheduledJob, beginScheduledJob, finishScheduledJob, readScheduledRows, utcDay } from '../_shared/scheduled-job.ts'
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' }
+const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers })
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+  if (req.method === 'OPTIONS') return new Response(null, { headers })
+  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
+  if (!authorizedScheduledJob(req, Deno.env.get('LEMBRETES_DIARIOS_TOKEN'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))) {
+    return json({ error: 'Unauthorized' }, 401)
   }
 
+  let runId: string | null = null
   try {
-    // Auth: require SERVICE_ROLE_KEY as bearer (cron / internal trigger only)
-    const authHeader = req.headers.get('Authorization');
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    if (!authHeader?.startsWith('Bearer ') || authHeader.replace('Bearer ', '') !== serviceKey) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    const body = await req.json().catch(() => ({}))
+    const dryRun = body?.dry_run === true
+    if (!dryRun) {
+      runId = await beginScheduledJob(supabase, 'lembretes-diarios')
+      if (!runId) return json({ success: true, skipped: true, reason: 'already_running_or_completed_today' })
     }
-
-    console.log('Iniciando processamento diário de lembretes de convite')
-    
-    // Buscar todas as empresas com lembretes habilitados
-    const { data: empresasAtivas, error: empresasError } = await supabase
+    const companies = await readScheduledRows<any>((from, to) => supabase
       .from('empresa_reminder_settings')
       .select('empresa_id, due_diligence_expiracao_ativo, due_diligence_expiracao_dias')
-      .eq('reminders_enabled', true)
+      .eq('reminders_enabled', true).order('empresa_id').range(from, to))
 
-    if (empresasError) {
-      console.error('Erro ao buscar empresas ativas:', empresasError)
-      throw empresasError
-    }
+    let sent = 0
+    let eligible = 0
+    let errors = 0
+    let notifications = 0
+    let processed = 0
+    const today = utcDay()
+    const endDate = new Date(`${today}T00:00:00Z`)
+    endDate.setUTCDate(endDate.getUTCDate() + 7)
 
-    if (!empresasAtivas || empresasAtivas.length === 0) {
-      console.log('Nenhuma empresa com lembretes habilitados encontrada')
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Nenhuma empresa com lembretes habilitados',
-        empresas_processadas: 0
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      })
-    }
-
-    let empresasProcessadas = 0
-    let totalEnviados = 0
-    let totalErros = 0
-
-    // Processar lembretes para cada empresa
-    for (const empresa of empresasAtivas) {
-      try {
-        console.log(`Processando lembretes para empresa ${empresa.empresa_id}`)
-        
-        // Chamar a função de processamento de lembretes para esta empresa
-        const { data, error } = await supabase.functions.invoke('process-invitation-reminders', {
-          body: { empresa_id: empresa.empresa_id }
-        })
-
-        if (error) {
-          console.error(`Erro ao processar empresa ${empresa.empresa_id}:`, error)
-          totalErros++
-          continue
-        }
-
-        /*
-          Lembrete de expiração de due diligence.
-
-          A função `process-due-diligence-reminders` já existia e funcionava --
-          faltava-lhe quem a chamasse. Enquanto isso, o painel de automações
-          mostrava um interruptor LIGADO a prometer este aviso, e nada o
-          enviava. Agora corre quando a empresa o pediu, e só então.
-        */
-        if (empresa.due_diligence_expiracao_ativo) {
-          const { error: erroDd } = await supabase.functions.invoke('process-due-diligence-reminders', {
-            body: {
-              empresa_id: empresa.empresa_id,
-              days_before_expiration: empresa.due_diligence_expiracao_dias ?? 7,
-            },
+    for (const company of companies) {
+      // Failure in invitations must not suppress this company's DD/GAP reminders.
+      for (const worker of [
+        { name: 'process-invitation-reminders', enabled: true, extra: {} },
+        { name: 'process-due-diligence-reminders', enabled: company.due_diligence_expiracao_ativo,
+          extra: { days_before_expiration: company.due_diligence_expiracao_dias ?? 7 } },
+      ]) {
+        if (!worker.enabled) continue
+        try {
+          const { data, error } = await supabase.functions.invoke(worker.name, {
+            body: { empresa_id: company.empresa_id, dry_run: dryRun, ...worker.extra },
           })
-          if (erroDd) {
-            console.error(`Erro no lembrete de due diligence da empresa ${empresa.empresa_id}:`, erroDd)
-            totalErros++
-          }
-        }
-
-        console.log(`Empresa ${empresa.empresa_id} processada:`, data)
-        empresasProcessadas++
-        totalEnviados += data.sent || 0
-        totalErros += data.errors || 0
-
-      } catch (error) {
-        console.error(`Erro ao processar empresa ${empresa.empresa_id}:`, error)
-        totalErros++
-      }
-    }
-
-    // === GAP ANALYSIS: Notificações de prazo de implementação ===
-    console.log('Verificando prazos de gap analysis...')
-    let gapNotificacoes = 0
-    try {
-      const hoje = new Date()
-      const em7dias = new Date(hoje)
-      em7dias.setDate(em7dias.getDate() + 7)
-
-      // Buscar evaluations com prazo próximo ou vencido
-      const { data: evalsPrazo, error: evalsPrazoError } = await supabase
-        .from('gap_analysis_evaluations')
-        .select('id, framework_id, requirement_id, empresa_id, prazo_implementacao, conformity_status, responsavel_avaliacao')
-        .not('prazo_implementacao', 'is', null)
-        .not('conformity_status', 'eq', 'conforme')
-        .not('conformity_status', 'eq', 'nao_aplicavel')
-        .lte('prazo_implementacao', em7dias.toISOString().split('T')[0])
-
-      if (evalsPrazoError) {
-        console.error('Erro ao buscar prazos gap analysis:', evalsPrazoError)
-      } else if (evalsPrazo && evalsPrazo.length > 0) {
-        // Load requirement titles
-        const reqIds = [...new Set(evalsPrazo.map(e => e.requirement_id))]
-        const { data: reqs } = await supabase
-          .from('gap_analysis_requirements')
-          .select('id, codigo, titulo')
-          .in('id', reqIds)
-
-        const reqMap = new Map((reqs || []).map(r => [r.id, r]))
-
-        // Load framework names
-        const fwIds = [...new Set(evalsPrazo.map(e => e.framework_id))]
-        const { data: fws } = await supabase
-          .from('gap_analysis_frameworks')
-          .select('id, nome')
-          .in('id', fwIds)
-
-        const fwMap = new Map((fws || []).map(f => [f.id, f.nome]))
-
-        // Get admin users per empresa to notify
-        for (const eval_ of evalsPrazo) {
-          const req = reqMap.get(eval_.requirement_id)
-          const fwNome = fwMap.get(eval_.framework_id) || 'Framework'
-          const prazoDate = new Date(eval_.prazo_implementacao!)
-          const vencido = prazoDate < hoje
-          const titulo = vencido
-            ? `Prazo vencido: ${req?.codigo || ''} - ${req?.titulo || 'Requisito'}`
-            : `Prazo próximo: ${req?.codigo || ''} - ${req?.titulo || 'Requisito'}`
-          const mensagem = vencido
-            ? `O prazo de implementação do requisito ${req?.codigo} (${fwNome}) venceu em ${prazoDate.toLocaleDateString('pt-BR')}.`
-            : `O prazo de implementação do requisito ${req?.codigo} (${fwNome}) vence em ${prazoDate.toLocaleDateString('pt-BR')}.`
-
-          /*
-            O aviso vai a quem é dono do requisito.
-
-            Isto ia buscar os CINCO PRIMEIROS perfis da empresa, sem ordem e
-            sem filtro de papel — o comentário dizia "(admins)" mas nada na
-            consulta o garantia. Resultado: cinco pessoas ao calhas recebiam o
-            aviso de um prazo que não é delas, e o responsável, que está
-            gravado em `responsavel_avaliacao`, podia não estar entre elas.
-
-            Um aviso que chega a quem não pode agir treina toda a gente a
-            ignorá-lo.
-
-            Sem responsável definido, cai para os administradores da empresa —
-            que são quem tem de o atribuir a alguém.
-          */
-          let users: Array<{ user_id: string }> = []
-          if (eval_.responsavel_avaliacao) {
-            users = [{ user_id: eval_.responsavel_avaliacao }]
-          } else {
-            const { data: admins } = await supabase
-              .from('profiles')
-              .select('user_id')
-              .eq('empresa_id', eval_.empresa_id)
-              .in('role', ['admin', 'super_admin'])
-            users = admins || []
-          }
-
-          for (const user of (users || [])) {
-            // Check if notification already sent today
-            const { data: existing } = await supabase
-              .from('notifications')
-              .select('id')
-              .eq('user_id', user.user_id)
-              .eq('type', vencido ? 'warning' : 'info')
-              .gte('created_at', hoje.toISOString().split('T')[0])
-              .ilike('title', `%${req?.codigo || ''}%`)
-              .maybeSingle()
-
-            if (!existing) {
-              await supabase.from('notifications').insert({
-                user_id: user.user_id,
-                title: titulo,
-                message: mensagem,
-                type: vencido ? 'warning' : 'info',
-                link_to: `/gap-analysis/framework/${eval_.framework_id}`,
-                metadata: {
-                  tipo: 'gap_analysis_prazo',
-                  evaluation_id: eval_.id,
-                  framework_id: eval_.framework_id,
-                  requirement_id: eval_.requirement_id,
-                }
-              })
-              gapNotificacoes++
-            }
-          }
+          if (error || data?.success !== true) throw error || new Error('Worker failed')
+          sent += data.sent ?? data.details?.success ?? 0
+          eligible += data.eligible ?? data.details?.eligible ?? 0
+          errors += data.errors ?? data.details?.errors ?? 0
+        } catch {
+          errors++
+          console.error('Reminder worker failed', worker.name)
         }
       }
-    } catch (gapError) {
-      console.error('Erro ao processar prazos gap analysis:', gapError)
-    }
 
-    const resultado = {
-      success: true,
-      message: 'Processamento diário concluído',
-      empresas_com_lembretes: empresasAtivas.length,
-      empresas_processadas: empresasProcessadas,
-      total_lembretes_enviados: totalEnviados,
-      total_gap_analysis_notificacoes: gapNotificacoes,
-      total_erros: totalErros,
-      timestamp: new Date().toISOString()
-    }
-
-    console.log('Resultado do processamento diário:', resultado)
-
-    return new Response(JSON.stringify(resultado), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders }
-    })
-
-  } catch (error: any) {
-    console.error('Erro na função daily-reminder-processor:', error)
-    return new Response(
-      JSON.stringify({
-        error: (error instanceof Error ? error.message : String(error)),
-        details: 'Falha no processamento diário de lembretes'
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      try {
+        // Respect the same opt-in for GAP and never search another company's rows.
+        const evaluations = await readScheduledRows<any>((from, to) => supabase
+          .from('gap_analysis_evaluations')
+          .select('id, framework_id, requirement_id, empresa_id, prazo_implementacao, responsavel_avaliacao')
+          .eq('empresa_id', company.empresa_id)
+          .not('conformity_status', 'in', '(conforme,nao_aplicavel)')
+          .lte('prazo_implementacao', utcDay(endDate)).order('id').range(from, to))
+        eligible += evaluations.length
+        if (!dryRun) for (const evaluation of evaluations) {
+          const [{ data: requirement, error: requirementError }, { data: framework, error: frameworkError }] = await Promise.all([
+            supabase.from('gap_analysis_requirements').select('codigo,titulo').eq('id', evaluation.requirement_id).maybeSingle(),
+            supabase.from('gap_analysis_frameworks').select('nome').eq('id', evaluation.framework_id)
+              .or(`empresa_id.is.null,empresa_id.eq.${company.empresa_id}`).maybeSingle(),
+          ])
+          if (requirementError || frameworkError) throw requirementError || frameworkError
+          const users = await readScheduledRows<any>((from, to) => {
+            let query = supabase.from('profiles').select('user_id').eq('empresa_id', company.empresa_id).eq('ativo', true)
+            query = evaluation.responsavel_avaliacao
+              ? query.eq('user_id', evaluation.responsavel_avaliacao)
+              : query.in('role', ['admin', 'super_admin'])
+            return query.order('user_id').range(from, to)
+          })
+          const overdue = evaluation.prazo_implementacao < today
+          const metadata = { tipo: 'gap_analysis_prazo', evaluation_id: evaluation.id,
+            framework_id: evaluation.framework_id, requirement_id: evaluation.requirement_id }
+          for (const user of users) {
+            const { data: existing, error: existingError } = await supabase.from('notifications').select('id')
+              .eq('user_id', user.user_id).contains('metadata', { tipo: metadata.tipo, evaluation_id: evaluation.id })
+              .gte('created_at', `${today}T00:00:00Z`).limit(1)
+            if (existingError) throw existingError
+            if (existing?.length) continue
+            const date = evaluation.prazo_implementacao.split('-').reverse().join('/')
+            const { error: notificationError } = await supabase.from('notifications').insert({
+              user_id: user.user_id,
+              title: `${overdue ? 'Prazo vencido' : 'Prazo próximo'}: ${requirement?.codigo || ''} - ${requirement?.titulo || 'Requisito'}`,
+              message: `O prazo de implementação do requisito ${requirement?.codigo || ''} (${framework?.nome || 'Framework'}) ${overdue ? 'venceu' : 'vence'} em ${date}.`,
+              type: overdue ? 'warning' : 'info', link_to: `/gap-analysis/framework/${evaluation.framework_id}`, metadata,
+            })
+            if (notificationError) throw notificationError
+            notifications++
+          }
+        }
+      } catch {
+        errors++
+        console.error('GAP deadline reminders failed')
       }
-    )
+      processed++
+    }
+
+    const result = { success: errors === 0, dry_run: dryRun, empresas_com_lembretes: companies.length,
+      empresas_processadas: processed, total_lembretes_enviados: sent, total_elegiveis: eligible,
+      total_gap_analysis_notificacoes: notifications, total_erros: errors }
+    if (runId) await finishScheduledJob(supabase, runId, result.success, result)
+    return json(result, result.success ? 200 : 500)
+  } catch {
+    if (runId) await finishScheduledJob(supabase, runId, false, { error: 'daily_reminder_processor_failed' })
+      .catch(() => console.error('Unable to record reminder failure'))
+    return json({ success: false, error: 'Daily reminder processing failed' }, 500)
   }
 })

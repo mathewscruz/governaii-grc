@@ -1,12 +1,12 @@
 import React from 'npm:react@18.3.1'
-import { Resend } from 'npm:resend@4.0.0'
+import { sendIdempotentEmail } from '../_shared/idempotent-email.ts'
+import { readScheduledRows } from '../_shared/scheduled-job.ts'
 import { htmlToText } from '../_shared/email.ts'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { InvitationReminderEmail } from './_templates/invitation-reminder-email.tsx'
 import { exigeInternaOuUtilizador, respostaAcessoNegado, AcessoNegado } from '../_shared/interna.ts'
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, supabaseKey)
@@ -19,6 +19,7 @@ const corsHeaders = {
 interface ReminderRequest {
   user_id?: string
   empresa_id?: string
+  dry_run?: boolean
 }
 
 Deno.serve(async (req) => {
@@ -50,7 +51,8 @@ Deno.serve(async (req) => {
       throw new AcessoNegado('Confirmação MFA necessária', 403)
     }
 
-    const { user_id, empresa_id: empresaPedida }: ReminderRequest = await req.json().catch(() => ({}))
+    const { user_id, empresa_id: empresaPedida, dry_run }: ReminderRequest = await req.json().catch(() => ({}))
+    const dryRun = dry_run === true
 
     /*
       Um utilizador só processa lembretes da SUA empresa -- o `empresa_id` do
@@ -64,37 +66,10 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Buscar usuários elegíveis para receber lembretes
-    let query = supabase
-      .from('profiles')
-      .select(`
-        *,
-        temporary_passwords!inner (
-          user_id,
-          is_temporary,
-          expires_at
-        ),
-        empresas!inner (
-          id,
-          nome
-        )
-      `)
-      .eq('temporary_passwords.is_temporary', true)
-      .gt('temporary_passwords.expires_at', new Date().toISOString())
-
-    if (user_id) {
-      query = query.eq('user_id', user_id)
-    }
-    if (empresa_id) {
-      query = query.eq('empresa_id', empresa_id)
-    }
-
-    const { data: eligibleUsers, error: usersError } = await query
-
-    if (usersError) {
-      console.error('Erro ao buscar usuários elegíveis:', usersError)
-      throw usersError
-    }
+    // The internal RPC joins by user_id; there is no profiles/temporary_passwords FK.
+    const eligibleUsers = await readScheduledRows<any>((from, to) => supabase
+      .rpc('convites_elegiveis_lembrete', { p_empresa_id: empresa_id ?? null, p_user_id: user_id ?? null })
+      .range(from, to))
 
     console.log(`Encontrados ${eligibleUsers?.length || 0} usuários elegíveis`)
 
@@ -114,34 +89,37 @@ Deno.serve(async (req) => {
     let processed = 0
     let sent = 0
     let errors = 0
+    let eligible = 0
 
     for (const user of eligibleUsers) {
       processed++
       
       try {
         // Buscar configurações de lembrete da empresa
-        const { data: settings } = await supabase
+        const { data: settings, error: settingsError } = await supabase
           .from('empresa_reminder_settings')
           .select('*')
           .eq('empresa_id', user.empresa_id)
           .single()
+        if (settingsError) throw settingsError
 
         // Se lembretes estão desabilitados para esta empresa, pular
-        if (settings && !settings.reminders_enabled) {
+        if (!settings?.reminders_enabled) {
           console.log(`Lembretes desabilitados para empresa ${user.empresa_id}`)
           continue
         }
 
-        const maxReminders = settings?.max_reminders || 3
+        const maxReminders = settings?.max_reminders ?? 3
         const intervals = settings?.reminder_intervals || [3, 7, 14]
 
         // Buscar histórico de lembretes do usuário
-        const { data: reminderHistory } = await supabase
+        const { data: reminderHistory, error: historyError } = await supabase
           .from('user_invitation_reminders')
           .select('*')
           .eq('user_id', user.user_id)
           .eq('empresa_id', user.empresa_id)
-          .single()
+          .maybeSingle()
+        if (historyError) throw historyError
 
         const currentReminderCount = reminderHistory?.reminder_count || 0
 
@@ -169,6 +147,9 @@ Deno.serve(async (req) => {
           continue
         }
 
+        eligible++
+        if (dryRun) continue
+
         // Enviar e-mail de lembrete
         const loginUrl = 'https://akuris.pt'
         
@@ -176,26 +157,20 @@ Deno.serve(async (req) => {
           React.createElement(InvitationReminderEmail, {
             userName: user.nome,
             userEmail: user.email,
-            companyName: user.empresas.nome,
+            companyName: user.empresa_nome,
             loginUrl,
             reminderNumber: currentReminderCount + 1,
             maxReminders,
           })
         )
 
-        const { data: emailData, error: emailError } = await resend.emails.send({
+        await sendIdempotentEmail({
           from: 'Akuris <noreply@akuris.com.br>',
           to: [user.email],
-          subject: `Lembrete: Seu acesso ao Akuris está aguardando - ${user.empresas.nome}`,
+          subject: `Lembrete: Seu acesso ao Akuris está aguardando - ${user.empresa_nome}`,
           html,
           text: htmlToText(html),
-        })
-
-        if (emailError) {
-          console.error(`Erro ao enviar e-mail para ${user.email}:`, emailError)
-          errors++
-          continue
-        }
+        }, `invitation-reminder/${user.user_id}/${currentReminderCount + 1}`, Deno.env.get('RESEND_API_KEY') || '')
 
         console.log(`E-mail de lembrete enviado para ${user.email}`)
 
@@ -214,16 +189,10 @@ Deno.serve(async (req) => {
           updated_at: now.toISOString()
         }
 
-        if (!reminderHistory) {
-          await supabase
-            .from('user_invitation_reminders')
-            .insert(reminderData)
-        } else {
-          await supabase
-            .from('user_invitation_reminders')
-            .update(reminderData)
-            .eq('id', reminderHistory.id)
-        }
+        const { error: saveError } = !reminderHistory
+          ? await supabase.from('user_invitation_reminders').insert(reminderData)
+          : await supabase.from('user_invitation_reminders').update(reminderData).eq('id', reminderHistory.id)
+        if (saveError) throw saveError
 
         sent++
 
@@ -236,17 +205,19 @@ Deno.serve(async (req) => {
     console.log(`Processamento concluído: ${processed} processados, ${sent} enviados, ${errors} erros`)
 
     return new Response(JSON.stringify({
-      success: true,
+      success: errors === 0,
       message: 'Processamento de lembretes concluído',
       processed,
       sent,
       errors,
+      eligible,
+      dry_run: dryRun,
       details: {
         total_eligible: eligibleUsers.length,
         success_rate: processed > 0 ? Math.round((sent / processed) * 100) : 0
       }
     }), {
-      status: 200,
+      status: errors === 0 ? 200 : 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders }
     })
 

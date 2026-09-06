@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { htmlToText, sanitizeEmailDocument } from "../_shared/email.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { sendIdempotentEmail } from '../_shared/idempotent-email.ts';
+import { utcDay } from '../_shared/scheduled-job.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -153,13 +155,21 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error(`Tipo de e-mail inválido: ${type}. Tipos aceitos: send, invitation, reminder, completion`);
     }
 
-    const emailResponse = await resend.emails.send({
+    const payload = {
       from: 'Akuris <noreply@akuris.com.br>',
       to: [fornecedor_email],
       subject: emailContent.subject,
       html: sanitizeEmailDocument(emailContent.html),
       text: htmlToText(emailContent.html),
-    });
+    };
+
+    if (type === 'reminder') {
+      const delivered = await sendIdempotentEmail(payload,
+        `dd-reminder/${assessment.id}/${utcDay()}`, Deno.env.get('RESEND_API_KEY') || '');
+      return new Response(JSON.stringify({ success: true, messageId: delivered.id }), { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
+    const emailResponse = await resend.emails.send(payload);
+    if (emailResponse.error || !emailResponse.data?.id) throw new Error('Email delivery failed');
 
     return new Response(JSON.stringify({ success: true, messageId: emailResponse.data?.id }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
   } catch (error: any) {
