@@ -75,7 +75,7 @@ export default function RevisaoAcessos() {
         .select(`
           *,
           sistema:sistemas_privilegiados(nome_sistema),
-          responsavel:responsavel_revisao(nome),
+          responsavel:profiles!access_reviews_responsavel_revisao_fkey(nome),
           creator:created_by(nome)
         `)
         .eq("empresa_id", empresaId);
@@ -111,7 +111,7 @@ export default function RevisaoAcessos() {
         .select(`
           *,
           sistema:sistemas_privilegiados(nome_sistema),
-          responsavel:responsavel_revisao(nome)
+          responsavel:profiles!access_reviews_responsavel_revisao_fkey(nome)
         `)
         .eq("empresa_id", empresaId)
         .in("status", ["concluida", "cancelada"])
