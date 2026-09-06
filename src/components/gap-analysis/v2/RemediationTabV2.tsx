@@ -485,7 +485,7 @@ export function RemediationTabV2({ frameworkId, frameworkName }: Props) {
             title={t('gapV2.remediation.actionPlansTitle')}
             count={planos.length}
           />
-          <SegmentToggle<'roadmap' | 'board'> value={planView} onChange={setPlanView} options={[
+          <SegmentToggle value={planView} onChange={(v) => setPlanView(v as 'roadmap' | 'board')} options={[
             { value: 'roadmap', label: t('executive.roadmap') },
             { value: 'board', label: t('executive.board') },
           ]} />
